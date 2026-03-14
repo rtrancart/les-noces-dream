@@ -46,7 +46,7 @@ export default function Prestataires() {
       .limit(100);
 
     if (filterStatut !== "tous") {
-      query = query.eq("statut", filterStatut);
+      query = query.eq("statut", filterStatut as StatutPrestataire);
     }
     if (search) {
       query = query.ilike("nom_commercial", `%${search}%`);

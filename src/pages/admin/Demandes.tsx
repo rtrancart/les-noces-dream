@@ -44,7 +44,7 @@ export default function Demandes() {
       .select("*")
       .order("created_at", { ascending: false })
       .limit(100);
-    if (filterStatut !== "tous") query = query.eq("statut", filterStatut);
+    if (filterStatut !== "tous") query = query.eq("statut", filterStatut as StatutDemande);
     const { data: result, error } = await query;
     if (error) toast.error(error.message);
     else setData(result ?? []);

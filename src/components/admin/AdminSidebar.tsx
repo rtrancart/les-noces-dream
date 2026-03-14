@@ -95,7 +95,7 @@ export function AdminSidebar() {
         </SidebarGroup>
 
         {/* Content Nav */}
-        <SidebarGroup defaultOpen>
+        <SidebarGroup>
           <SidebarGroupLabel className="text-[10px] uppercase tracking-[0.15em] text-sidebar-foreground/40 font-sans">
             Contenu
           </SidebarGroupLabel>
