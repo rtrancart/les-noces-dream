@@ -4,12 +4,24 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Connexion from "./pages/Connexion";
 import Inscription from "./pages/Inscription";
 import MotDePasseOublie from "./pages/MotDePasseOublie";
 import ResetPassword from "./pages/ResetPassword";
+
+// Admin
+import AdminLayout from "./components/admin/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import AdminPrestataires from "./pages/admin/Prestataires";
+import AdminCategories from "./pages/admin/Categories";
+import AdminDemandes from "./pages/admin/Demandes";
+import AdminAvis from "./pages/admin/Avis";
+import AdminUtilisateurs from "./pages/admin/Utilisateurs";
+import AdminArticles from "./pages/admin/Articles";
+import AdminPages from "./pages/admin/Pages";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +38,26 @@ const App = () => (
             <Route path="/inscription" element={<Inscription />} />
             <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* Admin back-office */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="prestataires" element={<AdminPrestataires />} />
+              <Route path="categories" element={<AdminCategories />} />
+              <Route path="demandes" element={<AdminDemandes />} />
+              <Route path="avis" element={<AdminAvis />} />
+              <Route path="utilisateurs" element={<AdminUtilisateurs />} />
+              <Route path="articles" element={<AdminArticles />} />
+              <Route path="pages" element={<AdminPages />} />
+            </Route>
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
