@@ -73,14 +73,14 @@ export default function Utilisateurs() {
     const toAdd = editRoles.filter((r) => !currentRoles.includes(r));
     const toRemove = currentRoles.filter((r) => !editRoles.includes(r));
 
-    const promises: Promise<any>[] = [];
+    const ops = [];
     for (const role of toAdd) {
-      promises.push(supabase.from("user_roles").insert({ user_id: selectedUser.id, role }));
+      ops.push(supabase.from("user_roles").insert({ user_id: selectedUser.id, role }).then((r) => r));
     }
     for (const role of toRemove) {
-      promises.push(supabase.from("user_roles").delete().eq("user_id", selectedUser.id).eq("role", role));
+      ops.push(supabase.from("user_roles").delete().eq("user_id", selectedUser.id).eq("role", role).then((r) => r));
     }
-    const results = await Promise.all(promises);
+    const results = await Promise.all(ops);
     const hasError = results.some((r) => r.error);
     if (hasError) toast.error("Erreur lors de la mise à jour des rôles");
     else { toast.success("Rôles mis à jour"); setSelectedUser(null); fetchData(); }
