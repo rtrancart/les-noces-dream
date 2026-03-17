@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Eye } from "lucide-react";
+import { Eye, Search, MessageSquare } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Demande = Database["public"]["Tables"]["demandes_devis"]["Row"];
@@ -25,19 +26,33 @@ const statutColors: Record<StatutDemande, string> = {
   devis_envoye: "bg-bleu-petrole/15 text-bleu-petrole", accepte: "bg-sauge/20 text-sauge", refuse: "bg-destructive/10 text-destructive", archive: "bg-muted/40 text-muted-foreground",
 };
 
+interface DemandeWithPrestataire extends Demande {
+  prestataire_nom?: string;
+}
+
 export default function Demandes() {
-  const [data, setData] = useState<Demande[]>([]);
+  const [data, setData] = useState<DemandeWithPrestataire[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatut, setFilterStatut] = useState("tous");
-  const [selected, setSelected] = useState<Demande | null>(null);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<DemandeWithPrestataire | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
-    let query = supabase.from("demandes_devis").select("*").order("created_at", { ascending: false }).limit(200);
+    let query = supabase
+      .from("demandes_devis")
+      .select("*, prestataires!demandes_devis_prestataire_id_fkey(nom_commercial)")
+      .order("created_at", { ascending: false }).limit(200);
     if (filterStatut !== "tous") query = query.eq("statut", filterStatut as StatutDemande);
     const { data: result, error } = await query;
     if (error) toast.error(error.message);
-    else setData(result ?? []);
+    else {
+      const mapped = (result ?? []).map((d: any) => ({
+        ...d,
+        prestataire_nom: d.prestataires?.nom_commercial ?? "—",
+      }));
+      setData(mapped);
+    }
     setLoading(false);
   };
 
@@ -46,39 +61,59 @@ export default function Demandes() {
   const updateStatut = async (id: string, statut: StatutDemande) => {
     const { error } = await supabase.from("demandes_devis").update({ statut }).eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Statut mis à jour"); fetchData(); if (selected?.id === id) setSelected({ ...selected, statut }); }
+    else {
+      toast.success("Statut mis à jour");
+      fetchData();
+      if (selected?.id === id) setSelected({ ...selected, statut });
+    }
   };
+
+  const filtered = search
+    ? data.filter((d) =>
+      `${d.nom_contact} ${d.email_contact} ${d.prestataire_nom ?? ""}`.toLowerCase().includes(search.toLowerCase())
+    )
+    : data;
 
   const InfoRow = ({ label, value }: { label: string; value: string | null | undefined }) => (
     <div className="flex justify-between py-2">
       <span className="font-sans text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
-      <span className="font-sans text-sm text-foreground">{value || "—"}</span>
+      <span className="font-sans text-sm text-foreground text-right max-w-[60%]">{value || "—"}</span>
     </div>
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-serif font-semibold text-foreground">Demandes de devis</h1>
-          <p className="mt-1 font-sans text-sm text-muted-foreground">Suivez toutes les demandes envoyées aux prestataires</p>
+          <p className="mt-1 font-sans text-sm text-muted-foreground">
+            {data.length} demande{data.length > 1 ? "s" : ""} · {data.filter((d) => d.statut === "nouveau").length} nouvelle{data.filter((d) => d.statut === "nouveau").length > 1 ? "s" : ""}
+          </p>
         </div>
-        <Select value={filterStatut} onValueChange={setFilterStatut}>
-          <SelectTrigger className="w-[180px] font-sans text-sm"><SelectValue placeholder="Filtrer" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="tous">Tous les statuts</SelectItem>
-            {Object.entries(statutLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
-          </SelectContent>
-        </Select>
       </div>
 
       <Card className="shadow-card">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 font-sans text-sm" />
+            </div>
+            <Select value={filterStatut} onValueChange={setFilterStatut}>
+              <SelectTrigger className="w-[180px] font-sans text-sm"><SelectValue placeholder="Filtrer" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tous">Tous les statuts</SelectItem>
+                {Object.entries(statutLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="font-sans text-xs">Contact</TableHead>
-                <TableHead className="font-sans text-xs">Email</TableHead>
+                <TableHead className="font-sans text-xs">Prestataire</TableHead>
                 <TableHead className="font-sans text-xs">Objet</TableHead>
                 <TableHead className="font-sans text-xs">Statut</TableHead>
                 <TableHead className="font-sans text-xs">Date</TableHead>
@@ -88,13 +123,16 @@ export default function Demandes() {
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (<TableRow key={i}>{Array.from({ length: 6 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>))
-              ) : data.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <TableRow><TableCell colSpan={6} className="text-center font-sans text-sm text-muted-foreground py-8">Aucune demande</TableCell></TableRow>
               ) : (
-                data.map((d) => (
-                  <TableRow key={d.id}>
-                    <TableCell className="font-sans text-sm font-medium">{d.nom_contact}</TableCell>
-                    <TableCell className="font-sans text-sm text-muted-foreground">{d.email_contact}</TableCell>
+                filtered.map((d) => (
+                  <TableRow key={d.id} className={d.statut === "nouveau" ? "bg-primary/5" : ""}>
+                    <TableCell>
+                      <p className="font-sans text-sm font-medium">{d.nom_contact}</p>
+                      <p className="font-sans text-xs text-muted-foreground">{d.email_contact}</p>
+                    </TableCell>
+                    <TableCell className="font-sans text-sm text-muted-foreground">{d.prestataire_nom}</TableCell>
                     <TableCell className="font-sans text-sm capitalize">{d.objet.replace(/_/g, " ")}</TableCell>
                     <TableCell>
                       <Select value={d.statut} onValueChange={(v) => updateStatut(d.id, v as StatutDemande)}>
@@ -130,6 +168,8 @@ export default function Demandes() {
               <Separator />
               <InfoRow label="Téléphone" value={selected.telephone_contact} />
               <Separator />
+              <InfoRow label="Prestataire" value={selected.prestataire_nom} />
+              <Separator />
               <InfoRow label="Objet" value={selected.objet.replace(/_/g, " ")} />
               <Separator />
               <InfoRow label="Date événement" value={selected.date_evenement} />
@@ -142,7 +182,7 @@ export default function Demandes() {
               <Separator />
               <div className="pt-3">
                 <span className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Message</span>
-                <p className="mt-1 font-sans text-sm text-foreground whitespace-pre-wrap">{selected.message}</p>
+                <p className="mt-1 font-sans text-sm text-foreground whitespace-pre-wrap bg-muted/10 rounded-md p-3">{selected.message}</p>
               </div>
               <Separator />
               <div className="flex items-center justify-between pt-3">
