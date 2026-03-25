@@ -220,12 +220,6 @@ export default function Prestataires() {
   const childCategories = categories.filter((c) => c.parent_id === form.categorie_mere_id);
   const getCatName = (id: string | null) => categories.find((c) => c.id === id)?.nom ?? "—";
 
-  const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <div className="space-y-1.5">
-      <Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
-      {children}
-    </div>
-  );
 
   return (
     <div className="space-y-6">
