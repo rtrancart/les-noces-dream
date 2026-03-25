@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -30,56 +30,87 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Database["public"]["Tables"]["profiles"]["Row"] | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isRoleLoading, setIsRoleLoading] = useState(false);
 
-  const fetchProfileAndRoles = async (userId: string) => {
-    const [profileRes, rolesRes] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", userId).single(),
-      supabase.from("user_roles").select("role").eq("user_id", userId),
-    ]);
-    if (profileRes.data) setProfile(profileRes.data);
-    if (rolesRes.data) setRoles(rolesRes.data.map((r) => r.role));
-  };
+  const fetchProfileAndRoles = useCallback(async (userId: string) => {
+    setIsRoleLoading(true);
+
+    try {
+      const [profileRes, rolesRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).single(),
+        supabase.from("user_roles").select("role").eq("user_id", userId),
+      ]);
+
+      if (profileRes.error) {
+        console.error("Erreur profil:", profileRes.error.message);
+      }
+
+      if (rolesRes.error) {
+        console.error("Erreur rôles:", rolesRes.error.message);
+      }
+
+      setProfile(profileRes.data ?? null);
+      setRoles((rolesRes.data ?? []).map((r) => r.role));
+    } finally {
+      setIsRoleLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let initialLoad = true;
+    let isMounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfileAndRoles(session.user.id);
-        } else {
-          setProfile(null);
-          setRoles([]);
-        }
-        setIsLoading(false);
-      }
-    );
+    const applySession = (nextSession: Session | null) => {
+      if (!isMounted) return;
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfileAndRoles(session.user.id);
+      if (!nextSession) {
+        setProfile(null);
+        setRoles([]);
       }
-      if (initialLoad) {
-        setIsLoading(false);
-        initialLoad = false;
-      }
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      applySession(nextSession);
+      setIsAuthLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    const initAuth = async () => {
+      const {
+        data: { session: initialSession },
+      } = await supabase.auth.getSession();
+
+      if (!isMounted) return;
+      applySession(initialSession);
+      setIsAuthLoading(false);
+    };
+
+    void initAuth();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    void fetchProfileAndRoles(user.id);
+  }, [user?.id, fetchProfileAndRoles]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
     setProfile(null);
     setRoles([]);
   };
 
   const hasRole = (role: AppRole) => roles.includes(role);
+  const isLoading = isAuthLoading || isRoleLoading;
 
   return (
     <AuthContext.Provider
