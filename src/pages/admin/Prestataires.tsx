@@ -61,6 +61,13 @@ const emptyForm = {
   cree_par_admin: true,
 };
 
+const Field = ({ label, children }: { label: string; children: ReactNode }) => (
+  <div className="space-y-1.5">
+    <Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
+    {children}
+  </div>
+);
+
 export default function Prestataires() {
   const [data, setData] = useState<Prestataire[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
