@@ -339,10 +339,16 @@ export default function Prestataires() {
             <TabsContent value="general" className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Nom commercial *">
-                  <Input value={form.nom_commercial} onChange={(e) => setForm({ ...form, nom_commercial: e.target.value })} />
+                  <Input value={form.nom_commercial} onChange={(e) => handleNomChange(e.target.value)} />
                 </Field>
                 <Field label="Slug *">
-                  <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="font-mono text-sm" placeholder="mon-prestataire" />
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <Input value={form.slug} onChange={(e) => { setForm({ ...form, slug: e.target.value }); setSlugError(null); }} className={`font-mono text-sm ${slugError ? "border-destructive" : ""}`} placeholder="mon-prestataire" />
+                      {checkingSlug && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                    </div>
+                    {slugError && <p className="text-xs text-destructive">{slugError}</p>}
+                  </div>
                 </Field>
               </div>
               <Field label="Description courte">
