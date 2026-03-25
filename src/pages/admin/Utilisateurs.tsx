@@ -101,7 +101,7 @@ export default function Utilisateurs() {
       <Tabs defaultValue="clients">
         <TabsList>
           <TabsTrigger value="clients" className="font-sans text-sm">
-            Clients & Prestataires ({clients.length})
+            Clients ({clients.length})
           </TabsTrigger>
           <TabsTrigger value="admins" className="font-sans text-sm">
             Administrateurs ({admins.length})
