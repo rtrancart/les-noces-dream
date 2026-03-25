@@ -109,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setProfile(null);
     setRoles([]);
+    setIsRoleLoading(false);
   };
 
   const hasRole = (role: AppRole) => roles.includes(role);
