@@ -15,6 +15,7 @@ import { useUsersData, roleLabels, roleColors } from "@/hooks/useUsersData";
 import type { AppRole, UserWithRoles } from "@/hooks/useUsersData";
 import EditUserDialog from "@/components/admin/EditUserDialog";
 import DeleteUserDialog from "@/components/admin/DeleteUserDialog";
+import CreateUserDialog from "@/components/admin/CreateUserDialog";
 
 export default function Utilisateurs() {
   const { data, loading, refetch } = useUsersData();
