@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Search, Pencil, ExternalLink, Trash2 } from "lucide-react";
+import { Search, Pencil, ExternalLink, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +15,7 @@ import { useUsersData, roleLabels, roleColors } from "@/hooks/useUsersData";
 import type { AppRole, UserWithRoles } from "@/hooks/useUsersData";
 import EditUserDialog from "@/components/admin/EditUserDialog";
 import DeleteUserDialog from "@/components/admin/DeleteUserDialog";
+import CreateUserDialog from "@/components/admin/CreateUserDialog";
 
 export default function Utilisateurs() {
   const { data, loading, refetch } = useUsersData();
@@ -25,6 +26,7 @@ export default function Utilisateurs() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [impersonating, setImpersonating] = useState<string | null>(null);
 
   const clients = data.filter((u) => u.roles.includes("client") && !u.roles.includes("prestataire"));
@@ -88,9 +90,15 @@ export default function Utilisateurs() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-serif font-semibold text-foreground">Utilisateurs</h1>
-        <p className="mt-1 font-sans text-sm text-muted-foreground">{data.length} utilisateur{data.length > 1 ? "s" : ""} inscrits</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-serif font-semibold text-foreground">Utilisateurs</h1>
+          <p className="mt-1 font-sans text-sm text-muted-foreground">{data.length} utilisateur{data.length > 1 ? "s" : ""} inscrits</p>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)} className="font-sans text-sm gap-2">
+          <Plus className="h-4 w-4" />
+          Créer un utilisateur
+        </Button>
       </div>
 
       <div className="relative max-w-sm">
@@ -217,6 +225,7 @@ export default function Utilisateurs() {
 
       <EditUserDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} user={selectedUser} onSaved={refetch} />
       <DeleteUserDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} user={selectedUser} onDeleted={refetch} />
+      <CreateUserDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} onCreated={refetch} />
     </div>
   );
 }
