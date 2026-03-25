@@ -27,7 +27,7 @@ export default function Utilisateurs() {
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
 
-  const clients = data.filter((u) => u.roles.includes("client") || u.roles.includes("prestataire"));
+  const clients = data.filter((u) => u.roles.includes("client") && !u.roles.includes("prestataire"));
   const admins = data.filter((u) => u.roles.includes("admin") || u.roles.includes("super_admin"));
 
   const filterBySearch = (list: UserWithRoles[]) =>
@@ -101,7 +101,7 @@ export default function Utilisateurs() {
       <Tabs defaultValue="clients">
         <TabsList>
           <TabsTrigger value="clients" className="font-sans text-sm">
-            Clients & Prestataires ({clients.length})
+            Clients ({clients.length})
           </TabsTrigger>
           <TabsTrigger value="admins" className="font-sans text-sm">
             Administrateurs ({admins.length})
