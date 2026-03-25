@@ -90,9 +90,15 @@ export default function Utilisateurs() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-serif font-semibold text-foreground">Utilisateurs</h1>
-        <p className="mt-1 font-sans text-sm text-muted-foreground">{data.length} utilisateur{data.length > 1 ? "s" : ""} inscrits</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-serif font-semibold text-foreground">Utilisateurs</h1>
+          <p className="mt-1 font-sans text-sm text-muted-foreground">{data.length} utilisateur{data.length > 1 ? "s" : ""} inscrits</p>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)} className="font-sans text-sm gap-2">
+          <Plus className="h-4 w-4" />
+          Créer un utilisateur
+        </Button>
       </div>
 
       <div className="relative max-w-sm">
