@@ -173,6 +173,8 @@ export default function Prestataires() {
       return;
     }
     setSaving(true);
+    const isUnique = await checkSlugUniqueness();
+    if (!isUnique) { setSaving(false); return; }
     const payload = {
       nom_commercial: form.nom_commercial,
       slug: form.slug,
