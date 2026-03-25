@@ -62,8 +62,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const applySession = (nextSession: Session | null) => {
       if (!isMounted) return;
+
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
+      setIsRoleLoading(Boolean(nextSession?.user));
 
       if (!nextSession) {
         setProfile(null);
