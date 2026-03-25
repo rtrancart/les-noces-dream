@@ -225,6 +225,7 @@ export default function Utilisateurs() {
 
       <EditUserDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} user={selectedUser} onSaved={refetch} />
       <DeleteUserDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} user={selectedUser} onDeleted={refetch} />
+      <CreateUserDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} onCreated={refetch} />
     </div>
   );
 }
