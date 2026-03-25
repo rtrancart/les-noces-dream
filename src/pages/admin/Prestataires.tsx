@@ -206,12 +206,14 @@ export default function Prestataires() {
     };
 
     if (editItem) {
-      const { error } = await supabase.from("prestataires").update(payload).eq("id", editItem.id);
+      const { data: updated, error } = await supabase.from("prestataires").update(payload).eq("id", editItem.id).select();
       if (error) toast.error(error.message);
+      else if (!updated || updated.length === 0) toast.error("Mise à jour refusée (permissions insuffisantes)");
       else { toast.success("Prestataire mis à jour"); setDialogOpen(false); fetchData(); }
     } else {
-      const { error } = await supabase.from("prestataires").insert(payload);
+      const { data: created, error } = await supabase.from("prestataires").insert(payload).select();
       if (error) toast.error(error.message);
+      else if (!created || created.length === 0) toast.error("Création refusée (permissions insuffisantes)");
       else { toast.success("Prestataire créé"); setDialogOpen(false); fetchData(); }
     }
     setSaving(false);
