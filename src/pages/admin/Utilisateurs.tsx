@@ -26,6 +26,7 @@ export default function Utilisateurs() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [impersonating, setImpersonating] = useState<string | null>(null);
 
   const clients = data.filter((u) => u.roles.includes("client") && !u.roles.includes("prestataire"));
