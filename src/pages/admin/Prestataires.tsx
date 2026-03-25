@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Search, Eye, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Eye, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -71,6 +71,40 @@ export default function Prestataires() {
   const [editItem, setEditItem] = useState<Prestataire | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [checkingSlug, setCheckingSlug] = useState(false);
+
+  const generateSlug = (text: string): string => {
+    return text
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+  };
+
+  const handleNomChange = (nom: string) => {
+    const newSlug = generateSlug(nom);
+    setForm((prev) => ({ ...prev, nom_commercial: nom, slug: newSlug }));
+    setSlugError(null);
+  };
+
+  const checkSlugUniqueness = async (): Promise<boolean> => {
+    if (!form.slug) return false;
+    setCheckingSlug(true);
+    let query = supabase.from("prestataires").select("id").eq("slug", form.slug).limit(1);
+    if (editItem) query = query.neq("id", editItem.id);
+    const { data: existing } = await query;
+    setCheckingSlug(false);
+    if (existing && existing.length > 0) {
+      setSlugError("Ce slug est déjà utilisé par un autre prestataire");
+      return false;
+    }
+    setSlugError(null);
+    return true;
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -139,6 +173,8 @@ export default function Prestataires() {
       return;
     }
     setSaving(true);
+    const isUnique = await checkSlugUniqueness();
+    if (!isUnique) { setSaving(false); return; }
     const payload = {
       nom_commercial: form.nom_commercial,
       slug: form.slug,
@@ -303,10 +339,16 @@ export default function Prestataires() {
             <TabsContent value="general" className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Nom commercial *">
-                  <Input value={form.nom_commercial} onChange={(e) => setForm({ ...form, nom_commercial: e.target.value })} />
+                  <Input value={form.nom_commercial} onChange={(e) => handleNomChange(e.target.value)} />
                 </Field>
                 <Field label="Slug *">
-                  <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="font-mono text-sm" placeholder="mon-prestataire" />
+                  <div className="space-y-1">
+                    <div className="relative">
+                      <Input value={form.slug} onChange={(e) => { setForm({ ...form, slug: e.target.value }); setSlugError(null); }} className={`font-mono text-sm ${slugError ? "border-destructive" : ""}`} placeholder="mon-prestataire" />
+                      {checkingSlug && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                    </div>
+                    {slugError && <p className="text-xs text-destructive">{slugError}</p>}
+                  </div>
                 </Field>
               </div>
               <Field label="Description courte">
