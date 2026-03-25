@@ -71,6 +71,40 @@ export default function Prestataires() {
   const [editItem, setEditItem] = useState<Prestataire | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [checkingSlug, setCheckingSlug] = useState(false);
+
+  const generateSlug = (text: string): string => {
+    return text
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+  };
+
+  const handleNomChange = (nom: string) => {
+    const newSlug = generateSlug(nom);
+    setForm((prev) => ({ ...prev, nom_commercial: nom, slug: newSlug }));
+    setSlugError(null);
+  };
+
+  const checkSlugUniqueness = async (): Promise<boolean> => {
+    if (!form.slug) return false;
+    setCheckingSlug(true);
+    let query = supabase.from("prestataires").select("id").eq("slug", form.slug).limit(1);
+    if (editItem) query = query.neq("id", editItem.id);
+    const { data: existing } = await query;
+    setCheckingSlug(false);
+    if (existing && existing.length > 0) {
+      setSlugError("Ce slug est déjà utilisé par un autre prestataire");
+      return false;
+    }
+    setSlugError(null);
+    return true;
+  };
 
   const fetchData = async () => {
     setLoading(true);
