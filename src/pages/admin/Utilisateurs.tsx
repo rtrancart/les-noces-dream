@@ -36,8 +36,9 @@ export default function Utilisateurs() {
   const filterBySearch = (list: UserWithRoles[]) =>
     list.filter((u) => !search || `${u.prenom} ${u.nom} ${u.email}`.toLowerCase().includes(search.toLowerCase()));
 
-  const openEdit = (u: UserWithRoles) => {
+  const openEdit = (u: UserWithRoles, ctx: "client" | "admin") => {
     setSelectedUser(u);
+    setEditContext(ctx);
     setEditDialogOpen(true);
   };
 
