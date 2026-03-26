@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 
 /**
  * Insert a row into logs_admin for auditing admin actions.
@@ -8,7 +9,7 @@ export async function logAdmin(
   action: string,
   entite?: string,
   entite_id?: string,
-  details?: Record<string, unknown>
+  details?: Record<string, string | number | boolean | null>
 ) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -19,7 +20,7 @@ export async function logAdmin(
       action,
       entite: entite ?? null,
       entite_id: entite_id ?? null,
-      details: (details as Record<string, unknown>) ?? null,
+      details: (details as Json) ?? null,
     }]);
   } catch {
     // Silent — logging should never block the UI
