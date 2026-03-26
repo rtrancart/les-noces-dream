@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import type { UserWithRoles } from "@/hooks/useUsersData";
+import { logAdmin } from "@/lib/logAdmin";
 
 interface Props {
   open: boolean;
