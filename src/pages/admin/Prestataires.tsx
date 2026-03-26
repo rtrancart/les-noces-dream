@@ -263,8 +263,10 @@ export default function Prestataires() {
             <TableHeader>
               <TableRow>
                 <TableHead className="font-sans text-xs">Nom commercial</TableHead>
+                <TableHead className="font-sans text-xs">Email</TableHead>
                 <TableHead className="font-sans text-xs">Catégorie</TableHead>
                 <TableHead className="font-sans text-xs">Ville</TableHead>
+                <TableHead className="font-sans text-xs">Inscrit le</TableHead>
                 <TableHead className="font-sans text-xs">Statut</TableHead>
                 <TableHead className="font-sans text-xs">Note</TableHead>
                 <TableHead className="font-sans text-xs text-right">Actions</TableHead>
@@ -273,16 +275,18 @@ export default function Prestataires() {
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>{Array.from({ length: 6 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>
+                  <TableRow key={i}>{Array.from({ length: 8 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>
                 ))
               ) : data.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
               ) : (
                 data.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-sans text-sm font-medium">{p.nom_commercial}</TableCell>
+                    <TableCell className="font-sans text-sm text-muted-foreground">{p.email_contact || "—"}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{getCatName(p.categorie_mere_id)}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.ville}</TableCell>
+                    <TableCell className="font-sans text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString("fr-FR")}</TableCell>
                     <TableCell>
                       <Select value={p.statut} onValueChange={(val) => updateStatut(p.id, val as StatutPrestataire)}>
                         <SelectTrigger className="h-7 w-[130px] border-0 p-0">
