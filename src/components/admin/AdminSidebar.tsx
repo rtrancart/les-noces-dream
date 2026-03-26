@@ -6,6 +6,7 @@ import {
   Star,
   Users,
   ScrollText,
+  ClipboardList,
   LogOut,
   Settings,
 } from "lucide-react";
