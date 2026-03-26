@@ -35,7 +35,12 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Index />} />
+            {/* Public pages with Header + Footer */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<Index />} />
+            </Route>
+
+            {/* Auth pages (no Header/Footer) */}
             <Route path="/connexion" element={<Connexion />} />
             <Route path="/inscription" element={<Inscription />} />
             <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
