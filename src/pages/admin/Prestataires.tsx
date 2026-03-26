@@ -223,7 +223,7 @@ export default function Prestataires() {
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("prestataires").delete().eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Prestataire supprimé"); fetchData(); }
+    else { toast.success("Prestataire supprimé"); logAdmin("delete_prestataire", "prestataires", id); fetchData(); }
   };
 
   const parentCategories = categories.filter((c) => !c.parent_id);
