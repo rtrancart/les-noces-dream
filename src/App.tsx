@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import PublicLayout from "@/components/layout/PublicLayout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Connexion from "./pages/Connexion";
