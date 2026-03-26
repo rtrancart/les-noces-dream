@@ -14,13 +14,13 @@ export async function logAdmin(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase.from("logs_admin").insert({
+    await supabase.from("logs_admin").insert([{
       admin_id: user.id,
       action,
       entite: entite ?? null,
       entite_id: entite_id ?? null,
-      details: details ?? null,
-    });
+      details: (details as Record<string, unknown>) ?? null,
+    }]);
   } catch {
     // Silent — logging should never block the UI
   }
