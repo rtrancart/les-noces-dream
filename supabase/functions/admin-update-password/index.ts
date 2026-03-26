@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     const { data: callerRoles } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", caller.id);
+      .eq("user_id", callerId);
 
     const callerRolesList = (callerRoles ?? []).map((r: any) => r.role);
     const isAdmin = callerRolesList.includes("admin");
