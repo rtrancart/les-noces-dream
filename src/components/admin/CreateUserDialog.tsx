@@ -65,6 +65,7 @@ export default function CreateUserDialog({ open, onOpenChange, onCreated }: Prop
       if (res.data?.error) throw new Error(res.data.error);
 
       toast.success(`Utilisateur ${form.email} créé avec succès`);
+      await logAdmin("create_user", "profiles", res.data?.user_id, { email: form.email, role: form.role });
       setForm(initialForm);
       onOpenChange(false);
       onCreated();

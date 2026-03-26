@@ -134,6 +134,7 @@ export default function EditUserDialog({ open, onOpenChange, user, onSaved, avai
       if (res.error) throw new Error(res.error.message);
       if (res.data?.error) throw new Error(res.data.error);
       toast.success("Mot de passe mis à jour");
+      await logAdmin("update_password", "profiles", user.id, { email: user.email });
       setNewPassword("");
       setConfirmPassword("");
     } catch (e: any) {

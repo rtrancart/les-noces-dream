@@ -40,6 +40,7 @@ export default function DeleteUserDialog({ open, onOpenChange, user, onDeleted }
       if (res.data?.error) throw new Error(res.data.error);
 
       toast.success(`${user.email} supprimé`);
+      await logAdmin("delete_user", "profiles", user.id, { email: user.email });
       onOpenChange(false);
       onDeleted();
     } catch (e: any) {

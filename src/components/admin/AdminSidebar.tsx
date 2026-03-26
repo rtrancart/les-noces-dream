@@ -34,6 +34,7 @@ const mainItems = [
   { title: "Demandes de devis", url: "/admin/demandes", icon: FileText },
   { title: "Avis", url: "/admin/avis", icon: Star },
   { title: "Utilisateurs", url: "/admin/utilisateurs", icon: Users },
+  { title: "Journal d'activité", url: "/admin/logs", icon: ClipboardList },
 ];
 
 const contentItems = [

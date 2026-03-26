@@ -61,6 +61,7 @@ export default function Utilisateurs() {
       if (!actionLink) throw new Error("Lien d'accès non généré");
 
       window.open(actionLink, "_blank");
+      await logAdmin("impersonate", "profiles", u.id, { email: u.email });
     } catch (e: any) {
       toast.error(e.message || "Erreur d'impersonation");
     } finally {
