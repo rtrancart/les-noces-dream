@@ -263,8 +263,10 @@ export default function Prestataires() {
             <TableHeader>
               <TableRow>
                 <TableHead className="font-sans text-xs">Nom commercial</TableHead>
+                <TableHead className="font-sans text-xs">Email</TableHead>
                 <TableHead className="font-sans text-xs">Catégorie</TableHead>
                 <TableHead className="font-sans text-xs">Ville</TableHead>
+                <TableHead className="font-sans text-xs">Inscrit le</TableHead>
                 <TableHead className="font-sans text-xs">Statut</TableHead>
                 <TableHead className="font-sans text-xs">Note</TableHead>
                 <TableHead className="font-sans text-xs text-right">Actions</TableHead>
