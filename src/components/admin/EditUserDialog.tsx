@@ -10,6 +10,7 @@ import { allRoles, roleLabels } from "@/hooks/useUsersData";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 const emptyProfileForm = {
   prenom: "",
@@ -26,14 +27,20 @@ interface Props {
   user: UserWithRoles | null;
   onSaved: () => void;
   availableRoles?: AppRole[];
+  canChangePassword?: boolean;
 }
 
-export default function EditUserDialog({ open, onOpenChange, user, onSaved, availableRoles }: Props) {
+export default function EditUserDialog({ open, onOpenChange, user, onSaved, availableRoles, canChangePassword = false }: Props) {
   const [editRoles, setEditRoles] = useState<AppRole[]>([]);
   const [profileForm, setProfileForm] = useState(emptyProfileForm);
   const [saving, setSaving] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const rolesToShow = availableRoles ?? allRoles;
+  const tabCount = canChangePassword ? 3 : 2;
 
   // Sync state when user changes
   const initForm = (u: UserWithRoles) => {
@@ -46,6 +53,8 @@ export default function EditUserDialog({ open, onOpenChange, user, onSaved, avai
       date_naissance: u.date_naissance ?? "",
       avatar_url: u.avatar_url ?? "",
     });
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   // Called when dialog opens
@@ -102,17 +111,47 @@ export default function EditUserDialog({ open, onOpenChange, user, onSaved, avai
     onSaved();
   };
 
+  const handleChangePassword = async () => {
+    if (!user) return;
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Les mots de passe ne correspondent pas");
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const res = await supabase.functions.invoke("admin-update-password", {
+        body: { target_user_id: user.id, new_password: newPassword },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success("Mot de passe mis à jour");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors du changement de mot de passe");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setProfileForm(emptyProfileForm); }}>
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) { setProfileForm(emptyProfileForm); setNewPassword(""); setConfirmPassword(""); } }}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-serif text-lg">Modifier l'utilisateur</DialogTitle>
         </DialogHeader>
         {user && (
           <Tabs defaultValue="profil" className="mt-2">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className={`grid w-full grid-cols-${tabCount}`}>
               <TabsTrigger value="profil" className="font-sans text-xs">Profil</TabsTrigger>
               <TabsTrigger value="roles" className="font-sans text-xs">Rôles</TabsTrigger>
+              {canChangePassword && (
+                <TabsTrigger value="password" className="font-sans text-xs">Mot de passe</TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="profil" className="space-y-4 pt-4">
@@ -158,6 +197,51 @@ export default function EditUserDialog({ open, onOpenChange, user, onSaved, avai
                 ))}
               </div>
             </TabsContent>
+
+            {canChangePassword && (
+              <TabsContent value="password" className="space-y-4 pt-4">
+                <p className="font-sans text-sm text-muted-foreground">
+                  Définir un nouveau mot de passe pour <span className="font-medium text-foreground">{user.email}</span>
+                </p>
+                <Field label="Nouveau mot de passe">
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Min. 6 caractères"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+                    </Button>
+                  </div>
+                </Field>
+                <Field label="Confirmer le mot de passe">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Retapez le mot de passe"
+                  />
+                  {confirmPassword && newPassword !== confirmPassword && (
+                    <p className="text-xs text-destructive">Les mots de passe ne correspondent pas</p>
+                  )}
+                </Field>
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={savingPassword || !newPassword || newPassword.length < 6 || newPassword !== confirmPassword}
+                  className="font-sans text-sm w-full"
+                >
+                  {savingPassword ? "Modification…" : "Changer le mot de passe"}
+                </Button>
+              </TabsContent>
+            )}
           </Tabs>
         )}
         <DialogFooter className="mt-4">

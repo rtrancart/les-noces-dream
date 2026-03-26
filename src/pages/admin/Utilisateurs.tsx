@@ -28,6 +28,7 @@ export default function Utilisateurs() {
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [impersonating, setImpersonating] = useState<string | null>(null);
+  const [editContext, setEditContext] = useState<"client" | "admin">("client");
 
   const clients = data.filter((u) => u.roles.includes("client") && !u.roles.includes("prestataire"));
   const admins = data.filter((u) => u.roles.includes("admin") || u.roles.includes("super_admin"));
@@ -35,8 +36,9 @@ export default function Utilisateurs() {
   const filterBySearch = (list: UserWithRoles[]) =>
     list.filter((u) => !search || `${u.prenom} ${u.nom} ${u.email}`.toLowerCase().includes(search.toLowerCase()));
 
-  const openEdit = (u: UserWithRoles) => {
+  const openEdit = (u: UserWithRoles, ctx: "client" | "admin") => {
     setSelectedUser(u);
+    setEditContext(ctx);
     setEditDialogOpen(true);
   };
 
@@ -156,7 +158,7 @@ export default function Utilisateurs() {
                             >
                               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Modifier" onClick={() => openEdit(u)}>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Modifier" onClick={() => openEdit(u, "client")}>
                               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                             </Button>
                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Supprimer" onClick={() => openDelete(u)}>
@@ -203,7 +205,7 @@ export default function Utilisateurs() {
                         <TableCell className="font-sans text-xs text-muted-foreground">{format(new Date(u.created_at), "dd MMM yyyy", { locale: fr })}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Modifier" onClick={() => openEdit(u)}>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Modifier" onClick={() => openEdit(u, "admin")}>
                               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                             </Button>
                             {isSuperAdmin && (
@@ -223,7 +225,13 @@ export default function Utilisateurs() {
         </TabsContent>
       </Tabs>
 
-      <EditUserDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} user={selectedUser} onSaved={refetch} />
+      <EditUserDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        user={selectedUser}
+        onSaved={refetch}
+        canChangePassword={editContext === "client" ? true : isSuperAdmin}
+      />
       <DeleteUserDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} user={selectedUser} onDeleted={refetch} />
       <CreateUserDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} onCreated={refetch} />
     </div>
