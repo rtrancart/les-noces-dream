@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import type { AppRole } from "@/hooks/useUsersData";
 import { roleLabels } from "@/hooks/useUsersData";
+import { logAdmin } from "@/lib/logAdmin";
 
 interface Props {
   open: boolean;
