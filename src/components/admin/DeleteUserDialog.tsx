@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import type { UserWithRoles } from "@/hooks/useUsersData";
+import { logAdmin } from "@/lib/logAdmin";
 
 interface Props {
   open: boolean;
@@ -39,6 +40,7 @@ export default function DeleteUserDialog({ open, onOpenChange, user, onDeleted }
       if (res.data?.error) throw new Error(res.data.error);
 
       toast.success(`${user.email} supprimé`);
+      await logAdmin("delete_user", "profiles", user.id, { email: user.email });
       onOpenChange(false);
       onDeleted();
     } catch (e: any) {

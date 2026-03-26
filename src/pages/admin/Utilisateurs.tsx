@@ -11,6 +11,7 @@ import { Search, Pencil, ExternalLink, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
+import { logAdmin } from "@/lib/logAdmin";
 import { useUsersData, roleLabels, roleColors } from "@/hooks/useUsersData";
 import type { AppRole, UserWithRoles } from "@/hooks/useUsersData";
 import EditUserDialog from "@/components/admin/EditUserDialog";
@@ -60,6 +61,7 @@ export default function Utilisateurs() {
       if (!actionLink) throw new Error("Lien d'accès non généré");
 
       window.open(actionLink, "_blank");
+      await logAdmin("impersonate", "profiles", u.id, { email: u.email });
     } catch (e: any) {
       toast.error(e.message || "Erreur d'impersonation");
     } finally {

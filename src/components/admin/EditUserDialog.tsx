@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { logAdmin } from "@/lib/logAdmin";
 
 const emptyProfileForm = {
   prenom: "",
@@ -106,6 +107,10 @@ export default function EditUserDialog({ open, onOpenChange, user, onSaved, avai
     }
 
     toast.success("Utilisateur mis à jour");
+    await logAdmin("update_user", "profiles", user.id, { email: user.email });
+    if (ops.length > 0) {
+      await logAdmin("update_roles", "user_roles", user.id, { roles: editRoles.join(",") });
+    }
     onOpenChange(false);
     setSaving(false);
     onSaved();
@@ -129,6 +134,7 @@ export default function EditUserDialog({ open, onOpenChange, user, onSaved, avai
       if (res.error) throw new Error(res.error.message);
       if (res.data?.error) throw new Error(res.data.error);
       toast.success("Mot de passe mis à jour");
+      await logAdmin("update_password", "profiles", user.id, { email: user.email });
       setNewPassword("");
       setConfirmPassword("");
     } catch (e: any) {

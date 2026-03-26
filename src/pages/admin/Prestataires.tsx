@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Search, Eye, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { Database } from "@/integrations/supabase/types";
+import { logAdmin } from "@/lib/logAdmin";
 
 type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
 type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
@@ -138,7 +139,7 @@ export default function Prestataires() {
   const updateStatut = async (id: string, statut: StatutPrestataire) => {
     const { error } = await supabase.from("prestataires").update({ statut }).eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Statut mis à jour"); fetchData(); }
+    else { toast.success("Statut mis à jour"); logAdmin("update_statut_prestataire", "prestataires", id, { statut }); fetchData(); }
   };
 
   const openCreate = () => {
@@ -209,12 +210,12 @@ export default function Prestataires() {
       const { data: updated, error } = await supabase.from("prestataires").update(payload).eq("id", editItem.id).select();
       if (error) toast.error(error.message);
       else if (!updated || updated.length === 0) toast.error("Mise à jour refusée (permissions insuffisantes)");
-      else { toast.success("Prestataire mis à jour"); setDialogOpen(false); fetchData(); }
+      else { toast.success("Prestataire mis à jour"); logAdmin("update_prestataire", "prestataires", editItem.id, { nom: form.nom_commercial }); setDialogOpen(false); fetchData(); }
     } else {
       const { data: created, error } = await supabase.from("prestataires").insert(payload).select();
       if (error) toast.error(error.message);
       else if (!created || created.length === 0) toast.error("Création refusée (permissions insuffisantes)");
-      else { toast.success("Prestataire créé"); setDialogOpen(false); fetchData(); }
+      else { toast.success("Prestataire créé"); logAdmin("create_prestataire", "prestataires", created[0].id, { nom: form.nom_commercial }); setDialogOpen(false); fetchData(); }
     }
     setSaving(false);
   };
@@ -222,7 +223,7 @@ export default function Prestataires() {
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("prestataires").delete().eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Prestataire supprimé"); fetchData(); }
+    else { toast.success("Prestataire supprimé"); logAdmin("delete_prestataire", "prestataires", id); fetchData(); }
   };
 
   const parentCategories = categories.filter((c) => !c.parent_id);

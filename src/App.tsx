@@ -22,6 +22,7 @@ import AdminAvis from "./pages/admin/Avis";
 import AdminUtilisateurs from "./pages/admin/Utilisateurs";
 import AdminArticles from "./pages/admin/Articles";
 import AdminPages from "./pages/admin/Pages";
+import AdminLogs from "./pages/admin/Logs";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="utilisateurs" element={<AdminUtilisateurs />} />
               <Route path="articles" element={<AdminArticles />} />
               <Route path="pages" element={<AdminPages />} />
+              <Route path="logs" element={<AdminLogs />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
