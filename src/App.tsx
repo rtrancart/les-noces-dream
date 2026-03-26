@@ -22,6 +22,7 @@ import AdminAvis from "./pages/admin/Avis";
 import AdminUtilisateurs from "./pages/admin/Utilisateurs";
 import AdminArticles from "./pages/admin/Articles";
 import AdminPages from "./pages/admin/Pages";
+import AdminLogs from "./pages/admin/Logs";
 
 const queryClient = new QueryClient();
 
