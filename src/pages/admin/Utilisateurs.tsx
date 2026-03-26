@@ -225,7 +225,13 @@ export default function Utilisateurs() {
         </TabsContent>
       </Tabs>
 
-      <EditUserDialog open={editDialogOpen} onOpenChange={setEditDialogOpen} user={selectedUser} onSaved={refetch} />
+      <EditUserDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        user={selectedUser}
+        onSaved={refetch}
+        canChangePassword={editContext === "client" ? true : isSuperAdmin}
+      />
       <DeleteUserDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} user={selectedUser} onDeleted={refetch} />
       <CreateUserDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} onCreated={refetch} />
     </div>
