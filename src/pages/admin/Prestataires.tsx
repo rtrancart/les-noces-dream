@@ -139,7 +139,7 @@ export default function Prestataires() {
   const updateStatut = async (id: string, statut: StatutPrestataire) => {
     const { error } = await supabase.from("prestataires").update({ statut }).eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Statut mis à jour"); fetchData(); }
+    else { toast.success("Statut mis à jour"); logAdmin("update_statut_prestataire", "prestataires", id, { statut }); fetchData(); }
   };
 
   const openCreate = () => {
