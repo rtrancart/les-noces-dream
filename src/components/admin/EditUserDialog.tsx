@@ -109,7 +109,7 @@ export default function EditUserDialog({ open, onOpenChange, user, onSaved, avai
     toast.success("Utilisateur mis à jour");
     await logAdmin("update_user", "profiles", user.id, { email: user.email });
     if (ops.length > 0) {
-      await logAdmin("update_roles", "user_roles", user.id, { roles: editRoles });
+      await logAdmin("update_roles", "user_roles", user.id, { roles: editRoles.join(",") });
     }
     onOpenChange(false);
     setSaving(false);
