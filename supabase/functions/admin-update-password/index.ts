@@ -16,12 +16,14 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
 
-    // Verify caller identity
+    // Verify caller identity using JWT claims (doesn't require active session)
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) throw new Error("Non autorisé");
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) throw new Error("Non autorisé");
+    const callerId = claimsData.claims.sub;
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -29,7 +31,7 @@ Deno.serve(async (req) => {
     const { data: callerRoles } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", caller.id);
+      .eq("user_id", callerId);
 
     const callerRolesList = (callerRoles ?? []).map((r: any) => r.role);
     const isAdmin = callerRolesList.includes("admin");
