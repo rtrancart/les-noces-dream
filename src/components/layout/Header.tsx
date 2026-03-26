@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoSrc from "@/assets/logo-lesnoces.png";
 
 const NAV_LINKS = [
   { label: "Prestataires", href: "/prestataires" },
@@ -19,12 +20,10 @@ export default function Header() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border shadow-sm">
-      <div className="max-w-[1099px] mx-auto px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div className="max-w-[1099px] mx-auto px-8 h-20 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl font-medium font-serif text-foreground">
-            LesNoces<span className="text-primary">.net</span>
-          </span>
+        <Link to="/" className="flex items-center">
+          <img src={logoSrc} alt="LesNoces.net" className="h-10 w-auto" />
         </Link>
 
         {/* Desktop Nav */}
