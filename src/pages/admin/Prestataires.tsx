@@ -210,12 +210,12 @@ export default function Prestataires() {
       const { data: updated, error } = await supabase.from("prestataires").update(payload).eq("id", editItem.id).select();
       if (error) toast.error(error.message);
       else if (!updated || updated.length === 0) toast.error("Mise à jour refusée (permissions insuffisantes)");
-      else { toast.success("Prestataire mis à jour"); setDialogOpen(false); fetchData(); }
+      else { toast.success("Prestataire mis à jour"); logAdmin("update_prestataire", "prestataires", editItem.id, { nom: form.nom_commercial }); setDialogOpen(false); fetchData(); }
     } else {
       const { data: created, error } = await supabase.from("prestataires").insert(payload).select();
       if (error) toast.error(error.message);
       else if (!created || created.length === 0) toast.error("Création refusée (permissions insuffisantes)");
-      else { toast.success("Prestataire créé"); setDialogOpen(false); fetchData(); }
+      else { toast.success("Prestataire créé"); logAdmin("create_prestataire", "prestataires", created[0].id, { nom: form.nom_commercial }); setDialogOpen(false); fetchData(); }
     }
     setSaving(false);
   };
