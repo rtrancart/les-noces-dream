@@ -16,11 +16,11 @@ export default function Header() {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-or shadow-sm">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-champagne shadow-sm">
       <div className="max-w-[1099px] mx-auto px-8 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center">
-          <img src={logoSrc} alt="LesNoces.net" className="h-10 w-auto brightness-0 invert" />
+          <img src={logoSrc} alt="LesNoces.net" className="h-[60px] w-auto brightness-0 invert" />
         </Link>
 
         {/* Desktop Nav */}
