@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import PublicLayout from "@/components/layout/PublicLayout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Connexion from "./pages/Connexion";
@@ -34,7 +35,12 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Index />} />
+            {/* Public pages with Header + Footer */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<Index />} />
+            </Route>
+
+            {/* Auth pages (no Header/Footer) */}
             <Route path="/connexion" element={<Connexion />} />
             <Route path="/inscription" element={<Inscription />} />
             <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
