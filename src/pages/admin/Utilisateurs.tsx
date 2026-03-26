@@ -11,6 +11,7 @@ import { Search, Pencil, ExternalLink, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
+import { logAdmin } from "@/lib/logAdmin";
 import { useUsersData, roleLabels, roleColors } from "@/hooks/useUsersData";
 import type { AppRole, UserWithRoles } from "@/hooks/useUsersData";
 import EditUserDialog from "@/components/admin/EditUserDialog";
