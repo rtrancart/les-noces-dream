@@ -158,7 +158,7 @@ export default function Utilisateurs() {
                             >
                               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                             </Button>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Modifier" onClick={() => openEdit(u)}>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Modifier" onClick={() => openEdit(u, "client")}>
                               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                             </Button>
                             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Supprimer" onClick={() => openDelete(u)}>
