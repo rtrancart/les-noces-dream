@@ -205,7 +205,7 @@ export default function Utilisateurs() {
                         <TableCell className="font-sans text-xs text-muted-foreground">{format(new Date(u.created_at), "dd MMM yyyy", { locale: fr })}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Modifier" onClick={() => openEdit(u)}>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Modifier" onClick={() => openEdit(u, "admin")}>
                               <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                             </Button>
                             {isSuperAdmin && (
