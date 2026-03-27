@@ -650,11 +650,11 @@ function RegionalSection() {
 /* ─── Page d'accueil ─────────────────────────────────────── */
 
 export default function Index() {
-  const { categories, providers, articles } = useHomeData();
+  const { categories, categoryTree, providers, articles } = useHomeData();
 
   return (
     <>
-      <HeroSection categories={categories} />
+      <HeroSection categories={categories} categoryTree={categoryTree} />
       <CategoriesSection categories={categories} />
       <FeaturedProviders providers={providers} />
       <TrustSection />
