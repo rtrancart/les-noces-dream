@@ -59,7 +59,7 @@ function useHomeData() {
           .is("parent_id", null)
           .eq("est_active", true)
           .order("ordre_affichage")
-          .limit(8),
+          .limit(10),
         supabase
           .from("prestataires")
           .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, est_premium, categorie_mere_id")
@@ -288,7 +288,7 @@ function CategoriesSection({ categories }: { categories: CategoryData[] }) {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
           {categories.map((cat) => (
             <CategoryCard key={cat.id} cat={cat} />
           ))}
