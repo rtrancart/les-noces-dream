@@ -78,6 +78,7 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => (
 function ZonesInterventionField({ selected, onChange, defaultRegion }: { selected: string[]; onChange: (v: string[]) => void; defaultRegion: string }) {
   const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set());
   const [zonesPopoverOpen, setZonesPopoverOpen] = useState(false);
+  const zonesListRef = useRef<HTMLDivElement | null>(null);
 
   // On first open, if nothing selected, pre-select the provider's region
   const [didDefault, setDidDefault] = useState(false);
@@ -91,6 +92,11 @@ function ZonesInterventionField({ selected, onChange, defaultRegion }: { selecte
       setDidDefault(true);
     }
   }, [defaultRegion, didDefault, selected.length]);
+
+  useEffect(() => {
+    if (!zonesPopoverOpen) return;
+    requestAnimationFrame(() => zonesListRef.current?.focus());
+  }, [zonesPopoverOpen]);
 
   const toggleExpand = (regionValue: string) => {
     setExpandedRegions((prev) => {
@@ -173,7 +179,9 @@ function ZonesInterventionField({ selected, onChange, defaultRegion }: { selecte
         </PopoverTrigger>
         <PopoverContent className="w-[420px] p-0" align="start" side="bottom" onOpenAutoFocus={(e) => e.preventDefault()}>
           <div
-            className="h-[420px] max-h-[70vh] overflow-y-scroll overscroll-contain touch-pan-y p-2 space-y-0.5"
+            ref={zonesListRef}
+            tabIndex={0}
+            className="h-[420px] max-h-[70vh] overflow-y-scroll overscroll-contain touch-pan-y p-2 space-y-0.5 focus:outline-none"
             onWheelCapture={(e) => e.stopPropagation()}
             onTouchMoveCapture={(e) => e.stopPropagation()}
           >
