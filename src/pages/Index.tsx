@@ -216,20 +216,13 @@ function HeroSection({ categories, categoryTree }: { categories: CategoryData[];
         {/* Search bar */}
         <div className="bg-card rounded-md shadow-elevated flex flex-col sm:flex-row items-stretch gap-0 p-3 w-full max-w-[768px]">
           {/* Category */}
-          <div className="flex items-center gap-3 flex-1 border-b sm:border-b-0 sm:border-r border-border pr-0 sm:pr-3 pb-3 sm:pb-0 h-14">
-            <Search className="w-5 h-5 text-muted-foreground shrink-0" />
-            <select
-              className="flex-1 text-base text-muted-foreground bg-transparent outline-none cursor-pointer font-sans"
+          <div className="flex items-center flex-1 border-b sm:border-b-0 sm:border-r border-border pr-0 sm:pr-3 pb-3 sm:pb-0 h-14">
+            <CategoryPicker
+              categories={categoryTree}
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">Quelle catégorie ?</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.slug}>
-                  {c.nom}
-                </option>
-              ))}
-            </select>
+              onChange={setCategory}
+              placeholder="Quelle catégorie ?"
+            />
           </div>
 
           {/* Location */}
