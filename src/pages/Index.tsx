@@ -165,7 +165,7 @@ function HeroSection({ categories }: { categories: CategoryData[] }) {
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (category) params.set("categorie", category);
-    if (location) params.set("lieu", location);
+    if (locationZones.length > 0) params.set("lieu", locationZones.join(","));
     navigate(`/prestataires?${params.toString()}`);
   };
 
