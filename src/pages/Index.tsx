@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Search, MapPin, Star, ChevronRight, ArrowRight, Clock, Shield, Award, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LocationPicker from "@/components/LocationPicker";
+import CategoryPicker, { type CategoryOption } from "@/components/CategoryPicker";
 
 
 /* ─── Types ─────────────────────────────────────────────── */
