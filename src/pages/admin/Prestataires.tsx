@@ -206,6 +206,7 @@ export default function Prestataires() {
       est_premium: form.est_premium,
       notes_admin: form.notes_admin || null,
       cree_par_admin: form.cree_par_admin,
+      zones_intervention: form.zones_intervention ? form.zones_intervention.split(",").map((z: string) => z.trim()).filter(Boolean) : [],
     };
 
     if (editItem) {
