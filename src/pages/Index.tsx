@@ -180,7 +180,7 @@ function priceRange(prix: number | null) {
 
 /* ─── Section: Hero ─────────────────────────────────────── */
 
-function HeroSection({ categories }: { categories: CategoryData[] }) {
+function HeroSection({ categories, categoryTree }: { categories: CategoryData[]; categoryTree: CategoryOption[] }) {
   const [locationZones, setLocationZones] = useState<string[]>([]);
   const [category, setCategory] = useState("");
   const navigate = useNavigate();
