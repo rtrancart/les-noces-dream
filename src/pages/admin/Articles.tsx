@@ -18,7 +18,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Article = Database["public"]["Tables"]["articles_blog"]["Row"];
 
-const emptyForm = { titre: "", slug: "", extrait: "", categorie_blog: "", image_couverture_url: "", tags: "", est_publie: false };
+const emptyForm = { titre: "", slug: "", extrait: "", categorie_blog: "", image_couverture_url: "", tags: "", est_publie: false, meta_title: "", meta_description: "" };
 
 export default function Articles() {
   const [data, setData] = useState<Article[]>([]);
