@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Search, MapPin, Star, ChevronRight, ArrowRight, Clock, Shield, Award, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LocationPicker from "@/components/LocationPicker";
+import CategoryPicker, { type CategoryOption } from "@/components/CategoryPicker";
 
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -47,13 +48,14 @@ interface ArticleData {
 
 function useHomeData() {
   const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [categoryTree, setCategoryTree] = useState<CategoryOption[]>([]);
   const [providers, setProviders] = useState<ProviderData[]>([]);
   const [articles, setArticles] = useState<ArticleData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetch() {
-      const [catRes, prestaRes, artRes] = await Promise.all([
+      const [catRes, allCatRes, prestaRes, artRes] = await Promise.all([
         supabase
           .from("categories")
           .select("id, nom, slug, icone_url, photo_url")
@@ -61,6 +63,11 @@ function useHomeData() {
           .eq("est_active", true)
           .order("ordre_affichage")
           .limit(10),
+        supabase
+          .from("categories")
+          .select("id, nom, slug, icone_url, parent_id")
+          .eq("est_active", true)
+          .order("ordre_affichage"),
         supabase
           .from("prestataires")
           .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, fin_premium, categorie_mere_id")
@@ -75,6 +82,21 @@ function useHomeData() {
           .order("created_at", { ascending: false })
           .limit(4),
       ]);
+
+      // Build category tree for picker
+      if (allCatRes.data) {
+        const parents = allCatRes.data.filter((c) => !c.parent_id);
+        const children = allCatRes.data.filter((c) => c.parent_id);
+        setCategoryTree(parents.map((p) => ({
+          id: p.id,
+          nom: p.nom,
+          slug: p.slug,
+          icone_url: p.icone_url,
+          children: children
+            .filter((c) => c.parent_id === p.id)
+            .map((c) => ({ id: c.id, nom: c.nom, slug: c.slug, icone_url: c.icone_url })),
+        })));
+      }
 
       // Map categories with prestataire count
       if (catRes.data) {
@@ -143,7 +165,7 @@ function useHomeData() {
     fetch();
   }, []);
 
-  return { categories, providers, articles, loading };
+  return { categories, categoryTree, providers, articles, loading };
 }
 
 /* ─── Price Helper ───────────────────────────────────────── */
@@ -158,7 +180,7 @@ function priceRange(prix: number | null) {
 
 /* ─── Section: Hero ─────────────────────────────────────── */
 
-function HeroSection({ categories }: { categories: CategoryData[] }) {
+function HeroSection({ categories, categoryTree }: { categories: CategoryData[]; categoryTree: CategoryOption[] }) {
   const [locationZones, setLocationZones] = useState<string[]>([]);
   const [category, setCategory] = useState("");
   const navigate = useNavigate();
@@ -194,20 +216,13 @@ function HeroSection({ categories }: { categories: CategoryData[] }) {
         {/* Search bar */}
         <div className="bg-card rounded-md shadow-elevated flex flex-col sm:flex-row items-stretch gap-0 p-3 w-full max-w-[768px]">
           {/* Category */}
-          <div className="flex items-center gap-3 flex-1 border-b sm:border-b-0 sm:border-r border-border pr-0 sm:pr-3 pb-3 sm:pb-0 h-14">
-            <Search className="w-5 h-5 text-muted-foreground shrink-0" />
-            <select
-              className="flex-1 text-base text-muted-foreground bg-transparent outline-none cursor-pointer font-sans"
+          <div className="flex items-center flex-1 border-b sm:border-b-0 sm:border-r border-border pr-0 sm:pr-3 pb-3 sm:pb-0 h-14">
+            <CategoryPicker
+              categories={categoryTree}
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">Quelle catégorie ?</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.slug}>
-                  {c.nom}
-                </option>
-              ))}
-            </select>
+              onChange={setCategory}
+              placeholder="Quelle catégorie ?"
+            />
           </div>
 
           {/* Location */}
@@ -635,11 +650,11 @@ function RegionalSection() {
 /* ─── Page d'accueil ─────────────────────────────────────── */
 
 export default function Index() {
-  const { categories, providers, articles } = useHomeData();
+  const { categories, categoryTree, providers, articles } = useHomeData();
 
   return (
     <>
-      <HeroSection categories={categories} />
+      <HeroSection categories={categories} categoryTree={categoryTree} />
       <CategoriesSection categories={categories} />
       <FeaturedProviders providers={providers} />
       <TrustSection />
