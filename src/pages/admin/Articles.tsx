@@ -44,6 +44,7 @@ export default function Articles() {
     setForm({
       titre: a.titre, slug: a.slug, extrait: a.extrait ?? "", categorie_blog: a.categorie_blog ?? "",
       image_couverture_url: a.image_couverture_url ?? "", tags: (a.tags ?? []).join(", "), est_publie: a.est_publie ?? false,
+      meta_title: (a as any).meta_title ?? "", meta_description: (a as any).meta_description ?? "",
     });
     setDialogOpen(true);
   };
