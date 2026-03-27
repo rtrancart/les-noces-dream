@@ -59,7 +59,7 @@ function useHomeData() {
           .is("parent_id", null)
           .eq("est_active", true)
           .order("ordre_affichage")
-          .limit(8),
+          .limit(10),
         supabase
           .from("prestataires")
           .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, est_premium, categorie_mere_id")
