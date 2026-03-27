@@ -443,8 +443,17 @@ export default function Prestataires() {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={form.fin_premium ? new Date(form.fin_premium) : undefined}
-                      onSelect={(d) => setForm({ ...form, fin_premium: d ? d.toISOString().slice(0, 10) : "" })}
+                      selected={form.fin_premium ? new Date(form.fin_premium + "T12:00:00") : undefined}
+                      onSelect={(d) => {
+                        if (d) {
+                          const yyyy = d.getFullYear();
+                          const mm = String(d.getMonth() + 1).padStart(2, "0");
+                          const dd2 = String(d.getDate()).padStart(2, "0");
+                          setForm({ ...form, fin_premium: `${yyyy}-${mm}-${dd2}` });
+                        } else {
+                          setForm({ ...form, fin_premium: "" });
+                        }
+                      }}
                       className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
