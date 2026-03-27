@@ -55,7 +55,7 @@ function useHomeData() {
       const [catRes, prestaRes, artRes] = await Promise.all([
         supabase
           .from("categories")
-          .select("id, nom, slug, icone_url")
+          .select("id, nom, slug, icone_url, photo_url")
           .is("parent_id", null)
           .eq("est_active", true)
           .order("ordre_affichage")
