@@ -211,14 +211,11 @@ function HeroSection({ categories }: { categories: CategoryData[] }) {
           </div>
 
           {/* Location */}
-          <div className="flex items-center gap-3 flex-1 h-14 px-0 sm:px-2 pt-3 sm:pt-0">
-            <MapPin className="w-5 h-5 text-muted-foreground shrink-0" />
-            <input
-              type="text"
+          <div className="flex items-center flex-1 h-14 px-0 sm:px-2 pt-3 sm:pt-0">
+            <LocationPicker
+              value={locationZones}
+              onChange={setLocationZones}
               placeholder="Où ?"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="flex-1 text-base text-foreground placeholder:text-muted-foreground bg-transparent outline-none font-sans"
             />
           </div>
 
