@@ -27,7 +27,7 @@ interface ProviderData {
   note_moyenne: number | null;
   nombre_avis: number | null;
   prix_depart: number | null;
-  est_premium: boolean | null;
+  fin_premium: string | null;
   categorie_nom: string;
 }
 
