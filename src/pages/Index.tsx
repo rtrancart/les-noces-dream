@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, MapPin, Star, ChevronRight, ArrowRight, Clock, Shield, Award, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LocationPicker from "@/components/LocationPicker";
 
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -158,14 +159,14 @@ function priceRange(prix: number | null) {
 /* ─── Section: Hero ─────────────────────────────────────── */
 
 function HeroSection({ categories }: { categories: CategoryData[] }) {
-  const [location, setLocation] = useState("");
+  const [locationZones, setLocationZones] = useState<string[]>([]);
   const [category, setCategory] = useState("");
   const navigate = useNavigate();
 
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (category) params.set("categorie", category);
-    if (location) params.set("lieu", location);
+    if (locationZones.length > 0) params.set("lieu", locationZones.join(","));
     navigate(`/prestataires?${params.toString()}`);
   };
 
@@ -210,14 +211,11 @@ function HeroSection({ categories }: { categories: CategoryData[] }) {
           </div>
 
           {/* Location */}
-          <div className="flex items-center gap-3 flex-1 h-14 px-0 sm:px-2 pt-3 sm:pt-0">
-            <MapPin className="w-5 h-5 text-muted-foreground shrink-0" />
-            <input
-              type="text"
+          <div className="flex items-center flex-1 h-14 px-0 sm:px-2 pt-3 sm:pt-0">
+            <LocationPicker
+              value={locationZones}
+              onChange={setLocationZones}
               placeholder="Où ?"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="flex-1 text-base text-foreground placeholder:text-muted-foreground bg-transparent outline-none font-sans"
             />
           </div>
 
