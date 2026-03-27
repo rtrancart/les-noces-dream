@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { Database } from "@/integrations/supabase/types";
 import { logAdmin } from "@/lib/logAdmin";
-import { ZONES_INTERVENTION, getZoneLabel } from "@/lib/zonesIntervention";
+import { REGIONS, DOM, PAYS_LIMITROPHES, getZoneLabel, getDepartementsByRegion, regionFieldToZoneValue } from "@/lib/zonesIntervention";
 
 type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
 type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
