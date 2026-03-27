@@ -60,6 +60,7 @@ const emptyForm = {
   est_premium: false,
   notes_admin: "",
   cree_par_admin: true,
+  zones_intervention: "",
 };
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
