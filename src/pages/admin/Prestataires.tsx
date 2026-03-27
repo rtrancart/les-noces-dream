@@ -172,7 +172,11 @@ function ZonesInterventionField({ selected, onChange, defaultRegion }: { selecte
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[420px] p-0" align="start" side="bottom" onOpenAutoFocus={(e) => e.preventDefault()}>
-          <div className="h-[420px] max-h-[70vh] overflow-y-scroll overscroll-contain touch-pan-y p-2 space-y-0.5">
+          <div
+            className="h-[420px] max-h-[70vh] overflow-y-scroll overscroll-contain touch-pan-y p-2 space-y-0.5"
+            onWheelCapture={(e) => e.stopPropagation()}
+            onTouchMoveCapture={(e) => e.stopPropagation()}
+          >
             {/* France entière */}
             <label className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-sm font-sans font-medium">
               <Checkbox checked={selected.includes("france_entiere")} onCheckedChange={() => toggleSimple("france_entiere")} />
