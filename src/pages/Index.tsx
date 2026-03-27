@@ -182,12 +182,12 @@ function priceRange(prix: number | null) {
 
 function HeroSection({ categories, categoryTree }: { categories: CategoryData[]; categoryTree: CategoryOption[] }) {
   const [locationZones, setLocationZones] = useState<string[]>([]);
-  const [category, setCategory] = useState("");
+  const [categorySlugs, setCategorySlugs] = useState<string[]>([]);
   const navigate = useNavigate();
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (category) params.set("categorie", category);
+    if (categorySlugs.length > 0) params.set("categorie", categorySlugs.join(","));
     if (locationZones.length > 0) params.set("lieu", locationZones.join(","));
     navigate(`/prestataires?${params.toString()}`);
   };
