@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Search, ChevronDown, ChevronRight, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -15,8 +16,8 @@ export interface CategoryOption {
 
 interface CategoryPickerProps {
   categories: CategoryOption[];
-  value: string;          // slug of selected category (parent or child)
-  onChange: (slug: string) => void;
+  value: string[];
+  onChange: (slugs: string[]) => void;
   placeholder?: string;
   className?: string;
 }
@@ -47,35 +48,52 @@ export default function CategoryPicker({
     });
   };
 
-  const selectCategory = (slug: string) => {
-    onChange(slug);
-    setOpen(false);
+  // Toggle a parent: selects/deselects parent + all children
+  const toggleParent = (parent: CategoryOption) => {
+    const allSlugs = [parent.slug, ...(parent.children?.map((c) => c.slug) ?? [])];
+    const allSelected = allSlugs.every((s) => value.includes(s));
+    if (allSelected) {
+      onChange(value.filter((v) => !allSlugs.includes(v)));
+    } else {
+      onChange([...new Set([...value, ...allSlugs])]);
+    }
   };
 
-  // Find selected label
-  const selectedLabel = useMemo(() => {
-    if (!value) return "";
-    for (const cat of categories) {
-      if (cat.slug === value) return cat.nom;
-      if (cat.children) {
-        const child = cat.children.find((c) => c.slug === value);
-        if (child) return child.nom;
-      }
-    }
-    return "";
-  }, [value, categories]);
+  // Toggle a single child
+  const toggleChild = (slug: string) => {
+    onChange(
+      value.includes(slug) ? value.filter((v) => v !== slug) : [...value, slug]
+    );
+  };
 
-  // Find selected icon
-  const selectedIcon = useMemo(() => {
-    if (!value) return null;
+  const isParentFullySelected = (parent: CategoryOption) => {
+    const allSlugs = [parent.slug, ...(parent.children?.map((c) => c.slug) ?? [])];
+    return allSlugs.every((s) => value.includes(s));
+  };
+
+  const isParentPartiallySelected = (parent: CategoryOption) => {
+    const allSlugs = [parent.slug, ...(parent.children?.map((c) => c.slug) ?? [])];
+    const count = allSlugs.filter((s) => value.includes(s)).length;
+    return count > 0 && count < allSlugs.length;
+  };
+
+  const parentSelectedCount = (parent: CategoryOption) => {
+    const childSlugs = parent.children?.map((c) => c.slug) ?? [];
+    return childSlugs.filter((s) => value.includes(s)).length;
+  };
+
+  // Display label
+  const displayLabel = useMemo(() => {
+    if (value.length === 0) return "";
+    // Find names for selected slugs
+    const nameMap = new Map<string, string>();
     for (const cat of categories) {
-      if (cat.slug === value) return cat.icone_url;
-      if (cat.children) {
-        const child = cat.children.find((c) => c.slug === value);
-        if (child) return child.icone_url || cat.icone_url;
-      }
+      nameMap.set(cat.slug, cat.nom);
+      cat.children?.forEach((c) => nameMap.set(c.slug, c.nom));
     }
-    return null;
+    const names = value.slice(0, 2).map((s) => nameMap.get(s) ?? s);
+    if (value.length > 2) return `${names.join(", ")} +${value.length - 2}`;
+    return names.join(", ");
   }, [value, categories]);
 
   const listContent = (
@@ -87,56 +105,29 @@ export default function CategoryPicker({
       onTouchMoveCapture={(e) => e.stopPropagation()}
     >
       <div className="p-3 space-y-0.5">
-        {/* Option "Toutes les catégories" */}
-        <button
-          type="button"
-          onClick={() => selectCategory("")}
-          className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left transition-colors",
-            !value ? "bg-primary/10 text-primary" : "hover:bg-secondary/50 text-foreground"
-          )}
-        >
-          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
-          <span className="font-sans text-sm font-medium">Toutes les catégories</span>
-        </button>
-
-        <div className="h-px bg-border my-2" />
-
         {categories.map((parent) => {
           const expanded = expandedParents.has(parent.id);
           const hasChildren = parent.children && parent.children.length > 0;
-          const isParentSelected = value === parent.slug;
-          const isChildSelected = parent.children?.some((c) => c.slug === value) ?? false;
+          const full = isParentFullySelected(parent);
+          const partial = isParentPartiallySelected(parent);
+          const count = parentSelectedCount(parent);
 
           return (
             <div key={parent.id}>
               <div className="flex items-center gap-1">
-                {/* Parent button */}
-                <button
-                  type="button"
-                  onClick={() => selectCategory(parent.slug)}
-                  className={cn(
-                    "flex-1 flex items-center gap-3 px-3 py-2.5 rounded-md text-left transition-colors",
-                    isParentSelected
-                      ? "bg-primary/10 text-primary"
-                      : isChildSelected
-                        ? "text-primary"
-                        : "hover:bg-secondary/50 text-foreground"
+                <label className="flex-1 flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-secondary/50 cursor-pointer transition-colors">
+                  <Checkbox
+                    checked={full}
+                    onCheckedChange={() => toggleParent(parent)}
+                  />
+                  <span className="font-sans text-sm font-medium text-foreground">{parent.nom}</span>
+                  {hasChildren && partial && (
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {count}/{parent.children!.length}
+                    </span>
                   )}
-                >
-                  {parent.icone_url ? (
-                    <img
-                      src={parent.icone_url}
-                      alt=""
-                      className="w-5 h-5 object-contain shrink-0"
-                    />
-                  ) : (
-                    <div className="w-5 h-5 rounded bg-secondary shrink-0" />
-                  )}
-                  <span className="font-sans text-sm font-medium">{parent.nom}</span>
-                </button>
+                </label>
 
-                {/* Expand toggle */}
                 {hasChildren && (
                   <button
                     type="button"
@@ -152,38 +143,19 @@ export default function CategoryPicker({
                 )}
               </div>
 
-              {/* Children */}
               {hasChildren && expanded && (
-                <div className="ml-6 space-y-0.5 pb-1">
+                <div className="ml-8 space-y-0.5 pb-1">
                   {parent.children!.map((child) => (
-                    <button
+                    <label
                       key={child.id}
-                      type="button"
-                      onClick={() => selectCategory(child.slug)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors",
-                        value === child.slug
-                          ? "bg-primary/10 text-primary"
-                          : "hover:bg-secondary/50 text-foreground"
-                      )}
+                      className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-secondary/50 cursor-pointer transition-colors"
                     >
-                      {child.icone_url ? (
-                        <img
-                          src={child.icone_url}
-                          alt=""
-                          className="w-4 h-4 object-contain shrink-0"
-                        />
-                      ) : parent.icone_url ? (
-                        <img
-                          src={parent.icone_url}
-                          alt=""
-                          className="w-4 h-4 object-contain shrink-0 opacity-50"
-                        />
-                      ) : (
-                        <div className="w-4 h-4 rounded bg-secondary/50 shrink-0" />
-                      )}
-                      <span className="text-sm font-sans">{child.nom}</span>
-                    </button>
+                      <Checkbox
+                        checked={value.includes(child.slug)}
+                        onCheckedChange={() => toggleChild(child.slug)}
+                      />
+                      <span className="text-sm font-sans text-foreground">{child.nom}</span>
+                    </label>
                   ))}
                 </div>
               )}
@@ -197,17 +169,14 @@ export default function CategoryPicker({
   const triggerContent = (
     <div className={cn("flex items-center gap-3 flex-1 cursor-pointer min-w-0", className)}>
       <Search className="w-5 h-5 text-muted-foreground shrink-0" />
-      {selectedLabel ? (
+      {displayLabel ? (
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {selectedIcon && (
-            <img src={selectedIcon} alt="" className="w-5 h-5 object-contain shrink-0" />
-          )}
-          <span className="text-base text-foreground font-sans truncate">{selectedLabel}</span>
+          <span className="text-base text-foreground font-sans truncate">{displayLabel}</span>
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onChange("");
+              onChange([]);
             }}
             className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
           >
@@ -228,6 +197,15 @@ export default function CategoryPicker({
           <DrawerContent className="max-h-[85vh]">
             <DrawerHeader className="flex items-center justify-between">
               <DrawerTitle className="font-serif text-lg">Catégorie</DrawerTitle>
+              {value.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onChange([])}
+                  className="text-sm text-primary font-sans hover:underline"
+                >
+                  Tout effacer
+                </button>
+              )}
             </DrawerHeader>
             {listContent}
           </DrawerContent>
@@ -245,10 +223,19 @@ export default function CategoryPicker({
         sideOffset={8}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="px-4 py-3 border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <span className="font-serif text-sm font-medium text-foreground">
             Choisir une catégorie
           </span>
+          {value.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-xs text-primary font-sans hover:underline"
+            >
+              Tout effacer
+            </button>
+          )}
         </div>
         {listContent}
       </PopoverContent>
