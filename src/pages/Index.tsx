@@ -27,7 +27,7 @@ interface ProviderData {
   note_moyenne: number | null;
   nombre_avis: number | null;
   prix_depart: number | null;
-  est_premium: boolean | null;
+  fin_premium: string | null;
   categorie_nom: string;
 }
 
@@ -62,8 +62,9 @@ function useHomeData() {
           .limit(10),
         supabase
           .from("prestataires")
-          .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, est_premium, categorie_mere_id")
+          .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, fin_premium, categorie_mere_id")
           .eq("statut", "actif")
+          .gte("fin_premium", new Date().toISOString())
           .order("note_moyenne", { ascending: false })
           .limit(5),
         supabase
@@ -103,7 +104,7 @@ function useHomeData() {
             note_moyenne: p.note_moyenne,
             nombre_avis: p.nombre_avis,
             prix_depart: p.prix_depart,
-            est_premium: p.est_premium,
+            fin_premium: (p as any).fin_premium,
             categorie_nom: catMap.get(p.categorie_mere_id as string) ?? "",
           }))
         );
@@ -325,7 +326,7 @@ function ProviderCard({ provider }: { provider: ProviderData }) {
             </svg>
           </div>
         )}
-        {provider.est_premium && (
+        {provider.fin_premium && new Date(provider.fin_premium) > new Date() && (
           <span className="absolute top-4 right-4 bg-primary text-primary-foreground text-xs uppercase tracking-wider px-3 py-1.5 rounded-md font-sans font-medium">
             Premium
           </span>

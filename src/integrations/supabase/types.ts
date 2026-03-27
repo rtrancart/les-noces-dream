@@ -770,6 +770,7 @@ export type Database = {
           email_contact: string | null
           est_premium: boolean | null
           est_verifie: boolean | null
+          fin_premium: string | null
           fin_visibilite_boost: string | null
           id: string
           latitude: number | null
@@ -815,6 +816,7 @@ export type Database = {
           email_contact?: string | null
           est_premium?: boolean | null
           est_verifie?: boolean | null
+          fin_premium?: string | null
           fin_visibilite_boost?: string | null
           id?: string
           latitude?: number | null
@@ -860,6 +862,7 @@ export type Database = {
           email_contact?: string | null
           est_premium?: boolean | null
           est_verifie?: boolean | null
+          fin_premium?: string | null
           fin_visibilite_boost?: string | null
           id?: string
           latitude?: number | null

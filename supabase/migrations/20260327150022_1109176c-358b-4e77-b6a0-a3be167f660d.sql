@@ -1,0 +1,1 @@
+ALTER TABLE public.prestataires ADD COLUMN IF NOT EXISTS fin_premium timestamptz;

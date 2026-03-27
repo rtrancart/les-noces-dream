@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Search, Eye, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { Database } from "@/integrations/supabase/types";
 import { logAdmin } from "@/lib/logAdmin";
@@ -56,8 +59,7 @@ const emptyForm = {
   prix_depart: "",
   prix_max: "",
   statut: "brouillon" as StatutPrestataire,
-  est_verifie: false,
-  est_premium: false,
+  fin_premium: "",
   notes_admin: "",
   cree_par_admin: true,
   zones_intervention: "",
@@ -168,8 +170,7 @@ export default function Prestataires() {
       prix_depart: p.prix_depart?.toString() ?? "",
       prix_max: p.prix_max?.toString() ?? "",
       statut: p.statut,
-      est_verifie: p.est_verifie ?? false,
-      est_premium: p.est_premium ?? false,
+      fin_premium: (p as any).fin_premium ? new Date((p as any).fin_premium).toISOString().slice(0, 10) : "",
       notes_admin: p.notes_admin ?? "",
       cree_par_admin: p.cree_par_admin ?? false,
       zones_intervention: ((p as any).zones_intervention ?? []).join(", "),
@@ -202,8 +203,7 @@ export default function Prestataires() {
       prix_depart: form.prix_depart ? parseInt(form.prix_depart) : null,
       prix_max: form.prix_max ? parseInt(form.prix_max) : null,
       statut: form.statut,
-      est_verifie: form.est_verifie,
-      est_premium: form.est_premium,
+      fin_premium: form.fin_premium || null,
       notes_admin: form.notes_admin || null,
       cree_par_admin: form.cree_par_admin,
       zones_intervention: form.zones_intervention ? form.zones_intervention.split(",").map((z: string) => z.trim()).filter(Boolean) : [],
@@ -432,16 +432,29 @@ export default function Prestataires() {
                   <SelectContent>{Object.entries(statutLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}</SelectContent>
                 </Select>
               </Field>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <Switch checked={form.est_verifie} onCheckedChange={(v) => setForm({ ...form, est_verifie: v })} />
-                  <Label className="font-sans text-sm">Vérifié</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={form.est_premium} onCheckedChange={(v) => setForm({ ...form, est_premium: v })} />
-                  <Label className="font-sans text-sm">Premium</Label>
-                </div>
-              </div>
+              <Field label="Fin Premium (laisser vide = non premium)">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal font-sans text-sm", !form.fin_premium && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.fin_premium ? new Date(form.fin_premium).toLocaleDateString("fr-FR") : "Aucune date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.fin_premium ? new Date(form.fin_premium) : undefined}
+                      onSelect={(d) => setForm({ ...form, fin_premium: d ? d.toISOString().slice(0, 10) : "" })}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {form.fin_premium && (
+                  <Button variant="ghost" size="sm" className="mt-1 text-xs text-muted-foreground" onClick={() => setForm({ ...form, fin_premium: "" })}>
+                    Retirer le premium
+                  </Button>
+                )}
+              </Field>
               <Field label="Notes admin (interne)">
                 <Textarea value={form.notes_admin} onChange={(e) => setForm({ ...form, notes_admin: e.target.value })} rows={3} />
               </Field>
