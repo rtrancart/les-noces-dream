@@ -75,7 +75,183 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => (
   </div>
 );
 
-export default function Prestataires() {
+function ZonesInterventionField({ selected, onChange, defaultRegion }: { selected: string[]; onChange: (v: string[]) => void; defaultRegion: string }) {
+  const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set());
+  const [zonesPopoverOpen, setZonesPopoverOpen] = useState(false);
+
+  // On first open, if nothing selected, pre-select the provider's region
+  const [didDefault, setDidDefault] = useState(false);
+  useEffect(() => {
+    if (!didDefault && selected.length === 0 && defaultRegion) {
+      const zoneVal = regionFieldToZoneValue(defaultRegion);
+      if (zoneVal) {
+        const deps = getDepartementsByRegion(zoneVal);
+        onChange([zoneVal, ...deps]);
+      }
+      setDidDefault(true);
+    }
+  }, [defaultRegion, didDefault, selected.length]);
+
+  const toggleExpand = (regionValue: string) => {
+    setExpandedRegions((prev) => {
+      const next = new Set(prev);
+      if (next.has(regionValue)) next.delete(regionValue);
+      else next.add(regionValue);
+      return next;
+    });
+  };
+
+  const toggleRegion = (regionValue: string) => {
+    const deps = getDepartementsByRegion(regionValue);
+    const allSelected = [regionValue, ...deps].every((v) => selected.includes(v));
+    if (allSelected) {
+      onChange(selected.filter((v) => v !== regionValue && !deps.includes(v)));
+    } else {
+      const toAdd = [regionValue, ...deps].filter((v) => !selected.includes(v));
+      onChange([...selected, ...toAdd]);
+    }
+  };
+
+  const toggleDept = (deptValue: string, regionValue: string) => {
+    const deps = getDepartementsByRegion(regionValue);
+    let next: string[];
+    if (selected.includes(deptValue)) {
+      next = selected.filter((v) => v !== deptValue);
+      // If we uncheck a dept, also uncheck the region
+      next = next.filter((v) => v !== regionValue);
+    } else {
+      next = [...selected, deptValue];
+      // If all deps now selected, also select the region
+      if (deps.every((d) => d === deptValue || next.includes(d))) {
+        if (!next.includes(regionValue)) next.push(regionValue);
+      }
+    }
+    onChange(next);
+  };
+
+  const toggleSimple = (value: string) => {
+    onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
+  };
+
+  // Build display summary
+  const displayZones = selected.filter((z) => {
+    // If region is selected, don't show its individual depts
+    const region = REGIONS.find((r) => r.departements.some((d) => d.value === z));
+    if (region && selected.includes(region.value)) return false;
+    return true;
+  });
+
+  return (
+    <Field label="Zones d'intervention">
+      <Popover open={zonesPopoverOpen} onOpenChange={setZonesPopoverOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className={cn("w-full justify-between text-left font-normal font-sans text-sm min-h-[40px] h-auto", displayZones.length === 0 && "text-muted-foreground")}>
+            <span className="flex flex-wrap gap-1 flex-1">
+              {displayZones.length === 0 ? "Sélectionner les zones…" : displayZones.slice(0, 8).map((z) => (
+                <Badge key={z} variant="secondary" className="font-sans text-xs font-normal gap-1">
+                  {getZoneLabel(z)}
+                  <X className="h-3 w-3 cursor-pointer" onClick={(e) => {
+                    e.stopPropagation();
+                    // If it's a region, remove region + all its deps
+                    const region = REGIONS.find((r) => r.value === z);
+                    if (region) {
+                      const deps = region.departements.map((d) => d.value);
+                      onChange(selected.filter((v) => v !== z && !deps.includes(v)));
+                    } else {
+                      const parentRegion = REGIONS.find((r) => r.departements.some((d) => d.value === z));
+                      let next = selected.filter((v) => v !== z);
+                      if (parentRegion) next = next.filter((v) => v !== parentRegion.value);
+                      onChange(next);
+                    }
+                  }} />
+                </Badge>
+              ))}
+              {displayZones.length > 8 && <Badge variant="secondary" className="font-sans text-xs font-normal">+{displayZones.length - 8}</Badge>}
+            </span>
+            <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[420px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <div className="max-h-[350px] overflow-y-auto p-2 space-y-0.5">
+            {/* France entière */}
+            <label className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-sm font-sans font-medium">
+              <Checkbox checked={selected.includes("france_entiere")} onCheckedChange={() => toggleSimple("france_entiere")} />
+              France entière
+            </label>
+
+            <div className="my-1.5 h-px bg-border" />
+
+            {/* Régions with collapsible départements */}
+            {REGIONS.map((region) => {
+              const expanded = expandedRegions.has(region.value);
+              const deptValues = region.departements.map((d) => d.value);
+              const allDepsSelected = deptValues.every((d) => selected.includes(d));
+              const someDepsSelected = deptValues.some((d) => selected.includes(d)) && !allDepsSelected;
+
+              return (
+                <div key={region.value}>
+                  <div className="flex items-center gap-1 px-1 py-1 rounded-sm hover:bg-accent">
+                    <button type="button" className="p-0.5 rounded hover:bg-muted" onClick={() => toggleExpand(region.value)}>
+                      <ChevronRight className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", expanded && "rotate-90")} />
+                    </button>
+                    <label className="flex items-center gap-2 flex-1 cursor-pointer text-sm font-sans font-medium">
+                      <Checkbox
+                        checked={allDepsSelected}
+                        className={someDepsSelected ? "data-[state=unchecked]:bg-primary/30 data-[state=unchecked]:border-primary" : ""}
+                        onCheckedChange={() => toggleRegion(region.value)}
+                      />
+                      {region.label}
+                    </label>
+                    {someDepsSelected && <span className="text-[10px] text-muted-foreground mr-1">{deptValues.filter((d) => selected.includes(d)).length}/{deptValues.length}</span>}
+                  </div>
+                  {expanded && (
+                    <div className="ml-6 space-y-0.5">
+                      {region.departements.map((dept) => (
+                        <label key={dept.value} className="flex items-center gap-2 px-2 py-1 rounded-sm hover:bg-accent cursor-pointer text-sm font-sans text-muted-foreground">
+                          <Checkbox checked={selected.includes(dept.value)} onCheckedChange={() => toggleDept(dept.value, region.value)} />
+                          <span className="text-foreground/70">{dept.value}</span> — {dept.label}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            <div className="my-1.5 h-px bg-border" />
+
+            {/* DOM */}
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">DOM</div>
+            {DOM.map((d) => (
+              <label key={d.value} className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-sm font-sans">
+                <Checkbox checked={selected.includes(d.value)} onCheckedChange={() => toggleSimple(d.value)} />
+                {d.label}
+              </label>
+            ))}
+
+            <div className="my-1.5 h-px bg-border" />
+
+            {/* Pays limitrophes */}
+            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pays limitrophes</div>
+            {PAYS_LIMITROPHES.map((p) => (
+              <label key={p.value} className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-sm font-sans">
+                <Checkbox checked={selected.includes(p.value)} onCheckedChange={() => toggleSimple(p.value)} />
+                {p.label}
+              </label>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+      {selected.length > 0 && (
+        <Button variant="ghost" size="sm" className="mt-1 text-xs text-muted-foreground" onClick={() => onChange([])}>
+          Tout désélectionner ({selected.length})
+        </Button>
+      )}
+    </Field>
+  );
+}
+
+
   const [data, setData] = useState<Prestataire[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
