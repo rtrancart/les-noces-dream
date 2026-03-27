@@ -47,7 +47,7 @@ interface ArticleData {
 /* ─── Hook: données accueil ──────────────────────────────── */
 
 function useHomeData() {
-  const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [categoryTree, setCategoryTree] = useState<CategoryOption[]>([]);
   const [providers, setProviders] = useState<ProviderData[]>([]);
   const [articles, setArticles] = useState<ArticleData[]>([]);
   const [loading, setLoading] = useState(true);
