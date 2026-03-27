@@ -170,7 +170,7 @@ export default function Prestataires() {
       prix_depart: p.prix_depart?.toString() ?? "",
       prix_max: p.prix_max?.toString() ?? "",
       statut: p.statut,
-      fin_premium: (p as any).fin_premium ? new Date((p as any).fin_premium).toISOString().slice(0, 10) : "",
+      fin_premium: (p as any).fin_premium ? (p as any).fin_premium.slice(0, 10) : "",
       notes_admin: p.notes_admin ?? "",
       cree_par_admin: p.cree_par_admin ?? false,
       zones_intervention: ((p as any).zones_intervention ?? []).join(", "),
