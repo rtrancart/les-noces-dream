@@ -203,7 +203,7 @@ export default function Prestataires() {
       prix_depart: form.prix_depart ? parseInt(form.prix_depart) : null,
       prix_max: form.prix_max ? parseInt(form.prix_max) : null,
       statut: form.statut,
-      fin_premium: form.fin_premium || null,
+      fin_premium: form.fin_premium ? `${form.fin_premium}T23:59:59` : null,
       notes_admin: form.notes_admin || null,
       cree_par_admin: form.cree_par_admin,
       zones_intervention: form.zones_intervention ? form.zones_intervention.split(",").map((z: string) => z.trim()).filter(Boolean) : [],
