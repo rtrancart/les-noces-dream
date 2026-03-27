@@ -55,7 +55,7 @@ function useHomeData() {
 
   useEffect(() => {
     async function fetch() {
-      const [catRes, prestaRes, artRes] = await Promise.all([
+      const [catRes, allCatRes, prestaRes, artRes] = await Promise.all([
         supabase
           .from("categories")
           .select("id, nom, slug, icone_url, photo_url")
@@ -63,6 +63,11 @@ function useHomeData() {
           .eq("est_active", true)
           .order("ordre_affichage")
           .limit(10),
+        supabase
+          .from("categories")
+          .select("id, nom, slug, icone_url, parent_id")
+          .eq("est_active", true)
+          .order("ordre_affichage"),
         supabase
           .from("prestataires")
           .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, fin_premium, categorie_mere_id")
@@ -77,6 +82,21 @@ function useHomeData() {
           .order("created_at", { ascending: false })
           .limit(4),
       ]);
+
+      // Build category tree for picker
+      if (allCatRes.data) {
+        const parents = allCatRes.data.filter((c) => !c.parent_id);
+        const children = allCatRes.data.filter((c) => c.parent_id);
+        setCategoryTree(parents.map((p) => ({
+          id: p.id,
+          nom: p.nom,
+          slug: p.slug,
+          icone_url: p.icone_url,
+          children: children
+            .filter((c) => c.parent_id === p.id)
+            .map((c) => ({ id: c.id, nom: c.nom, slug: c.slug, icone_url: c.icone_url })),
+        })));
+      }
 
       // Map categories with prestataire count
       if (catRes.data) {
