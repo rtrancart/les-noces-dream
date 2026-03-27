@@ -171,8 +171,8 @@ function ZonesInterventionField({ selected, onChange, defaultRegion }: { selecte
             <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[420px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
-          <div className="max-h-[60vh] overflow-y-auto p-2 space-y-0.5">
+        <PopoverContent className="w-[420px] p-0 max-h-[min(400px,70vh)]" align="start" side="bottom" avoidCollisions={false} onOpenAutoFocus={(e) => e.preventDefault()}>
+          <div className="max-h-[min(400px,70vh)] overflow-y-auto p-2 space-y-0.5">
             {/* France entière */}
             <label className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-sm font-sans font-medium">
               <Checkbox checked={selected.includes("france_entiere")} onCheckedChange={() => toggleSimple("france_entiere")} />
