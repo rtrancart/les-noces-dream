@@ -60,6 +60,7 @@ const emptyForm = {
   est_premium: false,
   notes_admin: "",
   cree_par_admin: true,
+  zones_intervention: "",
 };
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -171,6 +172,7 @@ export default function Prestataires() {
       est_premium: p.est_premium ?? false,
       notes_admin: p.notes_admin ?? "",
       cree_par_admin: p.cree_par_admin ?? false,
+      zones_intervention: ((p as any).zones_intervention ?? []).join(", "),
     });
     setDialogOpen(true);
   };
@@ -204,6 +206,7 @@ export default function Prestataires() {
       est_premium: form.est_premium,
       notes_admin: form.notes_admin || null,
       cree_par_admin: form.cree_par_admin,
+      zones_intervention: form.zones_intervention ? form.zones_intervention.split(",").map((z: string) => z.trim()).filter(Boolean) : [],
     };
 
     if (editItem) {
@@ -416,6 +419,9 @@ export default function Prestataires() {
               </div>
               <Field label="Site web">
                 <Input value={form.site_web} onChange={(e) => setForm({ ...form, site_web: e.target.value })} placeholder="https://…" />
+              </Field>
+              <Field label="Zones d'intervention (séparées par virgule)">
+                <Input value={form.zones_intervention} onChange={(e) => setForm({ ...form, zones_intervention: e.target.value })} placeholder="Île-de-France, Provence, france_entiere" />
               </Field>
             </TabsContent>
 

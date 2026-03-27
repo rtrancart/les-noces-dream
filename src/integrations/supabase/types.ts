@@ -92,6 +92,9 @@ export type Database = {
           extrait: string | null
           id: string
           image_couverture_url: string | null
+          meta_description: string | null
+          meta_title: string | null
+          publie_le: string | null
           slug: string
           tags: string[] | null
           titre: string
@@ -106,6 +109,9 @@ export type Database = {
           extrait?: string | null
           id?: string
           image_couverture_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          publie_le?: string | null
           slug: string
           tags?: string[] | null
           titre: string
@@ -120,6 +126,9 @@ export type Database = {
           extrait?: string | null
           id?: string
           image_couverture_url?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          publie_le?: string | null
           slug?: string
           tags?: string[] | null
           titre?: string
@@ -227,8 +236,10 @@ export type Database = {
           fin_le: string
           id: string
           montant_cents: number
+          motif_admin: string | null
           pack: Database["public"]["Enums"]["pack_boost"]
           prestataire_id: string
+          source: Database["public"]["Enums"]["source_boost"] | null
           statut: Database["public"]["Enums"]["statut_boost"]
           stripe_payment_intent_id: string | null
           zone: string | null
@@ -241,8 +252,10 @@ export type Database = {
           fin_le: string
           id?: string
           montant_cents: number
+          motif_admin?: string | null
           pack: Database["public"]["Enums"]["pack_boost"]
           prestataire_id: string
+          source?: Database["public"]["Enums"]["source_boost"] | null
           statut?: Database["public"]["Enums"]["statut_boost"]
           stripe_payment_intent_id?: string | null
           zone?: string | null
@@ -255,8 +268,10 @@ export type Database = {
           fin_le?: string
           id?: string
           montant_cents?: number
+          motif_admin?: string | null
           pack?: Database["public"]["Enums"]["pack_boost"]
           prestataire_id?: string
+          source?: Database["public"]["Enums"]["source_boost"] | null
           statut?: Database["public"]["Enums"]["statut_boost"]
           stripe_payment_intent_id?: string | null
           zone?: string | null
@@ -784,6 +799,7 @@ export type Database = {
           user_id: string | null
           video_url: string | null
           ville: string
+          zones_intervention: string[] | null
         }
         Insert: {
           adresse?: string | null
@@ -828,6 +844,7 @@ export type Database = {
           user_id?: string | null
           video_url?: string | null
           ville: string
+          zones_intervention?: string[] | null
         }
         Update: {
           adresse?: string | null
@@ -872,6 +889,7 @@ export type Database = {
           user_id?: string | null
           video_url?: string | null
           ville?: string
+          zones_intervention?: string[] | null
         }
         Relationships: [
           {
@@ -983,6 +1001,7 @@ export type Database = {
       objet_demande: "mariage" | "evenement_entreprise" | "cocktail" | "autre"
       pack_boost: "5j_5eur" | "15j_12eur" | "30j_20eur"
       plan_abonnement: "essai" | "mensuel" | "annuel"
+      source_boost: "prestataire" | "admin"
       statut_abonnement:
         | "actif"
         | "en_retard"
@@ -1153,6 +1172,7 @@ export const Constants = {
       objet_demande: ["mariage", "evenement_entreprise", "cocktail", "autre"],
       pack_boost: ["5j_5eur", "15j_12eur", "30j_20eur"],
       plan_abonnement: ["essai", "mensuel", "annuel"],
+      source_boost: ["prestataire", "admin"],
       statut_abonnement: [
         "actif",
         "en_retard",

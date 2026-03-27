@@ -18,7 +18,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Article = Database["public"]["Tables"]["articles_blog"]["Row"];
 
-const emptyForm = { titre: "", slug: "", extrait: "", categorie_blog: "", image_couverture_url: "", tags: "", est_publie: false };
+const emptyForm = { titre: "", slug: "", extrait: "", categorie_blog: "", image_couverture_url: "", tags: "", est_publie: false, meta_title: "", meta_description: "" };
 
 export default function Articles() {
   const [data, setData] = useState<Article[]>([]);
@@ -44,6 +44,7 @@ export default function Articles() {
     setForm({
       titre: a.titre, slug: a.slug, extrait: a.extrait ?? "", categorie_blog: a.categorie_blog ?? "",
       image_couverture_url: a.image_couverture_url ?? "", tags: (a.tags ?? []).join(", "), est_publie: a.est_publie ?? false,
+      meta_title: (a as any).meta_title ?? "", meta_description: (a as any).meta_description ?? "",
     });
     setDialogOpen(true);
   };
@@ -56,6 +57,8 @@ export default function Articles() {
       categorie_blog: form.categorie_blog || null, image_couverture_url: form.image_couverture_url || null,
       tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
       est_publie: form.est_publie,
+      meta_title: form.meta_title || null,
+      meta_description: form.meta_description || null,
     };
     if (editItem) {
       const { error } = await supabase.from("articles_blog").update(payload).eq("id", editItem.id);
@@ -141,6 +144,8 @@ export default function Articles() {
               <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Image couverture URL</Label><Input value={form.image_couverture_url} onChange={(e) => setForm({ ...form, image_couverture_url: e.target.value })} /></div>
             </div>
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Tags (séparés par virgule)</Label><Input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="mariage, décoration, tendances" /></div>
+            <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Meta title (SEO)</Label><Input value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} placeholder="Titre pour les moteurs de recherche" /></div>
+            <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Meta description (SEO)</Label><Textarea value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} rows={2} placeholder="Description pour les moteurs de recherche (max 160 car.)" /></div>
             <div className="flex items-center gap-2"><Switch checked={form.est_publie} onCheckedChange={(v) => setForm({ ...form, est_publie: v })} /><Label className="font-sans text-sm">Publier</Label></div>
           </div>
           <DialogFooter>
