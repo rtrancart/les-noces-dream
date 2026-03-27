@@ -420,6 +420,9 @@ export default function Prestataires() {
               <Field label="Site web">
                 <Input value={form.site_web} onChange={(e) => setForm({ ...form, site_web: e.target.value })} placeholder="https://…" />
               </Field>
+              <Field label="Zones d'intervention (séparées par virgule)">
+                <Input value={form.zones_intervention} onChange={(e) => setForm({ ...form, zones_intervention: e.target.value })} placeholder="Île-de-France, Provence, france_entiere" />
+              </Field>
             </TabsContent>
 
             <TabsContent value="admin" className="space-y-4 pt-4">

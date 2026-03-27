@@ -144,6 +144,8 @@ export default function Articles() {
               <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Image couverture URL</Label><Input value={form.image_couverture_url} onChange={(e) => setForm({ ...form, image_couverture_url: e.target.value })} /></div>
             </div>
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Tags (séparés par virgule)</Label><Input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="mariage, décoration, tendances" /></div>
+            <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Meta title (SEO)</Label><Input value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} placeholder="Titre pour les moteurs de recherche" /></div>
+            <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Meta description (SEO)</Label><Textarea value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} rows={2} placeholder="Description pour les moteurs de recherche (max 160 car.)" /></div>
             <div className="flex items-center gap-2"><Switch checked={form.est_publie} onCheckedChange={(v) => setForm({ ...form, est_publie: v })} /><Label className="font-sans text-sm">Publier</Label></div>
           </div>
           <DialogFooter>
