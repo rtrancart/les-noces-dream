@@ -78,6 +78,7 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => (
 function ZonesInterventionField({ selected, onChange, defaultRegion }: { selected: string[]; onChange: (v: string[]) => void; defaultRegion: string }) {
   const [expandedRegions, setExpandedRegions] = useState<Set<string>>(new Set());
   const [zonesPopoverOpen, setZonesPopoverOpen] = useState(false);
+  const zonesListRef = useRef<HTMLDivElement | null>(null);
 
   // On first open, if nothing selected, pre-select the provider's region
   const [didDefault, setDidDefault] = useState(false);
