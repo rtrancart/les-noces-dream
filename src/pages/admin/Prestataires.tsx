@@ -179,7 +179,9 @@ function ZonesInterventionField({ selected, onChange, defaultRegion }: { selecte
         </PopoverTrigger>
         <PopoverContent className="w-[420px] p-0" align="start" side="bottom" onOpenAutoFocus={(e) => e.preventDefault()}>
           <div
-            className="h-[420px] max-h-[70vh] overflow-y-scroll overscroll-contain touch-pan-y p-2 space-y-0.5"
+            ref={zonesListRef}
+            tabIndex={0}
+            className="h-[420px] max-h-[70vh] overflow-y-scroll overscroll-contain touch-pan-y p-2 space-y-0.5 focus:outline-none"
             onWheelCapture={(e) => e.stopPropagation()}
             onTouchMoveCapture={(e) => e.stopPropagation()}
           >
