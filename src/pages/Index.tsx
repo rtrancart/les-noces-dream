@@ -169,13 +169,15 @@ function HeroSection({ categories }: { categories: CategoryData[] }) {
 
   return (
     <section className="relative h-[500px] md:h-[600px] overflow-hidden">
-      <img
-        src={heroBg}
-        alt="Réception de mariage élégante"
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
         className="absolute inset-0 w-full h-full object-cover"
-        width={1920}
-        height={1080}
-      />
+      >
+        <source src="/videos/hero-banner.mp4" type="video/mp4" />
+      </video>
       <div className="absolute inset-0 bg-foreground/40" />
 
       <div className="relative h-full flex flex-col items-center justify-center text-center px-6 lg:px-8">
