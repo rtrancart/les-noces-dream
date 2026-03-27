@@ -165,7 +165,7 @@ function useHomeData() {
     fetch();
   }, []);
 
-  return { categories, providers, articles, loading };
+  return { categories, categoryTree, providers, articles, loading };
 }
 
 /* ─── Price Helper ───────────────────────────────────────── */
