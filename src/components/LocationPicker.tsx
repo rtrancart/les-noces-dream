@@ -107,7 +107,7 @@ export default function LocationPicker({ value, onChange, placeholder = "Où ?",
             checked={value.includes("france_entiere")}
             onCheckedChange={() => toggleSpecial("france_entiere")}
           />
-          <span className="font-serif font-medium text-sm text-foreground">France entière</span>
+          <span className="font-sans font-medium text-sm text-foreground">France entière</span>
         </label>
 
         <div className="h-px bg-border my-2" />
