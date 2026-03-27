@@ -3,40 +3,16 @@ export interface ZoneOption {
   label: string;
 }
 
-export interface ZoneGroup {
+export interface Region {
+  value: string;
   label: string;
-  options: ZoneOption[];
+  departements: ZoneOption[];
 }
 
-export const ZONES_INTERVENTION: ZoneGroup[] = [
+export const REGIONS: Region[] = [
   {
-    label: "Valeurs spéciales",
-    options: [
-      { value: "france_entiere", label: "France entière" },
-      { value: "international", label: "International (sur devis)" },
-    ],
-  },
-  {
-    label: "Régions",
-    options: [
-      { value: "ile_de_france", label: "Île-de-France" },
-      { value: "provence_alpes_cote_azur", label: "Provence-Alpes-Côte d'Azur" },
-      { value: "auvergne_rhone_alpes", label: "Auvergne-Rhône-Alpes" },
-      { value: "nouvelle_aquitaine", label: "Nouvelle-Aquitaine" },
-      { value: "occitanie", label: "Occitanie" },
-      { value: "hauts_de_france", label: "Hauts-de-France" },
-      { value: "grand_est", label: "Grand Est" },
-      { value: "pays_de_la_loire", label: "Pays de la Loire" },
-      { value: "normandie", label: "Normandie" },
-      { value: "bretagne", label: "Bretagne" },
-      { value: "bourgogne_franche_comte", label: "Bourgogne-Franche-Comté" },
-      { value: "centre_val_de_loire", label: "Centre-Val de Loire" },
-      { value: "corse", label: "Corse" },
-    ],
-  },
-  {
-    label: "Départements — Île-de-France",
-    options: [
+    value: "ile_de_france", label: "Île-de-France",
+    departements: [
       { value: "75", label: "Paris" },
       { value: "77", label: "Seine-et-Marne" },
       { value: "78", label: "Yvelines" },
@@ -48,8 +24,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Provence-Alpes-Côte d'Azur",
-    options: [
+    value: "provence_alpes_cote_azur", label: "Provence-Alpes-Côte d'Azur",
+    departements: [
       { value: "04", label: "Alpes-de-Haute-Provence" },
       { value: "05", label: "Hautes-Alpes" },
       { value: "06", label: "Alpes-Maritimes" },
@@ -59,8 +35,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Auvergne-Rhône-Alpes",
-    options: [
+    value: "auvergne_rhone_alpes", label: "Auvergne-Rhône-Alpes",
+    departements: [
       { value: "01", label: "Ain" },
       { value: "03", label: "Allier" },
       { value: "07", label: "Ardèche" },
@@ -76,8 +52,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Nouvelle-Aquitaine",
-    options: [
+    value: "nouvelle_aquitaine", label: "Nouvelle-Aquitaine",
+    departements: [
       { value: "16", label: "Charente" },
       { value: "17", label: "Charente-Maritime" },
       { value: "19", label: "Corrèze" },
@@ -93,8 +69,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Occitanie",
-    options: [
+    value: "occitanie", label: "Occitanie",
+    departements: [
       { value: "09", label: "Ariège" },
       { value: "11", label: "Aude" },
       { value: "12", label: "Aveyron" },
@@ -111,8 +87,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Hauts-de-France",
-    options: [
+    value: "hauts_de_france", label: "Hauts-de-France",
+    departements: [
       { value: "02", label: "Aisne" },
       { value: "59", label: "Nord" },
       { value: "60", label: "Oise" },
@@ -121,8 +97,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Grand Est",
-    options: [
+    value: "grand_est", label: "Grand Est",
+    departements: [
       { value: "08", label: "Ardennes" },
       { value: "10", label: "Aube" },
       { value: "51", label: "Marne" },
@@ -136,8 +112,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Pays de la Loire",
-    options: [
+    value: "pays_de_la_loire", label: "Pays de la Loire",
+    departements: [
       { value: "44", label: "Loire-Atlantique" },
       { value: "49", label: "Maine-et-Loire" },
       { value: "53", label: "Mayenne" },
@@ -146,8 +122,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Normandie",
-    options: [
+    value: "normandie", label: "Normandie",
+    departements: [
       { value: "14", label: "Calvados" },
       { value: "27", label: "Eure" },
       { value: "50", label: "Manche" },
@@ -156,8 +132,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Bretagne",
-    options: [
+    value: "bretagne", label: "Bretagne",
+    departements: [
       { value: "22", label: "Côtes-d'Armor" },
       { value: "29", label: "Finistère" },
       { value: "35", label: "Ille-et-Vilaine" },
@@ -165,8 +141,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Bourgogne-Franche-Comté",
-    options: [
+    value: "bourgogne_franche_comte", label: "Bourgogne-Franche-Comté",
+    departements: [
       { value: "21", label: "Côte-d'Or" },
       { value: "25", label: "Doubs" },
       { value: "39", label: "Jura" },
@@ -178,8 +154,8 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Centre-Val de Loire",
-    options: [
+    value: "centre_val_de_loire", label: "Centre-Val de Loire",
+    departements: [
       { value: "18", label: "Cher" },
       { value: "28", label: "Eure-et-Loir" },
       { value: "36", label: "Indre" },
@@ -189,39 +165,57 @@ export const ZONES_INTERVENTION: ZoneGroup[] = [
     ],
   },
   {
-    label: "Départements — Corse",
-    options: [
+    value: "corse", label: "Corse",
+    departements: [
       { value: "2A", label: "Corse-du-Sud" },
       { value: "2B", label: "Haute-Corse" },
     ],
   },
-  {
-    label: "DOM",
-    options: [
-      { value: "971", label: "Guadeloupe" },
-      { value: "972", label: "Martinique" },
-      { value: "973", label: "Guyane" },
-      { value: "974", label: "La Réunion" },
-      { value: "976", label: "Mayotte" },
-    ],
-  },
-  {
-    label: "Pays limitrophes",
-    options: [
-      { value: "belgique", label: "Belgique" },
-      { value: "luxembourg", label: "Luxembourg" },
-      { value: "suisse", label: "Suisse" },
-      { value: "monaco", label: "Monaco" },
-    ],
-  },
 ];
 
-/** Flat lookup: value → label */
-export const ZONE_LABELS: Record<string, string> = Object.fromEntries(
-  ZONES_INTERVENTION.flatMap((g) => g.options.map((o) => [o.value, o.label]))
-);
+export const DOM: ZoneOption[] = [
+  { value: "971", label: "Guadeloupe" },
+  { value: "972", label: "Martinique" },
+  { value: "973", label: "Guyane" },
+  { value: "974", label: "La Réunion" },
+  { value: "976", label: "Mayotte" },
+];
 
-/** Get display label for a zone value */
+export const PAYS_LIMITROPHES: ZoneOption[] = [
+  { value: "belgique", label: "Belgique" },
+  { value: "luxembourg", label: "Luxembourg" },
+  { value: "suisse", label: "Suisse" },
+  { value: "monaco", label: "Monaco" },
+];
+
+/** Build a flat lookup: value → label (includes regions, départements, france_entiere, DOM, pays) */
+const entries: [string, string][] = [
+  ["france_entiere", "France entière"],
+  ...REGIONS.flatMap((r) => [
+    [r.value, r.label] as [string, string],
+    ...r.departements.map((d) => [d.value, d.label] as [string, string]),
+  ]),
+  ...DOM.map((d) => [d.value, d.label] as [string, string]),
+  ...PAYS_LIMITROPHES.map((d) => [d.value, d.label] as [string, string]),
+];
+
+export const ZONE_LABELS: Record<string, string> = Object.fromEntries(entries);
+
 export function getZoneLabel(value: string): string {
   return ZONE_LABELS[value] ?? value;
+}
+
+/** Get all département values for a region */
+export function getDepartementsByRegion(regionValue: string): string[] {
+  const region = REGIONS.find((r) => r.value === regionValue);
+  return region ? region.departements.map((d) => d.value) : [];
+}
+
+/** Map a "region" field value (e.g. "Île-de-France") to the zone value */
+export function regionFieldToZoneValue(regionField: string): string | undefined {
+  const normalized = regionField.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+  return REGIONS.find((r) => {
+    const rNorm = r.label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+    return rNorm === normalized;
+  })?.value;
 }
