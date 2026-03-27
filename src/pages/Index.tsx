@@ -104,7 +104,7 @@ function useHomeData() {
             note_moyenne: p.note_moyenne,
             nombre_avis: p.nombre_avis,
             prix_depart: p.prix_depart,
-            est_premium: p.est_premium,
+            fin_premium: (p as any).fin_premium,
             categorie_nom: catMap.get(p.categorie_mere_id as string) ?? "",
           }))
         );
