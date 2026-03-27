@@ -176,7 +176,7 @@ export default function Prestataires() {
       fin_premium: (p as any).fin_premium ? (p as any).fin_premium.slice(0, 10) : "",
       notes_admin: p.notes_admin ?? "",
       cree_par_admin: p.cree_par_admin ?? false,
-      zones_intervention: ((p as any).zones_intervention ?? []).join(", "),
+      zones_intervention: (p as any).zones_intervention ?? [],
     });
     setDialogOpen(true);
   };
