@@ -219,8 +219,8 @@ function HeroSection({ categories, categoryTree }: { categories: CategoryData[];
           <div className="flex items-center flex-1 border-b sm:border-b-0 sm:border-r border-border pr-0 sm:pr-3 pb-3 sm:pb-0 h-14">
             <CategoryPicker
               categories={categoryTree}
-              value={category}
-              onChange={setCategory}
+              value={categorySlugs}
+              onChange={setCategorySlugs}
               placeholder="Quelle catégorie ?"
             />
           </div>
