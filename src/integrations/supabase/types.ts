@@ -282,6 +282,7 @@ export type Database = {
           nom: string
           ordre_affichage: number | null
           parent_id: string | null
+          photo_url: string | null
           slug: string
           updated_at: string
         }
@@ -295,6 +296,7 @@ export type Database = {
           nom: string
           ordre_affichage?: number | null
           parent_id?: string | null
+          photo_url?: string | null
           slug: string
           updated_at?: string
         }
@@ -308,6 +310,7 @@ export type Database = {
           nom?: string
           ordre_affichage?: number | null
           parent_id?: string | null
+          photo_url?: string | null
           slug?: string
           updated_at?: string
         }
