@@ -1,4 +1,4 @@
-import { useEffect, useState, ReactNode } from "react";
+import { useEffect, useState, useRef, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,13 +12,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon } from "lucide-react";
+import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon, X, ChevronDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import type { Database } from "@/integrations/supabase/types";
 import { logAdmin } from "@/lib/logAdmin";
+import { ZONES_INTERVENTION, getZoneLabel } from "@/lib/zonesIntervention";
 
 type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
 type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
@@ -62,7 +65,7 @@ const emptyForm = {
   fin_premium: "",
   notes_admin: "",
   cree_par_admin: true,
-  zones_intervention: "",
+  zones_intervention: [] as string[],
 };
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -173,7 +176,7 @@ export default function Prestataires() {
       fin_premium: (p as any).fin_premium ? (p as any).fin_premium.slice(0, 10) : "",
       notes_admin: p.notes_admin ?? "",
       cree_par_admin: p.cree_par_admin ?? false,
-      zones_intervention: ((p as any).zones_intervention ?? []).join(", "),
+      zones_intervention: (p as any).zones_intervention ?? [],
     });
     setDialogOpen(true);
   };
@@ -206,7 +209,7 @@ export default function Prestataires() {
       fin_premium: form.fin_premium ? `${form.fin_premium}T23:59:59` : null,
       notes_admin: form.notes_admin || null,
       cree_par_admin: form.cree_par_admin,
-      zones_intervention: form.zones_intervention ? form.zones_intervention.split(",").map((z: string) => z.trim()).filter(Boolean) : [],
+      zones_intervention: form.zones_intervention,
     };
 
     if (editItem) {
@@ -420,8 +423,52 @@ export default function Prestataires() {
               <Field label="Site web">
                 <Input value={form.site_web} onChange={(e) => setForm({ ...form, site_web: e.target.value })} placeholder="https://…" />
               </Field>
-              <Field label="Zones d'intervention (séparées par virgule)">
-                <Input value={form.zones_intervention} onChange={(e) => setForm({ ...form, zones_intervention: e.target.value })} placeholder="Île-de-France, Provence, france_entiere" />
+              <Field label="Zones d'intervention">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-between text-left font-normal font-sans text-sm min-h-[40px] h-auto", form.zones_intervention.length === 0 && "text-muted-foreground")}>
+                      <span className="flex flex-wrap gap-1 flex-1">
+                        {form.zones_intervention.length === 0 ? "Sélectionner les zones…" : form.zones_intervention.map((z) => (
+                          <Badge key={z} variant="secondary" className="font-sans text-xs font-normal gap-1">
+                            {getZoneLabel(z)}
+                            <X className="h-3 w-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); setForm({ ...form, zones_intervention: form.zones_intervention.filter((v) => v !== z) }); }} />
+                          </Badge>
+                        ))}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                    <ScrollArea className="h-[320px]">
+                      <div className="p-2 space-y-1">
+                        {ZONES_INTERVENTION.map((group) => (
+                          <div key={group.label}>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.label}</div>
+                            {group.options.map((opt) => {
+                              const checked = form.zones_intervention.includes(opt.value);
+                              return (
+                                <label key={opt.value} className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-accent cursor-pointer text-sm font-sans">
+                                  <Checkbox checked={checked} onCheckedChange={(c) => {
+                                    setForm((prev) => ({
+                                      ...prev,
+                                      zones_intervention: c ? [...prev.zones_intervention, opt.value] : prev.zones_intervention.filter((v) => v !== opt.value),
+                                    }));
+                                  }} />
+                                  {opt.label}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
+                {form.zones_intervention.length > 0 && (
+                  <Button variant="ghost" size="sm" className="mt-1 text-xs text-muted-foreground" onClick={() => setForm({ ...form, zones_intervention: [] })}>
+                    Tout désélectionner
+                  </Button>
+                )}
               </Field>
             </TabsContent>
 
