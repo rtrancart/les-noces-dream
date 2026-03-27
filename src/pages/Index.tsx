@@ -240,23 +240,34 @@ function CategoryCard({ cat }: { cat: CategoryData }) {
       to={`/categories/${cat.slug}`}
       className="relative overflow-hidden rounded-md block group aspect-square"
     >
-      <div className="absolute inset-0 bg-muted/30 flex items-center justify-center">
-        {cat.icone_url ? (
-          <img src={cat.icone_url} alt="" className="w-16 h-16 object-contain" />
-        ) : (
-          <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center">
-            <Search className="w-8 h-8 text-muted-foreground" />
-          </div>
-        )}
-      </div>
+      {/* Background photo */}
+      {cat.photo_url ? (
+        <img
+          src={cat.photo_url}
+          alt={cat.nom}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-muted/30" />
+      )}
+
+      {/* Overlay gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/50 via-50% to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-5">
-        <h3 className="text-primary-foreground text-lg md:text-xl font-medium font-serif">
-          {cat.nom}
-        </h3>
-        <p className="text-primary-foreground/80 text-sm font-sans mt-1">
-          {cat.prestataire_count} prestataires
-        </p>
+
+      {/* Content */}
+      <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end gap-3">
+        {cat.icone_url && (
+          <img src={cat.icone_url} alt="" className="w-8 h-8 object-contain shrink-0 brightness-0 invert" />
+        )}
+        <div>
+          <h3 className="text-primary-foreground text-lg md:text-xl font-medium font-serif">
+            {cat.nom}
+          </h3>
+          <p className="text-primary-foreground/80 text-sm font-sans mt-0.5">
+            {cat.prestataire_count} prestataires
+          </p>
+        </div>
       </div>
     </Link>
   );
