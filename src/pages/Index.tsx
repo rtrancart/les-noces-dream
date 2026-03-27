@@ -12,6 +12,7 @@ interface CategoryData {
   nom: string;
   slug: string;
   icone_url: string | null;
+  photo_url: string | null;
   prestataire_count: number;
 }
 
