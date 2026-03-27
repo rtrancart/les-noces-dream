@@ -251,7 +251,7 @@ function ZonesInterventionField({ selected, onChange, defaultRegion }: { selecte
   );
 }
 
-
+export default function Prestataires() {
   const [data, setData] = useState<Prestataire[]>([]);
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
