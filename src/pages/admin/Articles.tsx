@@ -57,6 +57,8 @@ export default function Articles() {
       categorie_blog: form.categorie_blog || null, image_couverture_url: form.image_couverture_url || null,
       tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
       est_publie: form.est_publie,
+      meta_title: form.meta_title || null,
+      meta_description: form.meta_description || null,
     };
     if (editItem) {
       const { error } = await supabase.from("articles_blog").update(payload).eq("id", editItem.id);
