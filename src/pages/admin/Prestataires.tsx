@@ -93,6 +93,11 @@ function ZonesInterventionField({ selected, onChange, defaultRegion }: { selecte
     }
   }, [defaultRegion, didDefault, selected.length]);
 
+  useEffect(() => {
+    if (!zonesPopoverOpen) return;
+    requestAnimationFrame(() => zonesListRef.current?.focus());
+  }, [zonesPopoverOpen]);
+
   const toggleExpand = (regionValue: string) => {
     setExpandedRegions((prev) => {
       const next = new Set(prev);
