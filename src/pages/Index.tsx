@@ -256,18 +256,13 @@ function CategoryCard({ cat }: { cat: CategoryData }) {
       <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/50 via-50% to-transparent" />
 
       {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end gap-3">
-        {cat.icone_url && (
-          <img src={cat.icone_url} alt="" className="w-8 h-8 object-contain shrink-0 brightness-0 invert" />
-        )}
-        <div>
-          <h3 className="text-primary-foreground text-lg md:text-xl font-medium font-serif">
-            {cat.nom}
-          </h3>
-          <p className="text-primary-foreground/80 text-sm font-sans mt-0.5">
-            {cat.prestataire_count} prestataires
-          </p>
-        </div>
+      <div className="absolute bottom-0 left-0 right-0 p-5 flex flex-col items-center text-center">
+        <h3 className="text-primary-foreground text-lg md:text-xl font-medium font-serif">
+          {cat.nom}
+        </h3>
+        <p className="text-primary-foreground/80 text-sm font-sans mt-0.5">
+          {cat.prestataire_count} prestataires
+        </p>
       </div>
     </Link>
   );
