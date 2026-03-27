@@ -65,7 +65,7 @@ const emptyForm = {
   fin_premium: "",
   notes_admin: "",
   cree_par_admin: true,
-  zones_intervention: "",
+  zones_intervention: [] as string[],
 };
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
