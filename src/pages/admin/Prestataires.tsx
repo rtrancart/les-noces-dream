@@ -209,7 +209,7 @@ export default function Prestataires() {
       fin_premium: form.fin_premium ? `${form.fin_premium}T23:59:59` : null,
       notes_admin: form.notes_admin || null,
       cree_par_admin: form.cree_par_admin,
-      zones_intervention: form.zones_intervention ? form.zones_intervention.split(",").map((z: string) => z.trim()).filter(Boolean) : [],
+      zones_intervention: form.zones_intervention,
     };
 
     if (editItem) {
