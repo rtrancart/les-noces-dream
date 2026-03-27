@@ -429,16 +429,29 @@ export default function Prestataires() {
                   <SelectContent>{Object.entries(statutLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}</SelectContent>
                 </Select>
               </Field>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <Switch checked={form.est_verifie} onCheckedChange={(v) => setForm({ ...form, est_verifie: v })} />
-                  <Label className="font-sans text-sm">Vérifié</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={form.est_premium} onCheckedChange={(v) => setForm({ ...form, est_premium: v })} />
-                  <Label className="font-sans text-sm">Premium</Label>
-                </div>
-              </div>
+              <Field label="Fin Premium (laisser vide = non premium)">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal font-sans text-sm", !form.fin_premium && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.fin_premium ? new Date(form.fin_premium).toLocaleDateString("fr-FR") : "Aucune date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.fin_premium ? new Date(form.fin_premium) : undefined}
+                      onSelect={(d) => setForm({ ...form, fin_premium: d ? d.toISOString().slice(0, 10) : "" })}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {form.fin_premium && (
+                  <Button variant="ghost" size="sm" className="mt-1 text-xs text-muted-foreground" onClick={() => setForm({ ...form, fin_premium: "" })}>
+                    Retirer le premium
+                  </Button>
+                )}
+              </Field>
               <Field label="Notes admin (interne)">
                 <Textarea value={form.notes_admin} onChange={(e) => setForm({ ...form, notes_admin: e.target.value })} rows={3} />
               </Field>
