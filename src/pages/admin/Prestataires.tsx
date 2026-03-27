@@ -480,6 +480,7 @@ export default function Prestataires() {
                   <TableRow key={p.id}>
                     <TableCell className="font-sans text-sm font-medium">{p.nom_commercial}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.email_contact || "—"}</TableCell>
+                    <TableCell className="font-sans text-sm text-muted-foreground">{p.telephone || "—"}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{getCatName(p.categorie_mere_id)}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.ville}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString("fr-FR")}</TableCell>
