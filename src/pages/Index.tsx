@@ -326,7 +326,7 @@ function ProviderCard({ provider }: { provider: ProviderData }) {
             </svg>
           </div>
         )}
-        {provider.est_premium && (
+        {provider.fin_premium && new Date(provider.fin_premium) > new Date() && (
           <span className="absolute top-4 right-4 bg-primary text-primary-foreground text-xs uppercase tracking-wider px-3 py-1.5 rounded-md font-sans font-medium">
             Premium
           </span>
