@@ -62,8 +62,9 @@ function useHomeData() {
           .limit(10),
         supabase
           .from("prestataires")
-          .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, est_premium, categorie_mere_id")
+          .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, fin_premium, categorie_mere_id")
           .eq("statut", "actif")
+          .gte("fin_premium", new Date().toISOString())
           .order("note_moyenne", { ascending: false })
           .limit(5),
         supabase
