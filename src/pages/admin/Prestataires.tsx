@@ -170,7 +170,7 @@ export default function Prestataires() {
       prix_depart: p.prix_depart?.toString() ?? "",
       prix_max: p.prix_max?.toString() ?? "",
       statut: p.statut,
-      fin_premium: (p as any).fin_premium ? new Date((p as any).fin_premium).toISOString().slice(0, 10) : "",
+      fin_premium: (p as any).fin_premium ? (p as any).fin_premium.slice(0, 10) : "",
       notes_admin: p.notes_admin ?? "",
       cree_par_admin: p.cree_par_admin ?? false,
       zones_intervention: ((p as any).zones_intervention ?? []).join(", "),
@@ -203,7 +203,7 @@ export default function Prestataires() {
       prix_depart: form.prix_depart ? parseInt(form.prix_depart) : null,
       prix_max: form.prix_max ? parseInt(form.prix_max) : null,
       statut: form.statut,
-      fin_premium: form.fin_premium || null,
+      fin_premium: form.fin_premium ? `${form.fin_premium}T23:59:59` : null,
       notes_admin: form.notes_admin || null,
       cree_par_admin: form.cree_par_admin,
       zones_intervention: form.zones_intervention ? form.zones_intervention.split(",").map((z: string) => z.trim()).filter(Boolean) : [],
@@ -443,8 +443,17 @@ export default function Prestataires() {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={form.fin_premium ? new Date(form.fin_premium) : undefined}
-                      onSelect={(d) => setForm({ ...form, fin_premium: d ? d.toISOString().slice(0, 10) : "" })}
+                      selected={form.fin_premium ? new Date(form.fin_premium + "T12:00:00") : undefined}
+                      onSelect={(d) => {
+                        if (d) {
+                          const yyyy = d.getFullYear();
+                          const mm = String(d.getMonth() + 1).padStart(2, "0");
+                          const dd2 = String(d.getDate()).padStart(2, "0");
+                          setForm({ ...form, fin_premium: `${yyyy}-${mm}-${dd2}` });
+                        } else {
+                          setForm({ ...form, fin_premium: "" });
+                        }
+                      }}
                       className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
