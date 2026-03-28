@@ -39,6 +39,7 @@ const App = () => (
             {/* Public pages with Header + Footer */}
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Index />} />
+              <Route path="/recherche" element={<Recherche />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}
