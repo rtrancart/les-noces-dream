@@ -223,7 +223,7 @@ export default function LocationPicker({ value, onChange, placeholder = "Où ?",
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerContent className="max-h-[85vh]">
             <DrawerHeader className="flex items-center justify-between">
-              <DrawerTitle className="font-serif text-lg">Lieu</DrawerTitle>
+              <DrawerTitle className="font-sans text-lg">Lieu</DrawerTitle>
               {value.length > 0 && (
                 <button
                   type="button"

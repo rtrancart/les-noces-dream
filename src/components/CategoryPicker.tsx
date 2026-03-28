@@ -196,7 +196,7 @@ export default function CategoryPicker({
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerContent className="max-h-[85vh]">
             <DrawerHeader className="flex items-center justify-between">
-              <DrawerTitle className="font-serif text-lg">Catégorie</DrawerTitle>
+              <DrawerTitle className="font-sans text-lg">Catégorie</DrawerTitle>
               {value.length > 0 && (
                 <button
                   type="button"
