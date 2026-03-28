@@ -12,6 +12,7 @@ import Connexion from "./pages/Connexion";
 import Inscription from "./pages/Inscription";
 import MotDePasseOublie from "./pages/MotDePasseOublie";
 import ResetPassword from "./pages/ResetPassword";
+import Recherche from "./pages/Recherche";
 
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
@@ -38,6 +39,7 @@ const App = () => (
             {/* Public pages with Header + Footer */}
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Index />} />
+              <Route path="/recherche" element={<Recherche />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}

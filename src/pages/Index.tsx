@@ -189,7 +189,7 @@ function HeroSection({ categories, categoryTree }: { categories: CategoryData[];
     const params = new URLSearchParams();
     if (categorySlugs.length > 0) params.set("categorie", categorySlugs.join(","));
     if (locationZones.length > 0) params.set("lieu", locationZones.join(","));
-    navigate(`/prestataires?${params.toString()}`);
+    navigate(`/recherche?${params.toString()}`);
   };
 
   return (
