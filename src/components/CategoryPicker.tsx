@@ -224,7 +224,7 @@ export default function CategoryPicker({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <span className="font-serif text-sm font-medium text-foreground">
+          <span className="font-sans text-sm font-medium text-foreground">
             Choisir une catégorie
           </span>
           {value.length > 0 && (
