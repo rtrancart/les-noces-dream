@@ -64,6 +64,8 @@ function useSearchData() {
             zones_intervention: (p as any).zones_intervention ?? [],
             categorie_mere_id: (p as any).categorie_mere_id,
             categorie_fille_id: (p as any).categorie_fille_id,
+            latitude: (p as any).latitude,
+            longitude: (p as any).longitude,
           }))
         );
       }
