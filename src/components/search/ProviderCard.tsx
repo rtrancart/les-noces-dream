@@ -28,7 +28,7 @@ export default function ProviderCard({ provider }: { provider: ProviderCardData 
     >
       <div className="rounded-xl hover:shadow-elevated transition-all duration-300">
         {/* Image */}
-        <div className="relative aspect-square overflow-hidden rounded-xl mb-3">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-xl mb-3">
           {provider.photo_principale_url ? (
             <img
               src={provider.photo_principale_url}
