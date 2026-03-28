@@ -174,7 +174,7 @@ export default function LocationPicker({ value, onChange, placeholder = "Où ?",
         {DOM.map((d) => (
           <label key={d.value} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-secondary/50 cursor-pointer transition-colors">
             <Checkbox checked={value.includes(d.value)} onCheckedChange={() => toggleDept(d.value)} />
-            <span className="text-sm text-foreground font-sans">{d.label}</span>
+           <span className="text-sm font-medium text-foreground font-sans">{d.label}</span>
           </label>
         ))}
 
@@ -185,7 +185,7 @@ export default function LocationPicker({ value, onChange, placeholder = "Où ?",
         {PAYS_LIMITROPHES.map((d) => (
           <label key={d.value} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-secondary/50 cursor-pointer transition-colors">
             <Checkbox checked={value.includes(d.value)} onCheckedChange={() => toggleDept(d.value)} />
-            <span className="text-sm text-foreground font-sans">{d.label}</span>
+            <span className="text-sm font-medium text-foreground font-sans">{d.label}</span>
           </label>
         ))}
       </div>
@@ -223,7 +223,7 @@ export default function LocationPicker({ value, onChange, placeholder = "Où ?",
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerContent className="max-h-[85vh]">
             <DrawerHeader className="flex items-center justify-between">
-              <DrawerTitle className="font-serif text-lg">Lieu</DrawerTitle>
+              <DrawerTitle className="font-sans text-lg">Lieu</DrawerTitle>
               {value.length > 0 && (
                 <button
                   type="button"
@@ -255,7 +255,7 @@ export default function LocationPicker({ value, onChange, placeholder = "Où ?",
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <span className="font-serif text-sm font-medium text-foreground">Sélectionner un lieu</span>
+          <span className="font-sans text-sm font-medium text-foreground">Sélectionner un lieu</span>
           {value.length > 0 && (
             <button
               type="button"

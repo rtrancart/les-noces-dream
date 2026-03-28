@@ -196,7 +196,7 @@ export default function CategoryPicker({
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerContent className="max-h-[85vh]">
             <DrawerHeader className="flex items-center justify-between">
-              <DrawerTitle className="font-serif text-lg">Catégorie</DrawerTitle>
+              <DrawerTitle className="font-sans text-lg">Catégorie</DrawerTitle>
               {value.length > 0 && (
                 <button
                   type="button"
@@ -224,7 +224,7 @@ export default function CategoryPicker({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <span className="font-serif text-sm font-medium text-foreground">
+          <span className="font-sans text-sm font-medium text-foreground">
             Choisir une catégorie
           </span>
           {value.length > 0 && (
