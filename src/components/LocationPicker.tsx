@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { MapPin, ChevronDown, ChevronRight, Check, X } from "lucide-react";
-import { REGIONS, DOM, PAYS_LIMITROPHES, getZoneLabel } from "@/lib/zonesIntervention";
+import { REGIONS, DOM, PAYS_LIMITROPHES, getZoneLabel, getCondensedZoneNames } from "@/lib/zonesIntervention";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from "@/components/ui/drawer";
