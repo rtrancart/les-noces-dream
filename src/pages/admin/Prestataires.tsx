@@ -447,6 +447,18 @@ export default function Prestataires() {
     }
   };
 
+  const triggerGeocode = async (prestataireId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke("geocode-prestataire", {
+        body: { prestataire_id: prestataireId },
+      });
+      if (error) console.error("Geocoding error:", error);
+      else toast.success("Coordonnées GPS mises à jour automatiquement");
+    } catch (e) {
+      console.error("Geocoding failed:", e);
+    }
+  };
+
 
   return (
     <div className="space-y-6">
