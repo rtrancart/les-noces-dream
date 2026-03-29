@@ -8,7 +8,7 @@ import CategoryPicker, { type CategoryOption, getCondensedCategoryNames } from "
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import SearchMap from "@/components/search/SearchMap";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { REGIONS, DOM, getZoneLabel } from "@/lib/zonesIntervention";
+import { REGIONS, DOM, getZoneLabel, getCondensedZoneNames } from "@/lib/zonesIntervention";
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
 
@@ -178,8 +178,8 @@ export default function Recherche() {
     // Use condensed names (parent only when all children selected)
     const catNames = getCondensedCategoryNames(categoryTree, categorySlugs);
 
-    // Resolve location labels
-    const locLabels: string[] = locationZones.map((z) => getZoneLabel(z)).filter(Boolean);
+    // Resolve location labels (condensed: region name when all depts selected)
+    const locLabels = getCondensedZoneNames(locationZones);
 
     const catPart = catNames.length > 0 ? catNames.join(", ") : "Prestataires de mariage";
     const locPart = locLabels.length > 0 ? ` à ${locLabels.join(", ")}` : " en France";
