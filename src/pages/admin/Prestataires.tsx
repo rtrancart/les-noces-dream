@@ -369,6 +369,18 @@ export default function Prestataires() {
     setDialogOpen(true);
   };
 
+  const triggerGeocode = async (prestataireId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke("geocode-prestataire", {
+        body: { prestataire_id: prestataireId },
+      });
+      if (error) console.error("Geocoding error:", error);
+      else toast.success("Coordonnées GPS mises à jour automatiquement");
+    } catch (e) {
+      console.error("Geocoding failed:", e);
+    }
+  };
+
   const handleSave = async () => {
     if (!form.nom_commercial || !form.slug || !form.ville || !form.region || !form.categorie_mere_id) {
       toast.error("Remplissez les champs obligatoires (nom, slug, ville, région, catégorie)");
