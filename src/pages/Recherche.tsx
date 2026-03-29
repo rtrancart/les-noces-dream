@@ -173,10 +173,30 @@ export default function Recherche() {
     setSearchParams(params, { replace: true });
   }, [categorySlugs, locationZones]);
 
+  // Dynamic title from filters
+  const dynamicTitle = useMemo(() => {
+    // Resolve category names from slugs
+    const catNames: string[] = [];
+    for (const cat of categoryTree) {
+      if (categorySlugs.includes(cat.slug)) catNames.push(cat.nom);
+      cat.children?.forEach((c) => {
+        if (categorySlugs.includes(c.slug)) catNames.push(c.nom);
+      });
+    }
+
+    // Resolve location labels
+    const locLabels: string[] = locationZones.map((z) => getZoneLabel(z)).filter(Boolean);
+
+    const catPart = catNames.length > 0 ? catNames.join(", ") : "Prestataires de mariage";
+    const locPart = locLabels.length > 0 ? ` à ${locLabels.join(", ")}` : " en France";
+
+    return `${catPart}${locPart}`;
+  }, [categorySlugs, locationZones, categoryTree]);
+
   // SEO title
   useEffect(() => {
-    document.title = "Prestataires de mariage premium en France | LesNoces.net";
-  }, []);
+    document.title = `${dynamicTitle} | LesNoces.net`;
+  }, [dynamicTitle]);
 
   const togglePrice = (p: string) =>
     setPriceFilters((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
