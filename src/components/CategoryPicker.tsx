@@ -14,6 +14,45 @@ export interface CategoryOption {
   children?: CategoryOption[];
 }
 
+/**
+ * Returns condensed display names: if all children of a parent are selected,
+ * show only the parent name instead of listing every child.
+ */
+export function getCondensedCategoryNames(
+  categories: CategoryOption[],
+  selectedSlugs: string[]
+): string[] {
+  const names: string[] = [];
+  const accounted = new Set<string>();
+
+  for (const parent of categories) {
+    const childSlugs = parent.children?.map((c) => c.slug) ?? [];
+    const allChildrenSelected = childSlugs.length > 0 && childSlugs.every((s) => selectedSlugs.includes(s));
+
+    if (allChildrenSelected) {
+      names.push(parent.nom);
+      accounted.add(parent.slug);
+      childSlugs.forEach((s) => accounted.add(s));
+    }
+  }
+
+  // Add individually selected items not already accounted for
+  for (const parent of categories) {
+    if (!accounted.has(parent.slug) && selectedSlugs.includes(parent.slug)) {
+      names.push(parent.nom);
+      accounted.add(parent.slug);
+    }
+    parent.children?.forEach((child) => {
+      if (!accounted.has(child.slug) && selectedSlugs.includes(child.slug)) {
+        names.push(child.nom);
+        accounted.add(child.slug);
+      }
+    });
+  }
+
+  return names;
+}
+
 interface CategoryPickerProps {
   categories: CategoryOption[];
   value: string[];
