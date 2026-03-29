@@ -435,17 +435,6 @@ export default function Prestataires() {
   const childCategories = categories.filter((c) => c.parent_id === form.categorie_mere_id);
   const getCatName = (id: string | null) => categories.find((c) => c.id === id)?.nom ?? "—";
 
-  const triggerGeocode = async (prestataireId: string) => {
-    try {
-      const { error } = await supabase.functions.invoke("geocode-prestataire", {
-        body: { prestataire_id: prestataireId },
-      });
-      if (error) console.error("Geocoding error:", error);
-      else toast.success("Coordonnées GPS mises à jour automatiquement");
-    } catch (e) {
-      console.error("Geocoding failed:", e);
-    }
-  };
 
 
 
