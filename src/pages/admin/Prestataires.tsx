@@ -369,6 +369,18 @@ export default function Prestataires() {
     setDialogOpen(true);
   };
 
+  const triggerGeocode = async (prestataireId: string) => {
+    try {
+      const { error } = await supabase.functions.invoke("geocode-prestataire", {
+        body: { prestataire_id: prestataireId },
+      });
+      if (error) console.error("Geocoding error:", error);
+      else toast.success("Coordonnées GPS mises à jour automatiquement");
+    } catch (e) {
+      console.error("Geocoding failed:", e);
+    }
+  };
+
   const handleSave = async () => {
     if (!form.nom_commercial || !form.slug || !form.ville || !form.region || !form.categorie_mere_id) {
       toast.error("Remplissez les champs obligatoires (nom, slug, ville, région, catégorie)");
@@ -404,12 +416,23 @@ export default function Prestataires() {
       const { data: updated, error } = await supabase.from("prestataires").update(payload).eq("id", editItem.id).select();
       if (error) toast.error(error.message);
       else if (!updated || updated.length === 0) toast.error("Mise à jour refusée (permissions insuffisantes)");
-      else { toast.success("Prestataire mis à jour"); logAdmin("update_prestataire", "prestataires", editItem.id, { nom: form.nom_commercial }); setDialogOpen(false); fetchData(); }
+      else {
+        toast.success("Prestataire mis à jour");
+        logAdmin("update_prestataire", "prestataires", editItem.id, { nom: form.nom_commercial });
+        const addressChanged = editItem.ville !== form.ville || editItem.code_postal !== (form.code_postal || null) || editItem.adresse !== (form.adresse || null);
+        if (addressChanged) triggerGeocode(editItem.id);
+        setDialogOpen(false); fetchData();
+      }
     } else {
       const { data: created, error } = await supabase.from("prestataires").insert(payload).select();
       if (error) toast.error(error.message);
       else if (!created || created.length === 0) toast.error("Création refusée (permissions insuffisantes)");
-      else { toast.success("Prestataire créé"); logAdmin("create_prestataire", "prestataires", created[0].id, { nom: form.nom_commercial }); setDialogOpen(false); fetchData(); }
+      else {
+        toast.success("Prestataire créé");
+        logAdmin("create_prestataire", "prestataires", created[0].id, { nom: form.nom_commercial });
+        triggerGeocode(created[0].id);
+        setDialogOpen(false); fetchData();
+      }
     }
     setSaving(false);
   };
@@ -423,6 +446,8 @@ export default function Prestataires() {
   const parentCategories = categories.filter((c) => !c.parent_id);
   const childCategories = categories.filter((c) => c.parent_id === form.categorie_mere_id);
   const getCatName = (id: string | null) => categories.find((c) => c.id === id)?.nom ?? "—";
+
+
 
 
   return (
