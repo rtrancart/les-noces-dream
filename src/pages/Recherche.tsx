@@ -178,8 +178,8 @@ export default function Recherche() {
     // Use condensed names (parent only when all children selected)
     const catNames = getCondensedCategoryNames(categoryTree, categorySlugs);
 
-    // Resolve location labels
-    const locLabels: string[] = locationZones.map((z) => getZoneLabel(z)).filter(Boolean);
+    // Resolve location labels (condensed: region name when all depts selected)
+    const locLabels = getCondensedZoneNames(locationZones);
 
     const catPart = catNames.length > 0 ? catNames.join(", ") : "Prestataires de mariage";
     const locPart = locLabels.length > 0 ? ` à ${locLabels.join(", ")}` : " en France";
