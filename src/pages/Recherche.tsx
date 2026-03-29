@@ -272,9 +272,9 @@ export default function Recherche() {
               </p>
 
               {/* Top section: 2-col cards + map */}
-              {!isMobile && showMap && firstFour.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr] gap-6 mb-8">
-                  <div className="lg:col-span-2 grid grid-cols-2 gap-6">
+              {!isMobile && showMap && (
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr] gap-6 mb-8">
+                  <div className="md:col-span-2 grid grid-cols-2 gap-6">
                     {firstFour.map((p) => (
                       <div
                         key={p.id}
@@ -285,7 +285,7 @@ export default function Recherche() {
                       </div>
                     ))}
                   </div>
-                  <div className="hidden lg:block sticky top-[200px] h-[calc(100vh-220px)]">
+                  <div className="hidden md:block sticky top-[200px] h-[calc(100vh-220px)]">
                     <SearchMap providers={filteredProviders} hoveredId={hoveredProvider} onHover={setHoveredProvider} />
                   </div>
                 </div>
