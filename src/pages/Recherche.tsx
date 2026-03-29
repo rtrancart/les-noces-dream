@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Star, SlidersHorizontal, MapPin, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LocationPicker from "@/components/LocationPicker";
-import CategoryPicker, { type CategoryOption } from "@/components/CategoryPicker";
+import CategoryPicker, { type CategoryOption, getCondensedCategoryNames } from "@/components/CategoryPicker";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import SearchMap from "@/components/search/SearchMap";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -175,14 +175,8 @@ export default function Recherche() {
 
   // Dynamic title from filters
   const dynamicTitle = useMemo(() => {
-    // Resolve category names from slugs
-    const catNames: string[] = [];
-    for (const cat of categoryTree) {
-      if (categorySlugs.includes(cat.slug)) catNames.push(cat.nom);
-      cat.children?.forEach((c) => {
-        if (categorySlugs.includes(c.slug)) catNames.push(c.nom);
-      });
-    }
+    // Use condensed names (parent only when all children selected)
+    const catNames = getCondensedCategoryNames(categoryTree, categorySlugs);
 
     // Resolve location labels
     const locLabels: string[] = locationZones.map((z) => getZoneLabel(z)).filter(Boolean);

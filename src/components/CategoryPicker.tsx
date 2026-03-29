@@ -14,6 +14,45 @@ export interface CategoryOption {
   children?: CategoryOption[];
 }
 
+/**
+ * Returns condensed display names: if all children of a parent are selected,
+ * show only the parent name instead of listing every child.
+ */
+export function getCondensedCategoryNames(
+  categories: CategoryOption[],
+  selectedSlugs: string[]
+): string[] {
+  const names: string[] = [];
+  const accounted = new Set<string>();
+
+  for (const parent of categories) {
+    const childSlugs = parent.children?.map((c) => c.slug) ?? [];
+    const allChildrenSelected = childSlugs.length > 0 && childSlugs.every((s) => selectedSlugs.includes(s));
+
+    if (allChildrenSelected) {
+      names.push(parent.nom);
+      accounted.add(parent.slug);
+      childSlugs.forEach((s) => accounted.add(s));
+    }
+  }
+
+  // Add individually selected items not already accounted for
+  for (const parent of categories) {
+    if (!accounted.has(parent.slug) && selectedSlugs.includes(parent.slug)) {
+      names.push(parent.nom);
+      accounted.add(parent.slug);
+    }
+    parent.children?.forEach((child) => {
+      if (!accounted.has(child.slug) && selectedSlugs.includes(child.slug)) {
+        names.push(child.nom);
+        accounted.add(child.slug);
+      }
+    });
+  }
+
+  return names;
+}
+
 interface CategoryPickerProps {
   categories: CategoryOption[];
   value: string[];
@@ -82,18 +121,12 @@ export default function CategoryPicker({
     return childSlugs.filter((s) => value.includes(s)).length;
   };
 
-  // Display label
+  // Display label — collapse to parent name when all children selected
   const displayLabel = useMemo(() => {
     if (value.length === 0) return "";
-    // Find names for selected slugs
-    const nameMap = new Map<string, string>();
-    for (const cat of categories) {
-      nameMap.set(cat.slug, cat.nom);
-      cat.children?.forEach((c) => nameMap.set(c.slug, c.nom));
-    }
-    const names = value.slice(0, 2).map((s) => nameMap.get(s) ?? s);
-    if (value.length > 2) return `${names.join(", ")} +${value.length - 2}`;
-    return names.join(", ");
+    const condensed = getCondensedCategoryNames(categories, value);
+    if (condensed.length > 2) return `${condensed.slice(0, 2).join(", ")} +${condensed.length - 2}`;
+    return condensed.join(", ");
   }, [value, categories]);
 
   const listContent = (
