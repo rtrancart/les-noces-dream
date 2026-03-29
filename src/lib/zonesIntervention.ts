@@ -205,6 +205,36 @@ export function getZoneLabel(value: string): string {
   return ZONE_LABELS[value] ?? value;
 }
 
+/**
+ * Returns condensed display names for zones:
+ * if all départements of a region are selected, show only the region name.
+ */
+export function getCondensedZoneNames(selectedZones: string[]): string[] {
+  if (selectedZones.includes("france_entiere")) return ["France entière"];
+
+  const names: string[] = [];
+  const accounted = new Set<string>();
+
+  for (const region of REGIONS) {
+    const deptValues = region.departements.map((d) => d.value);
+    const allSelected = deptValues.length > 0 && deptValues.every((d) => selectedZones.includes(d));
+    if (allSelected) {
+      names.push(region.label);
+      deptValues.forEach((d) => accounted.add(d));
+    }
+  }
+
+  // Add individually selected départements not already accounted for
+  for (const zone of selectedZones) {
+    if (zone === "france_entiere") continue;
+    if (!accounted.has(zone)) {
+      names.push(getZoneLabel(zone));
+    }
+  }
+
+  return names;
+}
+
 /** Get all département values for a region */
 export function getDepartementsByRegion(regionValue: string): string[] {
   const region = REGIONS.find((r) => r.value === regionValue);

@@ -8,7 +8,7 @@ import CategoryPicker, { type CategoryOption, getCondensedCategoryNames } from "
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import SearchMap from "@/components/search/SearchMap";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { REGIONS, DOM, getZoneLabel } from "@/lib/zonesIntervention";
+import { REGIONS, DOM, getZoneLabel, getCondensedZoneNames } from "@/lib/zonesIntervention";
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
 

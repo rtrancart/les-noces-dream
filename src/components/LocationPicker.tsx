@@ -83,13 +83,12 @@ export default function LocationPicker({ value, onChange, placeholder = "Où ?",
     return region ? region.departements.filter((d) => value.includes(d.value)).length : 0;
   };
 
-  // Display label
+  // Display label — collapse to region name when all départements selected
   const displayLabel = useMemo(() => {
     if (value.length === 0) return "";
-    if (value.includes("france_entiere")) return "France entière";
-    const labels = value.slice(0, 2).map((v) => getZoneLabel(v));
-    if (value.length > 2) return `${labels.join(", ")} +${value.length - 2}`;
-    return labels.join(", ");
+    const condensed = getCondensedZoneNames(value);
+    if (condensed.length > 2) return `${condensed.slice(0, 2).join(", ")} +${condensed.length - 2}`;
+    return condensed.join(", ");
   }, [value]);
 
   const listContent = (
