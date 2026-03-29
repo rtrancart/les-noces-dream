@@ -82,18 +82,12 @@ export default function CategoryPicker({
     return childSlugs.filter((s) => value.includes(s)).length;
   };
 
-  // Display label
+  // Display label — collapse to parent name when all children selected
   const displayLabel = useMemo(() => {
     if (value.length === 0) return "";
-    // Find names for selected slugs
-    const nameMap = new Map<string, string>();
-    for (const cat of categories) {
-      nameMap.set(cat.slug, cat.nom);
-      cat.children?.forEach((c) => nameMap.set(c.slug, c.nom));
-    }
-    const names = value.slice(0, 2).map((s) => nameMap.get(s) ?? s);
-    if (value.length > 2) return `${names.join(", ")} +${value.length - 2}`;
-    return names.join(", ");
+    const condensed = getCondensedCategoryNames(categories, value);
+    if (condensed.length > 2) return `${condensed.slice(0, 2).join(", ")} +${condensed.length - 2}`;
+    return condensed.join(", ");
   }, [value, categories]);
 
   const listContent = (
