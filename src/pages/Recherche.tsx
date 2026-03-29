@@ -287,6 +287,9 @@ export default function Recherche() {
         <div className="max-w-[2000px] mx-auto">
           {filteredProviders.length > 0 ? (
             <>
+              <h1 className="font-serif text-2xl md:text-3xl text-foreground mb-2">
+                {dynamicTitle}
+              </h1>
               <p className="font-sans text-sm text-muted-foreground mb-6">
                 Plus de {filteredProviders.length} prestataire{filteredProviders.length > 1 ? "s" : ""}
               </p>
