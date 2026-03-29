@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Star, SlidersHorizontal, MapPin, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LocationPicker from "@/components/LocationPicker";
-import CategoryPicker, { type CategoryOption } from "@/components/CategoryPicker";
+import CategoryPicker, { type CategoryOption, getCondensedCategoryNames } from "@/components/CategoryPicker";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import SearchMap from "@/components/search/SearchMap";
 import { useIsMobile } from "@/hooks/use-mobile";
