@@ -58,6 +58,24 @@ const App = () => (
             <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
+            {/* Espace prestataire */}
+            <Route
+              path="/espace-pro"
+              element={
+                <ProtectedRoute requiredRole="prestataire">
+                  <PrestataireLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<PrestataireDashboard />} />
+              <Route path="profil" element={<PrestataireProfil />} />
+              <Route path="galerie" element={<PrestataireGalerie />} />
+              <Route path="demandes" element={<PrestataireDemandes />} />
+              <Route path="avis" element={<PrestataireAvis />} />
+              <Route path="statistiques" element={<PrestataireStatistiques />} />
+              <Route path="parametres" element={<PrestataireParametres />} />
+            </Route>
+
             {/* Admin back-office */}
             <Route
               path="/admin"
