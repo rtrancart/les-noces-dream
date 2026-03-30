@@ -165,8 +165,13 @@ export default function Recherche() {
       });
     }
 
+    // Rating filter
+    if (ratingFilter) {
+      result = result.filter((p) => (p.note_moyenne ?? 0) >= 4.5);
+    }
+
     return result;
-  }, [allProviders, categoryIds, locationZones, priceFilters]);
+  }, [allProviders, categoryIds, locationZones, priceFilters, ratingFilter]);
 
   // Update URL params
   useEffect(() => {
