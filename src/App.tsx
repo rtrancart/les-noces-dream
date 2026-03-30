@@ -14,6 +14,16 @@ import MotDePasseOublie from "./pages/MotDePasseOublie";
 import ResetPassword from "./pages/ResetPassword";
 import Recherche from "./pages/Recherche";
 
+// Prestataire
+import PrestataireLayout from "./components/prestataire/PrestataireLayout";
+import PrestataireDashboard from "./pages/prestataire/Dashboard";
+import PrestataireProfil from "./pages/prestataire/Profil";
+import PrestataireGalerie from "./pages/prestataire/Galerie";
+import PrestataireDemandes from "./pages/prestataire/Demandes";
+import PrestataireAvis from "./pages/prestataire/Avis";
+import PrestataireStatistiques from "./pages/prestataire/Statistiques";
+import PrestataireParametres from "./pages/prestataire/Parametres";
+
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
@@ -47,6 +57,24 @@ const App = () => (
             <Route path="/inscription" element={<Inscription />} />
             <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* Espace prestataire */}
+            <Route
+              path="/espace-pro"
+              element={
+                <ProtectedRoute requiredRole="prestataire">
+                  <PrestataireLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<PrestataireDashboard />} />
+              <Route path="profil" element={<PrestataireProfil />} />
+              <Route path="galerie" element={<PrestataireGalerie />} />
+              <Route path="demandes" element={<PrestataireDemandes />} />
+              <Route path="avis" element={<PrestataireAvis />} />
+              <Route path="statistiques" element={<PrestataireStatistiques />} />
+              <Route path="parametres" element={<PrestataireParametres />} />
+            </Route>
 
             {/* Admin back-office */}
             <Route
