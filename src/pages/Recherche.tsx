@@ -414,6 +414,7 @@ export default function Recherche() {
                   setCategorySlugs([]);
                   setLocationZones([]);
                   setPriceFilters([]);
+                  setRatingFilter(false);
                 }}
               >
                 Réinitialiser les filtres
