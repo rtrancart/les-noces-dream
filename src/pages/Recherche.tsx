@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Star, SlidersHorizontal, MapPin, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import LocationPicker from "@/components/LocationPicker";
 import CategoryPicker, { type CategoryOption, getCondensedCategoryNames } from "@/components/CategoryPicker";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
