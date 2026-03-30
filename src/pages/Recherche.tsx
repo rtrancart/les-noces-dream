@@ -256,10 +256,74 @@ export default function Recherche() {
 
             {/* Filter pills */}
             <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
-              <button className="flex-shrink-0 px-4 md:px-5 py-2.5 border border-border rounded-full hover:border-muted-foreground transition-all font-sans text-sm flex items-center gap-2">
-                <SlidersHorizontal size={16} />
-                <span>Filtres</span>
-              </button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className={`flex-shrink-0 px-4 md:px-5 py-2.5 border rounded-full transition-all font-sans text-sm flex items-center gap-2 ${
+                      priceFilters.length > 0 || ratingFilter
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border hover:border-muted-foreground"
+                    }`}
+                  >
+                    <SlidersHorizontal size={16} />
+                    <span>Filtres</span>
+                    {(priceFilters.length > 0 || ratingFilter) && (
+                      <span className="ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground rounded-full text-xs font-semibold">
+                        {priceFilters.length + (ratingFilter ? 1 : 0)}
+                      </span>
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-4" align="start" sideOffset={8}>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-sans text-sm font-semibold text-foreground mb-3">Budget</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: "€", label: "€ — Moins de 1 000 €" },
+                          { value: "€€", label: "€€ — 1 000 à 3 000 €" },
+                          { value: "€€€", label: "€€€ — 3 000 à 6 000 €" },
+                          { value: "€€€€", label: "€€€€ — Plus de 6 000 €" },
+                        ].map((p) => (
+                          <label
+                            key={p.value}
+                            className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-secondary/50 cursor-pointer transition-colors"
+                          >
+                            <Checkbox
+                              checked={priceFilters.includes(p.value)}
+                              onCheckedChange={() => togglePrice(p.value)}
+                            />
+                            <span className="font-sans text-sm">{p.value}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="border-t border-border pt-3">
+                      <label className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-secondary/50 cursor-pointer transition-colors">
+                        <Checkbox
+                          checked={ratingFilter}
+                          onCheckedChange={() => setRatingFilter(!ratingFilter)}
+                        />
+                        <div className="flex items-center gap-1.5">
+                          <Star size={14} className="text-amber-500 fill-amber-500" />
+                          <span className="font-sans text-sm">Excellente note (4.5+)</span>
+                        </div>
+                      </label>
+                    </div>
+                    {(priceFilters.length > 0 || ratingFilter) && (
+                      <button
+                        onClick={() => {
+                          setPriceFilters([]);
+                          setRatingFilter(false);
+                        }}
+                        className="w-full text-center text-sm text-primary font-sans hover:underline pt-1"
+                      >
+                        Réinitialiser les filtres
+                      </button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
 
               {["€", "€€", "€€€", "€€€€"].map((price) => (
                 <button
@@ -275,8 +339,15 @@ export default function Recherche() {
                 </button>
               ))}
 
-              <button className="flex-shrink-0 px-5 py-2.5 border border-border rounded-full hover:border-muted-foreground transition-all font-sans text-sm flex items-center gap-1.5">
-                <Star size={14} />
+              <button
+                onClick={() => setRatingFilter(!ratingFilter)}
+                className={`flex-shrink-0 px-5 py-2.5 border rounded-full transition-all font-sans text-sm flex items-center gap-1.5 ${
+                  ratingFilter
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-muted-foreground"
+                }`}
+              >
+                <Star size={14} className={ratingFilter ? "fill-primary" : ""} />
                 <span>Excellente note</span>
               </button>
             </div>
