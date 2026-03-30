@@ -14,6 +14,16 @@ import MotDePasseOublie from "./pages/MotDePasseOublie";
 import ResetPassword from "./pages/ResetPassword";
 import Recherche from "./pages/Recherche";
 
+// Prestataire
+import PrestataireLayout from "./components/prestataire/PrestataireLayout";
+import PrestataireDashboard from "./pages/prestataire/Dashboard";
+import PrestataireProfil from "./pages/prestataire/Profil";
+import PrestataireGalerie from "./pages/prestataire/Galerie";
+import PrestataireDemandes from "./pages/prestataire/Demandes";
+import PrestataireAvis from "./pages/prestataire/Avis";
+import PrestataireStatistiques from "./pages/prestataire/Statistiques";
+import PrestataireParametres from "./pages/prestataire/Parametres";
+
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
