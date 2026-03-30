@@ -116,6 +116,7 @@ export default function Recherche() {
     return cat ? cat.split(",") : [];
   });
   const [priceFilters, setPriceFilters] = useState<string[]>([]);
+  const [ratingFilter, setRatingFilter] = useState(false);
   const [showMap, setShowMap] = useState(true);
   const [showMobileMap, setShowMobileMap] = useState(false);
   const [hoveredProvider, setHoveredProvider] = useState<string | null>(null);
