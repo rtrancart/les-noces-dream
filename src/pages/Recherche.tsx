@@ -305,7 +305,7 @@ export default function Recherche() {
                           onCheckedChange={() => setRatingFilter(!ratingFilter)}
                         />
                         <div className="flex items-center gap-1.5">
-                          <Star size={14} className="text-amber-500 fill-amber-500" />
+                          <Star size={14} className="text-primary fill-primary" />
                           <span className="font-sans text-sm">Excellente note (4.5+)</span>
                         </div>
                       </label>
