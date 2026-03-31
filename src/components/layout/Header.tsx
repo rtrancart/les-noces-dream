@@ -82,7 +82,7 @@ export default function Header() {
           ))}
           <div className="pt-3 border-t border-white/10 space-y-2">
             <Link
-              to={user ? "/mon-compte" : "/connexion"}
+              to={accountLink}
               className="flex items-center gap-2 text-sm text-white font-medium"
               onClick={() => setMobileOpen(false)}
             >
