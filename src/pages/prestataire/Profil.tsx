@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Save, Loader2 } from "lucide-react";
 import AddressAutocomplete from "@/components/prestataire/AddressAutocomplete";
+import ZonesInterventionPicker from "@/components/prestataire/ZonesInterventionPicker";
 
 const MAX_DESC_COURTE = 160;
 
@@ -30,6 +31,7 @@ export default function PrestataireProfil() {
     prix_max: "",
     latitude: null as number | null,
     longitude: null as number | null,
+    zones_intervention: [] as string[],
   });
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export default function PrestataireProfil() {
         prix_max: prestataire.prix_max?.toString() ?? "",
         latitude: prestataire.latitude,
         longitude: prestataire.longitude,
+        zones_intervention: prestataire.zones_intervention ?? [],
       });
     }
   }, [prestataire]);
@@ -74,6 +77,7 @@ export default function PrestataireProfil() {
         prix_max: form.prix_max ? parseInt(form.prix_max) : null,
         latitude: form.latitude,
         longitude: form.longitude,
+        zones_intervention: form.zones_intervention.length > 0 ? form.zones_intervention : null,
       })
       .eq("id", prestataire.id);
 
@@ -192,6 +196,19 @@ export default function PrestataireProfil() {
           <div className="md:col-span-2">
             {field("Site web", "site_web", { placeholder: "https://…" })}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Zones d'intervention */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-sans text-lg">Zones d'intervention</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ZonesInterventionPicker
+            value={form.zones_intervention}
+            onChange={(zones) => setForm((f) => ({ ...f, zones_intervention: zones }))}
+          />
         </CardContent>
       </Card>
 
