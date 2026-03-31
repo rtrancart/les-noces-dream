@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon, X, ChevronDown, ChevronRight, EyeOff } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -275,6 +275,38 @@ export default function Prestataires() {
   const [saving, setSaving] = useState(false);
   const [slugError, setSlugError] = useState<string | null>(null);
   const [checkingSlug, setCheckingSlug] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (!editItem?.user_id) return;
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Les mots de passe ne correspondent pas");
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const res = await supabase.functions.invoke("admin-update-password", {
+        body: { target_user_id: editItem.user_id, new_password: newPassword },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success("Mot de passe mis à jour");
+      await logAdmin("update_password", "prestataires", editItem.id, { nom: editItem.nom_commercial });
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors du changement de mot de passe");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
 
   const generateSlug = (text: string): string => {
     return text
@@ -344,6 +376,9 @@ export default function Prestataires() {
 
   const openEdit = (p: Prestataire) => {
     setEditItem(p);
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
     setForm({
       nom_commercial: p.nom_commercial,
       slug: p.slug,
@@ -559,10 +594,13 @@ export default function Prestataires() {
             <DialogTitle className="font-serif text-lg">{editItem ? "Modifier le prestataire" : "Nouveau prestataire"}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="general" className="mt-2">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${editItem?.user_id ? "grid-cols-4" : "grid-cols-3"}`}>
               <TabsTrigger value="general" className="font-sans text-xs">Général</TabsTrigger>
               <TabsTrigger value="coordonnees" className="font-sans text-xs">Coordonnées</TabsTrigger>
               <TabsTrigger value="admin" className="font-sans text-xs">Admin</TabsTrigger>
+              {editItem?.user_id && (
+                <TabsTrigger value="password" className="font-sans text-xs">Mot de passe</TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="general" className="space-y-4 pt-4">
@@ -688,6 +726,51 @@ export default function Prestataires() {
                 <Textarea value={form.notes_admin} onChange={(e) => setForm({ ...form, notes_admin: e.target.value })} rows={3} />
               </Field>
             </TabsContent>
+
+            {editItem?.user_id && (
+              <TabsContent value="password" className="space-y-4 pt-4">
+                <p className="font-sans text-sm text-muted-foreground">
+                  Définir un nouveau mot de passe pour <span className="font-medium text-foreground">{editItem.nom_commercial}</span>
+                </p>
+                <Field label="Nouveau mot de passe">
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Min. 6 caractères"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+                    </Button>
+                  </div>
+                </Field>
+                <Field label="Confirmer le mot de passe">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Retapez le mot de passe"
+                  />
+                  {confirmPassword && newPassword !== confirmPassword && (
+                    <p className="text-xs text-destructive">Les mots de passe ne correspondent pas</p>
+                  )}
+                </Field>
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={savingPassword || !newPassword || newPassword.length < 6 || newPassword !== confirmPassword}
+                  className="font-sans text-sm w-full"
+                >
+                  {savingPassword ? "Modification…" : "Changer le mot de passe"}
+                </Button>
+              </TabsContent>
+            )}
           </Tabs>
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setDialogOpen(false)} className="font-sans text-sm">Annuler</Button>
