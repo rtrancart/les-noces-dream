@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X, Search, User } from "lucide-react";
 import logoSrc from "@/assets/logo-lesnoces.png";
 
+// Helper to determine account link based on role
+
 const NAV_LINKS = [
   { label: "Lieux de réception", href: "/categories/lieux-de-reception" },
   { label: "Devenir prestataires", href: "/inscription" },
@@ -12,8 +14,9 @@ const NAV_LINKS = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isPrestataire, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const accountLink = user ? (isPrestataire ? "/espace-pro" : isAdmin ? "/admin" : "/mon-compte") : "/connexion";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-champagne shadow-sm">
@@ -45,13 +48,13 @@ export default function Header() {
           >
             <Search className="w-5 h-5" />
           </button>
-          <Link
-            to={user ? "/mon-compte" : "/connexion"}
-            className="flex items-center gap-2 text-sm font-sans text-white/90 hover:text-white transition-colors"
-          >
-            <User className="w-5 h-5" />
-            <span>Mon compte</span>
-          </Link>
+            <Link
+              to={user ? (isPrestataire ? "/espace-pro" : isAdmin ? "/admin" : "/mon-compte") : "/connexion"}
+              className="flex items-center gap-2 text-sm font-sans text-white/90 hover:text-white transition-colors"
+            >
+              <User className="w-5 h-5" />
+              <span>Mon compte</span>
+            </Link>
         </div>
 
         {/* Mobile Burger */}
@@ -79,7 +82,7 @@ export default function Header() {
           ))}
           <div className="pt-3 border-t border-white/10 space-y-2">
             <Link
-              to={user ? "/mon-compte" : "/connexion"}
+              to={accountLink}
               className="flex items-center gap-2 text-sm text-white font-medium"
               onClick={() => setMobileOpen(false)}
             >

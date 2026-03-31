@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePrestataire } from "@/hooks/usePrestataire";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,12 +6,42 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, Star, MessageSquare, TrendingUp, Eye, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 interface DashboardStats {
   totalDemandes: number;
   demandesNouvelles: number;
   totalAvis: number;
-  messagesNonLus: number;
+}
+
+interface WeeklyData {
+  semaine: string;
+  vues: number;
+  premiers_contacts: number;
+  affichages_tel: number;
+}
+
+function getWeekLabel(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDate();
+  const month = d.toLocaleDateString("fr-FR", { month: "short" });
+  return `${day} ${month}`;
+}
+
+function getLast8Weeks(): { start: Date; label: string }[] {
+  const weeks: { start: Date; label: string }[] = [];
+  const now = new Date();
+  for (let i = 7; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i * 7);
+    d.setHours(0, 0, 0, 0);
+    // Set to Monday
+    const dayOfWeek = d.getDay();
+    const diff = d.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    d.setDate(diff);
+    weeks.push({ start: new Date(d), label: getWeekLabel(d) });
+  }
+  return weeks;
 }
 
 export default function PrestataireDashboard() {
@@ -20,8 +50,8 @@ export default function PrestataireDashboard() {
     totalDemandes: 0,
     demandesNouvelles: 0,
     totalAvis: 0,
-    messagesNonLus: 0,
   });
+  const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
 
   useEffect(() => {
     if (!prestataire?.id) return;
@@ -48,11 +78,40 @@ export default function PrestataireDashboard() {
         totalDemandes: demandesRes.count ?? 0,
         demandesNouvelles: demandesNewRes.count ?? 0,
         totalAvis: avisRes.count ?? 0,
-        messagesNonLus: 0,
       });
     }
 
+    async function fetchWeekly() {
+      const weeks = getLast8Weeks();
+      const eightWeeksAgo = weeks[0].start.toISOString();
+
+      const { data: events } = await supabase
+        .from("evenements_prestataire")
+        .select("type, created_at")
+        .eq("prestataire_id", prestataire!.id)
+        .gte("created_at", eightWeeksAgo)
+        .order("created_at", { ascending: true });
+
+      const result: WeeklyData[] = weeks.map((w, i) => {
+        const nextStart = i < weeks.length - 1 ? weeks[i + 1].start : new Date();
+        const weekEvents = (events ?? []).filter((e) => {
+          const d = new Date(e.created_at);
+          return d >= w.start && d < nextStart;
+        });
+
+        return {
+          semaine: w.label,
+          vues: weekEvents.filter((e) => e.type === "vue_profil").length,
+          premiers_contacts: weekEvents.filter((e) => e.type === "premier_contact").length,
+          affichages_tel: weekEvents.filter((e) => e.type === "affichage_telephone").length,
+        };
+      });
+
+      setWeeklyData(result);
+    }
+
     fetchStats();
+    fetchWeekly();
   }, [prestataire?.id]);
 
   if (loading) {
@@ -114,7 +173,7 @@ export default function PrestataireDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="font-sans text-sm text-muted-foreground">Demandes reçues</CardTitle>
@@ -145,17 +204,6 @@ export default function PrestataireDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="font-sans text-sm text-muted-foreground">Nombre de vues</CardTitle>
-            <Eye className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-serif text-2xl text-foreground">—</div>
-            <p className="font-sans text-xs text-muted-foreground mt-1">Bientôt disponible</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="font-sans text-sm text-muted-foreground">Taux de réponse</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -165,6 +213,57 @@ export default function PrestataireDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Weekly Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-sans text-lg">Activité des 8 dernières semaines</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={weeklyData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="semaine" className="font-sans text-xs" tick={{ fontSize: 11 }} />
+                <YAxis allowDecimals={false} className="font-sans text-xs" tick={{ fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: "12px" }} />
+                <Line
+                  type="monotone"
+                  dataKey="vues"
+                  name="Vues du profil"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="premiers_contacts"
+                  name="Premiers contacts"
+                  stroke="hsl(var(--chart-2))"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="affichages_tel"
+                  name="Affichages téléphone"
+                  stroke="hsl(var(--chart-3))"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

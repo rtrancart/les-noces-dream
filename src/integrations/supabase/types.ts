@@ -515,6 +515,35 @@ export type Database = {
           },
         ]
       }
+      evenements_prestataire: {
+        Row: {
+          created_at: string
+          id: string
+          prestataire_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prestataire_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prestataire_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evenements_prestataire_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favoris: {
         Row: {
           created_at: string
