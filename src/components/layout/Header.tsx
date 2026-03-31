@@ -45,13 +45,13 @@ export default function Header() {
           >
             <Search className="w-5 h-5" />
           </button>
-          <Link
-            to={user ? "/mon-compte" : "/connexion"}
-            className="flex items-center gap-2 text-sm font-sans text-white/90 hover:text-white transition-colors"
-          >
-            <User className="w-5 h-5" />
-            <span>Mon compte</span>
-          </Link>
+            <Link
+              to={user ? (isPrestataire ? "/espace-pro" : isAdmin ? "/admin" : "/mon-compte") : "/connexion"}
+              className="flex items-center gap-2 text-sm font-sans text-white/90 hover:text-white transition-colors"
+            >
+              <User className="w-5 h-5" />
+              <span>Mon compte</span>
+            </Link>
         </div>
 
         {/* Mobile Burger */}
