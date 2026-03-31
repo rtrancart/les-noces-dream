@@ -8,6 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Save, Loader2 } from "lucide-react";
+import AddressAutocomplete from "@/components/prestataire/AddressAutocomplete";
+
+const MAX_DESC_COURTE = 160;
 
 export default function PrestataireProfil() {
   const { prestataire, loading, refetch } = usePrestataire();
@@ -25,6 +28,8 @@ export default function PrestataireProfil() {
     site_web: "",
     prix_depart: "",
     prix_max: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
 
   useEffect(() => {
@@ -42,6 +47,8 @@ export default function PrestataireProfil() {
         site_web: prestataire.site_web ?? "",
         prix_depart: prestataire.prix_depart?.toString() ?? "",
         prix_max: prestataire.prix_max?.toString() ?? "",
+        latitude: prestataire.latitude,
+        longitude: prestataire.longitude,
       });
     }
   }, [prestataire]);
@@ -65,6 +72,8 @@ export default function PrestataireProfil() {
         site_web: form.site_web,
         prix_depart: form.prix_depart ? parseInt(form.prix_depart) : null,
         prix_max: form.prix_max ? parseInt(form.prix_max) : null,
+        latitude: form.latitude,
+        longitude: form.longitude,
       })
       .eq("id", prestataire.id);
 
@@ -97,11 +106,13 @@ export default function PrestataireProfil() {
       <Input
         type={opts?.type ?? "text"}
         placeholder={opts?.placeholder}
-        value={form[key]}
+        value={form[key]?.toString() ?? ""}
         onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
       />
     </div>
   );
+
+  const descLen = form.description_courte.length;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -121,13 +132,22 @@ export default function PrestataireProfil() {
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {field("Nom commercial", "nom_commercial")}
           <div className="md:col-span-2 space-y-2">
-            <Label className="font-sans text-sm">Description courte</Label>
+            <div className="flex items-center justify-between">
+              <Label className="font-sans text-sm">Description courte</Label>
+              <span className={`font-sans text-xs ${descLen > MAX_DESC_COURTE ? "text-destructive" : "text-muted-foreground"}`}>
+                {descLen}/{MAX_DESC_COURTE}
+              </span>
+            </div>
             <Textarea
               placeholder="Décrivez votre activité en une phrase…"
               value={form.description_courte}
               onChange={(e) => setForm((f) => ({ ...f, description_courte: e.target.value }))}
               rows={2}
+              maxLength={MAX_DESC_COURTE}
             />
+            <p className="font-sans text-xs text-muted-foreground">
+              Maximum {MAX_DESC_COURTE} caractères pour un affichage optimal sur 3 lignes.
+            </p>
           </div>
           <div className="md:col-span-2 space-y-2">
             <Label className="font-sans text-sm">Description détaillée</Label>
@@ -147,7 +167,23 @@ export default function PrestataireProfil() {
           <CardTitle className="font-sans text-lg">Coordonnées</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {field("Adresse", "adresse")}
+          <div className="md:col-span-2 space-y-2">
+            <Label className="font-sans text-sm">Adresse</Label>
+            <AddressAutocomplete
+              value={form.adresse}
+              onChange={(address, details) => {
+                setForm((f) => ({
+                  ...f,
+                  adresse: address,
+                  ...(details?.ville && { ville: details.ville }),
+                  ...(details?.code_postal && { code_postal: details.code_postal }),
+                  ...(details?.region && { region: details.region }),
+                  ...(details?.latitude != null && { latitude: details.latitude }),
+                  ...(details?.longitude != null && { longitude: details.longitude }),
+                }));
+              }}
+            />
+          </div>
           {field("Ville", "ville")}
           {field("Code postal", "code_postal")}
           {field("Région", "region")}
