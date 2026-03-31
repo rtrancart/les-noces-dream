@@ -12,8 +12,17 @@ export default function PrestataireGalerie() {
   const { prestataire, loading, refetch } = usePrestataire();
   const [uploading, setUploading] = useState(false);
 
-  const photos = prestataire?.urls_galerie ?? [];
+  const galerieUrls = prestataire?.urls_galerie ?? [];
   const photoMain = prestataire?.photo_principale_url;
+
+  // Combine gallery + main photo (if main isn't already in gallery)
+  const photos = React.useMemo(() => {
+    const all = [...galerieUrls];
+    if (photoMain && !all.includes(photoMain)) {
+      all.unshift(photoMain);
+    }
+    return all;
+  }, [galerieUrls, photoMain]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!prestataire || !e.target.files?.length) return;
