@@ -594,10 +594,13 @@ export default function Prestataires() {
             <DialogTitle className="font-serif text-lg">{editItem ? "Modifier le prestataire" : "Nouveau prestataire"}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="general" className="mt-2">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${editItem?.user_id ? "grid-cols-4" : "grid-cols-3"}`}>
               <TabsTrigger value="general" className="font-sans text-xs">Général</TabsTrigger>
               <TabsTrigger value="coordonnees" className="font-sans text-xs">Coordonnées</TabsTrigger>
               <TabsTrigger value="admin" className="font-sans text-xs">Admin</TabsTrigger>
+              {editItem?.user_id && (
+                <TabsTrigger value="password" className="font-sans text-xs">Mot de passe</TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="general" className="space-y-4 pt-4">
