@@ -34,8 +34,8 @@ export default function CreateUserDialog({ open, onOpenChange, onCreated }: Prop
   const [saving, setSaving] = useState(false);
 
   const availableRoles: AppRole[] = isSuperAdmin
-    ? ["client", "admin", "super_admin"]
-    : ["client"];
+    ? ["client", "prestataire", "admin", "super_admin"]
+    : ["client", "prestataire"];
 
   const handleCreate = async () => {
     if (!form.email || !form.password || !form.role) {

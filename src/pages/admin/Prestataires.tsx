@@ -66,6 +66,7 @@ const emptyForm = {
   notes_admin: "",
   cree_par_admin: true,
   zones_intervention: [] as string[],
+  create_password: "",
 };
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -400,6 +401,7 @@ export default function Prestataires() {
       notes_admin: p.notes_admin ?? "",
       cree_par_admin: p.cree_par_admin ?? false,
       zones_intervention: (p as any).zones_intervention ?? [],
+      create_password: "",
     });
     setDialogOpen(true);
   };
@@ -419,6 +421,14 @@ export default function Prestataires() {
   const handleSave = async () => {
     if (!form.nom_commercial || !form.slug || !form.ville || !form.region || !form.categorie_mere_id) {
       toast.error("Remplissez les champs obligatoires (nom, slug, ville, région, catégorie)");
+      return;
+    }
+    if (!editItem && form.email_contact && form.create_password && form.create_password.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+    if (!editItem && !form.email_contact) {
+      toast.error("L'email de contact est requis pour créer le compte utilisateur");
       return;
     }
     setSaving(true);
@@ -459,11 +469,36 @@ export default function Prestataires() {
         setDialogOpen(false); fetchData();
       }
     } else {
-      const { data: created, error } = await supabase.from("prestataires").insert(payload).select();
+      // For new prestataire: create user account first if email provided
+      let linkedUserId: string | null = null;
+      if (form.email_contact) {
+        const password = form.create_password || Math.random().toString(36).slice(-10) + "A1!";
+        try {
+          const res = await supabase.functions.invoke("admin-create-user", {
+            body: {
+              email: form.email_contact.trim(),
+              password,
+              role: "prestataire",
+            },
+          });
+          if (res.error) throw new Error(res.error.message);
+          if (res.data?.error) throw new Error(res.data.error);
+          linkedUserId = res.data.user_id;
+        } catch (e: any) {
+          toast.error("Erreur création compte : " + e.message);
+          setSaving(false);
+          return;
+        }
+      }
+
+      const { data: created, error } = await supabase.from("prestataires").insert({
+        ...payload,
+        user_id: linkedUserId,
+      }).select();
       if (error) toast.error(error.message);
       else if (!created || created.length === 0) toast.error("Création refusée (permissions insuffisantes)");
       else {
-        toast.success("Prestataire créé");
+        toast.success("Prestataire créé" + (linkedUserId ? " avec compte utilisateur" : ""));
         logAdmin("create_prestataire", "prestataires", created[0].id, { nom: form.nom_commercial });
         triggerGeocode(created[0].id);
         setDialogOpen(false); fetchData();
@@ -594,11 +629,11 @@ export default function Prestataires() {
             <DialogTitle className="font-serif text-lg">{editItem ? "Modifier le prestataire" : "Nouveau prestataire"}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="general" className="mt-2">
-            <TabsList className={`grid w-full ${editItem?.user_id ? "grid-cols-4" : "grid-cols-3"}`}>
+            <TabsList className={`grid w-full ${editItem ? "grid-cols-4" : "grid-cols-3"}`}>
               <TabsTrigger value="general" className="font-sans text-xs">Général</TabsTrigger>
               <TabsTrigger value="coordonnees" className="font-sans text-xs">Coordonnées</TabsTrigger>
               <TabsTrigger value="admin" className="font-sans text-xs">Admin</TabsTrigger>
-              {editItem?.user_id && (
+              {editItem && (
                 <TabsTrigger value="password" className="font-sans text-xs">Mot de passe</TabsTrigger>
               )}
             </TabsList>
@@ -646,6 +681,17 @@ export default function Prestataires() {
                   <Input type="number" value={form.prix_max} onChange={(e) => setForm({ ...form, prix_max: e.target.value })} />
                 </Field>
               </div>
+              {!editItem && (
+                <Field label="Mot de passe du compte *">
+                  <Input
+                    type="password"
+                    value={form.create_password}
+                    onChange={(e) => setForm({ ...form, create_password: e.target.value })}
+                    placeholder="Min. 6 caractères — un compte sera créé avec l'email de contact"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Un compte utilisateur sera automatiquement créé avec l'email de contact</p>
+                </Field>
+              )}
             </TabsContent>
 
             <TabsContent value="coordonnees" className="space-y-4 pt-4">
@@ -727,48 +773,118 @@ export default function Prestataires() {
               </Field>
             </TabsContent>
 
-            {editItem?.user_id && (
+            {editItem && (
               <TabsContent value="password" className="space-y-4 pt-4">
-                <p className="font-sans text-sm text-muted-foreground">
-                  Définir un nouveau mot de passe pour <span className="font-medium text-foreground">{editItem.nom_commercial}</span>
-                </p>
-                <Field label="Nouveau mot de passe">
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Min. 6 caractères"
-                    />
+                {editItem.user_id ? (
+                  <>
+                    <p className="font-sans text-sm text-muted-foreground">
+                      Définir un nouveau mot de passe pour <span className="font-medium text-foreground">{editItem.nom_commercial}</span>
+                    </p>
+                    <Field label="Nouveau mot de passe">
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Min. 6 caractères"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+                        </Button>
+                      </div>
+                    </Field>
+                    <Field label="Confirmer le mot de passe">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Retapez le mot de passe"
+                      />
+                      {confirmPassword && newPassword !== confirmPassword && (
+                        <p className="text-xs text-destructive">Les mots de passe ne correspondent pas</p>
+                      )}
+                    </Field>
                     <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={handleChangePassword}
+                      disabled={savingPassword || !newPassword || newPassword.length < 6 || newPassword !== confirmPassword}
+                      className="font-sans text-sm w-full"
                     >
-                      {showPassword ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+                      {savingPassword ? "Modification…" : "Changer le mot de passe"}
                     </Button>
-                  </div>
-                </Field>
-                <Field label="Confirmer le mot de passe">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Retapez le mot de passe"
-                  />
-                  {confirmPassword && newPassword !== confirmPassword && (
-                    <p className="text-xs text-destructive">Les mots de passe ne correspondent pas</p>
-                  )}
-                </Field>
-                <Button
-                  onClick={handleChangePassword}
-                  disabled={savingPassword || !newPassword || newPassword.length < 6 || newPassword !== confirmPassword}
-                  className="font-sans text-sm w-full"
-                >
-                  {savingPassword ? "Modification…" : "Changer le mot de passe"}
-                </Button>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-sans text-sm text-muted-foreground">
+                      Ce prestataire n'a pas encore de compte utilisateur lié. Créez-en un pour lui permettre de se connecter.
+                    </p>
+                    <Field label="Mot de passe du nouveau compte">
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Min. 6 caractères"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+                        </Button>
+                      </div>
+                    </Field>
+                    <p className="text-xs text-muted-foreground">
+                      Le compte sera créé avec l'email : <span className="font-medium text-foreground">{editItem.email_contact || "aucun email"}</span>
+                    </p>
+                    <Button
+                      onClick={async () => {
+                        if (!editItem.email_contact) {
+                          toast.error("Veuillez d'abord renseigner un email de contact");
+                          return;
+                        }
+                        if (!newPassword || newPassword.length < 6) {
+                          toast.error("Le mot de passe doit contenir au moins 6 caractères");
+                          return;
+                        }
+                        setSavingPassword(true);
+                        try {
+                          const res = await supabase.functions.invoke("admin-create-user", {
+                            body: {
+                              email: editItem.email_contact.trim(),
+                              password: newPassword,
+                              role: "prestataire",
+                              prestataire_id: editItem.id,
+                            },
+                          });
+                          if (res.error) throw new Error(res.error.message);
+                          if (res.data?.error) throw new Error(res.data.error);
+                          toast.success("Compte utilisateur créé et rattaché");
+                          await logAdmin("create_user_for_prestataire", "prestataires", editItem.id, { email: editItem.email_contact });
+                          setNewPassword("");
+                          setDialogOpen(false);
+                          fetchData();
+                        } catch (e: any) {
+                          toast.error(e.message || "Erreur lors de la création du compte");
+                        } finally {
+                          setSavingPassword(false);
+                        }
+                      }}
+                      disabled={savingPassword || !newPassword || newPassword.length < 6 || !editItem.email_contact}
+                      className="font-sans text-sm w-full"
+                    >
+                      {savingPassword ? "Création…" : "Créer le compte utilisateur"}
+                    </Button>
+                  </>
+                )}
               </TabsContent>
             )}
           </Tabs>
