@@ -376,6 +376,9 @@ export default function Prestataires() {
 
   const openEdit = (p: Prestataire) => {
     setEditItem(p);
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
     setForm({
       nom_commercial: p.nom_commercial,
       slug: p.slug,
