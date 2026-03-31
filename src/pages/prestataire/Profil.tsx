@@ -77,6 +77,7 @@ export default function PrestataireProfil() {
         prix_max: form.prix_max ? parseInt(form.prix_max) : null,
         latitude: form.latitude,
         longitude: form.longitude,
+        zones_intervention: form.zones_intervention.length > 0 ? form.zones_intervention : null,
       })
       .eq("id", prestataire.id);
 
