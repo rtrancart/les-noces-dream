@@ -673,6 +673,17 @@ export default function Prestataires() {
                   <Input type="number" value={form.prix_max} onChange={(e) => setForm({ ...form, prix_max: e.target.value })} />
                 </Field>
               </div>
+              {!editItem && (
+                <Field label="Mot de passe du compte *">
+                  <Input
+                    type="password"
+                    value={form.create_password}
+                    onChange={(e) => setForm({ ...form, create_password: e.target.value })}
+                    placeholder="Min. 6 caractères — un compte sera créé avec l'email de contact"
+                  />
+                  <p className="text-[11px] text-muted-foreground">Un compte utilisateur sera automatiquement créé avec l'email de contact</p>
+                </Field>
+              )}
             </TabsContent>
 
             <TabsContent value="coordonnees" className="space-y-4 pt-4">
