@@ -6,41 +6,23 @@ import {
   ImageIcon,
   Settings,
   LogOut,
-  BarChart3,
+  CreditCard,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const mainItems = [
   { title: "Tableau de bord", url: "/espace-pro", icon: LayoutDashboard },
   { title: "Mon profil", url: "/espace-pro/profil", icon: User },
-  { title: "Photos & galerie", url: "/espace-pro/galerie", icon: ImageIcon },
-  { title: "Demandes reçues", url: "/espace-pro/demandes", icon: FileText },
+  { title: "Ma galerie", url: "/espace-pro/galerie", icon: ImageIcon },
+  { title: "Demandes de devis", url: "/espace-pro/demandes", icon: FileText },
   { title: "Avis clients", url: "/espace-pro/avis", icon: Star },
-  { title: "Statistiques", url: "/espace-pro/statistiques", icon: BarChart3 },
-];
-
-const settingsItems = [
-  { title: "Paramètres", url: "/espace-pro/parametres", icon: Settings },
+  { title: "Abonnement", url: "/espace-pro/parametres", icon: CreditCard },
 ];
 
 export function PrestataireSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
   const location = useLocation();
   const { signOut, profile } = useAuth();
   const currentPath = location.pathname;
@@ -49,95 +31,44 @@ export function PrestataireSidebar() {
     url === "/espace-pro" ? currentPath === "/espace-pro" : currentPath.startsWith(url);
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
-        {/* Brand */}
-        <div className="flex items-center gap-2 px-4 py-5 border-b border-sidebar-border">
-          {!collapsed && (
-            <span className="font-serif text-lg tracking-wide text-sidebar-primary">
-              LesNoces
-              <span className="text-sidebar-foreground opacity-50">.pro</span>
-            </span>
-          )}
-          {collapsed && (
-            <span className="font-serif text-lg text-sidebar-primary">L</span>
-          )}
-        </div>
+    <aside className="hidden md:flex flex-col w-[220px] shrink-0 bg-card border-r border-border">
+      <nav className="flex-1 py-3 px-3 space-y-1">
+        {mainItems.map((item) => {
+          const active = isActive(item.url);
+          return (
+            <NavLink
+              key={item.url}
+              to={item.url}
+              end={item.url === "/espace-pro"}
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-lg font-sans text-sm transition-all duration-200",
+                active
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+              )}
+              activeClassName=""
+            >
+              <item.icon className="h-5 w-5 shrink-0" />
+              <span>{item.title}</span>
+            </NavLink>
+          );
+        })}
+      </nav>
 
-        {/* Main Nav */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-[0.15em] text-sidebar-foreground/40 font-sans">
-            Mon espace
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/espace-pro"}
-                      className="flex items-center gap-2 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-                      activeClassName="!bg-sidebar-accent !text-sidebar-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && (
-                        <span className="font-sans text-sm">{item.title}</span>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Settings */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-[0.15em] text-sidebar-foreground/40 font-sans">
-            Configuration
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {settingsItems.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink
-                      to={item.url}
-                      className="flex items-center gap-2 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-                      activeClassName="!bg-sidebar-accent !text-sidebar-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && (
-                        <span className="font-sans text-sm">{item.title}</span>
-                      )}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter className="border-t border-sidebar-border p-3">
-        {!collapsed && profile && (
-          <p className="mb-2 truncate font-sans text-xs text-sidebar-foreground/50">
+      <div className="border-t border-border px-3 py-3 space-y-1">
+        {profile && (
+          <p className="px-4 mb-1 truncate font-sans text-xs text-muted-foreground">
             {profile.prenom} {profile.nom}
           </p>
         )}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex-1 justify-start gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent font-sans text-xs"
-            onClick={() => signOut()}
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            {!collapsed && "Déconnexion"}
-          </Button>
-        </div>
-      </SidebarFooter>
-    </Sidebar>
+        <button
+          onClick={() => signOut()}
+          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg font-sans text-sm text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          <span>Déconnexion</span>
+        </button>
+      </div>
+    </aside>
   );
 }
