@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePrestataire } from "@/hooks/usePrestataire";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
