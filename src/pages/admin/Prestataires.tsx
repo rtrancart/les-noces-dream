@@ -66,6 +66,7 @@ const emptyForm = {
   notes_admin: "",
   cree_par_admin: true,
   zones_intervention: [] as string[],
+  create_password: "",
 };
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
