@@ -726,6 +726,51 @@ export default function Prestataires() {
                 <Textarea value={form.notes_admin} onChange={(e) => setForm({ ...form, notes_admin: e.target.value })} rows={3} />
               </Field>
             </TabsContent>
+
+            {editItem?.user_id && (
+              <TabsContent value="password" className="space-y-4 pt-4">
+                <p className="font-sans text-sm text-muted-foreground">
+                  Définir un nouveau mot de passe pour <span className="font-medium text-foreground">{editItem.nom_commercial}</span>
+                </p>
+                <Field label="Nouveau mot de passe">
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Min. 6 caractères"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+                    </Button>
+                  </div>
+                </Field>
+                <Field label="Confirmer le mot de passe">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Retapez le mot de passe"
+                  />
+                  {confirmPassword && newPassword !== confirmPassword && (
+                    <p className="text-xs text-destructive">Les mots de passe ne correspondent pas</p>
+                  )}
+                </Field>
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={savingPassword || !newPassword || newPassword.length < 6 || newPassword !== confirmPassword}
+                  className="font-sans text-sm w-full"
+                >
+                  {savingPassword ? "Modification…" : "Changer le mot de passe"}
+                </Button>
+              </TabsContent>
+            )}
           </Tabs>
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setDialogOpen(false)} className="font-sans text-sm">Annuler</Button>
