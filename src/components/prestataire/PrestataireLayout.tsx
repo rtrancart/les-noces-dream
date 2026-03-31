@@ -1,7 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { PrestataireSidebar } from "./PrestataireSidebar";
-import { Separator } from "@/components/ui/separator";
 import Header from "@/components/layout/Header";
 
 export default function PrestataireLayout() {
@@ -9,23 +7,12 @@ export default function PrestataireLayout() {
     <>
       <Header />
       <div className="pt-20">
-        <SidebarProvider>
-          <div className="min-h-[calc(100vh-5rem)] flex w-full">
-            <PrestataireSidebar />
-            <div className="flex-1 flex flex-col min-w-0">
-              <header className="h-12 flex items-center gap-2 border-b border-border bg-card px-4">
-                <SidebarTrigger className="text-muted-foreground" />
-                <Separator orientation="vertical" className="h-5" />
-                <span className="font-sans text-xs uppercase tracking-wider text-muted-foreground">
-                  Espace prestataire
-                </span>
-              </header>
-              <main className="flex-1 overflow-auto bg-background p-6">
-                <Outlet />
-              </main>
-            </div>
-          </div>
-        </SidebarProvider>
+        <div className="min-h-[calc(100vh-5rem)] flex w-full">
+          <PrestataireSidebar />
+          <main className="flex-1 overflow-auto bg-background p-6 md:p-8">
+            <Outlet />
+          </main>
+        </div>
       </div>
     </>
   );
