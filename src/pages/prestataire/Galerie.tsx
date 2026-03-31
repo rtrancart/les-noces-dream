@@ -16,7 +16,7 @@ export default function PrestataireGalerie() {
   const photoMain = prestataire?.photo_principale_url;
 
   // Combine gallery + main photo (if main isn't already in gallery)
-  const photos = React.useMemo(() => {
+  const photos = useMemo(() => {
     const all = [...galerieUrls];
     if (photoMain && !all.includes(photoMain)) {
       all.unshift(photoMain);
