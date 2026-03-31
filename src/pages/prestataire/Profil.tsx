@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Save, Loader2 } from "lucide-react";
 import AddressAutocomplete from "@/components/prestataire/AddressAutocomplete";
+import ZonesInterventionPicker from "@/components/prestataire/ZonesInterventionPicker";
 
 const MAX_DESC_COURTE = 160;
 
