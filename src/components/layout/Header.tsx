@@ -14,8 +14,9 @@ const NAV_LINKS = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isPrestataire, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const accountLink = user ? (isPrestataire ? "/espace-pro" : isAdmin ? "/admin" : "/mon-compte") : "/connexion";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-champagne shadow-sm">
