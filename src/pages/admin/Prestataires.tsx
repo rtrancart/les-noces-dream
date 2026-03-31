@@ -460,11 +460,36 @@ export default function Prestataires() {
         setDialogOpen(false); fetchData();
       }
     } else {
-      const { data: created, error } = await supabase.from("prestataires").insert(payload).select();
+      // For new prestataire: create user account first if email provided
+      let linkedUserId: string | null = null;
+      if (form.email_contact) {
+        const password = form.create_password || Math.random().toString(36).slice(-10) + "A1!";
+        try {
+          const res = await supabase.functions.invoke("admin-create-user", {
+            body: {
+              email: form.email_contact.trim(),
+              password,
+              role: "prestataire",
+            },
+          });
+          if (res.error) throw new Error(res.error.message);
+          if (res.data?.error) throw new Error(res.data.error);
+          linkedUserId = res.data.user_id;
+        } catch (e: any) {
+          toast.error("Erreur création compte : " + e.message);
+          setSaving(false);
+          return;
+        }
+      }
+
+      const { data: created, error } = await supabase.from("prestataires").insert({
+        ...payload,
+        user_id: linkedUserId,
+      }).select();
       if (error) toast.error(error.message);
       else if (!created || created.length === 0) toast.error("Création refusée (permissions insuffisantes)");
       else {
-        toast.success("Prestataire créé");
+        toast.success("Prestataire créé" + (linkedUserId ? " avec compte utilisateur" : ""));
         logAdmin("create_prestataire", "prestataires", created[0].id, { nom: form.nom_commercial });
         triggerGeocode(created[0].id);
         setDialogOpen(false); fetchData();
