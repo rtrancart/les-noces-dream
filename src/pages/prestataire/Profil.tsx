@@ -199,6 +199,19 @@ export default function PrestataireProfil() {
         </CardContent>
       </Card>
 
+      {/* Zones d'intervention */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-sans text-lg">Zones d'intervention</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ZonesInterventionPicker
+            value={form.zones_intervention}
+            onChange={(zones) => setForm((f) => ({ ...f, zones_intervention: zones }))}
+          />
+        </CardContent>
+      </Card>
+
       {/* Tarifs */}
       <Card>
         <CardHeader>
