@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X, Search, User } from "lucide-react";
 import logoSrc from "@/assets/logo-lesnoces.png";
 
+// Helper to determine account link based on role
+
 const NAV_LINKS = [
   { label: "Lieux de réception", href: "/categories/lieux-de-reception" },
   { label: "Devenir prestataires", href: "/inscription" },
