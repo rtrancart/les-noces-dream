@@ -401,6 +401,7 @@ export default function Prestataires() {
       notes_admin: p.notes_admin ?? "",
       cree_par_admin: p.cree_par_admin ?? false,
       zones_intervention: (p as any).zones_intervention ?? [],
+      create_password: "",
     });
     setDialogOpen(true);
   };
