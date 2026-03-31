@@ -423,6 +423,14 @@ export default function Prestataires() {
       toast.error("Remplissez les champs obligatoires (nom, slug, ville, région, catégorie)");
       return;
     }
+    if (!editItem && form.email_contact && form.create_password && form.create_password.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+    if (!editItem && !form.email_contact) {
+      toast.error("L'email de contact est requis pour créer le compte utilisateur");
+      return;
+    }
     setSaving(true);
     const isUnique = await checkSlugUniqueness();
     if (!isUnique) { setSaving(false); return; }
