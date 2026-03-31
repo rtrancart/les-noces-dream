@@ -31,6 +31,7 @@ export default function PrestataireProfil() {
     prix_max: "",
     latitude: null as number | null,
     longitude: null as number | null,
+    zones_intervention: [] as string[],
   });
 
   useEffect(() => {
