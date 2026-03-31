@@ -21,15 +21,17 @@ Deno.serve(async (req) => {
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
-    if (!caller) throw new Error("Non autorisé");
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await callerClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims?.sub) throw new Error("Non autorisé");
+    const callerId = claimsData.claims.sub;
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const { data: callerRoles } = await adminClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", caller.id);
+      .eq("user_id", callerId);
 
     const callerRoleList = (callerRoles ?? []).map((r: any) => r.role);
     const isAdmin = callerRoleList.includes("admin") || callerRoleList.includes("super_admin");
@@ -38,7 +40,7 @@ Deno.serve(async (req) => {
     if (!isAdmin) throw new Error("Accès refusé : rôle admin requis");
 
     const body = await req.json();
-    const { email, password, prenom, nom, telephone, date_naissance, role } = body;
+    const { email, password, prenom, nom, telephone, date_naissance, role, prestataire_id } = body;
 
     if (!email || !password || !role) {
       throw new Error("Email, mot de passe et rôle sont requis");
@@ -49,17 +51,26 @@ Deno.serve(async (req) => {
       throw new Error("Seul un super admin peut créer un administrateur");
     }
 
-    const allowedRoles = ["client", "admin", "super_admin"];
+    const allowedRoles = ["client", "prestataire", "admin", "super_admin"];
     if (!allowedRoles.includes(role)) {
       throw new Error("Rôle invalide : " + role);
     }
 
+    // Check email uniqueness in auth.users
+    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
+    const emailExists = existingUsers?.users?.some(
+      (u: any) => u.email?.toLowerCase() === email.trim().toLowerCase()
+    );
+    if (emailExists) {
+      throw new Error("Un compte avec cet email existe déjà");
+    }
+
     // Create auth user (auto-confirmed)
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-      email,
+      email: email.trim(),
       password,
       email_confirm: true,
-      user_metadata: { prenom: prenom || null, nom: nom || null },
+      user_metadata: { prenom: prenom || null, nom: nom || null, role_souhaite: role },
     });
 
     if (createError) throw createError;
@@ -86,6 +97,14 @@ Deno.serve(async (req) => {
       .insert({ user_id: userId, role });
 
     if (roleError) throw roleError;
+
+    // If prestataire_id provided, link user to existing prestataire
+    if (prestataire_id && role === "prestataire") {
+      await adminClient
+        .from("prestataires")
+        .update({ user_id: userId })
+        .eq("id", prestataire_id);
+    }
 
     return new Response(
       JSON.stringify({ success: true, user_id: userId }),
