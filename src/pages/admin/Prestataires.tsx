@@ -275,6 +275,38 @@ export default function Prestataires() {
   const [saving, setSaving] = useState(false);
   const [slugError, setSlugError] = useState<string | null>(null);
   const [checkingSlug, setCheckingSlug] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (!editItem?.user_id) return;
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Les mots de passe ne correspondent pas");
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const res = await supabase.functions.invoke("admin-update-password", {
+        body: { target_user_id: editItem.user_id, new_password: newPassword },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+      toast.success("Mot de passe mis à jour");
+      await logAdmin("update_password", "prestataires", editItem.id, { nom: editItem.nom_commercial });
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors du changement de mot de passe");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
 
   const generateSlug = (text: string): string => {
     return text
