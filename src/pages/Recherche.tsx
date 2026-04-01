@@ -118,7 +118,20 @@ export default function Recherche() {
   });
   const [priceFilters, setPriceFilters] = useState<string[]>([]);
   const [ratingFilter, setRatingFilter] = useState(false);
-  const [citySearch, setCitySearch] = useState<CitySearchData | null>(null);
+  const [citySearch, setCitySearch] = useState<CitySearchData | null>(() => {
+    const ville = searchParams.get("ville");
+    if (!ville) return null;
+    const parts = ville.split(",");
+    if (parts.length >= 4) {
+      return {
+        lat: parseFloat(parts[0]),
+        lng: parseFloat(parts[1]),
+        radius: parseInt(parts[2], 10),
+        label: decodeURIComponent(parts.slice(3).join(",")),
+      };
+    }
+    return null;
+  });
   const [showMap, setShowMap] = useState(true);
   const [showMobileMap, setShowMobileMap] = useState(false);
   const [hoveredProvider, setHoveredProvider] = useState<string | null>(null);
