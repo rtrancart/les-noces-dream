@@ -118,7 +118,20 @@ export default function Recherche() {
   });
   const [priceFilters, setPriceFilters] = useState<string[]>([]);
   const [ratingFilter, setRatingFilter] = useState(false);
-  const [citySearch, setCitySearch] = useState<CitySearchData | null>(null);
+  const [citySearch, setCitySearch] = useState<CitySearchData | null>(() => {
+    const ville = searchParams.get("ville");
+    if (!ville) return null;
+    const parts = ville.split(",");
+    if (parts.length >= 4) {
+      return {
+        lat: parseFloat(parts[0]),
+        lng: parseFloat(parts[1]),
+        radius: parseInt(parts[2], 10),
+        label: decodeURIComponent(parts.slice(3).join(",")),
+      };
+    }
+    return null;
+  });
   const [showMap, setShowMap] = useState(true);
   const [showMobileMap, setShowMobileMap] = useState(false);
   const [hoveredProvider, setHoveredProvider] = useState<string | null>(null);
@@ -186,9 +199,13 @@ export default function Recherche() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (categorySlugs.length > 0) params.set("categorie", categorySlugs.join(","));
-    if (locationZones.length > 0) params.set("lieu", locationZones.join(","));
+    if (citySearch) {
+      params.set("ville", `${citySearch.lat},${citySearch.lng},${citySearch.radius},${encodeURIComponent(citySearch.label)}`);
+    } else if (locationZones.length > 0) {
+      params.set("lieu", locationZones.join(","));
+    }
     setSearchParams(params, { replace: true });
-  }, [categorySlugs, locationZones]);
+  }, [categorySlugs, locationZones, citySearch]);
 
   // Dynamic title from filters
   const dynamicTitle = useMemo(() => {

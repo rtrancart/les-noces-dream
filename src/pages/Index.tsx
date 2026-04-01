@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, MapPin, Star, ChevronRight, ArrowRight, Clock, Shield, Award, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import LocationPicker from "@/components/LocationPicker";
+import LocationPicker, { type CitySearchData } from "@/components/LocationPicker";
 import CategoryPicker, { type CategoryOption } from "@/components/CategoryPicker";
 
 
@@ -183,12 +183,17 @@ function priceRange(prix: number | null) {
 function HeroSection({ categories, categoryTree }: { categories: CategoryData[]; categoryTree: CategoryOption[] }) {
   const [locationZones, setLocationZones] = useState<string[]>([]);
   const [categorySlugs, setCategorySlugs] = useState<string[]>([]);
+  const [citySearch, setCitySearch] = useState<CitySearchData | null>(null);
   const navigate = useNavigate();
 
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (categorySlugs.length > 0) params.set("categorie", categorySlugs.join(","));
-    if (locationZones.length > 0) params.set("lieu", locationZones.join(","));
+    if (citySearch) {
+      params.set("ville", `${citySearch.lat},${citySearch.lng},${citySearch.radius},${encodeURIComponent(citySearch.label)}`);
+    } else if (locationZones.length > 0) {
+      params.set("lieu", locationZones.join(","));
+    }
     navigate(`/recherche?${params.toString()}`);
   };
 
@@ -230,6 +235,8 @@ function HeroSection({ categories, categoryTree }: { categories: CategoryData[];
             <LocationPicker
               value={locationZones}
               onChange={setLocationZones}
+              citySearch={citySearch}
+              onCitySearchChange={setCitySearch}
               placeholder="Où ?"
             />
           </div>
