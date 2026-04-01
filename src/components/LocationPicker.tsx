@@ -454,6 +454,12 @@ export default function LocationPicker({
           )}
         </div>
         {listContent}
+        <div className="p-3 border-t border-border">
+          <Button onClick={() => setOpen(false)} className="w-full">
+            <Check className="w-4 h-4 mr-2" />
+            Valider
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );
