@@ -148,8 +148,15 @@ export default function Recherche() {
       );
     }
 
-    // Location filter
-    if (locationZones.length > 0) {
+    // Location filter: city+radius OR zones
+    if (citySearch) {
+      result = result.filter((p) => {
+        const lat = (p as any).latitude;
+        const lng = (p as any).longitude;
+        if (lat == null || lng == null) return false;
+        return haversineDistanceKm(citySearch.lat, citySearch.lng, lat, lng) <= citySearch.radius;
+      });
+    } else if (locationZones.length > 0) {
       result = result.filter((p) => matchesZones(p, locationZones));
     }
 
