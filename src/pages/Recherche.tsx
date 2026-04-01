@@ -199,9 +199,13 @@ export default function Recherche() {
   useEffect(() => {
     const params = new URLSearchParams();
     if (categorySlugs.length > 0) params.set("categorie", categorySlugs.join(","));
-    if (locationZones.length > 0) params.set("lieu", locationZones.join(","));
+    if (citySearch) {
+      params.set("ville", `${citySearch.lat},${citySearch.lng},${citySearch.radius},${encodeURIComponent(citySearch.label)}`);
+    } else if (locationZones.length > 0) {
+      params.set("lieu", locationZones.join(","));
+    }
     setSearchParams(params, { replace: true });
-  }, [categorySlugs, locationZones]);
+  }, [categorySlugs, locationZones, citySearch]);
 
   // Dynamic title from filters
   const dynamicTitle = useMemo(() => {
