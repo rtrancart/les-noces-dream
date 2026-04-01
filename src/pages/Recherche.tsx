@@ -192,17 +192,17 @@ export default function Recherche() {
 
   // Dynamic title from filters
   const dynamicTitle = useMemo(() => {
-    // Use condensed names (parent only when all children selected)
     const catNames = getCondensedCategoryNames(categoryTree, categorySlugs);
-
-    // Resolve location labels (condensed: region name when all depts selected)
-    const locLabels = getCondensedZoneNames(locationZones);
-
     const catPart = catNames.length > 0 ? catNames.join(", ") : "Prestataires de mariage";
-    const locPart = locLabels.length > 0 ? ` à ${locLabels.join(", ")}` : " en France";
 
+    if (citySearch) {
+      return `${catPart} à ${citySearch.label} (${citySearch.radius} km)`;
+    }
+
+    const locLabels = getCondensedZoneNames(locationZones);
+    const locPart = locLabels.length > 0 ? ` à ${locLabels.join(", ")}` : " en France";
     return `${catPart}${locPart}`;
-  }, [categorySlugs, locationZones, categoryTree]);
+  }, [categorySlugs, locationZones, categoryTree, citySearch]);
 
   // SEO title
   useEffect(() => {
