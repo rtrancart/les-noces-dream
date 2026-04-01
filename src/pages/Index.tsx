@@ -235,6 +235,8 @@ function HeroSection({ categories, categoryTree }: { categories: CategoryData[];
             <LocationPicker
               value={locationZones}
               onChange={setLocationZones}
+              citySearch={citySearch}
+              onCitySearchChange={setCitySearch}
               placeholder="Où ?"
             />
           </div>
