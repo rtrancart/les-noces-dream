@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { MapPin, ChevronDown, ChevronRight, X, Search, Navigation } from "lucide-react";
+import { MapPin, ChevronDown, ChevronRight, X, Search, Navigation, Check } from "lucide-react";
 import { REGIONS, DOM, PAYS_LIMITROPHES, getCondensedZoneNames } from "@/lib/zonesIntervention";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
