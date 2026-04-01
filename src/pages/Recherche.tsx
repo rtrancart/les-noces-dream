@@ -5,12 +5,13 @@ import { Star, SlidersHorizontal, MapPin, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import LocationPicker from "@/components/LocationPicker";
+import LocationPicker, { type CitySearchData } from "@/components/LocationPicker";
 import CategoryPicker, { type CategoryOption, getCondensedCategoryNames } from "@/components/CategoryPicker";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import SearchMap from "@/components/search/SearchMap";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { REGIONS, DOM, getZoneLabel, getCondensedZoneNames } from "@/lib/zonesIntervention";
+import { haversineDistanceKm } from "@/lib/haversine";
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
 
