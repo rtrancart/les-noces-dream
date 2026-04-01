@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { MapPin, ChevronDown, ChevronRight, X, Search, Navigation } from "lucide-react";
+import { MapPin, ChevronDown, ChevronRight, X, Search, Navigation, Check } from "lucide-react";
 import { REGIONS, DOM, PAYS_LIMITROPHES, getCondensedZoneNames } from "@/lib/zonesIntervention";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -417,6 +418,12 @@ export default function LocationPicker({
               )}
             </DrawerHeader>
             {listContent}
+            <div className="p-3 border-t border-border">
+              <Button onClick={() => setOpen(false)} className="w-full">
+                <Check className="w-4 h-4 mr-2" />
+                Valider
+              </Button>
+            </div>
           </DrawerContent>
         </Drawer>
       </>
@@ -447,6 +454,12 @@ export default function LocationPicker({
           )}
         </div>
         {listContent}
+        <div className="p-3 border-t border-border">
+          <Button onClick={() => setOpen(false)} className="w-full">
+            <Check className="w-4 h-4 mr-2" />
+            Valider
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );
