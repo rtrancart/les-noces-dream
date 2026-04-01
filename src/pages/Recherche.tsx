@@ -424,6 +424,7 @@ export default function Recherche() {
                 onClick={() => {
                   setCategorySlugs([]);
                   setLocationZones([]);
+                  setCitySearch(null);
                   setPriceFilters([]);
                   setRatingFilter(false);
                 }}
