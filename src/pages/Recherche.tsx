@@ -245,6 +245,8 @@ export default function Recherche() {
                     <LocationPicker
                       value={locationZones}
                       onChange={setLocationZones}
+                      citySearch={citySearch}
+                      onCitySearchChange={setCitySearch}
                       placeholder="Où ?"
                     />
                   </div>
