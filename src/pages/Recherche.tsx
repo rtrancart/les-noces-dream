@@ -5,12 +5,13 @@ import { Star, SlidersHorizontal, MapPin, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import LocationPicker from "@/components/LocationPicker";
+import LocationPicker, { type CitySearchData } from "@/components/LocationPicker";
 import CategoryPicker, { type CategoryOption, getCondensedCategoryNames } from "@/components/CategoryPicker";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import SearchMap from "@/components/search/SearchMap";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { REGIONS, DOM, getZoneLabel, getCondensedZoneNames } from "@/lib/zonesIntervention";
+import { haversineDistanceKm } from "@/lib/haversine";
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
 
@@ -117,6 +118,7 @@ export default function Recherche() {
   });
   const [priceFilters, setPriceFilters] = useState<string[]>([]);
   const [ratingFilter, setRatingFilter] = useState(false);
+  const [citySearch, setCitySearch] = useState<CitySearchData | null>(null);
   const [showMap, setShowMap] = useState(true);
   const [showMobileMap, setShowMobileMap] = useState(false);
   const [hoveredProvider, setHoveredProvider] = useState<string | null>(null);
@@ -146,8 +148,15 @@ export default function Recherche() {
       );
     }
 
-    // Location filter
-    if (locationZones.length > 0) {
+    // Location filter: city+radius OR zones
+    if (citySearch) {
+      result = result.filter((p) => {
+        const lat = (p as any).latitude;
+        const lng = (p as any).longitude;
+        if (lat == null || lng == null) return false;
+        return haversineDistanceKm(citySearch.lat, citySearch.lng, lat, lng) <= citySearch.radius;
+      });
+    } else if (locationZones.length > 0) {
       result = result.filter((p) => matchesZones(p, locationZones));
     }
 
@@ -171,7 +180,7 @@ export default function Recherche() {
     }
 
     return result;
-  }, [allProviders, categoryIds, locationZones, priceFilters, ratingFilter]);
+  }, [allProviders, categoryIds, locationZones, priceFilters, ratingFilter, citySearch]);
 
   // Update URL params
   useEffect(() => {
@@ -183,17 +192,17 @@ export default function Recherche() {
 
   // Dynamic title from filters
   const dynamicTitle = useMemo(() => {
-    // Use condensed names (parent only when all children selected)
     const catNames = getCondensedCategoryNames(categoryTree, categorySlugs);
-
-    // Resolve location labels (condensed: region name when all depts selected)
-    const locLabels = getCondensedZoneNames(locationZones);
-
     const catPart = catNames.length > 0 ? catNames.join(", ") : "Prestataires de mariage";
-    const locPart = locLabels.length > 0 ? ` à ${locLabels.join(", ")}` : " en France";
 
+    if (citySearch) {
+      return `${catPart} à ${citySearch.label} (${citySearch.radius} km)`;
+    }
+
+    const locLabels = getCondensedZoneNames(locationZones);
+    const locPart = locLabels.length > 0 ? ` à ${locLabels.join(", ")}` : " en France";
     return `${catPart}${locPart}`;
-  }, [categorySlugs, locationZones, categoryTree]);
+  }, [categorySlugs, locationZones, categoryTree, citySearch]);
 
   // SEO title
   useEffect(() => {
@@ -236,6 +245,8 @@ export default function Recherche() {
                     <LocationPicker
                       value={locationZones}
                       onChange={setLocationZones}
+                      citySearch={citySearch}
+                      onCitySearchChange={setCitySearch}
                       placeholder="Où ?"
                     />
                   </div>
@@ -413,6 +424,7 @@ export default function Recherche() {
                 onClick={() => {
                   setCategorySlugs([]);
                   setLocationZones([]);
+                  setCitySearch(null);
                   setPriceFilters([]);
                   setRatingFilter(false);
                 }}
