@@ -180,7 +180,7 @@ export default function Recherche() {
     }
 
     return result;
-  }, [allProviders, categoryIds, locationZones, priceFilters, ratingFilter]);
+  }, [allProviders, categoryIds, locationZones, priceFilters, ratingFilter, citySearch]);
 
   // Update URL params
   useEffect(() => {
