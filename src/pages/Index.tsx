@@ -183,12 +183,17 @@ function priceRange(prix: number | null) {
 function HeroSection({ categories, categoryTree }: { categories: CategoryData[]; categoryTree: CategoryOption[] }) {
   const [locationZones, setLocationZones] = useState<string[]>([]);
   const [categorySlugs, setCategorySlugs] = useState<string[]>([]);
+  const [citySearch, setCitySearch] = useState<CitySearchData | null>(null);
   const navigate = useNavigate();
 
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (categorySlugs.length > 0) params.set("categorie", categorySlugs.join(","));
-    if (locationZones.length > 0) params.set("lieu", locationZones.join(","));
+    if (citySearch) {
+      params.set("ville", `${citySearch.lat},${citySearch.lng},${citySearch.radius},${encodeURIComponent(citySearch.label)}`);
+    } else if (locationZones.length > 0) {
+      params.set("lieu", locationZones.join(","));
+    }
     navigate(`/recherche?${params.toString()}`);
   };
 
