@@ -52,7 +52,7 @@ export default function PrestataireProfil() {
         prix_max: prestataire.prix_max?.toString() ?? "",
         latitude: prestataire.latitude,
         longitude: prestataire.longitude,
-        zones_intervention: prestataire.zones_intervention ?? [],
+        zones_intervention: normalizeZones(prestataire.zones_intervention ?? []),
       });
     }
   }, [prestataire]);
