@@ -153,23 +153,10 @@ export default function PrestataireDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-2xl md:text-3xl text-foreground">
-            Bonjour{prestataire.nom_commercial ? `, ${prestataire.nom_commercial}` : ""} 👋
-          </h1>
-          <div className="flex items-center gap-3 mt-2">
-            <Badge className={statusColors[prestataire.statut] ?? "bg-muted text-muted-foreground"}>
-              {statusLabels[prestataire.statut] ?? prestataire.statut}
-            </Badge>
-            {prestataire.est_premium && (
-              <Badge className="bg-primary/10 text-primary border-primary/20">Premium</Badge>
-            )}
-          </div>
-        </div>
-        <Button asChild variant="outline">
-          <Link to="/espace-pro/profil">Modifier mon profil</Link>
-        </Button>
+      <div>
+        <h2 className="font-serif text-2xl md:text-3xl text-foreground">
+          Bonjour{prestataire.nom_commercial ? `, ${prestataire.nom_commercial}` : ""} 👋
+        </h2>
       </div>
 
       {/* Stats Cards */}
