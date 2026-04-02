@@ -59,7 +59,7 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
               {prestataire.nom_commercial}
             </h1>
             {prestataire.est_premium && (
-              <span className="px-3 py-0.5 bg-primary text-primary-foreground rounded-sm font-sans text-xs uppercase tracking-wide">
+              <span className="px-3 py-0.5 bg-sauge text-white rounded-sm font-sans text-xs uppercase tracking-wide">
                 Premium
               </span>
             )}
