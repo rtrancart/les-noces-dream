@@ -132,21 +132,8 @@ export default function PrestataireDashboard() {
     );
   }
 
-  const statusColors: Record<string, string> = {
-    actif: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    brouillon: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-    en_attente: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-    suspendu: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  };
 
-  const statusLabels: Record<string, string> = {
-    actif: "Actif",
-    brouillon: "Brouillon",
-    en_attente: "En attente de validation",
-    a_corriger: "À corriger",
-    suspendu: "Suspendu",
-    archive: "Archivé",
-  };
+
 
   return (
     <div className="space-y-6">
