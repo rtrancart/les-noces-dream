@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Settings, Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 export default function PrestataireParametres() {
@@ -132,12 +132,6 @@ export default function PrestataireParametres() {
         </CardContent>
       </Card>
 
-      <div className="text-center py-8">
-        <Settings className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-        <p className="font-sans text-sm text-muted-foreground">
-          D'autres paramètres seront disponibles prochainement (notifications, abonnement, etc.)
-        </p>
-      </div>
     </div>
   );
 }

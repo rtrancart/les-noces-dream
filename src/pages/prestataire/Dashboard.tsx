@@ -2,10 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePrestataire } from "@/hooks/usePrestataire";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { FileText, Star, MessageSquare, TrendingUp, Eye, AlertCircle } from "lucide-react";
+import { FileText, Star, MessageSquare, TrendingUp, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 interface DashboardStats {
@@ -134,42 +132,16 @@ export default function PrestataireDashboard() {
     );
   }
 
-  const statusColors: Record<string, string> = {
-    actif: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    brouillon: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-    en_attente: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-    suspendu: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  };
 
-  const statusLabels: Record<string, string> = {
-    actif: "Actif",
-    brouillon: "Brouillon",
-    en_attente: "En attente de validation",
-    a_corriger: "À corriger",
-    suspendu: "Suspendu",
-    archive: "Archivé",
-  };
+
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-2xl md:text-3xl text-foreground">
-            Bonjour{prestataire.nom_commercial ? `, ${prestataire.nom_commercial}` : ""} 👋
-          </h1>
-          <div className="flex items-center gap-3 mt-2">
-            <Badge className={statusColors[prestataire.statut] ?? "bg-muted text-muted-foreground"}>
-              {statusLabels[prestataire.statut] ?? prestataire.statut}
-            </Badge>
-            {prestataire.est_premium && (
-              <Badge className="bg-primary/10 text-primary border-primary/20">Premium</Badge>
-            )}
-          </div>
-        </div>
-        <Button asChild variant="outline">
-          <Link to="/espace-pro/profil">Modifier mon profil</Link>
-        </Button>
+      <div>
+        <h2 className="font-serif text-2xl md:text-3xl text-foreground">
+          Bonjour{prestataire.nom_commercial ? `, ${prestataire.nom_commercial}` : ""} 👋
+        </h2>
       </div>
 
       {/* Stats Cards */}

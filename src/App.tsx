@@ -23,6 +23,7 @@ import PrestataireDemandes from "./pages/prestataire/Demandes";
 import PrestataireAvis from "./pages/prestataire/Avis";
 import PrestataireStatistiques from "./pages/prestataire/Statistiques";
 import PrestataireParametres from "./pages/prestataire/Parametres";
+import PrestataireAbonnement from "./pages/prestataire/Abonnement";
 
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="demandes" element={<PrestataireDemandes />} />
               <Route path="avis" element={<PrestataireAvis />} />
               <Route path="statistiques" element={<PrestataireStatistiques />} />
+              <Route path="abonnement" element={<PrestataireAbonnement />} />
               <Route path="parametres" element={<PrestataireParametres />} />
             </Route>
 
