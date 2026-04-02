@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { REGIONS } from "@/lib/zonesIntervention";
 import { usePrestataire } from "@/hooks/usePrestataire";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,20 @@ import AddressAutocomplete from "@/components/prestataire/AddressAutocomplete";
 import ZonesInterventionPicker from "@/components/prestataire/ZonesInterventionPicker";
 
 const MAX_DESC_COURTE = 160;
+
+/** Convert region values (e.g. "ile_de_france") to their département values */
+function normalizeZones(zones: string[]): string[] {
+  const regionMap = new Map(REGIONS.map((r) => [r.value, r.departements.map((d) => d.value)]));
+  const result = new Set<string>();
+  for (const z of zones) {
+    if (regionMap.has(z)) {
+      regionMap.get(z)!.forEach((d) => result.add(d));
+    } else {
+      result.add(z);
+    }
+  }
+  return [...result];
+}
 
 export default function PrestataireProfil() {
   const { prestataire, loading, refetch } = usePrestataire();
@@ -51,7 +66,7 @@ export default function PrestataireProfil() {
         prix_max: prestataire.prix_max?.toString() ?? "",
         latitude: prestataire.latitude,
         longitude: prestataire.longitude,
-        zones_intervention: prestataire.zones_intervention ?? [],
+        zones_intervention: normalizeZones(prestataire.zones_intervention ?? []),
       });
     }
   }, [prestataire]);
