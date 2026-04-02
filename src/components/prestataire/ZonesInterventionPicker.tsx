@@ -81,11 +81,16 @@ export default function ZonesInterventionPicker({ value, onChange }: Props) {
   const condensedNames = useMemo(() => getCondensedZoneNames(value), [value]);
 
   const removeZone = (zone: string) => {
-    // Find what to remove — could be a region (remove all its depts) or a single value
+    if (zone === "France entière") {
+      onChange([]);
+      return;
+    }
+    // Find what to remove — could be a region (remove all its depts + region value) or a single value
     const region = REGIONS.find((r) => r.label === zone);
     if (region) {
       const deptValues = region.departements.map((d) => d.value);
-      onChange(value.filter((v) => !deptValues.includes(v) && v !== "france_entiere"));
+      const toRemove = new Set([...deptValues, region.value, "france_entiere"]);
+      onChange(value.filter((v) => !toRemove.has(v)));
     } else {
       // Find value by label
       const allEntries = [
@@ -96,8 +101,6 @@ export default function ZonesInterventionPicker({ value, onChange }: Props) {
       const entry = allEntries.find((e) => e.label === zone);
       if (entry) {
         onChange(value.filter((v) => v !== entry.value && v !== "france_entiere"));
-      } else if (zone === "France entière") {
-        onChange([]);
       }
     }
   };

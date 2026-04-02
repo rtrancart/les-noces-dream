@@ -215,19 +215,23 @@ export function getCondensedZoneNames(selectedZones: string[]): string[] {
   const names: string[] = [];
   const accounted = new Set<string>();
 
+  // Also account for region values themselves (e.g. "ile_de_france")
+  const regionValues = new Set(REGIONS.map((r) => r.value));
+
   for (const region of REGIONS) {
     const deptValues = region.departements.map((d) => d.value);
     const allSelected = deptValues.length > 0 && deptValues.every((d) => selectedZones.includes(d));
-    if (allSelected) {
+    if (allSelected || selectedZones.includes(region.value)) {
       names.push(region.label);
       deptValues.forEach((d) => accounted.add(d));
+      accounted.add(region.value);
     }
   }
 
   // Add individually selected départements not already accounted for
   for (const zone of selectedZones) {
     if (zone === "france_entiere") continue;
-    if (!accounted.has(zone)) {
+    if (!accounted.has(zone) && !regionValues.has(zone)) {
       names.push(getZoneLabel(zone));
     }
   }
