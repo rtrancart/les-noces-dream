@@ -14,6 +14,20 @@ import ZonesInterventionPicker from "@/components/prestataire/ZonesInterventionP
 
 const MAX_DESC_COURTE = 160;
 
+/** Convert region values (e.g. "ile_de_france") to their département values */
+function normalizeZones(zones: string[]): string[] {
+  const regionMap = new Map(REGIONS.map((r) => [r.value, r.departements.map((d) => d.value)]));
+  const result = new Set<string>();
+  for (const z of zones) {
+    if (regionMap.has(z)) {
+      regionMap.get(z)!.forEach((d) => result.add(d));
+    } else {
+      result.add(z);
+    }
+  }
+  return [...result];
+}
+
 export default function PrestataireProfil() {
   const { prestataire, loading, refetch } = usePrestataire();
   const [saving, setSaving] = useState(false);
