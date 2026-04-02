@@ -132,12 +132,6 @@ export default function PrestataireParametres() {
         </CardContent>
       </Card>
 
-      <div className="text-center py-8">
-        <Settings className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-        <p className="font-sans text-sm text-muted-foreground">
-          D'autres paramètres seront disponibles prochainement (notifications, abonnement, etc.)
-        </p>
-      </div>
     </div>
   );
 }
