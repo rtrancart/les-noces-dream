@@ -66,7 +66,7 @@ export default function PrestataireAbonnement() {
 
           {/* Premium — Featured */}
           <div className="bg-gradient-to-br from-primary to-muted text-primary-foreground rounded-xl p-6 relative shadow-xl md:scale-105">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-foreground text-background px-4 py-1 rounded-full">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-sauge text-white px-4 py-1 rounded-full">
               <span className="font-sans text-xs font-bold uppercase tracking-wider">
                 Recommandé
               </span>
