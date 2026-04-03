@@ -140,9 +140,15 @@ export default function Recherche() {
   const categoryIds = useMemo(() => {
     const ids = new Set<string>();
     for (const cat of categoryTree) {
-      if (categorySlugs.includes(cat.slug)) ids.add(cat.id);
+      if (categorySlugs.includes(cat.slug)) {
+        ids.add(cat.id);
+      }
       cat.children?.forEach((c) => {
-        if (categorySlugs.includes(c.slug)) ids.add(c.id);
+        if (categorySlugs.includes(c.slug)) {
+          ids.add(c.id);
+          // Also include parent so providers assigned only to the parent category appear
+          ids.add(cat.id);
+        }
       });
     }
     return ids;
