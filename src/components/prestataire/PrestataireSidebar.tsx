@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 const mainItems = [
   { title: "Tableau de bord", url: "/espace-pro", icon: BarChart3 },
   { title: "Mon profil", url: "/espace-pro/profil", icon: User },
+  { title: "Ma prestation", url: "/espace-pro/prestation", icon: ClipboardList },
   { title: "Ma galerie", url: "/espace-pro/galerie", icon: ImageIcon },
   { title: "Demandes de devis", url: "/espace-pro/demandes", icon: FileText },
   { title: "Avis clients", url: "/espace-pro/avis", icon: Star },

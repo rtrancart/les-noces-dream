@@ -71,6 +71,7 @@ const App = () => (
             >
               <Route index element={<PrestataireDashboard />} />
               <Route path="profil" element={<PrestataireProfil />} />
+              <Route path="prestation" element={<PrestatairePrestation />} />
               <Route path="galerie" element={<PrestataireGalerie />} />
               <Route path="demandes" element={<PrestataireDemandes />} />
               <Route path="avis" element={<PrestataireAvis />} />
