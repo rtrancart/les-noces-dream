@@ -24,6 +24,7 @@ import PrestataireAvis from "./pages/prestataire/Avis";
 import PrestataireStatistiques from "./pages/prestataire/Statistiques";
 import PrestataireParametres from "./pages/prestataire/Parametres";
 import PrestataireAbonnement from "./pages/prestataire/Abonnement";
+import PrestatairePrestation from "./pages/prestataire/Prestation";
 
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
