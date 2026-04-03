@@ -1,6 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { REGIONS } from "@/lib/zonesIntervention";
 import { usePrestataire } from "@/hooks/usePrestataire";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,23 +9,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Save, Loader2 } from "lucide-react";
 import AddressAutocomplete from "@/components/prestataire/AddressAutocomplete";
-import ZonesInterventionPicker from "@/components/prestataire/ZonesInterventionPicker";
 
 const MAX_DESC_COURTE = 160;
-
-/** Convert region values (e.g. "ile_de_france") to their département values */
-function normalizeZones(zones: string[]): string[] {
-  const regionMap = new Map(REGIONS.map((r) => [r.value, r.departements.map((d) => d.value)]));
-  const result = new Set<string>();
-  for (const z of zones) {
-    if (regionMap.has(z)) {
-      regionMap.get(z)!.forEach((d) => result.add(d));
-    } else {
-      result.add(z);
-    }
-  }
-  return [...result];
-}
 
 export default function PrestataireProfil() {
   const { prestataire, loading, refetch } = usePrestataire();
@@ -42,11 +26,8 @@ export default function PrestataireProfil() {
     telephone: "",
     email_contact: "",
     site_web: "",
-    prix_depart: "",
-    prix_max: "",
     latitude: null as number | null,
     longitude: null as number | null,
-    zones_intervention: [] as string[],
   });
 
   useEffect(() => {
@@ -62,11 +43,8 @@ export default function PrestataireProfil() {
         telephone: prestataire.telephone ?? "",
         email_contact: prestataire.email_contact ?? "",
         site_web: prestataire.site_web ?? "",
-        prix_depart: prestataire.prix_depart?.toString() ?? "",
-        prix_max: prestataire.prix_max?.toString() ?? "",
         latitude: prestataire.latitude,
         longitude: prestataire.longitude,
-        zones_intervention: normalizeZones(prestataire.zones_intervention ?? []),
       });
     }
   }, [prestataire]);
@@ -88,11 +66,8 @@ export default function PrestataireProfil() {
         telephone: form.telephone,
         email_contact: form.email_contact,
         site_web: form.site_web,
-        prix_depart: form.prix_depart ? parseInt(form.prix_depart) : null,
-        prix_max: form.prix_max ? parseInt(form.prix_max) : null,
         latitude: form.latitude,
         longitude: form.longitude,
-        zones_intervention: form.zones_intervention.length > 0 ? form.zones_intervention : null,
       })
       .eq("id", prestataire.id);
 
@@ -211,30 +186,6 @@ export default function PrestataireProfil() {
           <div className="md:col-span-2">
             {field("Site web", "site_web", { placeholder: "https://…" })}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Zones d'intervention */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-sans text-lg">Zones d'intervention</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ZonesInterventionPicker
-            value={form.zones_intervention}
-            onChange={(zones) => setForm((f) => ({ ...f, zones_intervention: zones }))}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Tarifs */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-sans text-lg">Tarifs</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {field("Prix de départ (€)", "prix_depart", { type: "number" })}
-          {field("Prix maximum (€)", "prix_max", { type: "number" })}
         </CardContent>
       </Card>
     </div>
