@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { usePrestataire } from "@/hooks/usePrestataire";
+import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Star, MessageSquare, TrendingUp, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -43,7 +43,7 @@ function getLast8Weeks(): { start: Date; label: string }[] {
 }
 
 export default function PrestataireDashboard() {
-  const { prestataire, loading } = usePrestataire();
+  const { prestataire, loading } = useSharedPrestataire();
   const [stats, setStats] = useState<DashboardStats>({
     totalDemandes: 0,
     demandesNouvelles: 0,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { usePrestataire } from "@/hooks/usePrestataire";
+import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star } from "lucide-react";
 import { format } from "date-fns";
@@ -33,7 +33,7 @@ function Stars({ rating, max = 5 }: { rating: number; max?: number }) {
 }
 
 export default function PrestataireAvis() {
-  const { prestataire, loading: loadingPrest } = usePrestataire();
+  const { prestataire, loading: loadingPrest } = useSharedPrestataire();
   const [avis, setAvis] = useState<Avis[]>([]);
   const [loading, setLoading] = useState(true);
 

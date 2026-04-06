@@ -1,9 +1,9 @@
-import { usePrestataire } from "@/hooks/usePrestataire";
+import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3 } from "lucide-react";
 
 export default function PrestataireStatistiques() {
-  const { prestataire, loading } = usePrestataire();
+  const { prestataire, loading } = useSharedPrestataire();
 
   if (loading) {
     return (

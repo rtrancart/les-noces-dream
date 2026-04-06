@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { usePrestataire } from "@/hooks/usePrestataire";
+import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Upload, Trash2, ImageIcon, Loader2, Star } from "lucide-react";
 
 export default function PrestataireGalerie() {
-  const { prestataire, loading, refetch } = usePrestataire();
+  const { prestataire, loading, refetch } = useSharedPrestataire();
   const [uploading, setUploading] = useState(false);
 
   const galerieUrls = prestataire?.urls_galerie ?? [];

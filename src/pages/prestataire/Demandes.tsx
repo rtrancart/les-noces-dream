@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { usePrestataire } from "@/hooks/usePrestataire";
+import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
@@ -42,7 +42,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function PrestataireDemandes() {
-  const { prestataire, loading: loadingPrest } = usePrestataire();
+  const { prestataire, loading: loadingPrest } = useSharedPrestataire();
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [loading, setLoading] = useState(true);
 
