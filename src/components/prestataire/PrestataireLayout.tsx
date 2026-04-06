@@ -86,3 +86,11 @@ function PrestataireLayoutInner() {
     </>
   );
 }
+
+export default function PrestataireLayout() {
+  return (
+    <PrestataireProvider>
+      <PrestataireLayoutInner />
+    </PrestataireProvider>
+  );
+}
