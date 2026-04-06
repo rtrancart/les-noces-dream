@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { REGIONS } from "@/lib/zonesIntervention";
-import { usePrestataire } from "@/hooks/usePrestataire";
+import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,7 @@ function normalizeZones(zones: string[]): string[] {
 }
 
 export default function PrestatairePrestation() {
-  const { prestataire, loading, refetch } = usePrestataire();
+  const { prestataire, loading, refetch } = useSharedPrestataire();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     zones_intervention: [] as string[],

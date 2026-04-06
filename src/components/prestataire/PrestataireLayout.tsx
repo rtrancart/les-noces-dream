@@ -4,7 +4,7 @@ import { Menu } from "lucide-react";
 import { PrestataireSidebar, mainItems } from "./PrestataireSidebar";
 import { ProviderInfoBanner } from "./ProviderInfoBanner";
 import Header from "@/components/layout/Header";
-import { usePrestataire } from "@/hooks/usePrestataire";
+import { PrestataireProvider, useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,8 +14,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
-export default function PrestataireLayout() {
-  const { prestataire, loading } = usePrestataire();
+function PrestataireLayoutInner() {
+  const { prestataire, loading } = useSharedPrestataire();
   const isMobile = useIsMobile();
   const [sheetOpen, setSheetOpen] = useState(false);
   const location = useLocation();
@@ -84,5 +84,13 @@ export default function PrestataireLayout() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function PrestataireLayout() {
+  return (
+    <PrestataireProvider>
+      <PrestataireLayoutInner />
+    </PrestataireProvider>
   );
 }
