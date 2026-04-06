@@ -82,7 +82,7 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
             {/* Mobile version */}
             <div className="flex md:hidden flex-col gap-1.5">
               <p className="font-sans text-xs text-muted-foreground">
-                Complétez votre profil pour gagner en visibilité auprès des clients.
+                Profil complété à
               </p>
               <div className="flex items-center gap-3">
                 <div className="flex-1">
