@@ -25,7 +25,13 @@ const mainItems = [
   { title: "Paramètres", url: "/espace-pro/parametres", icon: Settings },
 ];
 
-export function PrestataireSidebar() {
+export { mainItems };
+
+interface PrestataireSidebarProps {
+  onNavigate?: () => void;
+}
+
+export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
   const location = useLocation();
   const { signOut, profile } = useAuth();
   const currentPath = location.pathname;
@@ -34,7 +40,7 @@ export function PrestataireSidebar() {
     url === "/espace-pro" ? currentPath === "/espace-pro" : currentPath.startsWith(url);
 
   return (
-    <nav className="bg-card rounded-lg shadow-sm p-3 sticky top-24 space-y-1">
+    <nav className="bg-card rounded-lg shadow-sm p-3 lg:sticky lg:top-24 space-y-1">
       {mainItems.map((item) => {
         const active = isActive(item.url);
         return (
@@ -42,6 +48,7 @@ export function PrestataireSidebar() {
             key={item.url}
             to={item.url}
             end={item.url === "/espace-pro"}
+            onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 px-4 py-2.5 rounded-sm font-sans text-sm transition-all duration-200",
               active
@@ -63,7 +70,10 @@ export function PrestataireSidebar() {
           </p>
         )}
         <button
-          onClick={() => signOut()}
+          onClick={() => {
+            signOut();
+            onNavigate?.();
+          }}
           className="flex items-center gap-3 w-full px-4 py-2.5 rounded-sm font-sans text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
         >
           <LogOut className="h-4 w-4 shrink-0" />

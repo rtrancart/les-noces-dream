@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, AlertCircle, X } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -8,7 +9,6 @@ interface ProviderInfoBannerProps {
 }
 
 export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBannerProps) {
-  // Profile completion
   const profileFields = {
     hasName: !!prestataire.nom_commercial,
     hasCategory: !!prestataire.categorie_mere_id,
@@ -50,36 +50,45 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
   const circumference = 2 * Math.PI * 28;
 
   return (
-    <div className="bg-secondary rounded-lg shadow-sm px-6 py-5 md:px-8 md:py-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="bg-secondary rounded-lg shadow-sm px-4 py-3 md:px-8 md:py-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
         {/* Left: Provider info */}
-        <div>
-          <div className="flex items-center gap-3 mb-1.5">
-            <h1 className="font-serif text-xl md:text-2xl text-foreground">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 md:gap-3 mb-1">
+            <h1 className="font-serif text-lg md:text-2xl text-foreground truncate">
               {prestataire.nom_commercial}
             </h1>
             {prestataire.est_premium && (
-              <span className="px-3 py-0.5 bg-sauge text-white rounded-sm font-sans text-xs uppercase tracking-wide">
+              <span className="px-2 md:px-3 py-0.5 bg-sauge text-white rounded-sm font-sans text-[10px] md:text-xs uppercase tracking-wide shrink-0">
                 Premium
               </span>
             )}
           </div>
-          <p className="font-sans text-sm text-foreground/70">
+          <p className="font-sans text-xs md:text-sm text-foreground/70">
             {categoryName && <>{categoryName} · </>}
             {prestataire.ville}, {prestataire.region}
           </p>
           <Badge
-            className="mt-2"
+            className="mt-1.5 md:mt-2"
             variant={prestataire.statut === "actif" ? "default" : "secondary"}
           >
             {statusLabels[prestataire.statut] ?? prestataire.statut}
           </Badge>
         </div>
 
-        {/* Right: Profile completion */}
-        <div className="relative group">
+        {/* Right: Profile completion — compact on mobile, circle on desktop */}
+        {/* Mobile version */}
+        <div className="flex md:hidden items-center gap-3">
+          <div className="flex-1">
+            <Progress value={completionRate} className="h-2" />
+          </div>
+          <span className="font-serif text-sm text-foreground shrink-0">{completionRate}%</span>
+        </div>
+
+        {/* Desktop version */}
+        <div className="relative group hidden md:block">
           <div className="flex items-center gap-4 cursor-pointer">
-            <div className="text-right hidden sm:block">
+            <div className="text-right">
               <div className="font-serif text-2xl text-foreground">{completionRate}%</div>
               <p className="font-sans text-xs text-muted-foreground">Profil complété</p>
             </div>
