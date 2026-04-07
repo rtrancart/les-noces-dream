@@ -29,6 +29,7 @@ import FicheAvis from "@/components/fiche/FicheAvis";
 import FicheDevisDialog from "@/components/fiche/FicheDevisDialog";
 import FicheCarte from "@/components/fiche/FicheCarte";
 import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
+import { getCondensedZoneNames } from "@/lib/zonesIntervention";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 
 type Prestataire = {
