@@ -415,11 +415,12 @@ export default function FichePrestataire() {
           </div>
 
           {/* Sidebar desktop */}
-          <aside className="hidden md:block space-y-6">
+          <aside className="hidden md:block">
             <div className="sticky top-24 space-y-4">
-              <Button className="w-full" size="lg" onClick={() => setDevisOpen(true)}>
-                Demander un devis
-              </Button>
+              <FicheDevisSidebar
+                prestataireId={presta.id}
+                prestataireName={presta.nom_commercial}
+              />
 
               {/* Téléphone */}
               {presta.telephone && (
