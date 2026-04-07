@@ -13,6 +13,7 @@ import Inscription from "./pages/Inscription";
 import MotDePasseOublie from "./pages/MotDePasseOublie";
 import ResetPassword from "./pages/ResetPassword";
 import Recherche from "./pages/Recherche";
+import FichePrestataire from "./pages/FichePrestataire";
 
 // Prestataire
 import PrestataireLayout from "./components/prestataire/PrestataireLayout";
@@ -52,6 +53,7 @@ const App = () => (
             <Route element={<PublicLayout />}>
               <Route path="/" element={<Index />} />
               <Route path="/recherche" element={<Recherche />} />
+              <Route path="/prestataire/:slug" element={<FichePrestataire />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}
