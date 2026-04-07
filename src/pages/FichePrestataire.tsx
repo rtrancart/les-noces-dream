@@ -27,6 +27,7 @@ import {
 import FicheGalerie from "@/components/fiche/FicheGalerie";
 import FicheAvis from "@/components/fiche/FicheAvis";
 import FicheDevisDialog from "@/components/fiche/FicheDevisDialog";
+import FicheDevisSidebar from "@/components/fiche/FicheDevisSidebar";
 import FicheCarte from "@/components/fiche/FicheCarte";
 import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
 import { getCondensedZoneNames } from "@/lib/zonesIntervention";
