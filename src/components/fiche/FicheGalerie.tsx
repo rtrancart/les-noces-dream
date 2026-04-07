@@ -26,44 +26,28 @@ export default function FicheGalerie({ photoUrl, galerie, nom }: Props) {
 
   return (
     <>
-      {/* Mobile: carousel */}
-      <div className="md:hidden relative">
-        <div className="aspect-[4/3] overflow-hidden rounded-xl">
-          <img
-            src={images[current]}
-            alt={`${nom} - photo ${current + 1}`}
-            className="w-full h-full object-cover cursor-pointer"
-            onClick={() => setLightbox(current)}
-          />
-        </div>
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={prev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/80 backdrop-blur-sm rounded-full p-1.5 shadow-soft"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={next}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-card/80 backdrop-blur-sm rounded-full p-1.5 shadow-soft"
-            >
-              <ChevronRight size={20} />
-            </button>
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {images.map((_, i) => (
+      {/* Mobile: square grid gallery */}
+      <div className="md:hidden">
+        <div className="grid grid-cols-3 gap-1 rounded-xl overflow-hidden">
+          {images.slice(0, 6).map((img, i) => (
+            <div key={i} className="relative aspect-square">
+              <img
+                src={img}
+                alt={`${nom} - photo ${i + 1}`}
+                className="w-full h-full object-cover cursor-pointer"
+                onClick={() => setLightbox(i)}
+              />
+              {i === 5 && images.length > 6 && (
                 <button
-                  key={i}
-                  onClick={() => setCurrent(i)}
-                  className={cn(
-                    "w-2 h-2 rounded-full transition-colors",
-                    i === current ? "bg-card" : "bg-card/50"
-                  )}
-                />
-              ))}
+                  onClick={() => setLightbox(6)}
+                  className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium text-sm"
+                >
+                  +{images.length - 6}
+                </button>
+              )}
             </div>
-          </>
-        )}
+          ))}
+        </div>
       </div>
 
       {/* Desktop: grid */}

@@ -18,23 +18,10 @@ export default function FicheStickyMobileCTA({ telephone, prestataireId, onDevis
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-card border-t border-border px-4 py-3 flex gap-3 safe-bottom">
-      {telephone && (
-        <Button
-          variant="outline"
-          className="flex-1 gap-2"
-          asChild
-          onClick={handleCall}
-        >
-          <a href={`tel:${telephone.replace(/\s/g, "")}`}>
-            <Phone size={16} />
-            Appeler
-          </a>
-        </Button>
-      )}
-      <Button className="flex-1 gap-2" onClick={onDevisClick}>
+    <div className="md:hidden fixed bottom-0 right-0 z-50 p-4 safe-bottom">
+      <Button className="gap-2 shadow-lg rounded-full px-6" size="lg" onClick={onDevisClick}>
         <FileText size={16} />
-        Demander un devis
+        Devis
       </Button>
     </div>
   );
