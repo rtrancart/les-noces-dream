@@ -29,6 +29,7 @@ import FicheAvis from "@/components/fiche/FicheAvis";
 import FicheDevisDialog from "@/components/fiche/FicheDevisDialog";
 import FicheCarte from "@/components/fiche/FicheCarte";
 import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
+import { getCondensedZoneNames } from "@/lib/zonesIntervention";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 
 type Prestataire = {
@@ -312,14 +313,30 @@ export default function FichePrestataire() {
                 )}
               </div>
 
-              {/* Zones */}
-              {presta.zones_intervention && presta.zones_intervention.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {presta.zones_intervention.map((z) => (
-                    <Badge key={z} variant="outline" className="text-xs font-sans">{z}</Badge>
-                  ))}
-                </div>
-              )}
+              {/* Zones d'intervention */}
+              {(() => {
+                const zones = presta.zones_intervention ?? [];
+                if (zones.length === 0) return null;
+                // Get the département from code_postal (first 2 chars, or 2A/2B for Corsica)
+                const cp = presta.code_postal ?? "";
+                const deptFromCp = cp.startsWith("20") 
+                  ? (parseInt(cp) >= 20200 ? "2B" : "2A") 
+                  : cp.slice(0, 2);
+                // If only one zone and it matches the provider's département, don't show
+                if (zones.length === 1 && zones[0] === deptFromCp) return null;
+                const condensed = getCondensedZoneNames(zones);
+                if (condensed.length === 0) return null;
+                return (
+                  <div className="mt-3">
+                    <p className="font-sans text-xs text-muted-foreground mb-1.5">Zones d'intervention</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {condensed.map((name) => (
+                        <Badge key={name} variant="outline" className="text-xs font-sans">{name}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <Separator />
