@@ -10,7 +10,6 @@ interface Props {
 
 export default function FicheStickyMobileCTA({ telephone, prestataireId, onDevisClick }: Props) {
   const handleCall = () => {
-    // Log event
     supabase
       .from("evenements_prestataire")
       .insert({ prestataire_id: prestataireId, type: "vue_telephone" })
@@ -18,11 +17,21 @@ export default function FicheStickyMobileCTA({ telephone, prestataireId, onDevis
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 right-0 z-50 p-4 safe-bottom">
-      <Button className="gap-2 shadow-lg rounded-full px-6" size="lg" onClick={onDevisClick}>
-        <FileText size={16} />
-        Devis
-      </Button>
+    <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur border-t border-border p-3 safe-bottom">
+      <div className="flex gap-2">
+        {telephone && (
+          <Button variant="outline" size="lg" className="gap-2 flex-1" asChild onClick={handleCall}>
+            <a href={`tel:${telephone}`}>
+              <Phone size={16} />
+              Appeler
+            </a>
+          </Button>
+        )}
+        <Button className="gap-2 flex-1" size="lg" onClick={onDevisClick}>
+          <FileText size={16} />
+          Demander un devis
+        </Button>
+      </div>
     </div>
   );
 }
