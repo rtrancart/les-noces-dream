@@ -245,19 +245,17 @@ export default function FichePrestataire() {
         <span className="text-foreground font-medium truncate">{presta.nom_commercial}</span>
       </nav>
 
-      {/* Galerie */}
-      <div className="max-w-5xl mx-auto px-4 mb-6">
-        <FicheGalerie
-          photoUrl={presta.photo_principale_url}
-          galerie={presta.urls_galerie ?? []}
-          nom={presta.nom_commercial}
-        />
-      </div>
-
       <div className="max-w-5xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main content */}
           <div className="md:col-span-2 space-y-8">
+            {/* Galerie */}
+            <FicheGalerie
+              photoUrl={presta.photo_principale_url}
+              galerie={presta.urls_galerie ?? []}
+              nom={presta.nom_commercial}
+            />
+
             {/* Header */}
             <div>
               <div className="flex items-start justify-between gap-4">
