@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon, X, ChevronDown, ChevronRight, EyeOff } from "lucide-react";
+import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon, X, ChevronDown, ChevronRight, EyeOff, ImageIcon } from "lucide-react";
+import PrestatairePhotosTab from "@/components/admin/PrestatairePhotosTab";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -629,9 +630,12 @@ export default function Prestataires() {
             <DialogTitle className="font-serif text-lg">{editItem ? "Modifier le prestataire" : "Nouveau prestataire"}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="general" className="mt-2">
-            <TabsList className={`grid w-full ${editItem ? "grid-cols-4" : "grid-cols-3"}`}>
+            <TabsList className={`grid w-full ${editItem ? "grid-cols-5" : "grid-cols-3"}`}>
               <TabsTrigger value="general" className="font-sans text-xs">Général</TabsTrigger>
               <TabsTrigger value="coordonnees" className="font-sans text-xs">Coordonnées</TabsTrigger>
+              {editItem && (
+                <TabsTrigger value="photos" className="font-sans text-xs">Photos</TabsTrigger>
+              )}
               <TabsTrigger value="admin" className="font-sans text-xs">Admin</TabsTrigger>
               {editItem && (
                 <TabsTrigger value="password" className="font-sans text-xs">Mot de passe</TabsTrigger>
@@ -728,6 +732,17 @@ export default function Prestataires() {
                 defaultRegion={form.region}
               />
             </TabsContent>
+
+            {editItem && (
+              <TabsContent value="photos">
+                <PrestatairePhotosTab
+                  prestataireId={editItem.id}
+                  photoUrl={editItem.photo_principale_url}
+                  galerieUrls={(editItem.urls_galerie as string[]) ?? []}
+                  onUpdate={() => { fetchData(); supabase.from("prestataires").select("*").eq("id", editItem.id).single().then(({ data }) => { if (data) setEditItem(data); }); }}
+                />
+              </TabsContent>
+            )}
 
             <TabsContent value="admin" className="space-y-4 pt-4">
               <Field label="Statut">
