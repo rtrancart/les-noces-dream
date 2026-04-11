@@ -115,7 +115,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
   });
 
   const resetAll = () => {
-    setStep("email");
+    setStep(isSuperAdmin ? "form" : "email");
     setEmail("");
     setContactId(null);
     setDemandeId(null);
