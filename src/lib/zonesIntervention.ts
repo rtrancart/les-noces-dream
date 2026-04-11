@@ -211,31 +211,35 @@ export function getZoneLabel(value: string): string {
   return ZONE_LABELS[value] ?? ZONE_LABELS[ZONE_ALIASES[value] ?? ""] ?? value;
 }
 
+/** Normalize zone values by resolving aliases */
+function normalizeZones(zones: string[]): string[] {
+  return zones.map((z) => ZONE_ALIASES[z] ?? z);
+}
+
 /**
  * Returns condensed display names for zones:
  * if all départements of a region are selected, show only the region name.
  */
 export function getCondensedZoneNames(selectedZones: string[]): string[] {
-  if (selectedZones.includes("france_entiere")) return ["France entière"];
+  const normalized = normalizeZones(selectedZones);
+  if (normalized.includes("france_entiere")) return ["France entière"];
 
   const names: string[] = [];
   const accounted = new Set<string>();
 
-  // Also account for region values themselves (e.g. "ile_de_france")
   const regionValues = new Set(REGIONS.map((r) => r.value));
 
   for (const region of REGIONS) {
     const deptValues = region.departements.map((d) => d.value);
-    const allSelected = deptValues.length > 0 && deptValues.every((d) => selectedZones.includes(d));
-    if (allSelected || selectedZones.includes(region.value)) {
+    const allSelected = deptValues.length > 0 && deptValues.every((d) => normalized.includes(d));
+    if (allSelected || normalized.includes(region.value)) {
       names.push(region.label);
       deptValues.forEach((d) => accounted.add(d));
       accounted.add(region.value);
     }
   }
 
-  // Add individually selected départements not already accounted for
-  for (const zone of selectedZones) {
+  for (const zone of normalized) {
     if (zone === "france_entiere") continue;
     if (!accounted.has(zone) && !regionValues.has(zone)) {
       names.push(getZoneLabel(zone));
