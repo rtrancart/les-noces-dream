@@ -19,6 +19,10 @@ export default function FicheStickyMobileCTA({ telephone, prestataireId, onDevis
   return (
     <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur border-t border-border p-3 safe-bottom">
       <div className="flex gap-2">
+        <Button className="gap-2 flex-1" size="lg" onClick={onDevisClick}>
+          <FileText size={16} />
+          Demander un devis
+        </Button>
         {telephone && (
           <Button variant="outline" size="lg" className="gap-2 flex-1" asChild onClick={handleCall}>
             <a href={`tel:${telephone}`}>
@@ -27,10 +31,6 @@ export default function FicheStickyMobileCTA({ telephone, prestataireId, onDevis
             </a>
           </Button>
         )}
-        <Button className="gap-2 flex-1" size="lg" onClick={onDevisClick}>
-          <FileText size={16} />
-          Demander un devis
-        </Button>
       </div>
     </div>
   );
