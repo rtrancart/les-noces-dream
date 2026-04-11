@@ -294,12 +294,15 @@ export default function FichePrestataire() {
                     <span>({presta.nombre_avis} avis)</span>
                   </a>
                 )}
-                {presta.prix_depart && (
+                {presta.prix_depart && presta.prix_max ? (
+                  <span>
+                    Entre <span className="font-semibold text-foreground">{formatPrice(presta.prix_depart)}</span> et <span className="font-semibold text-foreground">{formatPrice(presta.prix_max)}</span>
+                  </span>
+                ) : presta.prix_depart ? (
                   <span>
                     Dès <span className="font-semibold text-foreground">{formatPrice(presta.prix_depart)}</span>
-                    {presta.prix_max && ` — ${formatPrice(presta.prix_max)}`}
                   </span>
-                )}
+                ) : null}
               </div>
 
               {/* Zones d'intervention */}

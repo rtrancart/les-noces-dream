@@ -201,8 +201,14 @@ const entries: [string, string][] = [
 
 export const ZONE_LABELS: Record<string, string> = Object.fromEntries(entries);
 
+/** Common alternate keys stored in DB that differ from our canonical keys */
+const ZONE_ALIASES: Record<string, string> = {
+  provence_alpes_cote_dazur: "provence_alpes_cote_azur",
+  auvergne_rhone_alpes_: "auvergne_rhone_alpes",
+};
+
 export function getZoneLabel(value: string): string {
-  return ZONE_LABELS[value] ?? value;
+  return ZONE_LABELS[value] ?? ZONE_LABELS[ZONE_ALIASES[value] ?? ""] ?? value;
 }
 
 /**

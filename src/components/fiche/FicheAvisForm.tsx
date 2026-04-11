@@ -92,7 +92,8 @@ const criteres = [
 ];
 
 export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuccess }: Props) {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const isSuperAdmin = hasRole("super_admin");
   const isMobile = useIsMobile();
   const [step, setStep] = useState<"email" | "form">("email");
   const [email, setEmail] = useState("");
