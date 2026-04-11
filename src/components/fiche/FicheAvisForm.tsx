@@ -95,7 +95,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
   const { user, hasRole } = useAuth();
   const isSuperAdmin = hasRole("super_admin");
   const isMobile = useIsMobile();
-  const [step, setStep] = useState<"email" | "form">("email");
+  const [step, setStep] = useState<"email" | "form">(isSuperAdmin ? "form" : "email");
   const [email, setEmail] = useState("");
   const [contactId, setContactId] = useState<string | null>(null);
   const [demandeId, setDemandeId] = useState<string | null>(null);
