@@ -246,8 +246,11 @@ export default function FichePrestataire() {
       </nav>
 
       <div className="max-w-5xl mx-auto px-4">
-        {/* Header info before gallery */}
-        <div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Main content */}
+          <div className="md:col-span-2 space-y-6">
+            {/* Header info */}
+            <div>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground">
@@ -315,12 +318,10 @@ export default function FichePrestataire() {
               {(() => {
                 const zones = presta.zones_intervention ?? [];
                 if (zones.length === 0) return null;
-                // Get the département from code_postal (first 2 chars, or 2A/2B for Corsica)
                 const cp = presta.code_postal ?? "";
                 const deptFromCp = cp.startsWith("20") 
                   ? (parseInt(cp) >= 20200 ? "2B" : "2A") 
                   : cp.slice(0, 2);
-                // If only one zone and it matches the provider's département, don't show
                 if (zones.length === 1 && zones[0] === deptFromCp) return null;
                 const condensed = getCondensedZoneNames(zones);
                 if (condensed.length === 0) return null;
@@ -337,9 +338,6 @@ export default function FichePrestataire() {
               })()}
             </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Main content */}
-          <div className="md:col-span-2 space-y-8">
             {/* Galerie */}
             <FicheGalerie
               photoUrl={presta.photo_principale_url}
