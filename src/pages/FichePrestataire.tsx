@@ -250,7 +250,7 @@ export default function FichePrestataire() {
           {/* Main content */}
           <div className="md:col-span-2 space-y-6">
             {/* Header info */}
-            <div>
+            <div className="rounded-lg border border-border bg-secondary/30 p-4 md:p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground">
@@ -326,11 +326,14 @@ export default function FichePrestataire() {
                 const condensed = getCondensedZoneNames(zones);
                 if (condensed.length === 0) return null;
                 return (
-                  <div className="mt-3">
-                    <p className="font-sans text-xs text-muted-foreground mb-1.5">Zones d'intervention</p>
+                  <div className="mt-3 pt-3 border-t border-border/60">
+                    <p className="font-sans text-xs font-medium text-accent mb-1.5 flex items-center gap-1">
+                      <MapPin size={12} />
+                      Zones d'intervention
+                    </p>
                     <div className="flex flex-wrap gap-1.5">
                       {condensed.map((name) => (
-                        <Badge key={name} variant="outline" className="text-xs font-sans">{name}</Badge>
+                        <Badge key={name} className="text-xs font-sans bg-accent/10 text-accent border-accent/20 hover:bg-accent/15">{name}</Badge>
                       ))}
                     </div>
                   </div>
