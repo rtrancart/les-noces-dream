@@ -423,7 +423,7 @@ export default function FichePrestataire() {
 
           {/* Sidebar desktop */}
           <aside className="hidden md:block">
-            <div className="sticky top-24 space-y-4">
+            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto space-y-4">
               <FicheDevisSidebar
                 prestataireId={presta.id}
                 prestataireName={presta.nom_commercial}
