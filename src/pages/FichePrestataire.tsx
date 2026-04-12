@@ -250,7 +250,7 @@ export default function FichePrestataire() {
           {/* Main content */}
           <div className="md:col-span-2 space-y-6">
             {/* Header info */}
-            <div className="rounded-lg border border-border bg-secondary/30 p-4 md:p-5">
+            <div>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground">
