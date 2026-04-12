@@ -281,18 +281,24 @@ export default function FichePrestataire() {
                 </button>
               </div>
 
-              {/* Location + rating */}
-              <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-muted-foreground">
+              {/* Location · rating · price on one line */}
+              <div className="flex flex-wrap items-center gap-1.5 mt-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <MapPin size={14} />
                   <span>{presta.ville}, {presta.region}</span>
                 </div>
                 {presta.note_moyenne != null && presta.nombre_avis != null && presta.nombre_avis > 0 && (
-                  <a href="#avis" className="flex items-center gap-1 hover:text-foreground transition-colors">
-                    <Star size={14} className="text-primary fill-primary" />
-                    <span className="font-medium text-foreground">{presta.note_moyenne.toFixed(1)}</span>
-                    <span>({presta.nombre_avis} avis)</span>
-                  </a>
+                  <>
+                    <span className="text-muted-foreground/40">·</span>
+                    <a href="#avis" className="flex items-center gap-1 hover:text-foreground transition-colors">
+                      <Star size={14} className="text-primary fill-primary" />
+                      <span className="font-medium text-foreground">{presta.note_moyenne.toFixed(1)}</span>
+                      <span>({presta.nombre_avis} avis)</span>
+                    </a>
+                  </>
+                )}
+                {(presta.prix_depart || presta.prix_max) && (
+                  <span className="text-muted-foreground/40">·</span>
                 )}
                 {presta.prix_depart && presta.prix_max ? (
                   <span>

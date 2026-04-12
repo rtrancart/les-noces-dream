@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Send } from "lucide-react";
 
 const devisSchema = z.object({
@@ -55,6 +56,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
   const { user, profile } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const form = useForm<DevisFormValues>({
     resolver: zodResolver(devisSchema),
@@ -66,6 +68,10 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
       message: "",
     },
   });
+
+  const handleFocus = () => {
+    if (!expanded) setExpanded(true);
+  };
 
   const onSubmit = async (values: DevisFormValues) => {
     setSubmitting(true);
@@ -139,63 +145,22 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+            {/* Always visible fields */}
             <FormField control={form.control} name="nom" render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Nom *</FormLabel>
-                <FormControl><Input placeholder="Votre nom" className="h-9 text-sm" {...field} /></FormControl>
+                <FormControl>
+                  <Input placeholder="Votre nom" className="h-9 text-sm" {...field} onFocus={(e) => { handleFocus(); field.onBlur && e; }} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="email" render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">Email *</FormLabel>
-                <FormControl><Input type="email" placeholder="votre@email.com" className="h-9 text-sm" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="telephone" render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">Téléphone</FormLabel>
-                <FormControl><Input placeholder="06 ..." className="h-9 text-sm" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="objet" render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">Type d'événement *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {objets.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <div className="grid grid-cols-2 gap-2">
-              <FormField control={form.control} name="date_evenement" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Date</FormLabel>
-                  <FormControl><Input type="date" className="h-9 text-sm" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="nombre_invites_rang" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs">Invités</FormLabel>
-                  <FormControl><Input placeholder="80-100" className="h-9 text-sm" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-            <FormField control={form.control} name="lieu_evenement" render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-xs">Lieu</FormLabel>
-                <FormControl><Input placeholder="Ville ou lieu" className="h-9 text-sm" {...field} /></FormControl>
+                <FormControl>
+                  <Input type="email" placeholder="votre@email.com" className="h-9 text-sm" {...field} onFocus={handleFocus} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
@@ -203,11 +168,64 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
               <FormItem>
                 <FormLabel className="text-xs">Message *</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Décrivez votre projet…" rows={3} className="text-sm" {...field} />
+                  <Textarea placeholder="Décrivez votre projet…" rows={3} className="text-sm" {...field} onFocus={handleFocus} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )} />
+
+            {/* Collapsible secondary fields */}
+            <Collapsible open={expanded}>
+              <CollapsibleContent className="space-y-3">
+                <FormField control={form.control} name="telephone" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">Téléphone</FormLabel>
+                    <FormControl><Input placeholder="06 ..." className="h-9 text-sm" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="objet" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">Type d'événement *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {objets.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <div className="grid grid-cols-2 gap-2">
+                  <FormField control={form.control} name="date_evenement" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Date</FormLabel>
+                      <FormControl><Input type="date" className="h-9 text-sm" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="nombre_invites_rang" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Invités</FormLabel>
+                      <FormControl><Input placeholder="80-100" className="h-9 text-sm" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <FormField control={form.control} name="lieu_evenement" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">Lieu</FormLabel>
+                    <FormControl><Input placeholder="Ville ou lieu" className="h-9 text-sm" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </CollapsibleContent>
+            </Collapsible>
+
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? "Envoi…" : "Envoyer ma demande"}
             </Button>
