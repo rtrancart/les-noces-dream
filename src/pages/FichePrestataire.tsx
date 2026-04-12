@@ -327,8 +327,7 @@ export default function FichePrestataire() {
                 if (condensed.length === 0) return null;
                 return (
                   <div className="mt-3 pt-3 border-t border-border/60">
-                    <p className="font-sans text-xs font-medium text-accent mb-1.5 flex items-center gap-1">
-                      <MapPin size={12} />
+                    <p className="font-sans text-xs font-medium text-accent mb-1.5">
                       Zones d'intervention
                     </p>
                     <div className="flex flex-wrap gap-1.5">
