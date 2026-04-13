@@ -69,7 +69,21 @@ const App = () => (
             <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Espace prestataire */}
+            {/* Espace client */}
+            <Route
+              path="/mon-compte"
+              element={
+                <ProtectedRoute requiredRole="client">
+                  <ClientLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<ClientDashboard />} />
+              <Route path="messagerie" element={<ClientMessagerie />} />
+              <Route path="favoris" element={<ClientFavoris />} />
+              <Route path="parametres" element={<ClientParametres />} />
+            </Route>
+
             <Route
               path="/espace-pro"
               element={
