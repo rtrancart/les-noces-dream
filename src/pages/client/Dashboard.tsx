@@ -256,6 +256,9 @@ export default function ClientDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Budget */}
+      <BudgetModule />
     </div>
   );
 }
