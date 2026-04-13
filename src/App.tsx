@@ -15,6 +15,13 @@ import ResetPassword from "./pages/ResetPassword";
 import Recherche from "./pages/Recherche";
 import FichePrestataire from "./pages/FichePrestataire";
 
+// Client
+import ClientLayout from "./components/client/ClientLayout";
+import ClientDashboard from "./pages/client/Dashboard";
+import ClientMessagerie from "./pages/client/Messagerie";
+import ClientFavoris from "./pages/client/Favoris";
+import ClientParametres from "./pages/client/Parametres";
+
 // Prestataire
 import PrestataireLayout from "./components/prestataire/PrestataireLayout";
 import PrestataireDashboard from "./pages/prestataire/Dashboard";
