@@ -15,6 +15,13 @@ import ResetPassword from "./pages/ResetPassword";
 import Recherche from "./pages/Recherche";
 import FichePrestataire from "./pages/FichePrestataire";
 
+// Client
+import ClientLayout from "./components/client/ClientLayout";
+import ClientDashboard from "./pages/client/Dashboard";
+import ClientMessagerie from "./pages/client/Messagerie";
+import ClientFavoris from "./pages/client/Favoris";
+import ClientParametres from "./pages/client/Parametres";
+
 // Prestataire
 import PrestataireLayout from "./components/prestataire/PrestataireLayout";
 import PrestataireDashboard from "./pages/prestataire/Dashboard";
@@ -62,7 +69,21 @@ const App = () => (
             <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Espace prestataire */}
+            {/* Espace client */}
+            <Route
+              path="/mon-compte"
+              element={
+                <ProtectedRoute requiredRole="client">
+                  <ClientLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<ClientDashboard />} />
+              <Route path="messagerie" element={<ClientMessagerie />} />
+              <Route path="favoris" element={<ClientFavoris />} />
+              <Route path="parametres" element={<ClientParametres />} />
+            </Route>
+
             <Route
               path="/espace-pro"
               element={
