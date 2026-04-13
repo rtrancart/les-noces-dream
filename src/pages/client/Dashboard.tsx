@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, MessageSquare, Calendar, Star } from "lucide-react";
+import BudgetModule from "@/components/client/BudgetModule";
 
 interface DashboardStats {
   favorisCount: number;
