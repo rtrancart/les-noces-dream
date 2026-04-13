@@ -188,11 +188,23 @@ export default function FichePrestataire() {
     if (!presta) return;
 
     if (isFav) {
-      await supabase.from("favoris").delete().eq("user_id", user.id).eq("prestataire_id", presta.id);
+      const { error } = await supabase.from("favoris").delete().eq("user_id", user.id).eq("prestataire_id", presta.id);
+      if (error) {
+        toast.error("Erreur lors du retrait des favoris");
+        console.error("Favori delete error:", error);
+        return;
+      }
       setIsFav(false);
+      toast.success("Retiré des favoris");
     } else {
-      await supabase.from("favoris").insert({ user_id: user.id, prestataire_id: presta.id });
+      const { error } = await supabase.from("favoris").insert({ user_id: user.id, prestataire_id: presta.id });
+      if (error) {
+        toast.error("Erreur lors de l'ajout aux favoris");
+        console.error("Favori insert error:", error);
+        return;
+      }
       setIsFav(true);
+      toast.success("Ajouté aux favoris ♥");
     }
   };
 
