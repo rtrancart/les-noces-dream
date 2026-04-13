@@ -73,7 +73,7 @@ const App = () => (
             <Route
               path="/mon-compte"
               element={
-                <ProtectedRoute requiredRole="client">
+                <ProtectedRoute>
                   <ClientLayout />
                 </ProtectedRoute>
               }
