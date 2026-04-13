@@ -51,7 +51,7 @@ export default function ClientDashboard() {
       const [favRes, demRes] = await Promise.all([
         supabase
           .from("favoris")
-          .select("id, created_at, prestataire:prestataires(id, nom_commercial, slug, ville, photo_principale_url, categorie_mere:categories(nom))")
+          .select("id, created_at, prestataire:prestataires(id, nom_commercial, slug, ville, photo_principale_url, categorie_mere:categories!prestataires_categorie_mere_id_fkey(nom))")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(5),

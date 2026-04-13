@@ -33,7 +33,7 @@ export default function ClientFavoris() {
 
     const { data } = await supabase
       .from("favoris")
-      .select("id, prestataire:prestataires(id, nom_commercial, slug, ville, region, photo_principale_url, note_moyenne, nombre_avis, categorie_mere:categories(nom))")
+      .select("id, prestataire:prestataires(id, nom_commercial, slug, ville, region, photo_principale_url, note_moyenne, nombre_avis, categorie_mere:categories!prestataires_categorie_mere_id_fkey(nom))")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
