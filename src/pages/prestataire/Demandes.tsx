@@ -52,7 +52,9 @@ const visualLabels: Record<VisualStatus, { label: string; className: string }> =
   cloture: { label: "Clôturé", className: "bg-muted text-muted-foreground" },
 };
 
-const closedStatuses = [
+type ClosedStatus = "devis_envoye" | "accepte" | "refuse" | "archive";
+
+const closedStatuses: { value: ClosedStatus; label: string }[] = [
   { value: "devis_envoye", label: "Devis envoyé" },
   { value: "accepte", label: "Accepté" },
   { value: "refuse", label: "Refusé" },
