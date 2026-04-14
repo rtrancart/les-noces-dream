@@ -16,7 +16,7 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
     hasDescription: !!prestataire.description,
     hasShortDesc: !!prestataire.description_courte,
     hasPhoto: !!prestataire.photo_principale_url,
-    hasGallery: (prestataire.urls_galerie?.length ?? 0) > 0,
+    hasGallery: (prestataire.urls_galerie?.length ?? 0) > 0 || !!prestataire.photo_principale_url,
     hasPhone: !!prestataire.telephone,
     hasEmail: !!prestataire.email_contact,
     hasWebsite: !!prestataire.site_web,
