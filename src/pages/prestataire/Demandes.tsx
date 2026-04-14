@@ -111,7 +111,7 @@ export default function PrestataireDemandes() {
     }
   }, [selectedId]);
 
-  const handleStatusChange = async (demandeId: string, newStatut: string) => {
+  const handleStatusChange = async (demandeId: string, newStatut: "devis_envoye" | "accepte" | "refuse" | "archive") => {
     await supabase
       .from("demandes_devis")
       .update({ statut: newStatut })
