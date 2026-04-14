@@ -1,10 +1,11 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Star, MessageSquare, TrendingUp, AlertCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { FileText, Star, MessageSquare, TrendingUp, AlertCircle, ImageIcon, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { useMemo } from "react";
 
 interface DashboardStats {
   totalDemandes: number;
@@ -33,7 +34,6 @@ function getLast8Weeks(): { start: Date; label: string }[] {
     const d = new Date(now);
     d.setDate(d.getDate() - i * 7);
     d.setHours(0, 0, 0, 0);
-    // Set to Monday
     const dayOfWeek = d.getDay();
     const diff = d.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
     d.setDate(diff);
@@ -44,6 +44,7 @@ function getLast8Weeks(): { start: Date; label: string }[] {
 
 export default function PrestataireDashboard() {
   const { prestataire, loading } = useSharedPrestataire();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalDemandes: 0,
     demandesNouvelles: 0,
@@ -132,9 +133,6 @@ export default function PrestataireDashboard() {
     );
   }
 
-
-
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -144,9 +142,12 @@ export default function PrestataireDashboard() {
         </h2>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Clickable */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card>
+        <Card
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => navigate("/espace-pro/demandes")}
+        >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="font-sans text-sm text-muted-foreground">Demandes reçues</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -161,7 +162,10 @@ export default function PrestataireDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => navigate("/espace-pro/avis")}
+        >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="font-sans text-sm text-muted-foreground">Avis clients</CardTitle>
             <Star className="h-4 w-4 text-muted-foreground" />
@@ -174,7 +178,7 @@ export default function PrestataireDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate("/espace-pro/profil")}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="font-sans text-sm text-muted-foreground">Taux de réponse</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -207,68 +211,75 @@ export default function PrestataireDashboard() {
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: "12px" }} />
-                <Line
-                  type="monotone"
-                  dataKey="vues"
-                  name="Vues du profil"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="premiers_contacts"
-                  name="Premiers contacts"
-                  stroke="hsl(var(--chart-2))"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="affichages_tel"
-                  name="Affichages téléphone"
-                  stroke="hsl(var(--chart-3))"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                />
+                <Line type="monotone" dataKey="vues" name="Vues du profil" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="premiers_contacts" name="Premiers contacts" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="affichages_tel" name="Affichages téléphone" stroke="hsl(var(--chart-3))" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="hover:shadow-md transition-shadow">
-          <Link to="/espace-pro/demandes" className="block p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <MessageSquare className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-sans font-semibold text-foreground">Demandes de devis</h3>
-                <p className="font-sans text-sm text-muted-foreground">
-                  Consultez et répondez aux demandes
-                </p>
-              </div>
+      {/* Quick Actions - Clickable */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => navigate("/espace-pro/demandes")}
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <MessageSquare className="h-5 w-5 text-primary" />
             </div>
-          </Link>
+            <div>
+              <h3 className="font-sans text-sm font-semibold text-foreground">Messages</h3>
+              <p className="font-sans text-xs text-muted-foreground">Répondre aux demandes</p>
+            </div>
+          </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow">
-          <Link to="/espace-pro/avis" className="block p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Star className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-sans font-semibold text-foreground">Avis clients</h3>
-                <p className="font-sans text-sm text-muted-foreground">
-                  Consultez et répondez aux avis
-                </p>
-              </div>
+        <Card
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => navigate("/espace-pro/avis")}
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Star className="h-5 w-5 text-primary" />
             </div>
-          </Link>
+            <div>
+              <h3 className="font-sans text-sm font-semibold text-foreground">Avis</h3>
+              <p className="font-sans text-xs text-muted-foreground">Voir les avis clients</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => navigate("/espace-pro/galerie")}
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <ImageIcon className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-sans text-sm font-semibold text-foreground">Galerie</h3>
+              <p className="font-sans text-xs text-muted-foreground">Gérer vos photos</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => navigate("/espace-pro/profil")}
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <User className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-sans text-sm font-semibold text-foreground">Profil</h3>
+              <p className="font-sans text-xs text-muted-foreground">Modifier ma fiche</p>
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>
