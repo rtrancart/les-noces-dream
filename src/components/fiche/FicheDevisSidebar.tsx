@@ -27,10 +27,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Send } from "lucide-react";
 
+const countryCodes = [
+  { code: "+33", label: "🇫🇷 +33", country: "FR" },
+  { code: "+32", label: "🇧🇪 +32", country: "BE" },
+  { code: "+41", label: "🇨🇭 +41", country: "CH" },
+  { code: "+352", label: "🇱🇺 +352", country: "LU" },
+  { code: "+377", label: "🇲🇨 +377", country: "MC" },
+  { code: "+44", label: "🇬🇧 +44", country: "GB" },
+  { code: "+49", label: "🇩🇪 +49", country: "DE" },
+  { code: "+34", label: "🇪🇸 +34", country: "ES" },
+  { code: "+39", label: "🇮🇹 +39", country: "IT" },
+  { code: "+351", label: "🇵🇹 +351", country: "PT" },
+];
+
+const phoneRegex = /^[0-9\s]{6,15}$/;
+
 const devisSchema = z.object({
   nom: z.string().min(2, "Minimum 2 caractères").max(100),
   email: z.string().email("Email invalide").max(255),
-  telephone: z.string().optional(),
+  indicatif: z.string().default("+33"),
+  telephone: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || phoneRegex.test(val.replace(/\s/g, "")),
+      "Numéro invalide (6 à 15 chiffres)"
+    ),
   objet: z.enum(["mariage", "evenement_entreprise", "cocktail", "autre"]),
   date_evenement: z.string().optional(),
   lieu_evenement: z.string().max(200).optional(),
@@ -72,6 +94,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
     defaultValues: {
       nom: profile ? `${profile.prenom ?? ""} ${profile.nom ?? ""}`.trim() : "",
       email: profile?.email ?? "",
+      indicatif: "+33",
       telephone: profile?.telephone ?? "",
       objet: "mariage",
       message: "",
@@ -85,13 +108,18 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
   const onSubmit = async (values: DevisFormValues) => {
     setSubmitting(true);
     try {
+      // Build full phone number with country code
+      const fullPhone = values.telephone
+        ? `${values.indicatif} ${values.telephone.trim()}`
+        : null;
+
       const { data: contact, error: contactErr } = await supabase
         .from("contacts_anonymes")
         .upsert(
           {
             email: values.email.toLowerCase().trim(),
             prenom: values.nom.split(" ")[0],
-            telephone: values.telephone || null,
+            telephone: fullPhone,
             origine_premiere: "fiche_prestataire",
             ...(user ? { profile_id: user.id } : {}),
           },
@@ -108,7 +136,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
         profile_id: user?.id ?? null,
         nom_contact: values.nom,
         email_contact: values.email.toLowerCase().trim(),
-        telephone_contact: values.telephone || null,
+        telephone_contact: fullPhone,
         objet: values.objet,
         date_evenement: values.date_evenement || null,
         lieu_evenement: values.lieu_evenement || null,
@@ -186,10 +214,32 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
             {/* Collapsible secondary fields */}
             <Collapsible open={expanded}>
               <CollapsibleContent className="space-y-3">
+                {/* Phone with country code */}
                 <FormField control={form.control} name="telephone" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs">Téléphone</FormLabel>
-                    <FormControl><Input placeholder="06 ..." className="h-9 text-sm" {...field} /></FormControl>
+                    <div className="flex gap-1.5">
+                      <FormField control={form.control} name="indicatif" render={({ field: indField }) => (
+                        <Select onValueChange={indField.onChange} value={indField.value}>
+                          <SelectTrigger className="h-9 text-sm w-[100px] shrink-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countryCodes.map((c) => (
+                              <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )} />
+                      <FormControl>
+                        <Input
+                          placeholder="6 12 34 56 78"
+                          className="h-9 text-sm"
+                          inputMode="tel"
+                          {...field}
+                        />
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )} />

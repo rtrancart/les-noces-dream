@@ -1,3 +1,4 @@
+import { useEffect, useState, useCallback } from "react";
 import {
   BarChart3,
   User,
@@ -12,6 +13,8 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSharedPrestataire } from "@/contexts/PrestataireContext";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const mainItems = [
@@ -34,15 +37,67 @@ interface PrestataireSidebarProps {
 export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
   const location = useLocation();
   const { signOut, profile } = useAuth();
+  const { prestataire } = useSharedPrestataire();
   const currentPath = location.pathname;
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const isActive = (url: string) =>
     url === "/espace-pro" ? currentPath === "/espace-pro" : currentPath.startsWith(url);
+
+  const fetchUnread = useCallback(async () => {
+    if (!prestataire?.id) return;
+
+    // Count demandes with statut "nouveau" OR with unread messages from visitors
+    const { count: nouveauCount } = await supabase
+      .from("demandes_devis")
+      .select("id", { count: "exact", head: true })
+      .eq("prestataire_id", prestataire.id)
+      .eq("statut", "nouveau");
+
+    // Also get demandes with unread messages
+    const { data: demandes } = await supabase
+      .from("demandes_devis")
+      .select("id")
+      .eq("prestataire_id", prestataire.id)
+      .neq("statut", "nouveau");
+
+    let unreadMsgCount = 0;
+    if (demandes && demandes.length > 0) {
+      const ids = demandes.map((d) => d.id);
+      const { count } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .in("demande_id", ids)
+        .eq("expediteur_type", "visiteur")
+        .is("lu_le", null);
+      unreadMsgCount = count ?? 0;
+    }
+
+    setUnreadCount((nouveauCount ?? 0) + (unreadMsgCount > 0 ? 1 : 0));
+  }, [prestataire?.id]);
+
+  useEffect(() => {
+    fetchUnread();
+
+    // Refresh on realtime message inserts
+    if (!prestataire?.id) return;
+    const channel = supabase
+      .channel("sidebar-unread")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        () => fetchUnread()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchUnread, prestataire?.id]);
 
   return (
     <nav className="bg-card rounded-lg shadow-sm p-3 lg:sticky lg:top-24 space-y-1">
       {mainItems.map((item) => {
         const active = isActive(item.url);
+        const showBadge = item.url === "/espace-pro/demandes" && unreadCount > 0;
         return (
           <NavLink
             key={item.url}
@@ -58,7 +113,12 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
             activeClassName=""
           >
             <item.icon className="h-4 w-4 shrink-0" />
-            <span>{item.title}</span>
+            <span className="flex-1">{item.title}</span>
+            {showBadge && (
+              <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
+                {unreadCount}
+              </span>
+            )}
           </NavLink>
         );
       })}
