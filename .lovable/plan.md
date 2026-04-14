@@ -1,26 +1,36 @@
 
 
-## Plan : Formulaire de devis compact et dépliable + header réorganisé
+## Statuts de messagerie actuels vs proposés
 
-### Problèmes identifiés
-1. Le formulaire de devis sidebar affiche 8 champs + bouton, ce qui dépasse la hauteur d'un écran standard — il ne commence à scroller qu'après avoir scrollé tout le contenu au-dessus
-2. Le bandeau d'infos en haut (nom, badges, localisation, prix, zones) manque de structure visuelle
+### Statuts actuels dans la base (enum `statut_demande`)
+`nouveau`, `lu`, `en_discussion`, `devis_envoye`, `accepte`, `refuse`, `archive` — 7 valeurs.
 
-### Solution proposée
+### Proposition simplifiée (3 statuts visibles)
 
-**Formulaire dépliable (FicheDevisSidebar.tsx)**
-- Afficher par défaut uniquement : Nom, Email, Message (3 champs) + bouton "Envoyer"
-- Quand l'utilisateur clique/focus sur un champ, déplier automatiquement les champs supplémentaires (téléphone, type d'événement, date, invités, lieu) avec une animation fluide via Collapsible
-- Un état `expanded` passe à `true` au premier `onFocus` sur n'importe quel champ
-- Le formulaire reste compact (~250px) quand replié, ce qui le rend visible entièrement dès le haut de la page
-- Les champs secondaires apparaissent en transition douce
+On garde l'enum existant tel quel (pas de migration) mais on regroupe l'affichage en 3 états logiques :
 
-**Header réorganisé (FichePrestataire.tsx)**
-- Ligne 1 : Nom + badges (Premium, Vérifié, catégorie) + bouton favori — inchangé
-- Ligne 2 : Regrouper localisation, note et prix sur une seule ligne avec des séparateurs visuels (·) pour un rendu plus compact et lisible
-- Zones d'intervention : garder en dessous, inchangé
+| Affichage | Statuts DB correspondants | Logique |
+|-----------|--------------------------|---------|
+| **Non lu** | `nouveau` | Nouveau message pas encore ouvert par le destinataire |
+| **En discussion** | `lu`, `en_discussion` | Conversation active, tous les messages lus |
+| **Clôturé** | `devis_envoye`, `accepte`, `refuse`, `archive` | Conversation terminée |
 
-### Fichiers modifiés
-1. **`src/components/fiche/FicheDevisSidebar.tsx`** — Ajouter état `expanded`, wrapper Collapsible autour des champs secondaires, déclencher l'expansion au focus
-2. **`src/pages/FichePrestataire.tsx`** — Réorganiser le bloc header (lignes 250-332) pour un affichage plus compact avec séparateurs
+### Comportement
+
+- **Passage automatique à "lu"** : quand le prestataire ouvre une demande pour la première fois (statut `nouveau` → `lu`)
+- **Passage automatique à "en_discussion"** : quand un message est envoyé par l'un des participants (statut `lu` → `en_discussion`)
+- **Retour à "Non lu"** : quand un nouveau message arrive et que le destinataire ne l'a pas encore lu (basé sur `lu_le` de la table `messages`, pas sur le statut de la demande — on affiche un badge "non lu" si le dernier message n'a pas été lu par le destinataire)
+- **Clôturer** : le prestataire peut manuellement passer le statut à `devis_envoye`, `accepte`, `refuse` ou `archive` via un menu déroulant
+
+### Implémentation
+
+1. **Migration** : ajouter la politique UPDATE sur `demandes_devis` pour le prestataire propriétaire + politique UPDATE sur `messages` pour marquer `lu_le` + activer realtime sur `messages`
+
+2. **Composant `ConversationThread.tsx`** : fil de messages avec envoi, realtime, marquage lu automatique
+
+3. **Refonte `Demandes.tsx` (prestataire)** : liste + détail conversation, menu changement de statut, badge non lu
+
+4. **Refonte `Messagerie.tsx` (client)** : liste + détail conversation, badge non lu
+
+Les 3 statuts affichés (Non lu / En discussion / Clôturé) sont dérivés des valeurs existantes — aucun changement d'enum nécessaire.
 
