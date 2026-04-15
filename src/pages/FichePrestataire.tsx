@@ -32,6 +32,7 @@ import FicheCarte from "@/components/fiche/FicheCarte";
 import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
 import { getCondensedZoneNames } from "@/lib/zonesIntervention";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
+import { trackEvent } from "@/lib/analytics";
 
 type Prestataire = {
   id: string;
@@ -173,6 +174,13 @@ export default function FichePrestataire() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, user?.id]);
 
+  // Track vue_profil
+  useEffect(() => {
+    if (presta) {
+      trackEvent("vue_profil", { slug: presta.slug }, presta.id);
+    }
+  }, [presta?.id]);
+
   // SEO
   useEffect(() => {
     if (presta) {
@@ -211,10 +219,7 @@ export default function FichePrestataire() {
   const revealPhone = () => {
     if (!presta) return;
     setPhoneRevealed(true);
-    supabase
-      .from("evenements_prestataire")
-      .insert({ prestataire_id: presta.id, type: "vue_telephone" })
-      .then();
+    trackEvent("affichage_telephone", { slug: presta.slug }, presta.id);
   };
 
   if (loading) {

@@ -1,6 +1,6 @@
 import { Phone, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/lib/analytics";
 
 interface Props {
   telephone: string | null;
@@ -10,10 +10,7 @@ interface Props {
 
 export default function FicheStickyMobileCTA({ telephone, prestataireId, onDevisClick }: Props) {
   const handleCall = () => {
-    supabase
-      .from("evenements_prestataire")
-      .insert({ prestataire_id: prestataireId, type: "vue_telephone" })
-      .then();
+    trackEvent("affichage_telephone", {}, prestataireId);
   };
 
   return (

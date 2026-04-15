@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Mail, Lock, User, Heart, Briefcase } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 const Inscription = () => {
   const [email, setEmail] = useState("");
@@ -39,6 +40,7 @@ const Inscription = () => {
     if (error) {
       toast.error(error.message);
     } else {
+      trackEvent("inscription", { role });
       setSuccess(true);
     }
   };

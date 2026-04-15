@@ -12,6 +12,7 @@ import SearchMap from "@/components/search/SearchMap";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { REGIONS, DOM, getZoneLabel, getCondensedZoneNames } from "@/lib/zonesIntervention";
 import { haversineDistanceKm } from "@/lib/haversine";
+import { trackEvent } from "@/lib/analytics";
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
 
@@ -211,6 +212,14 @@ export default function Recherche() {
       params.set("lieu", locationZones.join(","));
     }
     setSearchParams(params, { replace: true });
+
+    // Track search event
+    if (categorySlugs.length > 0 || locationZones.length > 0 || citySearch) {
+      trackEvent("recherche", {
+        categorie: categorySlugs.join(",") || undefined,
+        lieu: citySearch?.label || locationZones.join(",") || undefined,
+      });
+    }
   }, [categorySlugs, locationZones, citySearch]);
 
   // Dynamic title from filters
