@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Mail, Lock } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 const Connexion = () => {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ const Connexion = () => {
         ? "Email ou mot de passe incorrect."
         : error.message);
     } else {
+      trackEvent("connexion");
       toast.success("Connexion réussie !");
       navigate(from, { replace: true });
     }

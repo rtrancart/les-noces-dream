@@ -12,6 +12,7 @@ import SearchMap from "@/components/search/SearchMap";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { REGIONS, DOM, getZoneLabel, getCondensedZoneNames } from "@/lib/zonesIntervention";
 import { haversineDistanceKm } from "@/lib/haversine";
+import { trackEvent } from "@/lib/analytics";
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
 

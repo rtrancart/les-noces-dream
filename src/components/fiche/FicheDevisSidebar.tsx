@@ -26,6 +26,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Send } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 const countryCodes = [
   { code: "+33", label: "🇫🇷 +33", country: "FR" },
@@ -147,6 +148,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
       if (error) throw error;
 
       toast.success("Votre demande de devis a été envoyée !");
+      trackEvent("premier_contact", { objet: values.objet }, prestataireId);
       setSent(true);
       form.reset();
     } catch {

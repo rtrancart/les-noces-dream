@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { trackEvent } from "@/lib/analytics";
 import type { Database } from "@/integrations/supabase/types";
 
 type ExpediteurType = Database["public"]["Enums"]["expediteur_type"];
@@ -124,6 +125,7 @@ export default function ConversationThread({
 
     if (!error) {
       setNewMessage("");
+      trackEvent("envoi_message", { role });
       // Update demande status to en_discussion if needed
       await supabase
         .from("demandes_devis")
