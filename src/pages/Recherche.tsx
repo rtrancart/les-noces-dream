@@ -212,6 +212,14 @@ export default function Recherche() {
       params.set("lieu", locationZones.join(","));
     }
     setSearchParams(params, { replace: true });
+
+    // Track search event
+    if (categorySlugs.length > 0 || locationZones.length > 0 || citySearch) {
+      trackEvent("recherche", {
+        categorie: categorySlugs.join(",") || undefined,
+        lieu: citySearch?.label || locationZones.join(",") || undefined,
+      });
+    }
   }, [categorySlugs, locationZones, citySearch]);
 
   // Dynamic title from filters
