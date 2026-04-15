@@ -1,36 +1,42 @@
 
 
-## Statuts de messagerie actuels vs proposés
+## Module analytics centralisé (GA4 + Supabase)
 
-### Statuts actuels dans la base (enum `statut_demande`)
-`nouveau`, `lu`, `en_discussion`, `devis_envoye`, `accepte`, `refuse`, `archive` — 7 valeurs.
+### Objectif
+Créer un module unique `src/lib/analytics.ts` qui envoie chaque événement à GA4 (si configuré) et/ou à Supabase (`evenements_prestataire`) selon le contexte. L'ID GA4 sera lu depuis `VITE_GA4_ID` — tant qu'il n'est pas défini, seul Supabase est utilisé.
 
-### Proposition simplifiée (3 statuts visibles)
+### Fichiers à créer
 
-On garde l'enum existant tel quel (pas de migration) mais on regroupe l'affichage en 3 états logiques :
+**`src/lib/analytics.ts`**
+- Fonction `initGA4()` : injecte dynamiquement le script gtag.js si `import.meta.env.VITE_GA4_ID` existe
+- Fonction `trackEvent(name, params?, prestataireId?)` :
+  - Appelle `window.gtag("event", name, params)` si GA4 est chargé
+  - Insère dans `evenements_prestataire` si `prestataireId` est fourni
 
-| Affichage | Statuts DB correspondants | Logique |
-|-----------|--------------------------|---------|
-| **Non lu** | `nouveau` | Nouveau message pas encore ouvert par le destinataire |
-| **En discussion** | `lu`, `en_discussion` | Conversation active, tous les messages lus |
-| **Clôturé** | `devis_envoye`, `accepte`, `refuse`, `archive` | Conversation terminée |
+### Fichiers à modifier
 
-### Comportement
+| Fichier | Modification |
+|---|---|
+| `src/vite-env.d.ts` | Ajouter déclaration globale `gtag` |
+| `src/main.tsx` | Appeler `initGA4()` au démarrage |
+| `src/pages/FichePrestataire.tsx` | Ajouter `trackEvent("vue_profil")` au chargement ; remplacer insert direct `vue_telephone` par `trackEvent("affichage_telephone")` |
+| `src/components/fiche/FicheStickyMobileCTA.tsx` | Remplacer insert direct par `trackEvent("affichage_telephone")` |
+| `src/components/fiche/FicheDevisSidebar.tsx` | Ajouter `trackEvent("premier_contact")` après envoi réussi |
+| `src/components/messaging/ConversationThread.tsx` | Ajouter `trackEvent("envoi_message")` après envoi (GA4 uniquement) |
+| `src/pages/Recherche.tsx` | Ajouter `trackEvent("recherche", { categorie, lieu })` quand les résultats s'affichent |
+| `src/pages/Inscription.tsx` | Ajouter `trackEvent("inscription", { role })` après succès |
+| `src/pages/Connexion.tsx` | Ajouter `trackEvent("connexion")` après succès |
 
-- **Passage automatique à "lu"** : quand le prestataire ouvre une demande pour la première fois (statut `nouveau` → `lu`)
-- **Passage automatique à "en_discussion"** : quand un message est envoyé par l'un des participants (statut `lu` → `en_discussion`)
-- **Retour à "Non lu"** : quand un nouveau message arrive et que le destinataire ne l'a pas encore lu (basé sur `lu_le` de la table `messages`, pas sur le statut de la demande — on affiche un badge "non lu" si le dernier message n'a pas été lu par le destinataire)
-- **Clôturer** : le prestataire peut manuellement passer le statut à `devis_envoye`, `accepte`, `refuse` ou `archive` via un menu déroulant
+### Logique de routage
 
-### Implémentation
+```text
+trackEvent(name, params, prestataireId?)
+  ├── GA4 activé ? → gtag("event", name, params)
+  └── prestataireId fourni ? → insert evenements_prestataire
+```
 
-1. **Migration** : ajouter la politique UPDATE sur `demandes_devis` pour le prestataire propriétaire + politique UPDATE sur `messages` pour marquer `lu_le` + activer realtime sur `messages`
+Les événements liés à un prestataire (vue_profil, affichage_telephone, premier_contact) vont dans les deux systèmes. Les événements globaux (recherche, inscription, connexion, envoi_message) vont uniquement dans GA4.
 
-2. **Composant `ConversationThread.tsx`** : fil de messages avec envoi, realtime, marquage lu automatique
-
-3. **Refonte `Demandes.tsx` (prestataire)** : liste + détail conversation, menu changement de statut, badge non lu
-
-4. **Refonte `Messagerie.tsx` (client)** : liste + détail conversation, badge non lu
-
-Les 3 statuts affichés (Non lu / En discussion / Clôturé) sont dérivés des valeurs existantes — aucun changement d'enum nécessaire.
+### Aucune migration nécessaire
+La table `evenements_prestataire` existe déjà avec les bonnes RLS policies (insert public).
 
