@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { trackEvent } from "@/lib/analytics";
 import {
   Dialog,
   DialogContent,
@@ -85,44 +86,26 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
   const onSubmit = async (values: DevisFormValues) => {
     setSubmitting(true);
     try {
-      // Upsert contact_anonyme
-      const { data: contact, error: contactErr } = await supabase
-        .from("contacts_anonymes")
-        .upsert(
-          {
-            email: values.email.toLowerCase().trim(),
-            prenom: values.nom.split(" ")[0],
-            telephone: values.telephone || null,
-            origine_premiere: "fiche_prestataire",
-            ...(user ? { profile_id: user.id } : {}),
-          },
-          { onConflict: "email" }
-        )
-        .select("id")
-        .single();
-
-      if (contactErr) throw contactErr;
-
-      const { error } = await supabase.from("demandes_devis").insert({
-        prestataire_id: prestataireId,
-        contact_id: contact.id,
-        profile_id: user?.id ?? null,
-        nom_contact: values.nom,
-        email_contact: values.email.toLowerCase().trim(),
-        telephone_contact: values.telephone || null,
-        objet: values.objet,
-        date_evenement: values.date_evenement || null,
-        lieu_evenement: values.lieu_evenement || null,
-        nombre_invites_rang: values.nombre_invites_rang || null,
-        message: values.message,
+      const { error } = await supabase.rpc("soumettre_demande_devis", {
+        p_prestataire_id: prestataireId,
+        p_nom: values.nom,
+        p_email: values.email.toLowerCase().trim(),
+        p_telephone: values.telephone || null,
+        p_objet: values.objet,
+        p_message: values.message,
+        p_date_evenement: values.date_evenement || null,
+        p_lieu_evenement: values.lieu_evenement || null,
+        p_nombre_invites_rang: values.nombre_invites_rang || null,
       });
 
       if (error) throw error;
 
       toast.success("Votre demande de devis a été envoyée !");
+      trackEvent("premier_contact", { objet: values.objet }, prestataireId);
       form.reset();
       onOpenChange(false);
-    } catch {
+    } catch (e) {
+      console.error("Devis submit error:", e);
       toast.error("Erreur lors de l'envoi. Veuillez réessayer.");
     } finally {
       setSubmitting(false);

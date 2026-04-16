@@ -1026,6 +1026,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      soumettre_demande_devis: {
+        Args: {
+          p_date_evenement?: string
+          p_email: string
+          p_lieu_evenement?: string
+          p_message: string
+          p_nom: string
+          p_nombre_invites_rang?: string
+          p_objet: Database["public"]["Enums"]["objet_demande"]
+          p_prestataire_id: string
+          p_telephone: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "client" | "prestataire" | "admin" | "super_admin"

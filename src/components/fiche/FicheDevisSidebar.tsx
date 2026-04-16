@@ -114,35 +114,16 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
         ? `${values.indicatif} ${values.telephone.trim()}`
         : null;
 
-      const { data: contact, error: contactErr } = await supabase
-        .from("contacts_anonymes")
-        .upsert(
-          {
-            email: values.email.toLowerCase().trim(),
-            prenom: values.nom.split(" ")[0],
-            telephone: fullPhone,
-            origine_premiere: "fiche_prestataire",
-            ...(user ? { profile_id: user.id } : {}),
-          },
-          { onConflict: "email" }
-        )
-        .select("id")
-        .single();
-
-      if (contactErr) throw contactErr;
-
-      const { error } = await supabase.from("demandes_devis").insert({
-        prestataire_id: prestataireId,
-        contact_id: contact.id,
-        profile_id: user?.id ?? null,
-        nom_contact: values.nom,
-        email_contact: values.email.toLowerCase().trim(),
-        telephone_contact: fullPhone,
-        objet: values.objet,
-        date_evenement: values.date_evenement || null,
-        lieu_evenement: values.lieu_evenement || null,
-        nombre_invites_rang: values.nombre_invites_rang || null,
-        message: values.message,
+      const { error } = await supabase.rpc("soumettre_demande_devis", {
+        p_prestataire_id: prestataireId,
+        p_nom: values.nom,
+        p_email: values.email.toLowerCase().trim(),
+        p_telephone: fullPhone,
+        p_objet: values.objet,
+        p_message: values.message,
+        p_date_evenement: values.date_evenement || null,
+        p_lieu_evenement: values.lieu_evenement || null,
+        p_nombre_invites_rang: values.nombre_invites_rang || null,
       });
 
       if (error) throw error;
@@ -151,7 +132,8 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);
       setSent(true);
       form.reset();
-    } catch {
+    } catch (e) {
+      console.error("Devis submit error:", e);
       toast.error("Erreur lors de l'envoi. Veuillez réessayer.");
     } finally {
       setSubmitting(false);
