@@ -167,7 +167,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
 
       const { error } = await supabase.from("demandes_devis").insert({
         prestataire_id: prestataireId,
-        contact_id: contact.id,
+        contact_id: contactId,
         profile_id: user?.id ?? null,
         nom_contact: values.nom,
         email_contact: values.email.toLowerCase().trim(),
