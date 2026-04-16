@@ -114,69 +114,16 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
         ? `${values.indicatif} ${values.telephone.trim()}`
         : null;
 
-      const emailNorm = values.email.toLowerCase().trim();
-      let contactId: string | null = null;
-
-      // Try to find existing contact (visible only if authenticated with same email; otherwise returns null)
-      const { data: existing } = await supabase
-        .from("contacts_anonymes")
-        .select("id")
-        .eq("email", emailNorm)
-        .maybeSingle();
-
-      if (existing?.id) {
-        contactId = existing.id;
-        // Best-effort update (RLS allows it only if same email JWT) — ignore failure for anon
-        await supabase
-          .from("contacts_anonymes")
-          .update({
-            prenom: values.nom.split(" ")[0],
-            telephone: fullPhone,
-            ...(user ? { profile_id: user.id } : {}),
-          })
-          .eq("id", existing.id);
-      } else {
-        const { data: inserted, error: insertErr } = await supabase
-          .from("contacts_anonymes")
-          .insert({
-            email: emailNorm,
-            prenom: values.nom.split(" ")[0],
-            telephone: fullPhone,
-            origine_premiere: "fiche_prestataire",
-            ...(user ? { profile_id: user.id } : {}),
-          })
-          .select("id")
-          .single();
-
-        if (insertErr) {
-          // Race condition: another insert may have created the row between SELECT and INSERT.
-          // Fallback: re-fetch by email.
-          const { data: refetch } = await supabase
-            .from("contacts_anonymes")
-            .select("id")
-            .eq("email", emailNorm)
-            .maybeSingle();
-          if (!refetch?.id) throw insertErr;
-          contactId = refetch.id;
-        } else {
-          contactId = inserted.id;
-        }
-      }
-
-      if (!contactId) throw new Error("Impossible de créer le contact");
-
-      const { error } = await supabase.from("demandes_devis").insert({
-        prestataire_id: prestataireId,
-        contact_id: contactId,
-        profile_id: user?.id ?? null,
-        nom_contact: values.nom,
-        email_contact: values.email.toLowerCase().trim(),
-        telephone_contact: fullPhone,
-        objet: values.objet,
-        date_evenement: values.date_evenement || null,
-        lieu_evenement: values.lieu_evenement || null,
-        nombre_invites_rang: values.nombre_invites_rang || null,
-        message: values.message,
+      const { error } = await supabase.rpc("soumettre_demande_devis", {
+        p_prestataire_id: prestataireId,
+        p_nom: values.nom,
+        p_email: values.email.toLowerCase().trim(),
+        p_telephone: fullPhone,
+        p_objet: values.objet,
+        p_message: values.message,
+        p_date_evenement: values.date_evenement || null,
+        p_lieu_evenement: values.lieu_evenement || null,
+        p_nombre_invites_rang: values.nombre_invites_rang || null,
       });
 
       if (error) throw error;
@@ -185,7 +132,8 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);
       setSent(true);
       form.reset();
-    } catch {
+    } catch (e) {
+      console.error("Devis submit error:", e);
       toast.error("Erreur lors de l'envoi. Veuillez réessayer.");
     } finally {
       setSubmitting(false);
