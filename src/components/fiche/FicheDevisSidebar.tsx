@@ -114,22 +114,56 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
         ? `${values.indicatif} ${values.telephone.trim()}`
         : null;
 
-      const { data: contact, error: contactErr } = await supabase
+      const emailNorm = values.email.toLowerCase().trim();
+      let contactId: string | null = null;
+
+      // Try to find existing contact (visible only if authenticated with same email; otherwise returns null)
+      const { data: existing } = await supabase
         .from("contacts_anonymes")
-        .upsert(
-          {
-            email: values.email.toLowerCase().trim(),
+        .select("id")
+        .eq("email", emailNorm)
+        .maybeSingle();
+
+      if (existing?.id) {
+        contactId = existing.id;
+        // Best-effort update (RLS allows it only if same email JWT) — ignore failure for anon
+        await supabase
+          .from("contacts_anonymes")
+          .update({
+            prenom: values.nom.split(" ")[0],
+            telephone: fullPhone,
+            ...(user ? { profile_id: user.id } : {}),
+          })
+          .eq("id", existing.id);
+      } else {
+        const { data: inserted, error: insertErr } = await supabase
+          .from("contacts_anonymes")
+          .insert({
+            email: emailNorm,
             prenom: values.nom.split(" ")[0],
             telephone: fullPhone,
             origine_premiere: "fiche_prestataire",
             ...(user ? { profile_id: user.id } : {}),
-          },
-          { onConflict: "email" }
-        )
-        .select("id")
-        .single();
+          })
+          .select("id")
+          .single();
 
-      if (contactErr) throw contactErr;
+        if (insertErr) {
+          // Race condition: another insert may have created the row between SELECT and INSERT.
+          // Fallback: re-fetch by email.
+          const { data: refetch } = await supabase
+            .from("contacts_anonymes")
+            .select("id")
+            .eq("email", emailNorm)
+            .maybeSingle();
+          if (!refetch?.id) throw insertErr;
+          contactId = refetch.id;
+        } else {
+          contactId = inserted.id;
+        }
+      }
+
+      if (!contactId) throw new Error("Impossible de créer le contact");
 
       const { error } = await supabase.from("demandes_devis").insert({
         prestataire_id: prestataireId,
