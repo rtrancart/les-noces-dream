@@ -28,23 +28,22 @@ const Email = ({
           <Text style={brand}>{SITE_NAME}</Text>
         </Section>
 
-        <Heading style={h1}>Nouvelle réponse client</Heading>
-        <Text style={text}>
-          Bonjour{prestataireNom ? ` ${prestataireNom}` : ''},
-        </Text>
-        <Text style={text}>
-          <strong style={{ color: '#2C3E50' }}>{clientNom ?? 'Un client'}</strong> vient de vous répondre dans la messagerie.
-        </Text>
+        <Heading style={h1}>Vous avez un nouveau message</Heading>
 
         {messageExtrait && (
           <Section style={card}>
+            <Text style={cardLabel}>{clientNom ?? 'Un client'}</Text>
             <Text style={messageStyle}>{messageExtrait}</Text>
           </Section>
         )}
 
+        <Text style={text}>
+          Bonjour{prestataireNom ? ` ${prestataireNom}` : ''}, {clientNom ?? 'un client'} vient de vous répondre dans la messagerie.
+        </Text>
+
         <Section style={{ textAlign: 'center', margin: '32px 0' }}>
           <Button href={lienMessagerie ?? 'https://lesnoces.net/espace-pro/demandes'} style={button}>
-            Répondre dans la messagerie
+            Répondre
           </Button>
         </Section>
 
@@ -75,7 +74,8 @@ const header = { borderBottom: '1px solid #E8E0D0', paddingBottom: '16px', margi
 const brand = { fontSize: '20px', fontWeight: 'bold', color: '#A57D27', letterSpacing: '0.05em', margin: 0 }
 const h1 = { fontSize: '24px', fontWeight: 'normal', color: '#2C3E50', margin: '0 0 16px', lineHeight: '1.3' }
 const text = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '0 0 16px' }
-const card = { backgroundColor: '#FAF7F1', padding: '24px', borderRadius: '4px', border: '1px solid #E8E0D0', borderLeft: '3px solid #A57D27', margin: '24px 0' }
-const messageStyle = { fontSize: '14px', color: '#4A4A4A', lineHeight: '1.6', margin: 0, fontFamily: 'Arial, sans-serif', fontStyle: 'italic' as const, whiteSpace: 'pre-wrap' as const }
+const card = { backgroundColor: '#FAF7F1', padding: '28px 24px', borderRadius: '6px', border: '1px solid #E8E0D0', margin: '24px 0 32px' }
+const cardLabel = { fontSize: '12px', textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#A57D27', margin: '0 0 12px', fontWeight: 'bold', fontFamily: 'Arial, sans-serif' }
+const messageStyle = { fontSize: '17px', color: '#2C3E50', lineHeight: '1.6', margin: 0, fontFamily: 'Georgia, serif', whiteSpace: 'pre-wrap' as const }
 const button = { backgroundColor: '#A57D27', color: '#ffffff', padding: '12px 28px', borderRadius: '2px', fontSize: '14px', fontWeight: 'bold', textDecoration: 'none', letterSpacing: '0.05em', textTransform: 'uppercase' as const }
 const footer = { fontSize: '12px', color: '#999', margin: '32px 0 0', textAlign: 'center' as const, fontFamily: 'Arial, sans-serif' }
