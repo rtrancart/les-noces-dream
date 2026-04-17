@@ -147,7 +147,7 @@ export default function Emails() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <CardTitle className="font-serif text-xl">{texte.display_name}</CardTitle>
-                        {!texte.est_actif && <Badge variant="secondary">Désactivé</Badge>}
+                        {!getValue(texte, "est_actif") && <Badge variant="secondary">Désactivé</Badge>}
                       </div>
                       {texte.description && (
                         <CardDescription className="text-xs">{texte.description}</CardDescription>
