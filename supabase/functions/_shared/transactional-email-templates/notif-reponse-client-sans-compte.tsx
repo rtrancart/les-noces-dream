@@ -30,19 +30,18 @@ const Email = ({
           <Text style={brand}>{SITE_NAME}</Text>
         </Section>
 
-        <Heading style={h1}>Vous avez une nouvelle réponse</Heading>
-        <Text style={text}>
-          Bonjour{clientPrenom ? ` ${clientPrenom}` : ''},
-        </Text>
-        <Text style={text}>
-          <strong style={{ color: '#2C3E50' }}>{prestataireNom ?? 'Un prestataire'}</strong> vient de répondre à votre demande de devis.
-        </Text>
+        <Heading style={h1}>Vous avez un nouveau message</Heading>
 
         {messageExtrait && (
           <Section style={card}>
+            <Text style={cardLabel}>{prestataireNom ?? 'Un prestataire'}</Text>
             <Text style={messageStyle}>{messageExtrait}</Text>
           </Section>
         )}
+
+        <Text style={text}>
+          Bonjour{clientPrenom ? ` ${clientPrenom}` : ''}, {prestataireNom ?? 'un prestataire'} vient de répondre à votre demande de devis.
+        </Text>
 
         <Section style={{ textAlign: 'center', margin: '32px 0' }}>
           <Button href={lienMagique ?? '#'} style={button}>
@@ -95,8 +94,9 @@ const header = { borderBottom: '1px solid #E8E0D0', paddingBottom: '16px', margi
 const brand = { fontSize: '20px', fontWeight: 'bold', color: '#A57D27', letterSpacing: '0.05em', margin: 0 }
 const h1 = { fontSize: '24px', fontWeight: 'normal', color: '#2C3E50', margin: '0 0 16px', lineHeight: '1.3' }
 const text = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '0 0 16px' }
-const card = { backgroundColor: '#FAF7F1', padding: '24px', borderRadius: '4px', border: '1px solid #E8E0D0', borderLeft: '3px solid #A57D27', margin: '24px 0' }
-const messageStyle = { fontSize: '14px', color: '#4A4A4A', lineHeight: '1.6', margin: 0, fontFamily: 'Arial, sans-serif', fontStyle: 'italic' as const, whiteSpace: 'pre-wrap' as const }
+const card = { backgroundColor: '#FAF7F1', padding: '28px 24px', borderRadius: '6px', border: '1px solid #E8E0D0', margin: '24px 0 32px' }
+const cardLabel = { fontSize: '12px', textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#A57D27', margin: '0 0 12px', fontWeight: 'bold', fontFamily: 'Arial, sans-serif' }
+const messageStyle = { fontSize: '17px', color: '#2C3E50', lineHeight: '1.6', margin: 0, fontFamily: 'Georgia, serif', whiteSpace: 'pre-wrap' as const }
 const button = { backgroundColor: '#A57D27', color: '#ffffff', padding: '12px 28px', borderRadius: '2px', fontSize: '14px', fontWeight: 'bold', textDecoration: 'none', letterSpacing: '0.05em', textTransform: 'uppercase' as const }
 const buttonOutline = { backgroundColor: 'transparent', color: '#A57D27', padding: '10px 24px', borderRadius: '2px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', letterSpacing: '0.05em', textTransform: 'uppercase' as const, border: '1px solid #A57D27' }
 const hint = { fontSize: '12px', color: '#999', margin: '12px 0 0', fontFamily: 'Arial, sans-serif' }
