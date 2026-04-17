@@ -9,6 +9,7 @@ import {
   ClipboardList,
   LogOut,
   Settings,
+  Mail,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -40,6 +41,7 @@ const mainItems = [
 const contentItems = [
   { title: "Articles blog", url: "/admin/articles", icon: ScrollText },
   { title: "Pages contenu", url: "/admin/pages", icon: FileText },
+  { title: "Emails", url: "/admin/emails", icon: Mail },
 ];
 
 export function AdminSidebar() {

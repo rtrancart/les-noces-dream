@@ -14,6 +14,7 @@ import MotDePasseOublie from "./pages/MotDePasseOublie";
 import ResetPassword from "./pages/ResetPassword";
 import Recherche from "./pages/Recherche";
 import FichePrestataire from "./pages/FichePrestataire";
+import Unsubscribe from "./pages/Unsubscribe";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
@@ -45,6 +46,7 @@ import AdminUtilisateurs from "./pages/admin/Utilisateurs";
 import AdminArticles from "./pages/admin/Articles";
 import AdminPages from "./pages/admin/Pages";
 import AdminLogs from "./pages/admin/Logs";
+import AdminEmails from "./pages/admin/Emails";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +70,7 @@ const App = () => (
             <Route path="/inscription" element={<Inscription />} />
             <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
 
             {/* Espace client */}
             <Route
@@ -121,6 +124,7 @@ const App = () => (
               <Route path="articles" element={<AdminArticles />} />
               <Route path="pages" element={<AdminPages />} />
               <Route path="logs" element={<AdminLogs />} />
+              <Route path="emails" element={<AdminEmails />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
