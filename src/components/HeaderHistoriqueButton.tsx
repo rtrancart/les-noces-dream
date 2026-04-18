@@ -83,7 +83,7 @@ const HistoriqueTriggerButton = forwardRef<HTMLButtonElement, HistoriqueTriggerP
     >
       <History className="w-5 h-5" />
       {count > 0 && (
-        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-primary text-white text-[10px] font-sans font-semibold rounded-full">
+        <span className="absolute -bottom-1 -left-1 min-w-[14px] h-[14px] px-0.5 flex items-center justify-center bg-primary text-white text-[9px] font-sans font-semibold rounded-full">
           {count >= 10 ? "9+" : count}
         </span>
       )}
