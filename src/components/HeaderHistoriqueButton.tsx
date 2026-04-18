@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { History } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Link } from "react-router-dom";
@@ -24,12 +24,7 @@ export default function HeaderHistoriqueButton() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          className="text-white/90 hover:text-white transition-colors"
-          aria-label="Historique de navigation"
-        >
-          <History className="w-5 h-5" />
-        </button>
+        <HistoriqueTriggerButton />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-3">
         <div className="flex items-center justify-between mb-2 px-1">
@@ -55,3 +50,17 @@ export default function HeaderHistoriqueButton() {
     </Popover>
   );
 }
+
+const HistoriqueTriggerButton = forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
+  (props, ref) => (
+    <button
+      ref={ref}
+      {...props}
+      className="text-white/90 hover:text-white transition-colors"
+      aria-label="Historique de navigation"
+    >
+      <History className="w-5 h-5" />
+    </button>
+  )
+);
+HistoriqueTriggerButton.displayName = "HistoriqueTriggerButton";
