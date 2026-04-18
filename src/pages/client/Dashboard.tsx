@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, MessageSquare, Calendar, Star } from "lucide-react";
 import BudgetModule from "@/components/client/BudgetModule";
+import HistoriqueWidget from "@/components/client/HistoriqueWidget";
 
 interface DashboardStats {
   favorisCount: number;
@@ -256,6 +257,9 @@ export default function ClientDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Récemment consultés */}
+      <HistoriqueWidget />
 
       {/* Budget */}
       <BudgetModule />

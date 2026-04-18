@@ -2,6 +2,7 @@ import {
   BarChart3,
   MessageSquare,
   Heart,
+  Clock,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -14,6 +15,7 @@ const mainItems = [
   { title: "Tableau de bord", url: "/mon-compte", icon: BarChart3 },
   { title: "Messagerie", url: "/mon-compte/messagerie", icon: MessageSquare },
   { title: "Favoris", url: "/mon-compte/favoris", icon: Heart },
+  { title: "Historique", url: "/mon-compte/historique", icon: Clock },
   { title: "Paramètres", url: "/mon-compte/parametres", icon: Settings },
 ];
 

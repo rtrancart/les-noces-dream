@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X, Search, User } from "lucide-react";
 import logoSrc from "@/assets/logo-lesnoces.png";
+import HeaderHistoriqueButton from "@/components/HeaderHistoriqueButton";
 
 // Helper to determine account link based on role
 
@@ -48,6 +49,7 @@ export default function Header() {
           >
             <Search className="w-5 h-5" />
           </button>
+          <HeaderHistoriqueButton />
             <Link
               to={user ? (isPrestataire ? "/espace-pro" : isAdmin ? "/admin" : "/mon-compte") : "/connexion"}
               className="flex items-center gap-2 text-sm font-sans text-white/90 hover:text-white transition-colors"

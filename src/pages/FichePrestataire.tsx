@@ -33,6 +33,7 @@ import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
 import { getCondensedZoneNames } from "@/lib/zonesIntervention";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import { trackEvent } from "@/lib/analytics";
+import { useTrackVisitePrestataire } from "@/hooks/useHistoriqueNavigation";
 
 type Prestataire = {
   id: string;
@@ -103,6 +104,8 @@ export default function FichePrestataire() {
   const [phoneRevealed, setPhoneRevealed] = useState(false);
   const [devisOpen, setDevisOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  useTrackVisitePrestataire(presta?.id);
 
   const fetchData = async () => {
     if (!slug) return;
