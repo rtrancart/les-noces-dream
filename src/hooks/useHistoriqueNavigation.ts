@@ -67,9 +67,11 @@ export function useTrackVisitePrestataire(prestataireId: string | null | undefin
     if (!prestataireId) return;
 
     if (user?.id) {
-      void supabase.rpc("enregistrer_consultation_prestataire", {
-        p_prestataire_id: prestataireId,
-      });
+      supabase
+        .rpc("enregistrer_consultation_prestataire", { p_prestataire_id: prestataireId })
+        .then(({ error }) => {
+          if (error) console.error("Tracking historique error:", error);
+        });
     } else {
       trackAnonymous(prestataireId);
     }
