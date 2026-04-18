@@ -21,6 +21,7 @@ import ClientLayout from "./components/client/ClientLayout";
 import ClientDashboard from "./pages/client/Dashboard";
 import ClientMessagerie from "./pages/client/Messagerie";
 import ClientFavoris from "./pages/client/Favoris";
+import ClientHistorique from "./pages/client/Historique";
 import ClientParametres from "./pages/client/Parametres";
 
 // Prestataire
@@ -84,6 +85,7 @@ const App = () => (
               <Route index element={<ClientDashboard />} />
               <Route path="messagerie" element={<ClientMessagerie />} />
               <Route path="favoris" element={<ClientFavoris />} />
+              <Route path="historique" element={<ClientHistorique />} />
               <Route path="parametres" element={<ClientParametres />} />
             </Route>
 
