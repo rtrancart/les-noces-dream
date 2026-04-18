@@ -1,27 +1,44 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Clock, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchHistorique, type HistoriqueEntry } from "@/hooks/useHistoriqueNavigation";
-import HistoriqueList from "@/components/HistoriqueList";
+import HistoriqueByCategory from "@/components/historique/HistoriqueByCategory";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function HistoriqueClient() {
   const { user } = useAuth();
   const [entries, setEntries] = useState<HistoriqueEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categorySlugs, setCategorySlugs] = useState<Record<string, string>>({});
 
   const load = async () => {
     setLoading(true);
     const data = await fetchHistorique(user?.id ?? null, 20);
     setEntries(data);
+
+    const noms = Array.from(new Set(data.map((e) => e.prestataire?.categorie_nom).filter(Boolean) as string[]));
+    if (noms.length > 0) {
+      const { data: cats } = await supabase.from("categories").select("nom, slug").in("nom", noms);
+      const map: Record<string, string> = {};
+      (cats ?? []).forEach((c: any) => (map[c.nom] = c.slug));
+      setCategorySlugs(map);
+    }
+
     setLoading(false);
   };
 
   useEffect(() => {
     load();
   }, [user?.id]);
+
+  const stats = useMemo(() => {
+    const valid = entries.filter((e) => e.prestataire);
+    const cats = new Set(valid.map((e) => e.prestataire!.categorie_nom).filter(Boolean));
+    return { fiches: valid.length, categories: cats.size };
+  }, [entries]);
 
   const clearAll = async () => {
     if (!user?.id) return;
@@ -36,28 +53,35 @@ export default function HistoriqueClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-serif text-2xl text-foreground">Historique de navigation</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl text-foreground">Prestataires consultés</h1>
           <p className="font-sans text-sm text-muted-foreground mt-1">
-            Les 20 dernières fiches prestataires consultées (conservées 90 jours).
+            {stats.fiches} fiche{stats.fiches > 1 ? "s" : ""} · {stats.categories} catégorie
+            {stats.categories > 1 ? "s" : ""} · 90 jours
           </p>
         </div>
         {entries.length > 0 && (
-          <Button variant="outline" size="sm" onClick={clearAll} className="shrink-0">
+          <Button variant="outline" size="sm" onClick={clearAll} className="text-destructive hover:text-destructive">
             <Trash2 className="h-4 w-4 mr-2" />
-            Vider
+            Tout effacer
           </Button>
         )}
       </div>
 
-      <div className="bg-card rounded-lg shadow-sm p-4">
-        {loading ? (
-          <p className="font-sans text-sm text-muted-foreground text-center py-8">Chargement…</p>
-        ) : (
-          <HistoriqueList entries={entries} variant="full" emptyLabel="Vous n'avez encore consulté aucune fiche prestataire" />
-        )}
-      </div>
+      {loading ? (
+        <p className="font-sans text-sm text-muted-foreground text-center py-12">Chargement…</p>
+      ) : entries.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-center bg-card rounded-lg">
+          <Clock className="h-10 w-10 text-muted-foreground" />
+          <p className="font-sans text-base text-foreground">Aucune fiche prestataire consultée</p>
+          <Button asChild className="mt-2">
+            <Link to="/recherche">Découvrir les prestataires</Link>
+          </Button>
+        </div>
+      ) : (
+        <HistoriqueByCategory entries={entries} categorySlugByName={categorySlugs} />
+      )}
     </div>
   );
 }
