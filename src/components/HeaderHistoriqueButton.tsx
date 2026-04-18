@@ -49,15 +49,13 @@ export default function HeaderHistoriqueButton() {
           <p className="font-sans text-xs font-medium text-foreground uppercase tracking-wide">
             Récemment consultés
           </p>
-          {user && (
-            <Link
-              to="/mon-compte/historique"
-              onClick={() => setOpen(false)}
-              className="font-sans text-xs text-primary hover:underline"
-            >
-              Voir tout
-            </Link>
-          )}
+          <Link
+            to={user ? "/mon-compte/historique" : "/prestataires-consultes"}
+            onClick={() => setOpen(false)}
+            className="font-sans text-xs text-primary hover:underline"
+          >
+            Voir tout
+          </Link>
         </div>
         {loading ? (
           <p className="font-sans text-xs text-muted-foreground py-6 text-center">Chargement…</p>

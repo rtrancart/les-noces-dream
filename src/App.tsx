@@ -14,6 +14,7 @@ import MotDePasseOublie from "./pages/MotDePasseOublie";
 import ResetPassword from "./pages/ResetPassword";
 import Recherche from "./pages/Recherche";
 import FichePrestataire from "./pages/FichePrestataire";
+import PrestatairesConsultes from "./pages/PrestatairesConsultes";
 import Unsubscribe from "./pages/Unsubscribe";
 
 // Client
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/recherche" element={<Recherche />} />
               <Route path="/prestataire/:slug" element={<FichePrestataire />} />
+              <Route path="/prestataires-consultes" element={<PrestatairesConsultes />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}
