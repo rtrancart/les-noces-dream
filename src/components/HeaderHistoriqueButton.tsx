@@ -15,8 +15,8 @@ export default function HeaderHistoriqueButton() {
 
   const loadCount = async () => {
     if (user?.id) {
-      const { data } = await fetchHistorique(user.id, 20);
-      setCount(data?.length ?? 0);
+      const entries = await fetchHistorique(user.id, 20);
+      setCount(entries.length);
     } else {
       setCount(readSessionHistorique().length);
     }
