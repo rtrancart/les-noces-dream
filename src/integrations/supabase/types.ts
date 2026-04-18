@@ -718,6 +718,45 @@ export type Database = {
           },
         ]
       }
+      historique_navigation: {
+        Row: {
+          consulte_le: string
+          id: string
+          nb_consultations: number
+          prestataire_id: string
+          user_id: string
+        }
+        Insert: {
+          consulte_le?: string
+          id?: string
+          nb_consultations?: number
+          prestataire_id: string
+          user_id: string
+        }
+        Update: {
+          consulte_le?: string
+          id?: string
+          nb_consultations?: number
+          prestataire_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historique_navigation_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historique_navigation_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logs_admin: {
         Row: {
           action: string
@@ -1189,6 +1228,10 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      enregistrer_consultation_prestataire: {
+        Args: { p_prestataire_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1205,6 +1248,7 @@ export type Database = {
         }
         Returns: number
       }
+      purger_historique_navigation: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
