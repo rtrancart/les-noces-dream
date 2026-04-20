@@ -2,13 +2,11 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
 import {
   Star,
   MapPin,
   Phone,
   Globe,
-  Heart,
   Shield,
   ChevronRight,
   Eye,
@@ -24,6 +22,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import FavoriButton from "@/components/favoris/FavoriButton";
 import FicheGalerie from "@/components/fiche/FicheGalerie";
 import FicheAvis from "@/components/fiche/FicheAvis";
 import FicheDevisDialog from "@/components/fiche/FicheDevisDialog";
@@ -100,7 +99,6 @@ export default function FichePrestataire() {
   const [avis, setAvis] = useState<Avis[]>([]);
   const [champsCategorie, setChampsCategorie] = useState<{ label: string; cle: string; type_champ: string }[]>([]);
   const [similaires, setSimilaires] = useState<ProviderCardData[]>([]);
-  const [isFav, setIsFav] = useState(false);
   const [phoneRevealed, setPhoneRevealed] = useState(false);
   const [devisOpen, setDevisOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -158,17 +156,6 @@ export default function FichePrestataire() {
     setChampsCategorie(champsRes.data ?? []);
     setSimilaires((simRes.data ?? []) as ProviderCardData[]);
 
-    // Check fav
-    if (user) {
-      const { data: favData } = await supabase
-        .from("favoris")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("prestataire_id", p.id)
-        .maybeSingle();
-      setIsFav(!!favData);
-    }
-
     setLoading(false);
   };
 
@@ -190,34 +177,6 @@ export default function FichePrestataire() {
       document.title = `${presta.nom_commercial} — ${catMere?.nom ?? ""} à ${presta.ville} | LesNoces.net`;
     }
   }, [presta, catMere]);
-
-  const toggleFav = async () => {
-    if (!user) {
-      toast.error("Connectez-vous pour ajouter aux favoris");
-      return;
-    }
-    if (!presta) return;
-
-    if (isFav) {
-      const { error } = await supabase.from("favoris").delete().eq("user_id", user.id).eq("prestataire_id", presta.id);
-      if (error) {
-        toast.error("Erreur lors du retrait des favoris");
-        console.error("Favori delete error:", error);
-        return;
-      }
-      setIsFav(false);
-      toast.success("Retiré des favoris");
-    } else {
-      const { error } = await supabase.from("favoris").insert({ user_id: user.id, prestataire_id: presta.id });
-      if (error) {
-        toast.error("Erreur lors de l'ajout aux favoris");
-        console.error("Favori insert error:", error);
-        return;
-      }
-      setIsFav(true);
-      toast.success("Ajouté aux favoris ♥");
-    }
-  };
 
   const revealPhone = () => {
     if (!presta) return;
@@ -292,17 +251,13 @@ export default function FichePrestataire() {
                       </Badge>
                     )}
                   </div>
-                </div>
-                <button
-                  onClick={toggleFav}
-                  className="p-2 rounded-full hover:bg-secondary/50 transition-colors shrink-0"
-                >
-                  <Heart
-                    size={22}
-                    className={isFav ? "text-destructive fill-destructive" : "text-muted-foreground"}
+                  </div>
+                  <FavoriButton
+                    prestataireId={presta.id}
+                    size="md"
+                    stopPropagation={false}
                   />
-                </button>
-              </div>
+                </div>
 
               {/* Location · rating · price on one line */}
               <div className="flex flex-wrap items-center gap-1.5 mt-3 text-sm text-muted-foreground">
