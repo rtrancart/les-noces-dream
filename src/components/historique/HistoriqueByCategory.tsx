@@ -74,7 +74,7 @@ export default function HistoriqueByCategory({ entries, categorySlugByName = {} 
         <div className="flex flex-col items-center gap-2 py-12 text-center">
           <Clock className="h-8 w-8 text-muted-foreground" />
           <p className="font-sans text-sm text-muted-foreground">
-            Aucune fiche prestataire dans cette catégorie
+            Aucun prestataire dans cette catégorie
           </p>
         </div>
       ) : (
