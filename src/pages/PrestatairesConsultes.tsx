@@ -111,7 +111,7 @@ export default function PrestatairesConsultes() {
         ) : entries.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <Clock className="h-10 w-10 text-muted-foreground" />
-            <p className="font-sans text-base text-foreground">Aucune fiche prestataire consultée</p>
+            <p className="font-sans text-base text-foreground">Aucun prestataire consulté</p>
             <p className="font-sans text-sm text-muted-foreground max-w-md">
               Parcourez nos prestataires : ils s'afficheront ici pour les retrouver facilement.
             </p>

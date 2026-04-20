@@ -75,7 +75,7 @@ export default function HistoriqueClient() {
       ) : entries.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center bg-card rounded-lg">
           <Clock className="h-10 w-10 text-muted-foreground" />
-          <p className="font-sans text-base text-foreground">Aucune fiche prestataire consultée</p>
+          <p className="font-sans text-base text-foreground">Aucun prestataire consulté</p>
           <Button asChild className="mt-2">
             <Link to="/recherche">Découvrir les prestataires</Link>
           </Button>

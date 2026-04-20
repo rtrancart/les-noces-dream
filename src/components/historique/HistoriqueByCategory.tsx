@@ -74,7 +74,7 @@ export default function HistoriqueByCategory({ entries, categorySlugByName = {} 
         <div className="flex flex-col items-center gap-2 py-12 text-center">
           <Clock className="h-8 w-8 text-muted-foreground" />
           <p className="font-sans text-sm text-muted-foreground">
-            Aucune fiche prestataire dans cette catégorie
+            Aucun prestataire dans cette catégorie
           </p>
         </div>
       ) : (
@@ -86,7 +86,7 @@ export default function HistoriqueByCategory({ entries, categorySlugByName = {} 
                 <div className="min-w-0 flex-1">
                   <h2 className="font-serif text-lg sm:text-xl text-foreground truncate">{cat}</h2>
                   <p className="font-sans text-xs text-muted-foreground mt-0.5">
-                    {items.length} fiche{items.length > 1 ? "s" : ""}
+                    {items.length} prestataire{items.length > 1 ? "s" : ""}
                   </p>
                 </div>
                 {slug && (
