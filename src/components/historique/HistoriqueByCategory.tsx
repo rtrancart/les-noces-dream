@@ -47,23 +47,26 @@ export default function HistoriqueByCategory({ entries, categorySlugByName = {} 
 
   return (
     <div className="space-y-8">
-      {/* Filtres pills */}
-      <div className="flex flex-wrap gap-2">
-        <FilterPill
-          active={filter === ALL}
-          label="Tout voir"
-          count={entries.filter((e) => e.prestataire).length}
-          onClick={() => setFilter(ALL)}
-        />
-        {categories.map(([cat, items]) => (
+      {/* Filtres pills — scroll horizontal sur mobile, wrap sur desktop */}
+      <div className="relative -mx-4 sm:mx-0">
+        <div className="flex gap-2 overflow-x-auto sm:flex-wrap px-4 sm:px-0 pb-2 sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <FilterPill
-            key={cat}
-            active={filter === cat}
-            label={cat}
-            count={items.length}
-            onClick={() => setFilter(cat)}
+            active={filter === ALL}
+            label="Tout voir"
+            count={entries.filter((e) => e.prestataire).length}
+            onClick={() => setFilter(ALL)}
           />
-        ))}
+          {categories.map(([cat, items]) => (
+            <FilterPill
+              key={cat}
+              active={filter === cat}
+              label={cat}
+              count={items.length}
+              onClick={() => setFilter(cat)}
+            />
+          ))}
+        </div>
+        <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent sm:hidden" />
       </div>
 
       {/* Sections par catégorie */}
