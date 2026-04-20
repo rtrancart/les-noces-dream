@@ -126,7 +126,7 @@ function FilterPill({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-sans text-sm transition-colors ${
+      className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full font-sans text-sm whitespace-nowrap shrink-0 transition-colors ${
         active
           ? "bg-primary text-primary-foreground"
           : "bg-secondary text-foreground hover:bg-secondary/70"
