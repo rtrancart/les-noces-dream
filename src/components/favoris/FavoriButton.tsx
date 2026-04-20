@@ -125,7 +125,7 @@ export default function FavoriButton({
               Connectez-vous pour sauvegarder vos favoris
             </DialogTitle>
             <DialogDescription className="font-sans text-sm pt-2">
-              Créez un compte gratuit pour retrouver vos prestataires préférés à tout moment et organiser votre mariage en toute sérénité.
+              Créez un compte gratuit pour retrouver vos prestataires préférés à tout moment et organiser votre événement en toute sérénité.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">
