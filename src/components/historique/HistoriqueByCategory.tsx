@@ -82,9 +82,9 @@ export default function HistoriqueByCategory({ entries, categorySlugByName = {} 
           const slug = categorySlugByName[cat];
           return (
             <section key={cat} className="space-y-4">
-              <div className="flex items-end justify-between gap-4 border-l-4 border-primary pl-3">
-                <div>
-                  <h2 className="font-serif text-xl text-foreground">{cat}</h2>
+              <div className="flex items-end justify-between gap-3 border-l-4 border-primary pl-3">
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-serif text-lg sm:text-xl text-foreground truncate">{cat}</h2>
                   <p className="font-sans text-xs text-muted-foreground mt-0.5">
                     {items.length} fiche{items.length > 1 ? "s" : ""}
                   </p>
@@ -92,9 +92,10 @@ export default function HistoriqueByCategory({ entries, categorySlugByName = {} 
                 {slug && (
                   <Link
                     to={`/recherche?categorie=${slug}`}
-                    className="font-sans text-sm text-primary hover:underline whitespace-nowrap"
+                    className="font-sans text-sm text-primary hover:underline whitespace-nowrap shrink-0"
                   >
-                    Voir tous les {cat.toLowerCase()}s →
+                    <span className="sm:hidden">Voir tout →</span>
+                    <span className="hidden sm:inline">Voir tous les {cat.toLowerCase()}s →</span>
                   </Link>
                 )}
               </div>
