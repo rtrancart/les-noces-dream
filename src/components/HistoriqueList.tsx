@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Clock, ImageIcon } from "lucide-react";
+import FavoriButton from "@/components/favoris/FavoriButton";
 import type { HistoriqueEntry } from "@/hooks/useHistoriqueNavigation";
 
 interface Props {
@@ -37,11 +38,11 @@ export default function HistoriqueList({ entries, emptyLabel = "Aucune fiche con
         if (!e.prestataire) return null;
         const p = e.prestataire;
         return (
-          <li key={e.prestataire_id}>
+          <li key={e.prestataire_id} className="flex items-center gap-2 -mx-2 px-2 rounded-sm hover:bg-secondary/50 transition-colors border-b border-border last:border-0">
             <Link
               to={`/prestataire/${p.slug}`}
               onClick={onItemClick}
-              className="flex items-center gap-3 py-2.5 border-b border-border last:border-0 hover:bg-secondary/50 -mx-2 px-2 rounded-sm transition-colors"
+              className="flex items-center gap-3 py-2.5 flex-1 min-w-0"
             >
               <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
                 {p.photo_principale_url ? (
@@ -65,6 +66,7 @@ export default function HistoriqueList({ entries, emptyLabel = "Aucune fiche con
                 <span className="font-sans text-xs text-muted-foreground shrink-0">{formatRelative(e.consulte_le)}</span>
               )}
             </Link>
+            <FavoriButton prestataireId={p.id} size="sm" stopPropagation={false} />
           </li>
         );
       })}
