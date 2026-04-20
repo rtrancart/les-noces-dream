@@ -100,7 +100,6 @@ export default function FichePrestataire() {
   const [avis, setAvis] = useState<Avis[]>([]);
   const [champsCategorie, setChampsCategorie] = useState<{ label: string; cle: string; type_champ: string }[]>([]);
   const [similaires, setSimilaires] = useState<ProviderCardData[]>([]);
-  const [isFav, setIsFav] = useState(false);
   const [phoneRevealed, setPhoneRevealed] = useState(false);
   const [devisOpen, setDevisOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -157,17 +156,6 @@ export default function FichePrestataire() {
     setAvis((avisRes.data ?? []) as Avis[]);
     setChampsCategorie(champsRes.data ?? []);
     setSimilaires((simRes.data ?? []) as ProviderCardData[]);
-
-    // Check fav
-    if (user) {
-      const { data: favData } = await supabase
-        .from("favoris")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("prestataire_id", p.id)
-        .maybeSingle();
-      setIsFav(!!favData);
-    }
 
     setLoading(false);
   };
@@ -292,17 +280,13 @@ export default function FichePrestataire() {
                       </Badge>
                     )}
                   </div>
-                </div>
-                <button
-                  onClick={toggleFav}
-                  className="p-2 rounded-full hover:bg-secondary/50 transition-colors shrink-0"
-                >
-                  <Heart
-                    size={22}
-                    className={isFav ? "text-destructive fill-destructive" : "text-muted-foreground"}
+                  </div>
+                  <FavoriButton
+                    prestataireId={presta.id}
+                    size="md"
+                    stopPropagation={false}
                   />
-                </button>
-              </div>
+                </div>
 
               {/* Location · rating · price on one line */}
               <div className="flex flex-wrap items-center gap-1.5 mt-3 text-sm text-muted-foreground">
