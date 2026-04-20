@@ -8,7 +8,6 @@ import {
   MapPin,
   Phone,
   Globe,
-  Heart,
   Shield,
   ChevronRight,
   Eye,
@@ -24,6 +23,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import FavoriButton from "@/components/favoris/FavoriButton";
 import FicheGalerie from "@/components/fiche/FicheGalerie";
 import FicheAvis from "@/components/fiche/FicheAvis";
 import FicheDevisDialog from "@/components/fiche/FicheDevisDialog";
