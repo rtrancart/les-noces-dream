@@ -62,28 +62,30 @@ export default function PrestatairesConsultes() {
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <nav className="font-sans text-sm text-muted-foreground mb-2">
-              <Link to="/" className="hover:text-foreground transition-colors">
-                Accueil
-              </Link>
-              <span className="mx-1.5">›</span>
-              <span>Prestataires consultés</span>
-            </nav>
+        <div className="space-y-2">
+          <nav className="font-sans text-sm text-muted-foreground">
+            <Link to="/" className="hover:text-foreground transition-colors">
+              Accueil
+            </Link>
+            <span className="mx-1.5">›</span>
+            <span>Prestataires consultés</span>
+          </nav>
+          <div className="flex items-center justify-between gap-3">
             <h1 className="font-serif text-3xl sm:text-4xl text-foreground">Prestataires consultés</h1>
-            <p className="font-sans text-sm text-muted-foreground mt-1">
-              {stats.fiches} fiche{stats.fiches > 1 ? "s" : ""} · {stats.categories} catégorie
-              {stats.categories > 1 ? "s" : ""}
-              {user ? " · 90 jours" : " · cette session"}
-            </p>
+            {entries.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearAll}
+                className="text-destructive hover:text-destructive shrink-0"
+                aria-label="Tout effacer"
+                title="Tout effacer"
+              >
+                <Trash2 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Tout effacer</span>
+              </Button>
+            )}
           </div>
-          {entries.length > 0 && (
-            <Button variant="outline" size="sm" onClick={clearAll} className="text-destructive hover:text-destructive">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Tout effacer
-            </Button>
-          )}
         </div>
 
         {/* Bandeau invitation compte (anonyme uniquement) */}

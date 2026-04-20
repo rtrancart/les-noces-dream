@@ -47,23 +47,26 @@ export default function HistoriqueByCategory({ entries, categorySlugByName = {} 
 
   return (
     <div className="space-y-8">
-      {/* Filtres pills */}
-      <div className="flex flex-wrap gap-2">
-        <FilterPill
-          active={filter === ALL}
-          label="Tout voir"
-          count={entries.filter((e) => e.prestataire).length}
-          onClick={() => setFilter(ALL)}
-        />
-        {categories.map(([cat, items]) => (
+      {/* Filtres pills — scroll horizontal sur mobile, wrap sur desktop */}
+      <div className="relative -mx-4 sm:mx-0">
+        <div className="flex gap-2 overflow-x-auto sm:flex-wrap px-4 sm:px-0 pb-2 sm:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <FilterPill
-            key={cat}
-            active={filter === cat}
-            label={cat}
-            count={items.length}
-            onClick={() => setFilter(cat)}
+            active={filter === ALL}
+            label="Tout voir"
+            count={entries.filter((e) => e.prestataire).length}
+            onClick={() => setFilter(ALL)}
           />
-        ))}
+          {categories.map(([cat, items]) => (
+            <FilterPill
+              key={cat}
+              active={filter === cat}
+              label={cat}
+              count={items.length}
+              onClick={() => setFilter(cat)}
+            />
+          ))}
+        </div>
+        <div className="pointer-events-none absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-background to-transparent sm:hidden" />
       </div>
 
       {/* Sections par catégorie */}
@@ -123,7 +126,7 @@ function FilterPill({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-sans text-sm transition-colors ${
+      className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full font-sans text-sm whitespace-nowrap shrink-0 transition-colors ${
         active
           ? "bg-primary text-primary-foreground"
           : "bg-secondary text-foreground hover:bg-secondary/70"
