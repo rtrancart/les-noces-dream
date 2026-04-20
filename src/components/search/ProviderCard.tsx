@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Star, MapPin } from "lucide-react";
+import FavoriButton from "@/components/favoris/FavoriButton";
 
 export interface ProviderCardData {
   id: string;
@@ -51,6 +52,10 @@ export default function ProviderCard({ provider }: { provider: ProviderCardData 
               <span className="font-sans text-xs font-semibold text-sauge">Premium</span>
             </div>
           )}
+          <FavoriButton
+            prestataireId={provider.id}
+            className="absolute top-3 right-3"
+          />
         </div>
 
         {/* Info */}

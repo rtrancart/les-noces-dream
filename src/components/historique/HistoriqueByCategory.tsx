@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Clock, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import FavoriButton from "@/components/favoris/FavoriButton";
 import type { HistoriqueEntry } from "@/hooks/useHistoriqueNavigation";
 
 interface Props {
@@ -163,6 +164,11 @@ function HistoriqueCard({ entry }: { entry: HistoriqueEntry }) {
         <div className="absolute bottom-2 right-2 px-2 py-1 bg-foreground/70 text-background rounded-md text-xs font-sans">
           {formatRelative(entry.consulte_le)}
         </div>
+        <FavoriButton
+          prestataireId={p.id}
+          size="sm"
+          className="absolute top-2 right-2"
+        />
       </div>
       <div className="p-3">
         <p className="font-sans text-sm font-medium text-foreground truncate">{p.nom_commercial}</p>
