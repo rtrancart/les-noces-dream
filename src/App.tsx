@@ -16,6 +16,8 @@ import Recherche from "./pages/Recherche";
 import FichePrestataire from "./pages/FichePrestataire";
 import PrestatairesConsultes from "./pages/PrestatairesConsultes";
 import Unsubscribe from "./pages/Unsubscribe";
+import Blog from "./pages/Blog";
+import BlogArticle from "./pages/BlogArticle";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
@@ -66,6 +68,8 @@ const App = () => (
               <Route path="/recherche" element={<Recherche />} />
               <Route path="/prestataire/:slug" element={<FichePrestataire />} />
               <Route path="/prestataires-consultes" element={<PrestatairesConsultes />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogArticle />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}
