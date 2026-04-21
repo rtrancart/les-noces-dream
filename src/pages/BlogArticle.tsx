@@ -300,7 +300,9 @@ export default function BlogArticle() {
                       <span className={`font-sans text-[10px] pt-1 ${i === 0 ? "text-terracotta" : "text-gris-cachemire"}`}>
                         {String(i + 1).padStart(2, "0")}
                       </span>
-                      <span>{s}</span>
+                      <a href={`#${slugify(s)}`} className="hover:text-bleu-abysse transition-colors">
+                        {s}
+                      </a>
                     </li>
                   ))}
                 </ol>
