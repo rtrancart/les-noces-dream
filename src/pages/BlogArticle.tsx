@@ -117,7 +117,16 @@ export default function BlogArticle() {
     );
   }
 
-  const sections = paragraphs.slice(1).map((_, i) => `Section ${i + 1}`);
+  const sections = blocks
+    .filter((b) => b.type === "h2")
+    .map((b) => (b as { type: "h2"; text: string }).text);
+
+  // Premier paragraphe pour le drop cap (avant tout titre)
+  const firstParaIdx = blocks.findIndex((b) => b.type === "p");
+  const firstPara = firstParaIdx >= 0 ? (blocks[firstParaIdx] as { text: string }).text : null;
+
+  // Premier blockquote du contenu pour la pull-quote (sinon fallback)
+  const firstQuote = blocks.find((b) => b.type === "quote") as { text: string } | undefined;
 
   return (
     <div className="bg-[#FBF8F3] min-h-screen text-bleu-abysse">
@@ -175,34 +184,84 @@ export default function BlogArticle() {
       {/* Corps + sidebar */}
       <div className="max-w-[1280px] mx-auto grid md:grid-cols-[1fr_320px] gap-12 md:gap-24 px-6 md:px-20 pt-10 pb-20">
         <article className="max-w-[680px]">
-          {paragraphs.length === 0 ? (
+          {blocks.length === 0 ? (
             <p className="font-serif text-lg leading-[1.85] text-gris-cachemire italic">
               Le contenu de cette chronique sera bientôt disponible.
             </p>
           ) : (
             <>
-              {/* Premier paragraphe avec drop cap */}
-              <p className="font-serif font-normal text-xl leading-[1.75] m-0">
-                <span className="font-serif text-7xl md:text-[84px] font-normal text-terracotta float-left leading-[0.85] pr-4 pt-2">
-                  {paragraphs[0].charAt(0)}
-                </span>
-                {paragraphs[0].slice(1)}
-              </p>
+              {blocks.map((b, i) => {
+                if (b.type === "h2") {
+                  return (
+                    <h2
+                      key={i}
+                      id={slugify(b.text)}
+                      className="font-serif font-normal italic text-3xl md:text-[34px] leading-tight tracking-tight mt-16 mb-6 scroll-mt-24"
+                    >
+                      {b.text}
+                    </h2>
+                  );
+                }
+                if (b.type === "h3") {
+                  return (
+                    <h3
+                      key={i}
+                      className="font-serif font-normal text-xl md:text-[22px] leading-tight tracking-tight mt-10 mb-4 text-bleu-abysse"
+                    >
+                      {b.text}
+                    </h3>
+                  );
+                }
+                if (b.type === "quote") {
+                  return (
+                    <blockquote key={i} className="my-12 px-10 border-l border-terracotta">
+                      <div
+                        className="font-serif italic text-xl md:text-[22px] leading-[1.5] tracking-tight"
+                        dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }}
+                      />
+                    </blockquote>
+                  );
+                }
+                if (b.type === "ul") {
+                  return (
+                    <ul key={i} className="list-none p-0 my-6 flex flex-col gap-3">
+                      {b.items.map((it, j) => (
+                        <li
+                          key={j}
+                          className="font-serif text-lg leading-[1.7] grid grid-cols-[14px_1fr] gap-3"
+                        >
+                          <span className="text-or-riche pt-2.5 text-[8px]">◆</span>
+                          <span dangerouslySetInnerHTML={{ __html: renderInlineHtml(it) }} />
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                }
+                // Paragraphe : drop cap sur le tout premier
+                if (i === firstParaIdx && firstPara) {
+                  return (
+                    <p key={i} className="font-serif font-normal text-xl leading-[1.75] m-0">
+                      <span className="font-serif text-7xl md:text-[84px] font-normal text-terracotta float-left leading-[0.85] pr-4 pt-2">
+                        {firstPara.charAt(0)}
+                      </span>
+                      <span dangerouslySetInnerHTML={{ __html: renderInlineHtml(firstPara.slice(1)) }} />
+                    </p>
+                  );
+                }
+                return (
+                  <p
+                    key={i}
+                    className="font-serif text-lg leading-[1.85] mt-5 mb-0"
+                    dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }}
+                  />
+                );
+              })}
 
-              {paragraphs.slice(1).map((p, i) => (
-                <div key={i}>
-                  <h2 className="font-serif font-normal italic text-3xl md:text-[34px] leading-tight tracking-tight my-16 mb-6">
-                    {sections[i] ?? `Suite — ${i + 1}`}
-                  </h2>
-                  <p className="font-serif text-lg leading-[1.85] m-0">{p}</p>
-                </div>
-              ))}
-
-              {/* Pull quote */}
-              {paragraphs.length > 1 && (
+              {/* Pull quote (sur citation extraite ou extrait) */}
+              {(firstQuote || article.extrait) && (
                 <blockquote className="my-16 px-12 border-l border-terracotta">
                   <div className="font-serif italic text-2xl md:text-[26px] leading-[1.35] tracking-tight">
-                    « {article.extrait?.slice(0, 120) ?? "Une chronique à savourer."} »
+                    « {firstQuote?.text ?? article.extrait?.slice(0, 140)} »
                   </div>
                   <div className="mt-5 text-[10px] tracking-[0.3em] uppercase text-gris-cachemire">
                     {authorName(article.auteur)}
