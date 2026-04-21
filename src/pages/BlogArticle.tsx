@@ -27,7 +27,6 @@ export default function BlogArticle() {
   const [article, setArticle] = useState<Article | null>(null);
   const [related, setRelated] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
-  const [paragraphs, setParagraphs] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -37,7 +36,7 @@ export default function BlogArticle() {
       const { data } = await supabase
         .from("articles_blog")
         .select(
-          "id, slug, titre, extrait, categorie_blog, image_couverture_url, publie_le, meta_description, meta_title, tags, auteur:profiles(prenom, nom, avatar_url)"
+          "id, slug, titre, extrait, contenu, categorie_blog, image_couverture_url, publie_le, meta_description, meta_title, tags, auteur:profiles(prenom, nom, avatar_url)"
         )
         .eq("slug", slug)
         .eq("est_publie", true)
@@ -53,18 +52,10 @@ export default function BlogArticle() {
           meta.setAttribute("content", art.meta_description || art.extrait || "");
         }
 
-        // Pseudo-content : extrait découpé en paragraphes
-        // Quand un système de contenu Builder.io sera branché, on injectera ici le HTML rendu.
-        if (art.extrait) {
-          setParagraphs(art.extrait.split(/\n+/).filter(Boolean));
-        } else {
-          setParagraphs([]);
-        }
-
         const { data: rel } = await supabase
           .from("articles_blog")
           .select(
-            "id, slug, titre, extrait, categorie_blog, image_couverture_url, publie_le, meta_description, meta_title, tags, auteur:profiles(prenom, nom, avatar_url)"
+            "id, slug, titre, extrait, contenu, categorie_blog, image_couverture_url, publie_le, meta_description, meta_title, tags, auteur:profiles(prenom, nom, avatar_url)"
           )
           .eq("est_publie", true)
           .neq("id", art.id)
@@ -79,6 +70,14 @@ export default function BlogArticle() {
     load();
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, [slug]);
+
+  const blocks = useMemo(() => {
+    if (!article?.contenu) return [];
+    return parseMarkdown(article.contenu);
+  }, [article?.contenu]);
+
+  const slugify = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
   const formatDate = (iso?: string | null) => {
     if (!iso) return "";
