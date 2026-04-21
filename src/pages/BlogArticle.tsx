@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArticleTile } from "@/components/blog/ArticleTile";
+import { parseMarkdown, renderInlineHtml } from "@/lib/markdown";
 
 interface Article {
   id: string;
   slug: string;
   titre: string;
   extrait: string | null;
+  contenu: string | null;
   categorie_blog: string | null;
   image_couverture_url: string | null;
   publie_le: string | null;
