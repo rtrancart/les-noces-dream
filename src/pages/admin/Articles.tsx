@@ -54,6 +54,7 @@ export default function Articles() {
     setSaving(true);
     const payload = {
       titre: form.titre, slug: form.slug, extrait: form.extrait || null,
+      contenu: form.contenu || null,
       categorie_blog: form.categorie_blog || null, image_couverture_url: form.image_couverture_url || null,
       tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
       est_publie: form.est_publie,
