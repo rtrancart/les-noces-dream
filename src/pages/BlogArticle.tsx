@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArticleTile } from "@/components/blog/ArticleTile";
+import { parseMarkdown, renderInlineHtml } from "@/lib/markdown";
 
 interface Article {
   id: string;
   slug: string;
   titre: string;
   extrait: string | null;
+  contenu: string | null;
   categorie_blog: string | null;
   image_couverture_url: string | null;
   publie_le: string | null;
@@ -25,7 +27,6 @@ export default function BlogArticle() {
   const [article, setArticle] = useState<Article | null>(null);
   const [related, setRelated] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
-  const [paragraphs, setParagraphs] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -35,7 +36,7 @@ export default function BlogArticle() {
       const { data } = await supabase
         .from("articles_blog")
         .select(
-          "id, slug, titre, extrait, categorie_blog, image_couverture_url, publie_le, meta_description, meta_title, tags, auteur:profiles(prenom, nom, avatar_url)"
+          "id, slug, titre, extrait, contenu, categorie_blog, image_couverture_url, publie_le, meta_description, meta_title, tags, auteur:profiles(prenom, nom, avatar_url)"
         )
         .eq("slug", slug)
         .eq("est_publie", true)
@@ -51,18 +52,10 @@ export default function BlogArticle() {
           meta.setAttribute("content", art.meta_description || art.extrait || "");
         }
 
-        // Pseudo-content : extrait découpé en paragraphes
-        // Quand un système de contenu Builder.io sera branché, on injectera ici le HTML rendu.
-        if (art.extrait) {
-          setParagraphs(art.extrait.split(/\n+/).filter(Boolean));
-        } else {
-          setParagraphs([]);
-        }
-
         const { data: rel } = await supabase
           .from("articles_blog")
           .select(
-            "id, slug, titre, extrait, categorie_blog, image_couverture_url, publie_le, meta_description, meta_title, tags, auteur:profiles(prenom, nom, avatar_url)"
+            "id, slug, titre, extrait, contenu, categorie_blog, image_couverture_url, publie_le, meta_description, meta_title, tags, auteur:profiles(prenom, nom, avatar_url)"
           )
           .eq("est_publie", true)
           .neq("id", art.id)
@@ -77,6 +70,14 @@ export default function BlogArticle() {
     load();
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, [slug]);
+
+  const blocks = useMemo(() => {
+    if (!article?.contenu) return [];
+    return parseMarkdown(article.contenu);
+  }, [article?.contenu]);
+
+  const slugify = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
   const formatDate = (iso?: string | null) => {
     if (!iso) return "";
@@ -116,7 +117,16 @@ export default function BlogArticle() {
     );
   }
 
-  const sections = paragraphs.slice(1).map((_, i) => `Section ${i + 1}`);
+  const sections = blocks
+    .filter((b) => b.type === "h2")
+    .map((b) => (b as { type: "h2"; text: string }).text);
+
+  // Premier paragraphe pour le drop cap (avant tout titre)
+  const firstParaIdx = blocks.findIndex((b) => b.type === "p");
+  const firstPara = firstParaIdx >= 0 ? (blocks[firstParaIdx] as { text: string }).text : null;
+
+  // Premier blockquote du contenu pour la pull-quote (sinon fallback)
+  const firstQuote = blocks.find((b) => b.type === "quote") as { text: string } | undefined;
 
   return (
     <div className="bg-[#FBF8F3] min-h-screen text-bleu-abysse">
@@ -174,34 +184,84 @@ export default function BlogArticle() {
       {/* Corps + sidebar */}
       <div className="max-w-[1280px] mx-auto grid md:grid-cols-[1fr_320px] gap-12 md:gap-24 px-6 md:px-20 pt-10 pb-20">
         <article className="max-w-[680px]">
-          {paragraphs.length === 0 ? (
+          {blocks.length === 0 ? (
             <p className="font-serif text-lg leading-[1.85] text-gris-cachemire italic">
               Le contenu de cette chronique sera bientôt disponible.
             </p>
           ) : (
             <>
-              {/* Premier paragraphe avec drop cap */}
-              <p className="font-serif font-normal text-xl leading-[1.75] m-0">
-                <span className="font-serif text-7xl md:text-[84px] font-normal text-terracotta float-left leading-[0.85] pr-4 pt-2">
-                  {paragraphs[0].charAt(0)}
-                </span>
-                {paragraphs[0].slice(1)}
-              </p>
+              {blocks.map((b, i) => {
+                if (b.type === "h2") {
+                  return (
+                    <h2
+                      key={i}
+                      id={slugify(b.text)}
+                      className="font-serif font-normal italic text-3xl md:text-[34px] leading-tight tracking-tight mt-16 mb-6 scroll-mt-24"
+                    >
+                      {b.text}
+                    </h2>
+                  );
+                }
+                if (b.type === "h3") {
+                  return (
+                    <h3
+                      key={i}
+                      className="font-serif font-normal text-xl md:text-[22px] leading-tight tracking-tight mt-10 mb-4 text-bleu-abysse"
+                    >
+                      {b.text}
+                    </h3>
+                  );
+                }
+                if (b.type === "quote") {
+                  return (
+                    <blockquote key={i} className="my-12 px-10 border-l border-terracotta">
+                      <div
+                        className="font-serif italic text-xl md:text-[22px] leading-[1.5] tracking-tight"
+                        dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }}
+                      />
+                    </blockquote>
+                  );
+                }
+                if (b.type === "ul") {
+                  return (
+                    <ul key={i} className="list-none p-0 my-6 flex flex-col gap-3">
+                      {b.items.map((it, j) => (
+                        <li
+                          key={j}
+                          className="font-serif text-lg leading-[1.7] grid grid-cols-[14px_1fr] gap-3"
+                        >
+                          <span className="text-or-riche pt-2.5 text-[8px]">◆</span>
+                          <span dangerouslySetInnerHTML={{ __html: renderInlineHtml(it) }} />
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                }
+                // Paragraphe : drop cap sur le tout premier
+                if (i === firstParaIdx && firstPara) {
+                  return (
+                    <p key={i} className="font-serif font-normal text-xl leading-[1.75] m-0">
+                      <span className="font-serif text-7xl md:text-[84px] font-normal text-terracotta float-left leading-[0.85] pr-4 pt-2">
+                        {firstPara.charAt(0)}
+                      </span>
+                      <span dangerouslySetInnerHTML={{ __html: renderInlineHtml(firstPara.slice(1)) }} />
+                    </p>
+                  );
+                }
+                return (
+                  <p
+                    key={i}
+                    className="font-serif text-lg leading-[1.85] mt-5 mb-0"
+                    dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }}
+                  />
+                );
+              })}
 
-              {paragraphs.slice(1).map((p, i) => (
-                <div key={i}>
-                  <h2 className="font-serif font-normal italic text-3xl md:text-[34px] leading-tight tracking-tight my-16 mb-6">
-                    {sections[i] ?? `Suite — ${i + 1}`}
-                  </h2>
-                  <p className="font-serif text-lg leading-[1.85] m-0">{p}</p>
-                </div>
-              ))}
-
-              {/* Pull quote */}
-              {paragraphs.length > 1 && (
+              {/* Pull quote (sur citation extraite ou extrait) */}
+              {(firstQuote || article.extrait) && (
                 <blockquote className="my-16 px-12 border-l border-terracotta">
                   <div className="font-serif italic text-2xl md:text-[26px] leading-[1.35] tracking-tight">
-                    « {article.extrait?.slice(0, 120) ?? "Une chronique à savourer."} »
+                    « {firstQuote?.text ?? article.extrait?.slice(0, 140)} »
                   </div>
                   <div className="mt-5 text-[10px] tracking-[0.3em] uppercase text-gris-cachemire">
                     {authorName(article.auteur)}
@@ -240,7 +300,9 @@ export default function BlogArticle() {
                       <span className={`font-sans text-[10px] pt-1 ${i === 0 ? "text-terracotta" : "text-gris-cachemire"}`}>
                         {String(i + 1).padStart(2, "0")}
                       </span>
-                      <span>{s}</span>
+                      <a href={`#${slugify(s)}`} className="hover:text-bleu-abysse transition-colors">
+                        {s}
+                      </a>
                     </li>
                   ))}
                 </ol>

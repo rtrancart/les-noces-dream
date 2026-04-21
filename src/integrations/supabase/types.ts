@@ -87,6 +87,7 @@ export type Database = {
           auteur_id: string | null
           builder_io_content_id: string | null
           categorie_blog: string | null
+          contenu: string | null
           created_at: string
           est_publie: boolean | null
           extrait: string | null
@@ -104,6 +105,7 @@ export type Database = {
           auteur_id?: string | null
           builder_io_content_id?: string | null
           categorie_blog?: string | null
+          contenu?: string | null
           created_at?: string
           est_publie?: boolean | null
           extrait?: string | null
@@ -121,6 +123,7 @@ export type Database = {
           auteur_id?: string | null
           builder_io_content_id?: string | null
           categorie_blog?: string | null
+          contenu?: string | null
           created_at?: string
           est_publie?: boolean | null
           extrait?: string | null

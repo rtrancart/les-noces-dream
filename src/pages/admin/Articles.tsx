@@ -18,7 +18,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Article = Database["public"]["Tables"]["articles_blog"]["Row"];
 
-const emptyForm = { titre: "", slug: "", extrait: "", categorie_blog: "", image_couverture_url: "", tags: "", est_publie: false, meta_title: "", meta_description: "" };
+const emptyForm = { titre: "", slug: "", extrait: "", contenu: "", categorie_blog: "", image_couverture_url: "", tags: "", est_publie: false, meta_title: "", meta_description: "" };
 
 export default function Articles() {
   const [data, setData] = useState<Article[]>([]);
@@ -42,7 +42,7 @@ export default function Articles() {
   const openEdit = (a: Article) => {
     setEditItem(a);
     setForm({
-      titre: a.titre, slug: a.slug, extrait: a.extrait ?? "", categorie_blog: a.categorie_blog ?? "",
+      titre: a.titre, slug: a.slug, extrait: a.extrait ?? "", contenu: (a as any).contenu ?? "", categorie_blog: a.categorie_blog ?? "",
       image_couverture_url: a.image_couverture_url ?? "", tags: (a.tags ?? []).join(", "), est_publie: a.est_publie ?? false,
       meta_title: (a as any).meta_title ?? "", meta_description: (a as any).meta_description ?? "",
     });
@@ -54,6 +54,7 @@ export default function Articles() {
     setSaving(true);
     const payload = {
       titre: form.titre, slug: form.slug, extrait: form.extrait || null,
+      contenu: form.contenu || null,
       categorie_blog: form.categorie_blog || null, image_couverture_url: form.image_couverture_url || null,
       tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
       est_publie: form.est_publie,
@@ -133,12 +134,13 @@ export default function Articles() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-serif text-lg">{editItem ? "Modifier l'article" : "Nouvel article"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Titre *</Label><Input value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} /></div>
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Slug *</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="font-mono text-sm" /></div>
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Extrait</Label><Textarea value={form.extrait} onChange={(e) => setForm({ ...form, extrait: e.target.value })} rows={3} /></div>
+            <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Contenu (Markdown)</Label><Textarea value={form.contenu} onChange={(e) => setForm({ ...form, contenu: e.target.value })} rows={14} className="font-mono text-xs" placeholder="## Titre de section&#10;&#10;Paragraphe avec **gras** et *italique*.&#10;&#10;> Citation à mettre en avant&#10;&#10;- Élément de liste&#10;- Autre élément" /></div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Catégorie</Label><Input value={form.categorie_blog} onChange={(e) => setForm({ ...form, categorie_blog: e.target.value })} /></div>
               <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Image couverture URL</Label><Input value={form.image_couverture_url} onChange={(e) => setForm({ ...form, image_couverture_url: e.target.value })} /></div>
