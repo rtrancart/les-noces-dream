@@ -1,0 +1,1 @@
+ALTER TABLE public.articles_blog ADD COLUMN IF NOT EXISTS contenu text;
