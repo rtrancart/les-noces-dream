@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Star, MapPin } from "lucide-react";
 import FavoriButton from "@/components/favoris/FavoriButton";
+import { regionNomToSlug } from "@/lib/regions";
 
 export interface ProviderCardData {
   id: string;
@@ -65,7 +66,28 @@ export default function ProviderCard({ provider }: { provider: ProviderCardData 
           </h3>
           <div className="flex items-center gap-1 text-muted-foreground mb-2">
             <MapPin size={12} />
-            <span className="font-sans text-xs">{provider.ville}{provider.region ? `, ${provider.region}` : ""}</span>
+            <span className="font-sans text-xs">
+              {provider.ville}
+              {provider.region ? (
+                <>
+                  {", "}
+                  {(() => {
+                    const slug = regionNomToSlug(provider.region);
+                    return slug ? (
+                      <Link
+                        to={`/mariage/${slug}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="hover:text-or-riche hover:underline"
+                      >
+                        {provider.region}
+                      </Link>
+                    ) : (
+                      <span>{provider.region}</span>
+                    );
+                  })()}
+                </>
+              ) : null}
+            </span>
           </div>
           {provider.description_courte && (
             <p className="font-sans text-sm text-muted-foreground line-clamp-3 leading-relaxed mb-3">
