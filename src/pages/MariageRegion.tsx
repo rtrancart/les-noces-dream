@@ -86,7 +86,7 @@ const fmtEur = (n: number | null) =>
 
 function inlineBold(text: string): string {
   // Permet **gras** dans les FAQ et citation
-  return text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-abysse">$1</strong>');
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-bleu-abysse">$1</strong>');
 }
 
 function renderInline(text: string) {
@@ -295,7 +295,7 @@ export default function MariageRegion() {
 
   if (loading || !page) {
     return (
-      <div className="bg-fond-general min-h-screen">
+      <div className="bg-background min-h-screen">
         <div className="max-w-[1099px] mx-auto px-6 lg:px-8 py-12 space-y-8">
           <Skeleton className="h-[480px] w-full rounded-md" />
           <Skeleton className="h-32 w-full rounded-md" />
@@ -350,7 +350,7 @@ export default function MariageRegion() {
 
   // ── Helpers couleur catégorie pour cards ──
   const catColor = (idx: number) =>
-    ["bg-or/15 text-or", "bg-terracotta/15 text-terracotta", "bg-petrole/15 text-petrole", "bg-sauge/15 text-sauge"][
+    ["bg-or-riche/15 text-or-riche", "bg-terracotta/15 text-terracotta", "bg-bleu-petrole/15 text-bleu-petrole", "bg-sauge/15 text-sauge"][
       idx % 4
     ];
 
@@ -368,13 +368,13 @@ export default function MariageRegion() {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      <div className="bg-fond-general">
+      <div className="bg-background">
         {/* Breadcrumb */}
-        <nav aria-label="Fil d'ariane" className="bg-[#F0EBE3] border-b border-nude/60 px-6 lg:px-8 py-3">
-          <div className="max-w-[1099px] mx-auto text-xs text-gris">
-            <Link to="/" className="hover:text-or">Accueil</Link>
+        <nav aria-label="Fil d'ariane" className="bg-[#F0EBE3] border-b border-nude-poudre/60 px-6 lg:px-8 py-3">
+          <div className="max-w-[1099px] mx-auto text-xs text-gris-cachemire">
+            <Link to="/" className="hover:text-or-riche-riche">Accueil</Link>
             <span className="mx-1.5">›</span>
-            <span className="text-or">Mariage par région</span>
+            <span className="text-or-riche">Mariage par région</span>
             <span className="mx-1.5">›</span>
             <span>{page.nom_region}</span>
           </div>
@@ -390,7 +390,7 @@ export default function MariageRegion() {
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-champagne to-or" />
+            <div className="absolute inset-0 bg-gradient-to-br from-champagne to-or-riche" />
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-abysse/10 to-abysse/75" />
           <div className="absolute inset-x-0 bottom-0 px-6 lg:px-12 py-10 max-w-[1099px] mx-auto">
@@ -409,13 +409,13 @@ export default function MariageRegion() {
               </p>
             )}
             <div className="flex gap-2 mt-5 flex-wrap">
-              <span className="bg-petrole/20 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
+              <span className="bg-bleu-petrole/20 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
                 ⬤ {fmtNb(stats.nb_prestataires)} prestataires validés
               </span>
-              <span className="bg-petrole/20 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
+              <span className="bg-bleu-petrole/20 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
                 ⬤ {fmtNb(stats.nb_villes)} villes couvertes
               </span>
-              <span className="bg-or/30 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
+              <span className="bg-or-riche/30 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
                 ✦ Sélection éditoriale LesNoces
               </span>
             </div>
@@ -423,14 +423,14 @@ export default function MariageRegion() {
         </section>
 
         {/* EN RÉSUMÉ — LLM-first */}
-        <section className="bg-champagne-fond border-b border-nude/60 py-8 md:py-10">
+        <section className="bg-champagne/30 border-b border-nude-poudre/60 py-8 md:py-10">
           <div className="max-w-[1099px] mx-auto px-6 lg:px-8">
             <div className="flex items-center gap-2 mb-5 flex-wrap">
-              <span className="w-6 h-px bg-or inline-block" />
-              <span className="text-[11px] tracking-[0.14em] uppercase font-semibold text-or">
+              <span className="w-6 h-px bg-or-riche inline-block" />
+              <span className="text-[11px] tracking-[0.14em] uppercase font-semibold text-or-riche">
                 En résumé
               </span>
-              <span className="bg-or/15 text-or text-[10px] px-2 py-0.5 rounded-full font-semibold">
+              <span className="bg-or-riche/15 text-or-riche text-[10px] px-2 py-0.5 rounded-full font-semibold">
                 ⬤ + ✦ LLM-optimisé · Schema.org · citables
               </span>
             </div>
@@ -461,7 +461,7 @@ export default function MariageRegion() {
                 sub={`sur ${fmtNb(stats.nb_avis)} avis vérifiés · tous prestataires validés manuellement par LesNoces`}
               />
             </div>
-            <p className="text-[10px] text-or/70 italic text-right mt-3">
+            <p className="text-[10px] text-or-riche/70 italic text-right mt-3">
               Ces données alimentent le Schema.org JSON-LD — citables par ChatGPT, Perplexity, Gemini
             </p>
           </div>
@@ -482,7 +482,7 @@ export default function MariageRegion() {
 
         {/* SPÉCIFICITÉS */}
         {page.specificites && page.specificites.length > 0 && (
-          <section className="bg-fond-alt py-10 md:py-14">
+          <section className="bg-secondary/30 py-10 md:py-14">
             <div className="max-w-[1099px] mx-auto px-6 lg:px-8">
               <SectionLabel editorial>Ce qui rend cette région unique</SectionLabel>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
@@ -492,8 +492,8 @@ export default function MariageRegion() {
                     className="bg-card p-4 md:p-5 rounded-r-lg"
                     style={{ borderLeft: `2px solid ${s.couleur_accent || "#A57D27"}` }}
                   >
-                    <h3 className="text-sm font-semibold text-abysse mb-1.5">{s.titre}</h3>
-                    <p className="text-xs md:text-[13px] text-gris leading-relaxed">{s.texte}</p>
+                    <h3 className="text-sm font-semibold text-bleu-abysse mb-1.5">{s.titre}</h3>
+                    <p className="text-xs md:text-[13px] text-gris-cachemire leading-relaxed">{s.texte}</p>
                   </div>
                 ))}
               </div>
@@ -515,7 +515,7 @@ export default function MariageRegion() {
                 <Link
                   key={c.id}
                   to={`/recherche?categorie=${c.slug}&lieu=${encodeURIComponent(page.nom_region)}`}
-                  className="text-xs px-3.5 py-1.5 border border-nude rounded-full text-gris hover:text-or hover:border-or transition-colors"
+                  className="text-xs px-3.5 py-1.5 border border-nude-poudre rounded-full text-gris-cachemire hover:text-or-riche-riche hover:border-or-riche-riche transition-colors"
                 >
                   {c.nom} ({c.nb})
                 </Link>
@@ -530,7 +530,7 @@ export default function MariageRegion() {
                     <Link
                       key={p.id}
                       to={`/prestataire/${p.slug}`}
-                      className="group block border border-nude/80 rounded-lg overflow-hidden bg-card hover:border-or transition-colors"
+                      className="group block border border-nude-poudre/80 rounded-lg overflow-hidden bg-card hover:border-or-riche-riche transition-colors"
                     >
                       <div className="aspect-[4/3] bg-secondary/30">
                         {p.photo_principale_url ? (
@@ -541,7 +541,7 @@ export default function MariageRegion() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-nude to-champagne" />
+                          <div className="w-full h-full bg-gradient-to-br from-nude-poudre to-champagne" />
                         )}
                       </div>
                       <div className="p-3">
@@ -552,12 +552,12 @@ export default function MariageRegion() {
                             {p.categorie_nom}
                           </span>
                         )}
-                        <h3 className="font-serif text-base text-abysse mt-1.5 leading-snug">
+                        <h3 className="font-serif text-base text-bleu-abysse mt-1.5 leading-snug">
                           {p.nom_commercial}
                         </h3>
-                        <div className="text-[11px] text-gris mt-0.5">{p.ville}</div>
-                        <div className="text-[11px] text-or mt-1 flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-or" />
+                        <div className="text-[11px] text-gris-cachemire mt-0.5">{p.ville}</div>
+                        <div className="text-[11px] text-or-riche mt-1 flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-or-riche" />
                           {p.note_moyenne?.toFixed(1) ?? "—"} · {p.nombre_avis ?? 0} avis
                         </div>
                       </div>
@@ -570,7 +570,7 @@ export default function MariageRegion() {
             <div className="text-center">
               <Link
                 to={`/recherche?lieu=${encodeURIComponent(page.nom_region)}`}
-                className="inline-block font-serif italic text-abysse border-b border-or pb-0.5 hover:text-or transition-colors"
+                className="inline-block font-serif italic text-bleu-abysse border-b border-or-riche pb-0.5 hover:text-or-riche-riche transition-colors"
               >
                 Voir les {fmtNb(stats.nb_prestataires)} prestataires en {page.nom_region} →
               </Link>
@@ -580,7 +580,7 @@ export default function MariageRegion() {
 
         {/* VILLES */}
         {villes.length > 0 && (
-          <section className="bg-fond-alt py-10 md:py-14">
+          <section className="bg-secondary/30 py-10 md:py-14">
             <div className="max-w-[1099px] mx-auto px-6 lg:px-8">
               <SectionLabel auto>Mariage par ville</SectionLabel>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
@@ -588,20 +588,20 @@ export default function MariageRegion() {
                   <Link
                     key={v.ville}
                     to={`/recherche?lieu=${encodeURIComponent(v.ville)}`}
-                    className="border border-nude/80 rounded-lg p-3 px-4 bg-card hover:border-or transition-colors"
+                    className="border border-nude-poudre/80 rounded-lg p-3 px-4 bg-card hover:border-or-riche-riche transition-colors"
                   >
-                    <div className="text-sm font-medium text-abysse">{v.ville}</div>
-                    <div className="text-[11px] text-or mt-0.5">{v.nb} prestataires</div>
+                    <div className="text-sm font-medium text-bleu-abysse">{v.ville}</div>
+                    <div className="text-[11px] text-or-riche mt-0.5">{v.nb} prestataires</div>
                   </Link>
                 ))}
                 {totalVilles > 5 && (
                   <Link
                     to={`/recherche?lieu=${encodeURIComponent(page.nom_region)}`}
-                    className="border border-nude/80 rounded-lg p-3 px-4 bg-card hover:border-or transition-colors flex items-center justify-center text-center"
+                    className="border border-nude-poudre/80 rounded-lg p-3 px-4 bg-card hover:border-or-riche-riche transition-colors flex items-center justify-center text-center"
                   >
                     <div>
-                      <div className="text-sm font-medium text-gris">+ {totalVilles - 5} autres villes</div>
-                      <div className="text-[11px] text-or mt-0.5">Voir toutes →</div>
+                      <div className="text-sm font-medium text-gris-cachemire">+ {totalVilles - 5} autres villes</div>
+                      <div className="text-[11px] text-or-riche mt-0.5">Voir toutes →</div>
                     </div>
                   </Link>
                 )}
@@ -621,14 +621,14 @@ export default function MariageRegion() {
                 {page.conseils.map((c, i) => (
                   <div
                     key={i}
-                    className="bg-card border border-nude/80 rounded-lg p-4 md:p-5 flex gap-4 items-start"
+                    className="bg-card border border-nude-poudre/80 rounded-lg p-4 md:p-5 flex gap-4 items-start"
                   >
-                    <span className="font-serif italic text-or text-2xl leading-none w-8 shrink-0">
+                    <span className="font-serif italic text-or-riche text-2xl leading-none w-8 shrink-0">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <div>
-                      <h3 className="text-sm font-semibold text-abysse mb-1.5">{c.titre}</h3>
-                      <p className="text-xs md:text-[13px] text-gris leading-relaxed">{c.texte}</p>
+                      <h3 className="text-sm font-semibold text-bleu-abysse mb-1.5">{c.titre}</h3>
+                      <p className="text-xs md:text-[13px] text-gris-cachemire leading-relaxed">{c.texte}</p>
                     </div>
                   </div>
                 ))}
@@ -642,20 +642,20 @@ export default function MariageRegion() {
           <section className="py-10 md:py-14 bg-card">
             <div className="max-w-[1099px] mx-auto px-6 lg:px-8">
               <div className="flex items-center gap-2 mb-5 flex-wrap">
-                <span className="text-[10px] uppercase tracking-[0.08em] text-gris font-medium">
+                <span className="text-[10px] uppercase tracking-[0.08em] text-gris-cachemire font-medium">
                   Budget par type de prestation
                 </span>
-                <span className="bg-petrole/15 text-petrole text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                <span className="bg-bleu-petrole/15 text-bleu-petrole text-[10px] px-2 py-0.5 rounded-full font-semibold">
                   ⬤ calculé depuis Supabase
                 </span>
-                <span className="bg-or/15 text-or text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                <span className="bg-or-riche/15 text-or-riche text-[10px] px-2 py-0.5 rounded-full font-semibold">
                   ✦ extrait par les LLMs
                 </span>
               </div>
-              <div className="overflow-x-auto border border-nude/80 rounded-lg">
+              <div className="overflow-x-auto border border-nude-poudre/80 rounded-lg">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-petrole text-white">
+                    <tr className="bg-bleu-petrole text-white">
                       <th className="text-left px-4 py-3 text-[10px] uppercase tracking-[0.08em] font-semibold">
                         Prestation
                       </th>
@@ -669,10 +669,10 @@ export default function MariageRegion() {
                   </thead>
                   <tbody>
                     {budgets.map((b, i) => (
-                      <tr key={b.categorie} className={i % 2 === 0 ? "bg-card" : "bg-fond-alt"}>
-                        <td className="px-4 py-3 font-medium text-abysse">{b.categorie}</td>
-                        <td className="px-4 py-3 text-right text-or font-semibold">{fmtEur(b.budget_moyen)}</td>
-                        <td className="px-4 py-3 text-right text-gris">
+                      <tr key={b.categorie} className={i % 2 === 0 ? "bg-card" : "bg-secondary/30"}>
+                        <td className="px-4 py-3 font-medium text-bleu-abysse">{b.categorie}</td>
+                        <td className="px-4 py-3 text-right text-or-riche font-semibold">{fmtEur(b.budget_moyen)}</td>
+                        <td className="px-4 py-3 text-right text-gris-cachemire">
                           {fmtEur(b.budget_min)} – {fmtEur(b.budget_max)}
                         </td>
                       </tr>
@@ -680,7 +680,7 @@ export default function MariageRegion() {
                   </tbody>
                 </table>
               </div>
-              <p className="mt-3 text-[11px] text-gris italic">
+              <p className="mt-3 text-[11px] text-gris-cachemire italic">
                 Calculé automatiquement depuis les prix déclarés par les prestataires LesNoces · mis à jour en continu
               </p>
             </div>
@@ -689,7 +689,7 @@ export default function MariageRegion() {
 
         {/* ARTICLES BLOG LIÉS */}
         {articles.length > 0 && (
-          <section className="bg-fond-alt py-10 md:py-14">
+          <section className="bg-secondary/30 py-10 md:py-14">
             <div className="max-w-[1099px] mx-auto px-6 lg:px-8">
               <SectionLabel auto>À lire sur {page.nom_region}</SectionLabel>
               <div className="space-y-3">
@@ -697,9 +697,9 @@ export default function MariageRegion() {
                   <Link
                     key={a.slug}
                     to={`/blog/${a.slug}`}
-                    className="grid grid-cols-[80px_1fr] gap-4 items-center bg-card border border-nude/80 rounded-lg p-3 hover:border-or transition-colors"
+                    className="grid grid-cols-[80px_1fr] gap-4 items-center bg-card border border-nude-poudre/80 rounded-lg p-3 hover:border-or-riche-riche transition-colors"
                   >
-                    <div className="h-[60px] rounded overflow-hidden bg-gradient-to-br from-nude to-champagne">
+                    <div className="h-[60px] rounded overflow-hidden bg-gradient-to-br from-nude-poudre to-champagne">
                       {a.image_couverture_url && (
                         <img
                           src={a.image_couverture_url}
@@ -711,12 +711,12 @@ export default function MariageRegion() {
                     </div>
                     <div>
                       {a.categorie_blog && (
-                        <span className="inline-block bg-or/15 text-or text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded mb-1">
+                        <span className="inline-block bg-or-riche/15 text-or-riche text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded mb-1">
                           {a.categorie_blog}
                         </span>
                       )}
-                      <h3 className="font-serif text-sm md:text-base text-abysse leading-snug">{a.titre}</h3>
-                      <div className="text-[11px] text-gris mt-1">
+                      <h3 className="font-serif text-sm md:text-base text-bleu-abysse leading-snug">{a.titre}</h3>
+                      <div className="text-[11px] text-gris-cachemire mt-1">
                         {a.temps_lecture ? `${a.temps_lecture} min` : "Lecture"}
                         {a.auteur ? ` · ${a.auteur}` : ""}
                       </div>
@@ -733,27 +733,27 @@ export default function MariageRegion() {
           <section className="py-10 md:py-14 bg-card">
             <div className="max-w-[1099px] mx-auto px-6 lg:px-8">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="text-[10px] uppercase tracking-[0.08em] text-gris font-medium">
+                <span className="text-[10px] uppercase tracking-[0.08em] text-gris-cachemire font-medium">
                   Questions fréquentes
                 </span>
-                <span className="bg-or/15 text-or text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                <span className="bg-or-riche/15 text-or-riche text-[10px] px-2 py-0.5 rounded-full font-semibold">
                   ✦ éditorial
                 </span>
-                <span className="bg-or/15 text-or text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                <span className="bg-or-riche/15 text-or-riche text-[10px] px-2 py-0.5 rounded-full font-semibold">
                   Schema.org FAQPage
                 </span>
               </div>
-              <p className="text-[11px] text-gris italic mb-5">
+              <p className="text-[11px] text-gris-cachemire italic mb-5">
                 Réponses courtes avec données précises — format optimisé pour les IA
               </p>
               <div className="space-y-2.5">
                 {page.faq.map((q, i) => (
                   <div
                     key={i}
-                    className="bg-fond-alt border border-nude/80 rounded-lg p-4"
+                    className="bg-secondary/30 border border-nude-poudre/80 rounded-lg p-4"
                   >
-                    <h3 className="text-sm font-semibold text-abysse mb-2">{q.question}</h3>
-                    <p className="text-xs md:text-[13px] text-gris leading-relaxed">
+                    <h3 className="text-sm font-semibold text-bleu-abysse mb-2">{q.question}</h3>
+                    <p className="text-xs md:text-[13px] text-gris-cachemire leading-relaxed">
                       {renderInline(q.reponse)}
                     </p>
                   </div>
@@ -768,11 +768,11 @@ export default function MariageRegion() {
           <section className="py-10 md:py-12 bg-[#F0EBE3]">
             <div className="max-w-[1099px] mx-auto px-6 lg:px-8">
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="text-[10px] uppercase tracking-[0.08em] text-gris font-medium">
+                <span className="text-[10px] uppercase tracking-[0.08em] text-gris-cachemire font-medium">
                   Source LesNoces — données vérifiées
                 </span>
               </div>
-              <blockquote className="bg-card border-l-2 border-or rounded-r-lg p-5 md:p-6 italic text-gris leading-loose text-sm">
+              <blockquote className="bg-card border-l-2 border-or-riche rounded-r-lg p-5 md:p-6 italic text-gris-cachemire leading-loose text-sm">
                 « {renderInline(page.citation_llm)} »
               </blockquote>
             </div>
@@ -781,16 +781,16 @@ export default function MariageRegion() {
 
         {/* CONTENU SEO BAS */}
         {page.contenu_seo_bas && (
-          <section className="py-10 md:py-14 bg-fond-alt">
+          <section className="py-10 md:py-14 bg-secondary/30">
             <div className="max-w-[1099px] mx-auto px-6 lg:px-8">
-              <h2 className="font-serif text-2xl md:text-3xl text-abysse mb-6">
+              <h2 className="font-serif text-2xl md:text-3xl text-bleu-abysse mb-6">
                 Tout savoir sur le mariage en {page.nom_region}
               </h2>
               <div
-                className="prose prose-sm md:prose-base max-w-none text-gris leading-relaxed
-                  prose-headings:font-serif prose-headings:text-abysse
-                  prose-p:text-gris prose-p:leading-loose
-                  prose-strong:text-abysse"
+                className="prose prose-sm md:prose-base max-w-none text-gris-cachemire leading-relaxed
+                  prose-headings:font-serif prose-headings:text-bleu-abysse
+                  prose-p:text-gris-cachemire prose-p:leading-loose
+                  prose-strong:text-bleu-abysse"
                 dangerouslySetInnerHTML={{ __html: page.contenu_seo_bas }}
               />
             </div>
@@ -798,7 +798,7 @@ export default function MariageRegion() {
         )}
 
         {/* CTA Newsletter */}
-        <section className="bg-abysse py-12 md:py-16">
+        <section className="bg-bleu-abysse py-12 md:py-16">
           <div className="max-w-2xl mx-auto px-6 lg:px-8 text-center">
             <h2 className="font-serif italic text-champagne text-2xl md:text-3xl mb-3">
               Organisez votre mariage en {page.nom_region}
@@ -815,11 +815,11 @@ export default function MariageRegion() {
               <input
                 type="email"
                 placeholder="votre@email.fr"
-                className="flex-1 bg-white/10 border border-white/20 text-white rounded px-4 py-3 text-sm placeholder:text-white/40 focus:outline-none focus:border-or"
+                className="flex-1 bg-white/10 border border-white/20 text-white rounded px-4 py-3 text-sm placeholder:text-white/40 focus:outline-none focus:border-or-riche-riche"
               />
               <button
                 type="submit"
-                className="bg-or text-white text-sm font-semibold px-6 py-3 rounded hover:bg-or/90 transition-colors whitespace-nowrap"
+                className="bg-or-riche text-white text-sm font-semibold px-6 py-3 rounded hover:bg-or-riche/90 transition-colors whitespace-nowrap"
               >
                 Recevoir <ArrowRight className="inline w-4 h-4 ml-1" />
               </button>
@@ -836,12 +836,12 @@ export default function MariageRegion() {
 function ResumeCard({ value, sub, wide }: { value: string; sub: string; wide?: boolean }) {
   return (
     <div
-      className={`flex items-start gap-3 p-3.5 px-4 bg-card rounded-lg border border-nude/80 ${wide ? "md:col-span-2" : ""}`}
+      className={`flex items-start gap-3 p-3.5 px-4 bg-card rounded-lg border border-nude-poudre/80 ${wide ? "md:col-span-2" : ""}`}
     >
-      <span className="text-or text-base font-serif italic leading-tight shrink-0">→</span>
+      <span className="text-or-riche text-base font-serif italic leading-tight shrink-0">→</span>
       <div>
-        <div className="text-sm font-semibold text-abysse">{value}</div>
-        <div className="text-[11px] text-gris mt-0.5">{sub}</div>
+        <div className="text-sm font-semibold text-bleu-abysse">{value}</div>
+        <div className="text-[11px] text-gris-cachemire mt-0.5">{sub}</div>
       </div>
     </div>
   );
@@ -849,9 +849,9 @@ function ResumeCard({ value, sub, wide }: { value: string; sub: string; wide?: b
 
 function StatBox({ value, label }: { value: string; label: string }) {
   return (
-    <div className="bg-card border border-nude/80 rounded-lg p-4 text-center">
-      <div className="font-serif text-or text-3xl md:text-4xl">{value}</div>
-      <div className="text-[10px] uppercase tracking-[0.08em] text-gris font-medium mt-1.5">{label}</div>
+    <div className="bg-card border border-nude-poudre/80 rounded-lg p-4 text-center">
+      <div className="font-serif text-or-riche text-3xl md:text-4xl">{value}</div>
+      <div className="text-[10px] uppercase tracking-[0.08em] text-gris-cachemire font-medium mt-1.5">{label}</div>
     </div>
   );
 }
@@ -869,14 +869,14 @@ function SectionLabel({
 }) {
   return (
     <div className={`flex items-center gap-2 mb-5 flex-wrap ${className}`}>
-      <span className="text-[10px] uppercase tracking-[0.08em] text-gris font-medium">{children}</span>
+      <span className="text-[10px] uppercase tracking-[0.08em] text-gris-cachemire font-medium">{children}</span>
       {auto && (
-        <span className="bg-petrole/15 text-petrole text-[10px] px-2 py-0.5 rounded-full font-semibold">
+        <span className="bg-bleu-petrole/15 text-bleu-petrole text-[10px] px-2 py-0.5 rounded-full font-semibold">
           ⬤ dynamique
         </span>
       )}
       {editorial && (
-        <span className="bg-or/15 text-or text-[10px] px-2 py-0.5 rounded-full font-semibold">
+        <span className="bg-or-riche/15 text-or-riche text-[10px] px-2 py-0.5 rounded-full font-semibold">
           ✦ éditorial
         </span>
       )}
@@ -899,8 +899,8 @@ function CategoryPillBtn({
       onClick={onClick}
       className={`text-xs px-3.5 py-1.5 rounded-full font-medium transition-colors ${
         active
-          ? "border border-or text-or bg-or/5"
-          : "border border-nude text-gris hover:text-or hover:border-or"
+          ? "border border-or-riche text-or-riche bg-or-riche/5"
+          : "border border-nude-poudre text-gris-cachemire hover:text-or-riche-riche hover:border-or-riche-riche"
       }`}
     >
       {label}
