@@ -743,11 +743,6 @@ export default function MariageRegion() {
         {page.citation_llm && (
           <section className="py-10 md:py-12 bg-[#F0EBE3]">
             <div className="max-w-[1099px] mx-auto px-6 lg:px-8">
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="text-[10px] uppercase tracking-[0.08em] text-gris-cachemire font-medium">
-                  Source LesNoces — données vérifiées
-                </span>
-              </div>
               <blockquote className="bg-card border-l-2 border-or-riche rounded-r-lg p-5 md:p-6 italic text-gris-cachemire leading-loose text-sm">
                 « {renderInline(page.citation_llm)} »
               </blockquote>
