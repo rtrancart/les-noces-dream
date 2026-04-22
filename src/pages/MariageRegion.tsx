@@ -111,6 +111,7 @@ export default function MariageRegion() {
   const [totalVilles, setTotalVilles] = useState(0);
   const [budgets, setBudgets] = useState<BudgetCategorie[]>([]);
   const [articles, setArticles] = useState<ArticleLie[]>([]);
+  const [nbLieux, setNbLieux] = useState(0);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("toutes");
