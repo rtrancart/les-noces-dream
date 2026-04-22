@@ -10,6 +10,7 @@ import {
   LogOut,
   Settings,
   Mail,
+  MapPin,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -41,6 +42,7 @@ const mainItems = [
 const contentItems = [
   { title: "Articles blog", url: "/admin/articles", icon: ScrollText },
   { title: "Pages contenu", url: "/admin/pages", icon: FileText },
+  { title: "Pages région", url: "/admin/regions", icon: MapPin },
   { title: "Emails", url: "/admin/emails", icon: Mail },
 ];
 

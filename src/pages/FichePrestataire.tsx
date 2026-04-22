@@ -33,6 +33,7 @@ import { getCondensedZoneNames } from "@/lib/zonesIntervention";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import { trackEvent } from "@/lib/analytics";
 import { useTrackVisitePrestataire } from "@/hooks/useHistoriqueNavigation";
+import { regionNomToSlug } from "@/lib/regions";
 
 type Prestataire = {
   id: string;
@@ -263,7 +264,19 @@ export default function FichePrestataire() {
               <div className="flex flex-wrap items-center gap-1.5 mt-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <MapPin size={14} />
-                  <span>{presta.ville}, {presta.region}</span>
+                  <span>
+                    {presta.ville},{" "}
+                    {(() => {
+                      const slug = regionNomToSlug(presta.region);
+                      return slug ? (
+                        <Link to={`/mariage/${slug}`} className="hover:text-or-riche hover:underline">
+                          {presta.region}
+                        </Link>
+                      ) : (
+                        <span>{presta.region}</span>
+                      );
+                    })()}
+                  </span>
                 </div>
                 {presta.note_moyenne != null && presta.nombre_avis != null && presta.nombre_avis > 0 && (
                   <>

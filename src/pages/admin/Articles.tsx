@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Plus, Pencil, Trash2, Upload, X, CalendarIcon, ExternalLink, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { REGIONS } from "@/lib/regions";
 import type { Database } from "@/integrations/supabase/types";
 
 type Article = Database["public"]["Tables"]["articles_blog"]["Row"];
@@ -50,6 +51,7 @@ const emptyForm = {
   prestataires_lies: [] as LinkedItem[],
   articles_lies: [] as LinkedItem[],
   categorie_liee_slug: "",
+  regions_liees: [] as string[],
 };
 
 function estimateReadingTime(text: string): number {
@@ -152,6 +154,7 @@ export default function Articles() {
       prestataires_lies: ((presRes.data ?? []) as any[]).map((p) => ({ id: p.id, label: p.nom_commercial })),
       articles_lies: ((artRes.data ?? []) as any[]).map((x) => ({ id: x.id, label: x.titre })),
       categorie_liee_slug: (a as any).categorie_liee_slug ?? "",
+      regions_liees: ((a as any).regions_liees ?? []) as string[],
     });
     setDialogOpen(true);
   };
@@ -219,6 +222,7 @@ export default function Articles() {
       prestataires_lies: form.prestataires_lies.map((p) => p.id),
       articles_lies: form.articles_lies.map((a) => a.id),
       categorie_liee_slug: form.categorie_liee_slug || null,
+      regions_liees: form.regions_liees,
     };
     if (editItem) {
       const { error } = await supabase.from("articles_blog").update(payload).eq("id", editItem.id).select();
@@ -569,6 +573,39 @@ export default function Articles() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">
+                Régions liées (article visible sur les pages /mariage/[région])
+              </Label>
+              <div className="flex flex-wrap gap-1.5 rounded-md border border-input bg-background p-2.5">
+                {REGIONS.map((r) => {
+                  const active = form.regions_liees.includes(r.slug);
+                  return (
+                    <button
+                      type="button"
+                      key={r.slug}
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          regions_liees: active
+                            ? form.regions_liees.filter((s) => s !== r.slug)
+                            : [...form.regions_liees, r.slug],
+                        })
+                      }
+                      className={cn(
+                        "rounded-full px-3 py-1 font-sans text-xs transition-colors",
+                        active
+                          ? "bg-or-riche text-white"
+                          : "bg-muted/40 text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      {r.nom}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </section>
 
