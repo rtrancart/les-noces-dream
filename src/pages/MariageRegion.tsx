@@ -436,7 +436,7 @@ export default function MariageRegion() {
                 En résumé
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
               <ResumeCard
                 value={`${fmtNb(stats.nb_prestataires)} prestataires`}
                 sub={`validés sur ${fmtNb(stats.nb_villes)} villes`}
@@ -458,9 +458,12 @@ export default function MariageRegion() {
                 sub="délai de réservation recommandé"
               />
               <ResumeCard
-                wide
                 value={`${stats.note_moyenne.toFixed(1)}/5 de note moyenne`}
-                sub={`sur ${fmtNb(stats.nb_avis)} avis vérifiés · tous prestataires validés manuellement par LesNoces`}
+                sub={`sur ${fmtNb(stats.nb_avis)} avis vérifiés`}
+              />
+              <ResumeCard
+                value={fmtNb(nbLieux)}
+                sub="lieux de réception"
               />
             </div>
           </div>
