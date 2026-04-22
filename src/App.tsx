@@ -18,6 +18,7 @@ import PrestatairesConsultes from "./pages/PrestatairesConsultes";
 import Unsubscribe from "./pages/Unsubscribe";
 import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
+import MariageRegion from "./pages/MariageRegion";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="/prestataires-consultes" element={<PrestatairesConsultes />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogArticle />} />
+              <Route path="/mariage/:slug" element={<MariageRegion />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}
