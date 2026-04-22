@@ -410,13 +410,10 @@ export default function MariageRegion() {
             )}
             <div className="flex gap-2 mt-5 flex-wrap">
               <span className="bg-bleu-petrole/20 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
-                ⬤ {fmtNb(stats.nb_prestataires)} prestataires validés
+                {fmtNb(stats.nb_prestataires)} prestataires validés
               </span>
               <span className="bg-bleu-petrole/20 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
-                ⬤ {fmtNb(stats.nb_villes)} villes couvertes
-              </span>
-              <span className="bg-or-riche/30 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
-                ✦ Sélection éditoriale LesNoces
+                {fmtNb(stats.nb_villes)} villes couvertes
               </span>
             </div>
           </div>
@@ -429,9 +426,6 @@ export default function MariageRegion() {
               <span className="w-6 h-px bg-or-riche inline-block" />
               <span className="text-[11px] tracking-[0.14em] uppercase font-semibold text-or-riche">
                 En résumé
-              </span>
-              <span className="bg-or-riche/15 text-or-riche text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                ⬤ + ✦ LLM-optimisé · Schema.org · citables
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
@@ -461,9 +455,6 @@ export default function MariageRegion() {
                 sub={`sur ${fmtNb(stats.nb_avis)} avis vérifiés · tous prestataires validés manuellement par LesNoces`}
               />
             </div>
-            <p className="text-[10px] text-or-riche/70 italic text-right mt-3">
-              Ces données alimentent le Schema.org JSON-LD — citables par ChatGPT, Perplexity, Gemini
-            </p>
           </div>
         </section>
 
@@ -645,12 +636,6 @@ export default function MariageRegion() {
                 <span className="text-[10px] uppercase tracking-[0.08em] text-gris-cachemire font-medium">
                   Budget par type de prestation
                 </span>
-                <span className="bg-bleu-petrole/15 text-bleu-petrole text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                  ⬤ calculé depuis Supabase
-                </span>
-                <span className="bg-or-riche/15 text-or-riche text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                  ✦ extrait par les LLMs
-                </span>
               </div>
               <div className="overflow-x-auto border border-nude-poudre/80 rounded-lg">
                 <table className="w-full text-sm">
@@ -732,20 +717,11 @@ export default function MariageRegion() {
         {page.faq && page.faq.length > 0 && (
           <section className="py-10 md:py-14 bg-card">
             <div className="max-w-[1099px] mx-auto px-6 lg:px-8">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <div className="flex items-center gap-2 mb-5 flex-wrap">
                 <span className="text-[10px] uppercase tracking-[0.08em] text-gris-cachemire font-medium">
                   Questions fréquentes
                 </span>
-                <span className="bg-or-riche/15 text-or-riche text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                  ✦ éditorial
-                </span>
-                <span className="bg-or-riche/15 text-or-riche text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                  Schema.org FAQPage
-                </span>
               </div>
-              <p className="text-[11px] text-gris-cachemire italic mb-5">
-                Réponses courtes avec données précises — format optimisé pour les IA
-              </p>
               <div className="space-y-2.5">
                 {page.faq.map((q, i) => (
                   <div
@@ -870,16 +846,6 @@ function SectionLabel({
   return (
     <div className={`flex items-center gap-2 mb-5 flex-wrap ${className}`}>
       <span className="text-[10px] uppercase tracking-[0.08em] text-gris-cachemire font-medium">{children}</span>
-      {auto && (
-        <span className="bg-bleu-petrole/15 text-bleu-petrole text-[10px] px-2 py-0.5 rounded-full font-semibold">
-          ⬤ dynamique
-        </span>
-      )}
-      {editorial && (
-        <span className="bg-or-riche/15 text-or-riche text-[10px] px-2 py-0.5 rounded-full font-semibold">
-          ✦ éditorial
-        </span>
-      )}
     </div>
   );
 }
