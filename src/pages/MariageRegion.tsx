@@ -205,6 +205,13 @@ export default function MariageRegion() {
       pills.sort((a, b) => b.nb - a.nb);
       setCategories(pills);
 
+      // Nombre de lieux de réception
+      const lieuxCat = cats.find((c) => c.slug === "lieux-de-reception");
+      const nbLieuxCount = lieuxCat
+        ? prestas.filter((p) => p.categorie_mere_id === lieuxCat.id).length
+        : 0;
+      setNbLieux(nbLieuxCount);
+
       // Coups de cœur (premium + top notes)
       const premiums = prestas
         .filter((p) => p.est_premium)
