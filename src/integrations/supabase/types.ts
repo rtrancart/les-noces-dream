@@ -106,6 +106,7 @@ export type Database = {
           og_image_url: string | null
           prestataires_lies: string[]
           publie_le: string | null
+          regions_liees: string[]
           slug: string
           tags: string[] | null
           temps_lecture: number | null
@@ -135,6 +136,7 @@ export type Database = {
           og_image_url?: string | null
           prestataires_lies?: string[]
           publie_le?: string | null
+          regions_liees?: string[]
           slug: string
           tags?: string[] | null
           temps_lecture?: number | null
@@ -164,6 +166,7 @@ export type Database = {
           og_image_url?: string | null
           prestataires_lies?: string[]
           publie_le?: string | null
+          regions_liees?: string[]
           slug?: string
           tags?: string[] | null
           temps_lecture?: number | null
@@ -952,6 +955,75 @@ export type Database = {
           meta_title?: string | null
           slug?: string
           titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pages_regions_mariage: {
+        Row: {
+          budget_max: number | null
+          budget_min: number | null
+          budget_moyen: number | null
+          citation_llm: string | null
+          conseils: Json
+          contenu_seo_bas: string | null
+          created_at: string
+          delai_reservation: string | null
+          est_publiee: boolean
+          faq: Json
+          id: string
+          image_hero_url: string | null
+          intro_editoriale: string | null
+          meilleure_periode: string | null
+          meta_description: string | null
+          meta_title: string | null
+          nom_region: string
+          slug_region: string
+          specificites: Json
+          updated_at: string
+        }
+        Insert: {
+          budget_max?: number | null
+          budget_min?: number | null
+          budget_moyen?: number | null
+          citation_llm?: string | null
+          conseils?: Json
+          contenu_seo_bas?: string | null
+          created_at?: string
+          delai_reservation?: string | null
+          est_publiee?: boolean
+          faq?: Json
+          id?: string
+          image_hero_url?: string | null
+          intro_editoriale?: string | null
+          meilleure_periode?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          nom_region: string
+          slug_region: string
+          specificites?: Json
+          updated_at?: string
+        }
+        Update: {
+          budget_max?: number | null
+          budget_min?: number | null
+          budget_moyen?: number | null
+          citation_llm?: string | null
+          conseils?: Json
+          contenu_seo_bas?: string | null
+          created_at?: string
+          delai_reservation?: string | null
+          est_publiee?: boolean
+          faq?: Json
+          id?: string
+          image_hero_url?: string | null
+          intro_editoriale?: string | null
+          meilleure_periode?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          nom_region?: string
+          slug_region?: string
+          specificites?: Json
           updated_at?: string
         }
         Relationships: []
