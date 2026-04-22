@@ -20,7 +20,7 @@ export const REGIONS = [
 
 export type RegionSlug = (typeof REGIONS)[number]["slug"];
 
-const SLUG_TO_NOM = new Map(REGIONS.map((r) => [r.slug, r.nom]));
+const SLUG_TO_NOM = new Map<string, string>(REGIONS.map((r) => [r.slug, r.nom]));
 const NOM_TO_SLUG = new Map<string, string>();
 for (const r of REGIONS) {
   NOM_TO_SLUG.set(r.nom, r.slug);
