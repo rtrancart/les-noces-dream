@@ -599,7 +599,7 @@ const MORE_REGIONS = ["Normandie", "Grand Est", "Hauts-de-France", "Pays de la L
 function RegionCard({ region }: { region: { name: string; slug: string } }) {
   return (
     <Link
-      to={`/regions/${region.slug}`}
+      to={`/mariage/${region.slug}`}
       className="relative overflow-hidden rounded-md block group h-56 md:h-72"
     >
       <div className="absolute inset-0 bg-secondary/30 flex items-center justify-center">
@@ -642,7 +642,7 @@ function RegionalSection() {
           Plus de régions :{" "}
           {MORE_REGIONS.map((r, i) => (
             <span key={r}>
-              <Link to={`/regions/${r.toLowerCase().replace(/\s+/g, "-")}`} className="text-primary hover:underline">
+              <Link to={`/mariage/${r.toLowerCase().replace(/\s+/g, "-").replace(/'/g, "")}`} className="text-primary hover:underline">
                 {r}
               </Link>
               {i < MORE_REGIONS.length - 1 && ", "}
