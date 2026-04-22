@@ -111,6 +111,7 @@ export default function MariageRegion() {
   const [totalVilles, setTotalVilles] = useState(0);
   const [budgets, setBudgets] = useState<BudgetCategorie[]>([]);
   const [articles, setArticles] = useState<ArticleLie[]>([]);
+  const [nbLieux, setNbLieux] = useState(0);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("toutes");
@@ -203,6 +204,13 @@ export default function MariageRegion() {
       });
       pills.sort((a, b) => b.nb - a.nb);
       setCategories(pills);
+
+      // Nombre de lieux de réception
+      const lieuxCat = cats.find((c) => c.slug === "lieux-de-reception");
+      const nbLieuxCount = lieuxCat
+        ? prestas.filter((p) => p.categorie_mere_id === lieuxCat.id).length
+        : 0;
+      setNbLieux(nbLieuxCount);
 
       // Coups de cœur (premium + top notes)
       const premiums = prestas
@@ -428,7 +436,7 @@ export default function MariageRegion() {
                 En résumé
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
               <ResumeCard
                 value={`${fmtNb(stats.nb_prestataires)} prestataires`}
                 sub={`validés sur ${fmtNb(stats.nb_villes)} villes`}
@@ -450,9 +458,12 @@ export default function MariageRegion() {
                 sub="délai de réservation recommandé"
               />
               <ResumeCard
-                wide
                 value={`${stats.note_moyenne.toFixed(1)}/5 de note moyenne`}
-                sub={`sur ${fmtNb(stats.nb_avis)} avis vérifiés · tous prestataires validés manuellement par LesNoces`}
+                sub={`sur ${fmtNb(stats.nb_avis)} avis vérifiés`}
+              />
+              <ResumeCard
+                value={fmtNb(nbLieux)}
+                sub="lieux de réception"
               />
             </div>
           </div>
