@@ -84,56 +84,89 @@ export type Database = {
       }
       articles_blog: {
         Row: {
+          articles_lies: string[]
+          auteur: string | null
           auteur_id: string | null
+          balise_canonique: string | null
           builder_io_content_id: string | null
           categorie_blog: string | null
+          categorie_liee_slug: string | null
           contenu: string | null
           created_at: string
           est_publie: boolean | null
           extrait: string | null
+          faq: Json
           id: string
           image_couverture_url: string | null
+          inclure_sitemap: boolean
+          legende_image: string | null
           meta_description: string | null
           meta_title: string | null
+          noindex: boolean
+          og_image_url: string | null
+          prestataires_lies: string[]
           publie_le: string | null
           slug: string
           tags: string[] | null
+          temps_lecture: number | null
           titre: string
           updated_at: string
         }
         Insert: {
+          articles_lies?: string[]
+          auteur?: string | null
           auteur_id?: string | null
+          balise_canonique?: string | null
           builder_io_content_id?: string | null
           categorie_blog?: string | null
+          categorie_liee_slug?: string | null
           contenu?: string | null
           created_at?: string
           est_publie?: boolean | null
           extrait?: string | null
+          faq?: Json
           id?: string
           image_couverture_url?: string | null
+          inclure_sitemap?: boolean
+          legende_image?: string | null
           meta_description?: string | null
           meta_title?: string | null
+          noindex?: boolean
+          og_image_url?: string | null
+          prestataires_lies?: string[]
           publie_le?: string | null
           slug: string
           tags?: string[] | null
+          temps_lecture?: number | null
           titre: string
           updated_at?: string
         }
         Update: {
+          articles_lies?: string[]
+          auteur?: string | null
           auteur_id?: string | null
+          balise_canonique?: string | null
           builder_io_content_id?: string | null
           categorie_blog?: string | null
+          categorie_liee_slug?: string | null
           contenu?: string | null
           created_at?: string
           est_publie?: boolean | null
           extrait?: string | null
+          faq?: Json
           id?: string
           image_couverture_url?: string | null
+          inclure_sitemap?: boolean
+          legende_image?: string | null
           meta_description?: string | null
           meta_title?: string | null
+          noindex?: boolean
+          og_image_url?: string | null
+          prestataires_lies?: string[]
           publie_le?: string | null
           slug?: string
           tags?: string[] | null
+          temps_lecture?: number | null
           titre?: string
           updated_at?: string
         }
