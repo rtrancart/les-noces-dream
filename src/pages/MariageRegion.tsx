@@ -520,7 +520,7 @@ export default function MariageRegion() {
               {categories.map((c) => (
                 <Link
                   key={c.id}
-                  to={`/recherche?categorie=${c.slug}&lieu=${encodeURIComponent(page.nom_region)}`}
+                  to={`/recherche?categorie=${c.slug}&lieu=${regionLieuParam(page.nom_region)}`}
                   className="text-xs px-3.5 py-1.5 border border-nude-poudre rounded-full text-gris-cachemire hover:text-or-riche-riche hover:border-or-riche-riche transition-colors"
                 >
                   {c.nom} ({c.nb})
