@@ -392,69 +392,82 @@ export default function MariageRegion() {
           </div>
         </nav>
 
-        {/* HERO */}
-        <section className="relative h-[420px] md:h-[480px] overflow-hidden">
-          {page.image_hero_url ? (
-            <img
-              src={page.image_hero_url}
-              alt={`Mariage en ${page.nom_region}`}
-              fetchPriority="high"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-champagne to-or-riche" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-abysse/10 to-abysse/75" />
-          <div className="absolute inset-x-0 bottom-0 px-6 lg:px-12 py-10 max-w-[1099px] mx-auto">
-            <div className="flex items-center gap-2.5 mb-3">
-              <span className="w-8 h-px bg-champagne inline-block" />
-              <span className="text-champagne text-[11px] tracking-[0.18em] uppercase font-medium">
-                Organiser son mariage
-              </span>
-            </div>
-            <h1 className="font-serif text-white text-4xl md:text-6xl leading-[1.05] font-normal mb-4">
-              Mariage en <em className="font-serif">{page.nom_region}</em>
-            </h1>
-            {page.intro_editoriale && (
-              <p className="text-white/85 text-base md:text-lg leading-relaxed max-w-2xl">
-                {page.intro_editoriale}
-              </p>
-            )}
-            <div className="flex gap-2 mt-5 flex-wrap">
-              <span className="bg-bleu-petrole/40 text-champagne text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
-                ⬤ {fmtNb(stats.nb_prestataires)} prestataires
-              </span>
-              <span className="bg-or-riche/25 text-champagne text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
-                ✦ Sélection LesNoces
-              </span>
+        {/* HERO — split 50/50 (texte sombre à gauche, photo à droite) */}
+        <section className="bg-abysse">
+          <div className="max-w-[1099px] mx-auto grid grid-cols-1 md:grid-cols-2 min-h-[420px] md:min-h-[480px]">
+            {/* Colonne gauche — contenu sur fond abysse */}
+            <div className="px-6 lg:px-10 py-10 md:py-12 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2.5 mb-4">
+                  <span className="w-8 h-px bg-champagne inline-block" />
+                  <span className="text-champagne text-[11px] tracking-[0.18em] uppercase font-medium">
+                    Organiser son mariage
+                  </span>
+                </div>
+                <h1 className="font-serif text-white text-4xl md:text-5xl lg:text-6xl leading-[1.05] font-normal mb-4">
+                  Mariage en <br />
+                  <em className="font-serif text-champagne">{page.nom_region}</em>
+                </h1>
+                {page.intro_editoriale && (
+                  <p className="font-serif italic text-white/65 text-sm md:text-base leading-relaxed">
+                    {page.intro_editoriale}
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-8">
+                <div className="flex gap-2 mb-4 flex-wrap">
+                  <span className="bg-bleu-petrole/40 text-champagne text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
+                    ⬤ {fmtNb(stats.nb_prestataires)} prestataires
+                  </span>
+                  <span className="bg-or-riche/25 text-champagne text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
+                    ✦ Sélection LesNoces
+                  </span>
+                </div>
+
+                {/* 3 stats hero — preuves sociales (jamais répétées dans En résumé) */}
+                <div className="grid grid-cols-3 gap-px bg-white/10 rounded-md overflow-hidden">
+                  <div className="bg-abysse px-3 py-2.5 text-center">
+                    <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
+                      {fmtNb(stats.nb_prestataires)}
+                    </div>
+                    <div className="text-[9px] text-white/45 uppercase tracking-wider mt-0.5">
+                      Prestataires
+                    </div>
+                  </div>
+                  <div className="bg-abysse px-3 py-2.5 text-center">
+                    <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
+                      {stats.note_moyenne > 0 ? `${stats.note_moyenne.toFixed(1)}/5` : "—"}
+                    </div>
+                    <div className="text-[9px] text-white/45 uppercase tracking-wider mt-0.5">
+                      Note moy.
+                    </div>
+                  </div>
+                  <div className="bg-abysse px-3 py-2.5 text-center">
+                    <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
+                      {fmtNb(stats.nb_avis)}
+                    </div>
+                    <div className="text-[9px] text-white/45 uppercase tracking-wider mt-0.5">
+                      Avis vérifiés
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* 3 stats hero — preuves sociales (jamais répétées dans En résumé) */}
-            <div className="mt-5 grid grid-cols-3 gap-px bg-white/10 rounded-md overflow-hidden max-w-md">
-              <div className="bg-abysse/80 backdrop-blur-sm px-3 py-2.5 text-center">
-                <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
-                  {fmtNb(stats.nb_prestataires)}
-                </div>
-                <div className="text-[9px] text-white/45 uppercase tracking-wider mt-0.5">
-                  Prestataires
-                </div>
-              </div>
-              <div className="bg-abysse/80 backdrop-blur-sm px-3 py-2.5 text-center">
-                <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
-                  {stats.note_moyenne > 0 ? `${stats.note_moyenne.toFixed(1)}/5` : "—"}
-                </div>
-                <div className="text-[9px] text-white/45 uppercase tracking-wider mt-0.5">
-                  Note moy.
-                </div>
-              </div>
-              <div className="bg-abysse/80 backdrop-blur-sm px-3 py-2.5 text-center">
-                <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
-                  {fmtNb(stats.nb_avis)}
-                </div>
-                <div className="text-[9px] text-white/45 uppercase tracking-wider mt-0.5">
-                  Avis vérifiés
-                </div>
-              </div>
+            {/* Colonne droite — photo */}
+            <div className="relative overflow-hidden min-h-[260px] md:min-h-[480px]">
+              {page.image_hero_url ? (
+                <img
+                  src={page.image_hero_url}
+                  alt={`Mariage en ${page.nom_region}`}
+                  fetchPriority="high"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-champagne to-or-riche" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-r from-abysse/25 via-transparent to-transparent" />
             </div>
           </div>
         </section>
