@@ -602,7 +602,7 @@ export default function MariageRegion() {
                 ))}
                 {totalVilles > 5 && (
                   <Link
-                    to={`/recherche?lieu=${encodeURIComponent(page.nom_region)}`}
+                    to={`/recherche?lieu=${regionLieuParam(page.nom_region)}`}
                     className="border border-nude-poudre/80 rounded-lg p-3 px-4 bg-card hover:border-or-riche-riche transition-colors flex items-center justify-center text-center"
                   >
                     <div>
