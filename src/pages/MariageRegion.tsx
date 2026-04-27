@@ -3,6 +3,10 @@ import { useParams, Link, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { regionSlugToNom } from "@/lib/regions";
+import { REGIONS as ZONES_REGIONS } from "@/lib/zonesIntervention";
+
+const regionLieuParam = (nom: string): string =>
+  ZONES_REGIONS.find((r) => r.label === nom)?.value ?? "";
 import { MapPin, Star, ChevronRight, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -516,7 +520,7 @@ export default function MariageRegion() {
               {categories.map((c) => (
                 <Link
                   key={c.id}
-                  to={`/recherche?categorie=${c.slug}&lieu=${encodeURIComponent(page.nom_region)}`}
+                  to={`/recherche?categorie=${c.slug}&lieu=${regionLieuParam(page.nom_region)}`}
                   className="text-xs px-3.5 py-1.5 border border-nude-poudre rounded-full text-gris-cachemire hover:text-or-riche-riche hover:border-or-riche-riche transition-colors"
                 >
                   {c.nom} ({c.nb})
@@ -571,7 +575,7 @@ export default function MariageRegion() {
 
             <div className="text-center">
               <Link
-                to={`/recherche?lieu=${encodeURIComponent(page.nom_region)}`}
+                to={`/recherche?lieu=${regionLieuParam(page.nom_region)}`}
                 className="inline-block font-serif italic text-bleu-abysse border-b border-or-riche pb-0.5 hover:text-or-riche-riche transition-colors"
               >
                 Voir les {fmtNb(stats.nb_prestataires)} prestataires en {page.nom_region} →
@@ -598,7 +602,7 @@ export default function MariageRegion() {
                 ))}
                 {totalVilles > 5 && (
                   <Link
-                    to={`/recherche?lieu=${encodeURIComponent(page.nom_region)}`}
+                    to={`/recherche?lieu=${regionLieuParam(page.nom_region)}`}
                     className="border border-nude-poudre/80 rounded-lg p-3 px-4 bg-card hover:border-or-riche-riche transition-colors flex items-center justify-center text-center"
                   >
                     <div>
