@@ -575,7 +575,7 @@ export default function MariageRegion() {
 
             <div className="text-center">
               <Link
-                to={`/recherche?lieu=${encodeURIComponent(page.nom_region)}`}
+                to={`/recherche?lieu=${regionLieuParam(page.nom_region)}`}
                 className="inline-block font-serif italic text-bleu-abysse border-b border-or-riche pb-0.5 hover:text-or-riche-riche transition-colors"
               >
                 Voir les {fmtNb(stats.nb_prestataires)} prestataires en {page.nom_region} →
