@@ -393,7 +393,7 @@ export default function MariageRegion() {
         </nav>
 
         {/* HERO — split 50/50 (texte sombre à gauche, photo à droite) */}
-        <section className="bg-bleu-petrole">
+        <section className="bg-bleu-abysse">
           <div className="max-w-[1099px] mx-auto grid grid-cols-1 md:grid-cols-2 min-h-[420px] md:min-h-[480px]">
             {/* Colonne gauche — contenu sur fond abysse */}
             <div className="px-6 lg:px-10 py-10 md:py-12 flex flex-col justify-between">
@@ -427,7 +427,7 @@ export default function MariageRegion() {
 
                 {/* 3 stats hero — preuves sociales (jamais répétées dans En résumé) */}
                 <div className="grid grid-cols-3 gap-px bg-white/10 rounded-md overflow-hidden">
-                  <div className="bg-bleu-petrole px-3 py-2.5 text-center">
+                  <div className="bg-bleu-abysse px-3 py-2.5 text-center">
                     <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
                       {fmtNb(stats.nb_prestataires)}
                     </div>
@@ -435,7 +435,7 @@ export default function MariageRegion() {
                       Prestataires
                     </div>
                   </div>
-                  <div className="bg-bleu-petrole px-3 py-2.5 text-center">
+                  <div className="bg-bleu-abysse px-3 py-2.5 text-center">
                     <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
                       {stats.note_moyenne > 0 ? `${stats.note_moyenne.toFixed(1)}/5` : "—"}
                     </div>
@@ -443,7 +443,7 @@ export default function MariageRegion() {
                       Note moy.
                     </div>
                   </div>
-                  <div className="bg-bleu-petrole px-3 py-2.5 text-center">
+                  <div className="bg-bleu-abysse px-3 py-2.5 text-center">
                     <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
                       {fmtNb(stats.nb_avis)}
                     </div>
