@@ -3,6 +3,10 @@ import { useParams, Link, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { regionSlugToNom } from "@/lib/regions";
+import { REGIONS as ZONES_REGIONS } from "@/lib/zonesIntervention";
+
+const regionLieuParam = (nom: string): string =>
+  ZONES_REGIONS.find((r) => r.label === nom)?.value ?? "";
 import { MapPin, Star, ChevronRight, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
