@@ -468,11 +468,8 @@ export default function MariageRegion() {
                 En résumé
               </span>
             </div>
+            {/* 6 faits planification — aucun overlap avec le hero */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-              <ResumeCard
-                value={`${fmtNb(stats.nb_prestataires)} prestataires`}
-                sub={`validés sur ${fmtNb(stats.nb_villes)} villes`}
-              />
               <ResumeCard
                 value={page.budget_moyen ? `${fmtNb(page.budget_moyen)} € en moyenne` : "Budget sur mesure"}
                 sub={
@@ -490,12 +487,16 @@ export default function MariageRegion() {
                 sub="délai de réservation recommandé"
               />
               <ResumeCard
-                value={`${stats.note_moyenne.toFixed(1)}/5 de note moyenne`}
-                sub={`sur ${fmtNb(stats.nb_avis)} avis vérifiés`}
+                value={`${fmtNb(nbLieux)} lieux de réception`}
+                sub="disponibles sur LesNoces"
               />
               <ResumeCard
-                value={fmtNb(nbLieux)}
-                sub="lieux de réception"
+                value={`${fmtNb(stats.nb_villes)} villes couvertes`}
+                sub="dans toute la région"
+              />
+              <ResumeCard
+                value={`${fmtNb(stats.nb_categories)} catégories de prestataires`}
+                sub="disponibles dans la région"
               />
             </div>
           </div>
