@@ -421,12 +421,40 @@ export default function MariageRegion() {
               </p>
             )}
             <div className="flex gap-2 mt-5 flex-wrap">
-              <span className="bg-bleu-petrole/20 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
-                {fmtNb(stats.nb_prestataires)} prestataires validés
+              <span className="bg-bleu-petrole/40 text-champagne text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
+                ⬤ {fmtNb(stats.nb_prestataires)} prestataires
               </span>
-              <span className="bg-bleu-petrole/20 text-white text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
-                {fmtNb(stats.nb_villes)} villes couvertes
+              <span className="bg-or-riche/25 text-champagne text-[11px] px-3 py-1 rounded-full font-semibold tracking-wider">
+                ✦ Sélection LesNoces
               </span>
+            </div>
+
+            {/* 3 stats hero — preuves sociales (jamais répétées dans En résumé) */}
+            <div className="mt-5 grid grid-cols-3 gap-px bg-white/10 rounded-md overflow-hidden max-w-md">
+              <div className="bg-abysse/80 backdrop-blur-sm px-3 py-2.5 text-center">
+                <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
+                  {fmtNb(stats.nb_prestataires)}
+                </div>
+                <div className="text-[9px] text-white/45 uppercase tracking-wider mt-0.5">
+                  Prestataires
+                </div>
+              </div>
+              <div className="bg-abysse/80 backdrop-blur-sm px-3 py-2.5 text-center">
+                <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
+                  {stats.note_moyenne > 0 ? `${stats.note_moyenne.toFixed(1)}/5` : "—"}
+                </div>
+                <div className="text-[9px] text-white/45 uppercase tracking-wider mt-0.5">
+                  Note moy.
+                </div>
+              </div>
+              <div className="bg-abysse/80 backdrop-blur-sm px-3 py-2.5 text-center">
+                <div className="font-serif text-champagne text-xl md:text-2xl font-normal">
+                  {fmtNb(stats.nb_avis)}
+                </div>
+                <div className="text-[9px] text-white/45 uppercase tracking-wider mt-0.5">
+                  Avis vérifiés
+                </div>
+              </div>
             </div>
           </div>
         </section>
