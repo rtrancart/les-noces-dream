@@ -350,30 +350,11 @@ export default function BlogArticle() {
 
             {/* Auteur */}
             <section className="pt-8 border-t border-border">
-              <div className="grid grid-cols-[48px_1fr] gap-3.5 items-center">
-                {article.auteur?.avatar_url ? (
-                  <img
-                    src={article.auteur.avatar_url}
-                    alt={authorName(article.auteur)}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div
-                    className="w-12 h-12 rounded-full"
-                    style={{
-                      background: "linear-gradient(135deg, hsl(var(--nude-poudre)), hsl(var(--champagne)))",
-                    }}
-                    aria-hidden
-                  />
-                )}
-                <div>
-                  <div className="font-serif text-[15px] text-bleu-abysse">
-                    {authorName(article.auteur)}
-                  </div>
-                  <div className="text-[10px] text-gris-cachemire mt-0.5 tracking-[0.1em] uppercase">
-                    Rédaction
-                  </div>
-                </div>
+              <div className="font-serif text-[15px] text-bleu-abysse">
+                {authorName(article.auteur)}
+              </div>
+              <div className="text-[10px] text-gris-cachemire mt-0.5 tracking-[0.1em] uppercase">
+                Rédaction
               </div>
             </section>
           </div>
