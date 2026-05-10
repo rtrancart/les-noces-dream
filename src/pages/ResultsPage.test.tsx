@@ -292,11 +292,8 @@ describe("PrestatairesListe — fallback behavior", () => {
 
     // 1) Approximate-results banner is visible
     expect(
-      screen.getByText((_, node) =>
-        !!node?.textContent?.match(/Résultats approximatifs pour/) &&
-        !!node?.textContent?.includes("marseille test timeout")
-      )
-    ).toBeInTheDocument();
+      screen.getByText(/Résultats approximatifs pour/i)
+    ).toHaveTextContent(/marseille test timeout/);
 
     // 2) Skeleton has been removed
     expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
