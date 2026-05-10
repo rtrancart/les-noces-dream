@@ -94,7 +94,7 @@ export default function PrestatairesListe() {
         if (fille) {
           setCategorieFille(fille);
         } else {
-          const resolved = await resolveZoneSlug(slug2);
+          const resolved = await resolveZoneSlug(slug2, zoneIndex);
           if (cancelled) return;
           if (!resolved) {
             setNotFound(true);
