@@ -111,7 +111,7 @@ export default function PrestatairesListe() {
     return () => {
       cancelled = true;
     };
-  }, [slugMere, slug2]);
+  }, [slugMere, slug2, zonesLoaded, zoneIndex]);
 
   /* Fetch prestataires */
   useEffect(() => {
