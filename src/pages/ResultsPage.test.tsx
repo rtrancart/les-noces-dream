@@ -307,6 +307,27 @@ describe("PrestatairesListe — fallback behavior", () => {
     expect(h1.textContent).not.toContain("marseille test timeout");
     expect(document.title).toContain("marseille-test-timeout");
     expect(document.title).not.toContain("marseille test timeout");
+
+    // 5) SEO meta tags (og:title, og:description, canonical) also preserve the raw slug
+    expect(document.querySelector('meta[property="og:title"]')?.getAttribute("content"))
+      .toContain("marseille-test-timeout");
+    expect(document.querySelector('meta[property="og:title"]')?.getAttribute("content"))
+      .not.toContain("marseille test timeout");
+
+    expect(document.querySelector('meta[property="og:description"]')?.getAttribute("content"))
+      .toContain("marseille-test-timeout");
+    expect(document.querySelector('meta[property="og:description"]')?.getAttribute("content"))
+      .not.toContain("marseille test timeout");
+
+    expect(document.querySelector('meta[property="og:url"]')?.getAttribute("content"))
+      .toContain("marseille-test-timeout");
+    expect(document.querySelector('meta[property="og:url"]')?.getAttribute("content"))
+      .not.toContain("marseille test timeout");
+
+    expect(document.querySelector('link[rel="canonical"]')?.getAttribute("href"))
+      .toContain("marseille-test-timeout");
+    expect(document.querySelector('link[rel="canonical"]')?.getAttribute("href"))
+      .not.toContain("marseille test timeout");
   });
 
   it("network error: retry also fails → fallback fires without waiting the full 7s", async () => {
