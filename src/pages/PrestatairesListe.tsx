@@ -231,12 +231,11 @@ export default function PrestatairesListe() {
     let metaZone = "France";
 
     if (fallbackSlug) {
-      // Geo resolution failed — render the slug as-is so the heading is
-      // never empty or broken.
-      const term = fallbackSlug.replace(/-/g, " ");
-      h1 = `Résultats pour «\u00a0${term}\u00a0»`;
+      // Geo resolution failed — render the slug exactly as it appears in the
+      // URL (hyphens preserved) so the heading is never empty or broken.
+      h1 = `Résultats pour «\u00a0${fallbackSlug}\u00a0»`;
       intro = `${n} prestataires trouvés pour cette recherche.`;
-      metaZone = term;
+      metaZone = fallbackSlug;
     } else if (categorieFille) {
       h1 = `Spécialistes en ${categorieFille.nom} pour votre mariage`;
       intro = `${n} prestataires sélectionnés par LesNoces.net.`;
@@ -334,7 +333,7 @@ export default function PrestatairesListe() {
 
         {fallbackSlug && !showSkeleton && (
           <div className="mb-6 px-4 py-3 bg-muted/50 border border-border rounded text-sm font-sans text-muted-foreground">
-            Résultats approximatifs pour «&nbsp;{fallbackSlug.replace(/-/g, " ")}&nbsp;».
+            Résultats approximatifs pour «&nbsp;{fallbackSlug}&nbsp;».
           </div>
         )}
 
