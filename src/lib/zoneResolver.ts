@@ -1,4 +1,4 @@
-import { REGIONS } from "@/lib/zonesIntervention";
+import type { ZoneRefRow } from "@/contexts/ZonesContext";
 
 /* ──────────────── Types ──────────────── */
 
@@ -33,49 +33,7 @@ export function slugify(s: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-/* ──────────────── Static index (régions / départements) ──────────────── */
-
-interface RegionIdx {
-  slug: string;
-  label: string;
-  zoneValue: string;
-  deptCodes: string[];
-}
-interface DeptIdx {
-  slug: string;
-  label: string;
-  zoneValue: string; // dept code, e.g. "75"
-  regionLabel: string;
-  regionSlug: string;
-  regionZoneValue: string;
-}
-
-const REGION_BY_SLUG = new Map<string, RegionIdx>();
-const DEPT_BY_SLUG = new Map<string, DeptIdx>();
-
-for (const r of REGIONS) {
-  const rSlug = slugify(r.label);
-  const idx: RegionIdx = {
-    slug: rSlug,
-    label: r.label,
-    zoneValue: r.value,
-    deptCodes: r.departements.map((d) => d.value),
-  };
-  REGION_BY_SLUG.set(rSlug, idx);
-  for (const d of r.departements) {
-    const dSlug = slugify(d.label);
-    DEPT_BY_SLUG.set(dSlug, {
-      slug: dSlug,
-      label: d.label,
-      zoneValue: d.value,
-      regionLabel: r.label,
-      regionSlug: rSlug,
-      regionZoneValue: r.value,
-    });
-  }
-}
-
-/* ──────────────── Cache villes ──────────────── */
+/* ──────────────── Cache villes (in-memory, persists across navigations) ──────────────── */
 
 const VILLE_CACHE = new Map<string, ResolvedZone | null>();
 
@@ -98,49 +56,68 @@ const INSEE_REGION_TO_LABEL: Record<string, string> = {
 
 /* ──────────────── API ──────────────── */
 
-export function listKnownRegionSlugs(): string[] {
-  return Array.from(REGION_BY_SLUG.keys());
-}
-
-export async function resolveZoneSlug(slug: string): Promise<ResolvedZone | null> {
+/**
+ * Resolve a URL slug into a zone definition.
+ *
+ * @param slug      The URL slug (e.g. "paris", "ile-de-france", "lyon")
+ * @param zoneIndex The preloaded zones_reference cache (slug → row)
+ *                  Pass `useZones().bySlug` from a React component.
+ *
+ * Lookup order:
+ *  1. Cached admin zone (région / département / DOM / pays)
+ *  2. In-memory ville cache
+ *  3. geo.api.gouv.fr (network fallback, only for villes)
+ */
+export async function resolveZoneSlug(
+  slug: string,
+  zoneIndex: Map<string, ZoneRefRow>
+): Promise<ResolvedZone | null> {
   if (!slug) return null;
 
-  // 1. Région
-  const r = REGION_BY_SLUG.get(slug);
-  if (r) {
+  // 1. Admin zone (region / departement / dom / pays)
+  const row = zoneIndex.get(slug);
+  if (row) {
+    if (row.type === "region") {
+      return {
+        type: "region",
+        slug: row.slug,
+        label: row.label,
+        zoneValue: row.zone_value,
+        regionLabel: row.label,
+        regionZoneValue: row.zone_value,
+      };
+    }
+    if (row.type === "departement") {
+      return {
+        type: "departement",
+        slug: row.slug,
+        label: row.label,
+        zoneValue: row.zone_value,
+        regionLabel: row.parent_region_label ?? undefined,
+        regionZoneValue: row.parent_region_zone_value ?? undefined,
+        deptCode: row.dept_code ?? row.zone_value,
+      };
+    }
+    // dom / pays → treat as a region-like zone
     return {
       type: "region",
-      slug: r.slug,
-      label: r.label,
-      zoneValue: r.zoneValue,
-      regionLabel: r.label,
-      regionZoneValue: r.zoneValue,
+      slug: row.slug,
+      label: row.label,
+      zoneValue: row.zone_value,
+      regionLabel: row.label,
+      regionZoneValue: row.zone_value,
     };
   }
 
-  // 2. Département
-  const d = DEPT_BY_SLUG.get(slug);
-  if (d) {
-    return {
-      type: "departement",
-      slug: d.slug,
-      label: d.label,
-      zoneValue: d.zoneValue,
-      regionLabel: d.regionLabel,
-      regionZoneValue: d.regionZoneValue,
-      deptCode: d.zoneValue,
-    };
-  }
-
-  // 3. Ville (cache)
+  // 2. Ville cache
   if (VILLE_CACHE.has(slug)) return VILLE_CACHE.get(slug) ?? null;
 
+  // 3. Network fallback — geo.api.gouv.fr
   try {
     const nom = slug.replace(/-/g, " ");
     const url = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(nom)}&boost=population&limit=5&fields=nom,code,centre,codeRegion,codeDepartement&format=json`;
     const res = await fetch(url);
     const list = (await res.json()) as Array<any>;
-    // Pick the first whose slugified nom matches the input (handles homonymes)
     const exact = list.find((c) => slugify(c.nom) === slug) ?? list[0];
     if (!exact || !exact.centre?.coordinates) {
       VILLE_CACHE.set(slug, null);
@@ -148,7 +125,7 @@ export async function resolveZoneSlug(slug: string): Promise<ResolvedZone | null
     }
     const [lng, lat] = exact.centre.coordinates;
     const regionLabel = INSEE_REGION_TO_LABEL[exact.codeRegion];
-    const regionEntry = regionLabel ? REGION_BY_SLUG.get(slugify(regionLabel)) : undefined;
+    const regionRow = regionLabel ? zoneIndex.get(slugify(regionLabel)) : undefined;
     const resolved: ResolvedZone = {
       type: "ville",
       slug,
@@ -156,7 +133,7 @@ export async function resolveZoneSlug(slug: string): Promise<ResolvedZone | null
       lat,
       lng,
       regionLabel,
-      regionZoneValue: regionEntry?.zoneValue,
+      regionZoneValue: regionRow?.zone_value,
       deptCode: exact.codeDepartement,
     };
     VILLE_CACHE.set(slug, resolved);

@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ZonesProvider } from "@/contexts/ZonesContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PublicLayout from "@/components/layout/PublicLayout";
@@ -66,6 +67,7 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
+          <ZonesProvider>
           <Routes>
             {/* Public pages with Header + Footer */}
             <Route element={<PublicLayout />}>
@@ -147,6 +149,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ZonesProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

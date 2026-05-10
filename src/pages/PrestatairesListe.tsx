@@ -3,6 +3,7 @@ import { useParams, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import { resolveZoneSlug, type ResolvedZone } from "@/lib/zoneResolver";
+import { useZones } from "@/contexts/ZonesContext";
 import { haversineDistanceKm } from "@/lib/haversine";
 
 interface CategorieRow {
@@ -45,6 +46,7 @@ export default function PrestatairesListe() {
   const { slugMere = "", slug2 } = useParams<{ slugMere: string; slug2?: string }>();
   const [searchParams] = useSearchParams();
   const rayon = Math.max(1, Math.min(500, parseInt(searchParams.get("rayon") ?? "50", 10) || 50));
+  const { bySlug: zoneIndex, loaded: zonesLoaded } = useZones();
 
   const [categorieMere, setCategorieMere] = useState<CategorieRow | null>(null);
   const [categorieFille, setCategorieFille] = useState<CategorieRow | null>(null);
@@ -55,6 +57,7 @@ export default function PrestatairesListe() {
 
   /* Resolve route → catégorie / zone */
   useEffect(() => {
+    if (!zonesLoaded) return;
     let cancelled = false;
     setLoading(true);
     setNotFound(false);
@@ -91,7 +94,7 @@ export default function PrestatairesListe() {
         if (fille) {
           setCategorieFille(fille);
         } else {
-          const resolved = await resolveZoneSlug(slug2);
+          const resolved = await resolveZoneSlug(slug2, zoneIndex);
           if (cancelled) return;
           if (!resolved) {
             setNotFound(true);
@@ -108,7 +111,7 @@ export default function PrestatairesListe() {
     return () => {
       cancelled = true;
     };
-  }, [slugMere, slug2]);
+  }, [slugMere, slug2, zonesLoaded, zoneIndex]);
 
   /* Fetch prestataires */
   useEffect(() => {
