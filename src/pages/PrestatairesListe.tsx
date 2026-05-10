@@ -52,17 +52,21 @@ export default function PrestatairesListe() {
   const [categorieFille, setCategorieFille] = useState<CategorieRow | null>(null);
   const [zone, setZone] = useState<ResolvedZone | null>(null);
   const [providers, setProviders] = useState<ProviderCardData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [routeLoading, setRouteLoading] = useState(true);
+  const [providersLoading, setProvidersLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  /** API failure fallback: text-search on ville ILIKE %slug% */
+  const [fallbackSlug, setFallbackSlug] = useState<string | null>(null);
 
   /* Resolve route → catégorie / zone */
   useEffect(() => {
     if (!zonesLoaded) return;
     let cancelled = false;
-    setLoading(true);
+    setRouteLoading(true);
     setNotFound(false);
     setCategorieFille(null);
     setZone(null);
+    setFallbackSlug(null);
 
     (async () => {
       // 1. Categorie mère
@@ -76,7 +80,7 @@ export default function PrestatairesListe() {
       if (cancelled) return;
       if (!mere) {
         setNotFound(true);
-        setLoading(false);
+        setRouteLoading(false);
         return;
       }
       setCategorieMere(mere);
@@ -94,18 +98,31 @@ export default function PrestatairesListe() {
         if (fille) {
           setCategorieFille(fille);
         } else {
-          const resolved = await resolveZoneSlug(slug2, zoneIndex);
-          if (cancelled) return;
-          if (!resolved) {
-            setNotFound(true);
-            setLoading(false);
-            return;
+          try {
+            const resolved = await resolveZoneSlug(slug2, zoneIndex);
+            if (cancelled) return;
+            if (!resolved) {
+              // geo API responded with 0 results → may still be 404, but
+              // let providers fetch with text-fallback decide.
+              setFallbackSlug(slug2);
+            } else {
+              setZone(resolved);
+            }
+          } catch (e) {
+            if (cancelled) return;
+            if (e instanceof ZoneApiError) {
+              // network/timeout → text fallback
+              setFallbackSlug(slug2);
+            } else {
+              setNotFound(true);
+              setRouteLoading(false);
+              return;
+            }
           }
-          setZone(resolved);
         }
       }
 
-      setLoading(false);
+      setRouteLoading(false);
     })();
 
     return () => {
