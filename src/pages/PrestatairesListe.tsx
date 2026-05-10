@@ -333,7 +333,7 @@ export default function PrestatairesListe() {
 
         {fallbackSlug && !showSkeleton && (
           <div className="mb-6 px-4 py-3 bg-muted/50 border border-border rounded text-sm font-sans text-muted-foreground">
-            Résultats approximatifs pour «&nbsp;{fallbackSlug.replace(/-/g, " ")}&nbsp;».
+            Résultats approximatifs pour «&nbsp;{fallbackSlug}&nbsp;».
           </div>
         )}
 
