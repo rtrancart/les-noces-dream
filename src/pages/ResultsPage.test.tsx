@@ -336,10 +336,10 @@ describe("PrestatairesListe — fallback behavior", () => {
       await vi.runAllTimersAsync();
     });
 
-    // 1) Banner present
-    expect(
-      screen.getByText(/Résultats approximatifs pour/i)
-    ).toHaveTextContent(/bordeaux-test-neterr/);
+    // 1) Banner present — slug with hyphens preserved
+    const banner = screen.getByText(/Résultats approximatifs pour/i);
+    expect(banner.textContent).toContain("bordeaux-test-neterr");
+    expect(banner.textContent).not.toContain("bordeaux test neterr");
 
     // 2) Skeleton gone
     expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
@@ -347,10 +347,11 @@ describe("PrestatairesListe — fallback behavior", () => {
     // 3) 3 cards from the ILIKE fallback
     expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
 
-    // 4) H1 + <title> contain the raw slug
+    // 4) H1 + <title> contain the raw slug with hyphens
     const h1 = screen.getByRole("heading", { level: 1 });
-    expect(h1.textContent).toMatch(/Résultats pour/);
-    expect(h1.textContent).toMatch(/bordeaux-test-neterr/);
+    expect(h1.textContent).toContain("bordeaux-test-neterr");
+    expect(h1.textContent).not.toContain("bordeaux test neterr");
     expect(document.title).toContain("bordeaux-test-neterr");
+    expect(document.title).not.toContain("bordeaux test neterr");
   });
 });
