@@ -102,10 +102,10 @@ export function applySeo(tags: SeoTags): void {
   setMetaProperty("og:type", ogType);
 
   if (tags.siteName) setMetaProperty("og:site_name", tags.siteName);
-  if (tags.imageUrl) {
-    setMetaProperty("og:image", tags.imageUrl);
-    setMetaName("twitter:image", tags.imageUrl);
-  }
+
+  const imageUrl = resolveAbsoluteUrl(tags.imageUrl ?? DEFAULT_SEO_IMAGE_PATH);
+  setMetaProperty("og:image", imageUrl);
+  setMetaName("twitter:image", imageUrl);
 
   setMetaName("twitter:card", twitterCard);
   setMetaName("twitter:title", tags.title);
