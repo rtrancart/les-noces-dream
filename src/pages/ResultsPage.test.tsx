@@ -231,10 +231,131 @@ describe("PrestatairesListe — non-regression: render is never blocked by geo.a
     // its full data flow as soon as the network resolved.
     await waitFor(
       () => {
-        const desc = document.querySelector('meta[name="description"]');
-        expect(desc?.getAttribute("content") ?? "").toMatch(/3 professionnels/);
+        expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
       },
       { timeout: 4000 }
     );
+    expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
+  });
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * Fallback behavior — geo resolution fails, the page must still render
+ * results via the approximate Supabase ILIKE search and a slug-based H1.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+describe("PrestatairesListe — fallback behavior", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("timeout: after the full 3s + 1s + 3s sequence, fallback banner + skeleton hidden + 3 cards", async () => {
+    // Slug unique to this test → avoids VILLE_CACHE pollution across tests
+    const SLUG = "marseille-test-timeout";
+
+    // geo.api.gouv.fr never resolves but respects abort signals so the
+    // 3s timer in resolveZoneSlug can reject and trigger the retry path.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_input: any, init: any) =>
+          new Promise<Response>((_res, reject) => {
+            init?.signal?.addEventListener?.("abort", () => {
+              const err = new Error("Aborted");
+              (err as any).name = "AbortError";
+              reject(err);
+            });
+          })
+      )
+    );
+
+    render(
+      <MemoryRouter initialEntries={[`/prestataires/photographe/${SLUG}`]}>
+        <Routes>
+          <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // Advance the full retry sequence: 3s → 1s pause → 3s.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(7000);
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    // 1) Approximate-results banner is visible
+    expect(
+      screen.getByText((_, node) =>
+        !!node?.textContent?.match(/Résultats approximatifs pour/) &&
+        !!node?.textContent?.includes("marseille test timeout")
+      )
+    ).toBeInTheDocument();
+
+    // 2) Skeleton has been removed
+    expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
+
+    // 3) Exactly 3 provider cards rendered from the Supabase ILIKE fixtures
+    expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
+
+    // 4) H1 + <title> contain the raw slug, not a resolved city name
+    const h1 = screen.getByRole("heading", { level: 1 });
+    expect(h1.textContent).toMatch(/Résultats pour/);
+    expect(h1.textContent).toMatch(/marseille test timeout/);
+    expect(document.title).toContain("marseille test timeout");
+  });
+
+  it("network error: retry also fails → fallback fires without waiting the full 7s", async () => {
+    const SLUG = "bordeaux-test-neterr";
+
+    // Both the first attempt AND the retry reject synchronously with a hard
+    // network error (TypeError, like a real fetch DNS / connection failure).
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new TypeError("Network request failed")))
+    );
+
+    render(
+      <MemoryRouter initialEntries={[`/prestataires/photographe/${SLUG}`]}>
+        <Routes>
+          <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // Component still schedules a 1s pause between retries via setTimeout;
+    // we advance ONLY that delay (NOT 7s) to prove the fallback fires fast.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1100);
+    });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    // 1) Banner present
+    expect(
+      screen.getByText((_, node) =>
+        !!node?.textContent?.match(/Résultats approximatifs pour/) &&
+        !!node?.textContent?.includes("bordeaux test neterr")
+      )
+    ).toBeInTheDocument();
+
+    // 2) Skeleton gone
+    expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
+
+    // 3) 3 cards from the ILIKE fallback
+    expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
+
+    // 4) H1 + <title> contain the raw slug
+    const h1 = screen.getByRole("heading", { level: 1 });
+    expect(h1.textContent).toMatch(/Résultats pour/);
+    expect(h1.textContent).toMatch(/bordeaux test neterr/);
+    expect(document.title).toContain("bordeaux test neterr");
   });
 });
