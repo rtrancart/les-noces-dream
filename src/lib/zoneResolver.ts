@@ -112,34 +112,50 @@ export async function resolveZoneSlug(
   // 2. Ville cache
   if (VILLE_CACHE.has(slug)) return VILLE_CACHE.get(slug) ?? null;
 
-  // 3. Network fallback — geo.api.gouv.fr
+  // 3. Network fallback — geo.api.gouv.fr (3s timeout)
+  const nom = slug.replace(/-/g, " ");
+  const url = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(nom)}&boost=population&limit=5&fields=nom,code,centre,codeRegion,codeDepartement&format=json`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+
+  let list: Array<any>;
   try {
-    const nom = slug.replace(/-/g, " ");
-    const url = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(nom)}&boost=population&limit=5&fields=nom,code,centre,codeRegion,codeDepartement&format=json`;
-    const res = await fetch(url);
-    const list = (await res.json()) as Array<any>;
-    const exact = list.find((c) => slugify(c.nom) === slug) ?? list[0];
-    if (!exact || !exact.centre?.coordinates) {
-      VILLE_CACHE.set(slug, null);
-      return null;
-    }
-    const [lng, lat] = exact.centre.coordinates;
-    const regionLabel = INSEE_REGION_TO_LABEL[exact.codeRegion];
-    const regionRow = regionLabel ? zoneIndex.get(slugify(regionLabel)) : undefined;
-    const resolved: ResolvedZone = {
-      type: "ville",
-      slug,
-      label: exact.nom,
-      lat,
-      lng,
-      regionLabel,
-      regionZoneValue: regionRow?.zone_value,
-      deptCode: exact.codeDepartement,
-    };
-    VILLE_CACHE.set(slug, resolved);
-    return resolved;
-  } catch {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new ZoneApiError(`geo.api.gouv.fr ${res.status}`);
+    list = (await res.json()) as Array<any>;
+  } catch (e: any) {
+    // Network error or timeout → throw, do NOT cache (let caller fallback)
+    throw new ZoneApiError(e?.name === "AbortError" ? "timeout" : "network");
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const exact = list.find((c) => slugify(c.nom) === slug) ?? list[0];
+  if (!exact || !exact.centre?.coordinates) {
     VILLE_CACHE.set(slug, null);
-    return null;
+    return null; // genuinely not found
+  }
+  const [lng, lat] = exact.centre.coordinates;
+  const regionLabel = INSEE_REGION_TO_LABEL[exact.codeRegion];
+  const regionRow = regionLabel ? zoneIndex.get(slugify(regionLabel)) : undefined;
+  const resolved: ResolvedZone = {
+    type: "ville",
+    slug,
+    label: exact.nom,
+    lat,
+    lng,
+    regionLabel,
+    regionZoneValue: regionRow?.zone_value,
+    deptCode: exact.codeDepartement,
+  };
+  VILLE_CACHE.set(slug, resolved);
+  return resolved;
+}
+
+export class ZoneApiError extends Error {
+  constructor(public reason: string) {
+    super(`ZoneApiError: ${reason}`);
+    this.name = "ZoneApiError";
   }
 }
