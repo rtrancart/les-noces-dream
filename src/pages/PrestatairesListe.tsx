@@ -5,6 +5,7 @@ import ProviderCard, { type ProviderCardData } from "@/components/search/Provide
 import { resolveZoneSlug, ZoneApiError, type ResolvedZone } from "@/lib/zoneResolver";
 import { useZones } from "@/contexts/ZonesContext";
 import { haversineDistanceKm } from "@/lib/haversine";
+import { applySeo } from "@/lib/seo";
 
 interface CategorieRow {
   id: string;
@@ -17,36 +18,6 @@ interface CategorieRow {
 
 const SITE_URL =
   typeof window !== "undefined" ? window.location.origin : "https://lesnoces.net";
-
-function setMeta(name: string, content: string) {
-  let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
-  if (!el) {
-    el = document.createElement("meta");
-    el.setAttribute("name", name);
-    document.head.appendChild(el);
-  }
-  el.setAttribute("content", content);
-}
-
-function setMetaProperty(property: string, content: string) {
-  let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement | null;
-  if (!el) {
-    el = document.createElement("meta");
-    el.setAttribute("property", property);
-    document.head.appendChild(el);
-  }
-  el.setAttribute("content", content);
-}
-
-function setCanonical(href: string) {
-  let el = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-  if (!el) {
-    el = document.createElement("link");
-    el.setAttribute("rel", "canonical");
-    document.head.appendChild(el);
-  }
-  el.setAttribute("href", href);
-}
 
 /* ───────── Page ───────── */
 
@@ -271,13 +242,13 @@ export default function PrestatairesListe() {
 
   useEffect(() => {
     if (!seo) return;
-    document.title = seo.metaTitle;
     const metaDesc = `${seo.h1}. ${seo.intro} Comparez les meilleurs prestataires sur LesNoces.net.`;
-    setMeta("description", metaDesc);
-    setCanonical(seo.canonicalUrl);
-    setMetaProperty("og:title", seo.metaTitle);
-    setMetaProperty("og:description", metaDesc);
-    setMetaProperty("og:url", seo.canonicalUrl);
+    applySeo({
+      title: seo.metaTitle,
+      description: metaDesc,
+      canonicalUrl: seo.canonicalUrl,
+      siteName: "LesNoces.net",
+    });
   }, [seo]);
 
   /* ───── Render ───── */
