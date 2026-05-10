@@ -7,6 +7,20 @@
  * between, say, <title> and og:title.
  */
 
+/**
+ * Default social-share image used for og:image and twitter:image when a page
+ * does not provide its own. Path is resolved against `window.location.origin`
+ * so crawlers always receive an absolute URL.
+ */
+export const DEFAULT_SEO_IMAGE_PATH = "/og-default.jpg";
+
+function resolveAbsoluteUrl(pathOrUrl: string): string {
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "https://lesnoces.net";
+  return `${origin}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
+}
+
 export interface SeoTags {
   /** <title> + og:title + twitter:title */
   title: string;
@@ -18,7 +32,11 @@ export interface SeoTags {
   ogType?: string;
   /** twitter:card — defaults to "summary_large_image" */
   twitterCard?: string;
-  /** og:image + twitter:image (optional) */
+  /**
+   * og:image + twitter:image. If omitted, falls back to
+   * `DEFAULT_SEO_IMAGE_PATH` so the tags are always populated.
+   * Accepts either an absolute URL or a path starting with "/".
+   */
   imageUrl?: string;
   /** og:site_name (optional) */
   siteName?: string;
