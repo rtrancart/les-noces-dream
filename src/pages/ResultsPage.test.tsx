@@ -197,7 +197,7 @@ describe("PrestatairesListe — non-regression: render is never blocked by geo.a
     });
     vi.stubGlobal("fetch", vi.fn(() => fetchPromise));
 
-    renderAt("/prestataires/photographe/paris");
+    renderAt("/prestataires/photographe/lyon");
 
     // Initial render: skeleton present, no cards yet.
     await waitFor(() => {
@@ -211,11 +211,11 @@ describe("PrestatairesListe — non-regression: render is never blocked by geo.a
       status: 200,
       json: async () => [
         {
-          nom: "Paris",
-          code: "75056",
-          codeRegion: "11",
-          codeDepartement: "75",
-          centre: { coordinates: [2.3522, 48.8566] },
+          nom: "Lyon",
+          code: "69123",
+          codeRegion: "84",
+          codeDepartement: "69",
+          centre: { coordinates: [4.85, 45.75] },
         },
       ],
     } as Response);
