@@ -230,7 +230,14 @@ export default function PrestatairesListe() {
     let intro = "";
     let metaZone = "France";
 
-    if (categorieFille) {
+    if (fallbackSlug) {
+      // Geo resolution failed — render the slug as-is so the heading is
+      // never empty or broken.
+      const term = fallbackSlug.replace(/-/g, " ");
+      h1 = `Résultats pour «\u00a0${term}\u00a0»`;
+      intro = `${n} prestataires trouvés pour cette recherche.`;
+      metaZone = term;
+    } else if (categorieFille) {
       h1 = `Spécialistes en ${categorieFille.nom} pour votre mariage`;
       intro = `${n} prestataires sélectionnés par LesNoces.net.`;
       metaZone = categorieFille.nom;
@@ -253,7 +260,7 @@ export default function PrestatairesListe() {
       : `/prestataires/${slugMere}`;
 
     return { h1, intro, metaTitle, canonicalUrl: `${SITE_URL}${canonicalPath}` };
-  }, [categorieMere, categorieFille, zone, providers.length, slugMere, slug2]);
+  }, [categorieMere, categorieFille, zone, providers.length, slugMere, slug2, fallbackSlug]);
 
   useEffect(() => {
     if (!seo) return;
