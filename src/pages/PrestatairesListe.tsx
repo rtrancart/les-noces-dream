@@ -132,8 +132,9 @@ export default function PrestatairesListe() {
 
   /* Fetch prestataires */
   useEffect(() => {
-    if (!categorieMere) return;
+    if (!categorieMere || routeLoading) return;
     let cancelled = false;
+    setProvidersLoading(true);
 
     (async () => {
       let q = supabase
@@ -149,6 +150,12 @@ export default function PrestatairesListe() {
         q = q.eq("categorie_fille_id", categorieFille.id);
       } else {
         q = q.eq("categorie_mere_id", categorieMere.id);
+      }
+
+      // Text-search fallback: filter by ville ILIKE %slug%
+      if (fallbackSlug) {
+        const term = fallbackSlug.replace(/-/g, " ");
+        q = q.ilike("ville", `%${term}%`);
       }
 
       const { data } = await q;
@@ -205,12 +212,13 @@ export default function PrestatairesListe() {
           est_premium: p.est_premium ?? false,
         }))
       );
+      setProvidersLoading(false);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [categorieMere, categorieFille, zone, rayon]);
+  }, [categorieMere, categorieFille, zone, rayon, routeLoading, fallbackSlug]);
 
   /* H1 + intro + SEO */
   const seo = useMemo(() => {
