@@ -337,11 +337,8 @@ describe("PrestatairesListe — fallback behavior", () => {
 
     // 1) Banner present
     expect(
-      screen.getByText((_, node) =>
-        !!node?.textContent?.match(/Résultats approximatifs pour/) &&
-        !!node?.textContent?.includes("bordeaux test neterr")
-      )
-    ).toBeInTheDocument();
+      screen.getByText(/Résultats approximatifs pour/i)
+    ).toHaveTextContent(/bordeaux test neterr/);
 
     // 2) Skeleton gone
     expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
