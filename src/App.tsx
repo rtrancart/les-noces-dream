@@ -67,6 +67,7 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
+          <ZonesProvider>
           <Routes>
             {/* Public pages with Header + Footer */}
             <Route element={<PublicLayout />}>
