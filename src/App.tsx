@@ -20,6 +20,7 @@ import Unsubscribe from "./pages/Unsubscribe";
 import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
 import MariageRegion from "./pages/MariageRegion";
+import PrestatairesListe from "./pages/PrestatairesListe";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
