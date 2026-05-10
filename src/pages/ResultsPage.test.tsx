@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 /* ───────── Mocks ───────── */
@@ -79,9 +79,7 @@ const PRESTA_FIXTURES = [
   },
 ];
 
-// Supabase mock: chainable thenable builder. Resolves to category-mère for the
-// initial `.maybeSingle()` call, null for the fille lookup, and the fixtures
-// list for the providers query.
+// Supabase mock: chainable thenable builder.
 vi.mock("@/integrations/supabase/client", () => {
   function makeBuilder(table: string) {
     const filters: Record<string, unknown> = {};
@@ -106,7 +104,6 @@ vi.mock("@/integrations/supabase/client", () => {
       },
       async maybeSingle() {
         if (table === "categories") {
-          // Mère lookup: parent_id IS NULL + slug=photographe
           if (filters.parent_id === null && filters.slug === "photographe") {
             return {
               data: {
@@ -120,13 +117,11 @@ vi.mock("@/integrations/supabase/client", () => {
               error: null,
             };
           }
-          // Fille lookup: parent_id=cat1 + slug=paris → not a category
           return { data: null, error: null };
         }
         return { data: null, error: null };
       },
       then(resolve: any) {
-        // Awaited directly: providers query
         if (table === "prestataires") {
           resolve({ data: PRESTA_FIXTURES, error: null });
         } else {
@@ -136,14 +131,8 @@ vi.mock("@/integrations/supabase/client", () => {
     };
     return builder;
   }
-  return {
-    supabase: {
-      from: (t: string) => makeBuilder(t),
-    },
-  };
+  return { supabase: { from: (t: string) => makeBuilder(t) } };
 });
-
-/* ───────── Helpers ───────── */
 
 import PrestatairesListe from "./PrestatairesListe";
 
@@ -161,12 +150,9 @@ function renderAt(path: string) {
 /* ───────── Tests ───────── */
 
 describe("PrestatairesListe — non-regression: render is never blocked by geo.api.gouv.fr", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
   afterEach(() => {
-    vi.useRealTimers();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("renders the skeleton immediately on mount while geo.api.gouv.fr is pending", async () => {
@@ -174,82 +160,67 @@ describe("PrestatairesListe — non-regression: render is never blocked by geo.a
     vi.stubGlobal(
       "fetch",
       vi.fn(
-        (_input: any, init: any) =>
-          new Promise<Response>((_res, reject) => {
-            init?.signal?.addEventListener?.("abort", () => {
-              const err = new Error("Aborted");
-              (err as any).name = "AbortError";
-              reject(err);
-            });
+        () =>
+          new Promise<Response>(() => {
+            /* never resolves */
           })
       )
     );
 
     renderAt("/prestataires/photographe/paris");
 
-    // Flush only microtasks (awaited supabase mocks resolving) — DO NOT advance
-    // timers, so the geo call is still pending and the page must already be
-    // showing a skeleton without blocking.
+    // Flush microtasks so the supabase category lookups settle, but DO NOT
+    // wait on the geo call. The skeleton must already be visible.
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      for (let i = 0; i < 10; i++) await Promise.resolve();
     });
 
     // Skeleton placeholders use the .animate-pulse utility from Tailwind.
-    const skeletons = document.querySelectorAll(".animate-pulse");
-    expect(skeletons.length).toBeGreaterThan(0);
+    expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
 
     // No provider cards rendered yet
     expect(screen.queryAllByTestId("provider-card")).toHaveLength(0);
   });
 
   it("replaces the skeleton with 3 provider cards once geo.api.gouv.fr resolves", async () => {
-    // geo.api.gouv.fr resolves successfully after 1s
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        (_input: any, _init: any) =>
-          new Promise<Response>((resolve) => {
-            setTimeout(() => {
-              resolve({
-                ok: true,
-                status: 200,
-                json: async () => [
-                  {
-                    nom: "Paris",
-                    code: "75056",
-                    codeRegion: "11",
-                    codeDepartement: "75",
-                    centre: { coordinates: [2.3522, 48.8566] },
-                  },
-                ],
-              } as Response);
-            }, 1000);
-          })
-      )
-    );
+    // Manually-controlled fetch promise — simulates a slow network call that
+    // resolves after the page has already rendered its skeleton.
+    let resolveFetch!: (value: Response) => void;
+    const fetchPromise = new Promise<Response>((res) => {
+      resolveFetch = res;
+    });
+    vi.stubGlobal("fetch", vi.fn(() => fetchPromise));
 
     renderAt("/prestataires/photographe/paris");
 
-    // Initial render: skeleton present
+    // Initial render: skeleton present, no cards yet.
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
+      for (let i = 0; i < 10; i++) await Promise.resolve();
     });
     expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    expect(screen.queryAllByTestId("provider-card")).toHaveLength(0);
 
-    // Advance the 1s timer → fetch resolves → providers query fires → render.
+    // Resolve the geo call → zone resolves → providers fetch → cards render.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1000);
-      // flush extra microtasks for the chained state updates
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      resolveFetch({
+        ok: true,
+        status: 200,
+        json: async () => [
+          {
+            nom: "Paris",
+            code: "75056",
+            codeRegion: "11",
+            codeDepartement: "75",
+            centre: { coordinates: [2.3522, 48.8566] },
+          },
+        ],
+      } as Response);
+      for (let i = 0; i < 20; i++) await Promise.resolve();
     });
 
-    const cards = screen.getAllByTestId("provider-card");
-    expect(cards).toHaveLength(3);
+    await waitFor(() => {
+      expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
+    });
     expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
   });
 });
