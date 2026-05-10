@@ -272,11 +272,12 @@ export default function PrestatairesListe() {
   useEffect(() => {
     if (!seo) return;
     document.title = seo.metaTitle;
-    setMeta(
-      "description",
-      `${seo.h1}. ${seo.intro} Comparez les meilleurs prestataires sur LesNoces.net.`
-    );
+    const metaDesc = `${seo.h1}. ${seo.intro} Comparez les meilleurs prestataires sur LesNoces.net.`;
+    setMeta("description", metaDesc);
     setCanonical(seo.canonicalUrl);
+    setMetaProperty("og:title", seo.metaTitle);
+    setMetaProperty("og:description", metaDesc);
+    setMetaProperty("og:url", seo.canonicalUrl);
   }, [seo]);
 
   /* ───── Render ───── */
