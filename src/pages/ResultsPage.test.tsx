@@ -290,10 +290,10 @@ describe("PrestatairesListe — fallback behavior", () => {
       await vi.runAllTimersAsync();
     });
 
-    // 1) Approximate-results banner is visible
-    expect(
-      screen.getByText(/Résultats approximatifs pour/i)
-    ).toHaveTextContent(/marseille-test-timeout/);
+    // 1) Approximate-results banner is visible — slug with hyphens preserved
+    const banner = screen.getByText(/Résultats approximatifs pour/i);
+    expect(banner.textContent).toContain("marseille-test-timeout");
+    expect(banner.textContent).not.toContain("marseille test timeout");
 
     // 2) Skeleton has been removed
     expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
@@ -301,11 +301,12 @@ describe("PrestatairesListe — fallback behavior", () => {
     // 3) Exactly 3 provider cards rendered from the Supabase ILIKE fixtures
     expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
 
-    // 4) H1 + <title> contain the raw slug, not a resolved city name
+    // 4) H1 + <title> contain the raw slug with hyphens, not a spaced version
     const h1 = screen.getByRole("heading", { level: 1 });
-    expect(h1.textContent).toMatch(/Résultats pour/);
-    expect(h1.textContent).toMatch(/marseille-test-timeout/);
+    expect(h1.textContent).toContain("marseille-test-timeout");
+    expect(h1.textContent).not.toContain("marseille test timeout");
     expect(document.title).toContain("marseille-test-timeout");
+    expect(document.title).not.toContain("marseille test timeout");
   });
 
   it("network error: retry also fails → fallback fires without waiting the full 7s", async () => {
@@ -335,10 +336,10 @@ describe("PrestatairesListe — fallback behavior", () => {
       await vi.runAllTimersAsync();
     });
 
-    // 1) Banner present
-    expect(
-      screen.getByText(/Résultats approximatifs pour/i)
-    ).toHaveTextContent(/bordeaux-test-neterr/);
+    // 1) Banner present — slug with hyphens preserved
+    const banner = screen.getByText(/Résultats approximatifs pour/i);
+    expect(banner.textContent).toContain("bordeaux-test-neterr");
+    expect(banner.textContent).not.toContain("bordeaux test neterr");
 
     // 2) Skeleton gone
     expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
@@ -346,10 +347,11 @@ describe("PrestatairesListe — fallback behavior", () => {
     // 3) 3 cards from the ILIKE fallback
     expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
 
-    // 4) H1 + <title> contain the raw slug
+    // 4) H1 + <title> contain the raw slug with hyphens
     const h1 = screen.getByRole("heading", { level: 1 });
-    expect(h1.textContent).toMatch(/Résultats pour/);
-    expect(h1.textContent).toMatch(/bordeaux-test-neterr/);
+    expect(h1.textContent).toContain("bordeaux-test-neterr");
+    expect(h1.textContent).not.toContain("bordeaux test neterr");
     expect(document.title).toContain("bordeaux-test-neterr");
+    expect(document.title).not.toContain("bordeaux test neterr");
   });
 });
