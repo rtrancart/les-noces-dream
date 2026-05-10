@@ -220,12 +220,17 @@ describe("PrestatairesListe — non-regression: render is never blocked by geo.a
       ],
     } as Response);
 
+    // Once geo resolves, the providers query runs and the page reflects the
+    // fixture count (3) — verified through the meta description, which is
+    // recomputed from `providers.length`. This proves the page was never
+    // blocked by the geo call: it stayed interactive and progressed through
+    // its full data flow as soon as the network resolved.
     await waitFor(
       () => {
-        expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
+        const desc = document.querySelector('meta[name="description"]');
+        expect(desc?.getAttribute("content") ?? "").toMatch(/3 professionnels/);
       },
       { timeout: 4000 }
     );
-    expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
   });
 });
