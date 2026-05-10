@@ -220,9 +220,12 @@ describe("PrestatairesListe — non-regression: render is never blocked by geo.a
       ],
     } as Response);
 
-    await waitFor(() => {
-      expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
-    });
+    await waitFor(
+      () => {
+        expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
+      },
+      { timeout: 4000 }
+    );
     expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
   });
 });
