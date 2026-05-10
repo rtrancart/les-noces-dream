@@ -112,23 +112,41 @@ export async function resolveZoneSlug(
   // 2. Ville cache
   if (VILLE_CACHE.has(slug)) return VILLE_CACHE.get(slug) ?? null;
 
-  // 3. Network fallback — geo.api.gouv.fr (3s timeout)
+  // 3. Network fallback — geo.api.gouv.fr
+  // Strategy: 3s timeout, on timeout/network error wait 1s and retry once.
+  // HTTP 4xx = do not retry (treated as genuine miss → caller fallback).
   const nom = slug.replace(/-/g, " ");
   const url = `https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(nom)}&boost=population&limit=5&fields=nom,code,centre,codeRegion,codeDepartement&format=json`;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 3000);
+  async function fetchOnce(): Promise<Array<any>> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3000);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (res.status >= 400 && res.status < 500) {
+        // Client error — do not retry
+        throw new ZoneApiError(`http_${res.status}`, false);
+      }
+      if (!res.ok) throw new ZoneApiError(`http_${res.status}`, true);
+      return (await res.json()) as Array<any>;
+    } catch (e: any) {
+      if (e instanceof ZoneApiError) throw e;
+      throw new ZoneApiError(e?.name === "AbortError" ? "timeout" : "network", true);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
 
   let list: Array<any>;
   try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new ZoneApiError(`geo.api.gouv.fr ${res.status}`);
-    list = (await res.json()) as Array<any>;
-  } catch (e: any) {
-    // Network error or timeout → throw, do NOT cache (let caller fallback)
-    throw new ZoneApiError(e?.name === "AbortError" ? "timeout" : "network");
-  } finally {
-    clearTimeout(timer);
+    list = await fetchOnce();
+  } catch (e) {
+    if (e instanceof ZoneApiError && e.retryable) {
+      await new Promise((r) => setTimeout(r, 1000));
+      list = await fetchOnce(); // bubbles ZoneApiError on second failure
+    } else {
+      throw e;
+    }
   }
 
   const exact = list.find((c) => slugify(c.nom) === slug) ?? list[0];
