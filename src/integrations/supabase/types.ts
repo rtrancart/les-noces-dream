@@ -1319,6 +1319,45 @@ export type Database = {
         }
         Relationships: []
       }
+      zones_reference: {
+        Row: {
+          created_at: string
+          dept_code: string | null
+          id: string
+          label: string
+          parent_region_label: string | null
+          parent_region_slug: string | null
+          parent_region_zone_value: string | null
+          slug: string
+          type: string
+          zone_value: string
+        }
+        Insert: {
+          created_at?: string
+          dept_code?: string | null
+          id?: string
+          label: string
+          parent_region_label?: string | null
+          parent_region_slug?: string | null
+          parent_region_zone_value?: string | null
+          slug: string
+          type: string
+          zone_value: string
+        }
+        Update: {
+          created_at?: string
+          dept_code?: string | null
+          id?: string
+          label?: string
+          parent_region_label?: string | null
+          parent_region_slug?: string | null
+          parent_region_zone_value?: string | null
+          slug?: string
+          type?: string
+          zone_value?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
