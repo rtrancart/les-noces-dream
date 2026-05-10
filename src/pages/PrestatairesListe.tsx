@@ -3,6 +3,7 @@ import { useParams, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import { resolveZoneSlug, type ResolvedZone } from "@/lib/zoneResolver";
+import { useZones } from "@/contexts/ZonesContext";
 import { haversineDistanceKm } from "@/lib/haversine";
 
 interface CategorieRow {
