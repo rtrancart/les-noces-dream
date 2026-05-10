@@ -293,7 +293,7 @@ describe("PrestatairesListe — fallback behavior", () => {
     // 1) Approximate-results banner is visible
     expect(
       screen.getByText(/Résultats approximatifs pour/i)
-    ).toHaveTextContent(/marseille test timeout/);
+    ).toHaveTextContent(/marseille-test-timeout/);
 
     // 2) Skeleton has been removed
     expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
@@ -304,8 +304,8 @@ describe("PrestatairesListe — fallback behavior", () => {
     // 4) H1 + <title> contain the raw slug, not a resolved city name
     const h1 = screen.getByRole("heading", { level: 1 });
     expect(h1.textContent).toMatch(/Résultats pour/);
-    expect(h1.textContent).toMatch(/marseille test timeout/);
-    expect(document.title).toContain("marseille test timeout");
+    expect(h1.textContent).toMatch(/marseille-test-timeout/);
+    expect(document.title).toContain("marseille-test-timeout");
   });
 
   it("network error: retry also fails → fallback fires without waiting the full 7s", async () => {
@@ -338,7 +338,7 @@ describe("PrestatairesListe — fallback behavior", () => {
     // 1) Banner present
     expect(
       screen.getByText(/Résultats approximatifs pour/i)
-    ).toHaveTextContent(/bordeaux test neterr/);
+    ).toHaveTextContent(/bordeaux-test-neterr/);
 
     // 2) Skeleton gone
     expect(document.querySelectorAll(".animate-pulse").length).toBe(0);
@@ -349,7 +349,7 @@ describe("PrestatairesListe — fallback behavior", () => {
     // 4) H1 + <title> contain the raw slug
     const h1 = screen.getByRole("heading", { level: 1 });
     expect(h1.textContent).toMatch(/Résultats pour/);
-    expect(h1.textContent).toMatch(/bordeaux test neterr/);
-    expect(document.title).toContain("bordeaux test neterr");
+    expect(h1.textContent).toMatch(/bordeaux-test-neterr/);
+    expect(document.title).toContain("bordeaux-test-neterr");
   });
 });
