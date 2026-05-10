@@ -172,7 +172,7 @@ export async function resolveZoneSlug(
 }
 
 export class ZoneApiError extends Error {
-  constructor(public reason: string) {
+  constructor(public reason: string, public retryable: boolean = true) {
     super(`ZoneApiError: ${reason}`);
     this.name = "ZoneApiError";
   }
