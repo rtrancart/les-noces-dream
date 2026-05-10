@@ -374,5 +374,26 @@ describe("PrestatairesListe — fallback behavior", () => {
     expect(h1.textContent).not.toContain("bordeaux test neterr");
     expect(document.title).toContain("bordeaux-test-neterr");
     expect(document.title).not.toContain("bordeaux test neterr");
+
+    // 5) SEO meta tags preserve the raw slug with hyphens
+    expect(document.querySelector('meta[property="og:title"]')?.getAttribute("content"))
+      .toContain("bordeaux-test-neterr");
+    expect(document.querySelector('meta[property="og:title"]')?.getAttribute("content"))
+      .not.toContain("bordeaux test neterr");
+
+    expect(document.querySelector('meta[property="og:description"]')?.getAttribute("content"))
+      .toContain("bordeaux-test-neterr");
+    expect(document.querySelector('meta[property="og:description"]')?.getAttribute("content"))
+      .not.toContain("bordeaux test neterr");
+
+    expect(document.querySelector('meta[property="og:url"]')?.getAttribute("content"))
+      .toContain("bordeaux-test-neterr");
+    expect(document.querySelector('meta[property="og:url"]')?.getAttribute("content"))
+      .not.toContain("bordeaux test neterr");
+
+    expect(document.querySelector('link[rel="canonical"]')?.getAttribute("href"))
+      .toContain("bordeaux-test-neterr");
+    expect(document.querySelector('link[rel="canonical"]')?.getAttribute("href"))
+      .not.toContain("bordeaux test neterr");
   });
 });
