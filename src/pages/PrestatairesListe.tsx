@@ -267,37 +267,87 @@ export default function PrestatairesListe() {
 
   /* ───── Render ───── */
 
-  if (loading) {
+  // Hard 404: catégorie mère unknown, or fallback text-search returned nothing
+  const hardNotFound =
+    notFound ||
+    (!routeLoading &&
+      !providersLoading &&
+      fallbackSlug &&
+      providers.length === 0 &&
+      !zone);
+
+  if (hardNotFound) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <h1 className="font-serif text-3xl text-foreground">Page introuvable</h1>
+        <p className="font-sans text-sm text-muted-foreground max-w-md">
+          Nous n'avons trouvé ni catégorie ni zone correspondant à cette adresse.
+        </p>
+        <div className="flex flex-wrap gap-3 justify-center mt-2">
+          <Link
+            to="/recherche"
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded font-sans text-sm"
+          >
+            Parcourir par catégorie
+          </Link>
+          <Link
+            to="/"
+            className="px-5 py-2.5 border border-border rounded font-sans text-sm text-foreground"
+          >
+            Retour à l'accueil
+          </Link>
+        </div>
       </div>
     );
   }
 
-  if (notFound || !categorieMere || !seo) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-4">
-        <h1 className="font-serif text-2xl text-foreground">Page introuvable</h1>
-        <p className="font-sans text-sm text-muted-foreground">
-          Cette catégorie ou cette zone n'existe pas.
-        </p>
-        <Link to="/recherche" className="text-primary underline font-sans text-sm">
-          Voir tous les prestataires
-        </Link>
-      </div>
-    );
-  }
+  // Skeleton placeholder while route or providers are loading
+  const showSkeleton = routeLoading || providersLoading || !seo;
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-12">
         <header className="mb-8">
-          <h1 className="font-serif text-3xl md:text-4xl text-foreground mb-3">{seo.h1}</h1>
-          <p className="font-sans text-base text-muted-foreground max-w-3xl">{seo.intro}</p>
+          {seo ? (
+            <>
+              <h1 className="font-serif text-3xl md:text-4xl text-foreground mb-3">
+                {seo.h1}
+              </h1>
+              <p className="font-sans text-base text-muted-foreground max-w-3xl">
+                {seo.intro}
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="h-9 w-2/3 max-w-xl bg-muted rounded animate-pulse mb-3" />
+              <div className="h-5 w-1/2 max-w-md bg-muted rounded animate-pulse" />
+            </>
+          )}
         </header>
 
-        {providers.length === 0 ? (
+        {fallbackSlug && !showSkeleton && (
+          <div className="mb-6 px-4 py-3 bg-muted/50 border border-border rounded text-sm font-sans text-muted-foreground">
+            Résultats approximatifs pour «&nbsp;{fallbackSlug.replace(/-/g, " ")}&nbsp;».
+          </div>
+        )}
+
+        {showSkeleton ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded-lg overflow-hidden border border-border bg-card"
+              >
+                <div className="aspect-[4/3] bg-muted animate-pulse" />
+                <div className="p-4 space-y-2">
+                  <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+                  <div className="h-3 w-1/2 bg-muted rounded animate-pulse" />
+                  <div className="h-3 w-2/3 bg-muted rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : providers.length === 0 ? (
           <div className="text-center py-16">
             <p className="font-sans text-muted-foreground">
               Aucun prestataire trouvé pour ces critères.
@@ -311,7 +361,7 @@ export default function PrestatairesListe() {
           </div>
         )}
 
-        {(categorieFille?.contenu_seo || categorieMere.contenu_seo) && (
+        {!showSkeleton && categorieMere && (categorieFille?.contenu_seo || categorieMere.contenu_seo) && (
           <section className="mt-16 prose prose-sm max-w-3xl font-sans text-foreground">
             <h2 className="font-serif text-2xl mb-4">À propos</h2>
             <div className="whitespace-pre-line text-muted-foreground">
