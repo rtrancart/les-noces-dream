@@ -13,10 +13,14 @@ vi.mock("@/components/search/ProviderCard", () => ({
 
 // useZones: pretend the admin-zones cache is loaded but empty,
 // so any slug2 falls through to the geo.api.gouv.fr network path.
+// CRITICAL: return *stable* Map references so the route effect (whose deps
+// include zoneIndex) does not re-run on every render and loop forever.
+const STABLE_BY_SLUG = new Map();
+const STABLE_BY_ZONE_VALUE = new Map();
 vi.mock("@/contexts/ZonesContext", () => ({
   useZones: () => ({
-    bySlug: new Map(),
-    byZoneValue: new Map(),
+    bySlug: STABLE_BY_SLUG,
+    byZoneValue: STABLE_BY_ZONE_VALUE,
     loaded: true,
   }),
   ZonesProvider: ({ children }: any) => children,
