@@ -57,6 +57,7 @@ export default function PrestatairesListe() {
 
   /* Resolve route → catégorie / zone */
   useEffect(() => {
+    if (!zonesLoaded) return;
     let cancelled = false;
     setLoading(true);
     setNotFound(false);
