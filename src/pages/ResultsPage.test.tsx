@@ -156,29 +156,35 @@ describe("PrestatairesListe — non-regression: render is never blocked by geo.a
   });
 
   it("renders the skeleton immediately on mount while geo.api.gouv.fr is pending", async () => {
-    // geo.api.gouv.fr never resolves
+    // geo.api.gouv.fr never resolves — and respects abort so it doesn't
+    // keep act() pending forever.
     vi.stubGlobal(
       "fetch",
       vi.fn(
-        () =>
-          new Promise<Response>(() => {
-            /* never resolves */
+        (_input: any, init: any) =>
+          new Promise<Response>((_res, reject) => {
+            init?.signal?.addEventListener?.("abort", () => {
+              const err = new Error("Aborted");
+              (err as any).name = "AbortError";
+              reject(err);
+            });
           })
       )
     );
 
     renderAt("/prestataires/photographe/paris");
 
-    // Flush microtasks so the supabase category lookups settle, but DO NOT
-    // wait on the geo call. The skeleton must already be visible.
-    await act(async () => {
-      for (let i = 0; i < 10; i++) await Promise.resolve();
-    });
+    // Wait until the page has had a chance to render — the skeleton must
+    // appear without us having to advance any timers (i.e. without waiting
+    // on the geo call).
+    await waitFor(
+      () => {
+        expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+      },
+      { timeout: 1000 }
+    );
 
-    // Skeleton placeholders use the .animate-pulse utility from Tailwind.
-    expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
-
-    // No provider cards rendered yet
+    // No provider cards rendered yet.
     expect(screen.queryAllByTestId("provider-card")).toHaveLength(0);
   });
 
@@ -194,29 +200,25 @@ describe("PrestatairesListe — non-regression: render is never blocked by geo.a
     renderAt("/prestataires/photographe/paris");
 
     // Initial render: skeleton present, no cards yet.
-    await act(async () => {
-      for (let i = 0; i < 10; i++) await Promise.resolve();
+    await waitFor(() => {
+      expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
     });
-    expect(document.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
     expect(screen.queryAllByTestId("provider-card")).toHaveLength(0);
 
     // Resolve the geo call → zone resolves → providers fetch → cards render.
-    await act(async () => {
-      resolveFetch({
-        ok: true,
-        status: 200,
-        json: async () => [
-          {
-            nom: "Paris",
-            code: "75056",
-            codeRegion: "11",
-            codeDepartement: "75",
-            centre: { coordinates: [2.3522, 48.8566] },
-          },
-        ],
-      } as Response);
-      for (let i = 0; i < 20; i++) await Promise.resolve();
-    });
+    resolveFetch({
+      ok: true,
+      status: 200,
+      json: async () => [
+        {
+          nom: "Paris",
+          code: "75056",
+          codeRegion: "11",
+          codeDepartement: "75",
+          centre: { coordinates: [2.3522, 48.8566] },
+        },
+      ],
+    } as Response);
 
     await waitFor(() => {
       expect(screen.getAllByTestId("provider-card")).toHaveLength(3);
