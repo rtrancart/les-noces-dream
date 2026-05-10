@@ -46,6 +46,7 @@ export default function PrestatairesListe() {
   const { slugMere = "", slug2 } = useParams<{ slugMere: string; slug2?: string }>();
   const [searchParams] = useSearchParams();
   const rayon = Math.max(1, Math.min(500, parseInt(searchParams.get("rayon") ?? "50", 10) || 50));
+  const { bySlug: zoneIndex, loaded: zonesLoaded } = useZones();
 
   const [categorieMere, setCategorieMere] = useState<CategorieRow | null>(null);
   const [categorieFille, setCategorieFille] = useState<CategorieRow | null>(null);
