@@ -121,12 +121,12 @@ vi.mock("@/integrations/supabase/client", () => {
         }
         return { data: null, error: null };
       },
-      then(resolve: any) {
-        if (table === "prestataires") {
-          resolve({ data: PRESTA_FIXTURES, error: null });
-        } else {
-          resolve({ data: null, error: null });
-        }
+      then(onFulfilled: any, onRejected: any) {
+        const value =
+          table === "prestataires"
+            ? { data: PRESTA_FIXTURES, error: null }
+            : { data: null, error: null };
+        return Promise.resolve(value).then(onFulfilled, onRejected);
       },
     };
     return builder;
