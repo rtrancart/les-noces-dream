@@ -61,6 +61,12 @@ export default function PrestatairesConsultes() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SeoHead
+        title="Prestataires consultés | LesNoces.net"
+        description="Historique de vos prestataires de mariage consultés sur LesNoces.net."
+        canonicalUrl="/prestataires-consultes"
+        noindex
+      />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8">
         {/* Header */}
         <div className="space-y-2">
