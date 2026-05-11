@@ -584,8 +584,19 @@ export default function Prestataires() {
               </SelectContent>
             </Select>
           </div>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-input bg-background px-3 py-2">
+              <LocationPicker
+                value={locationZones}
+                onChange={setLocationZones}
+                citySearch={citySearch}
+                onCitySearchChange={setCitySearch}
+                placeholder="Filtrer par région, département ou ville…"
+              />
+            </div>
+          </div>
           <p className="mt-3 font-sans text-xs text-muted-foreground">
-            {loading ? "Chargement…" : `${data.length} résultat${data.length > 1 ? "s" : ""}`}
+            {loading ? "Chargement…" : `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`}
           </p>
         </CardHeader>
         <CardContent className="p-0">
