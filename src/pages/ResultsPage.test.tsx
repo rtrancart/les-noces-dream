@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 
 /* ───────── Mocks ───────── */
 
@@ -142,12 +143,14 @@ import PrestatairesListe from "./PrestatairesListe";
 
 function renderAt(path: string) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
-        <Route path="/prestataires/:slugMere" element={<PrestatairesListe />} />
-      </Routes>
-    </MemoryRouter>
+    <HelmetProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
+          <Route path="/prestataires/:slugMere" element={<PrestatairesListe />} />
+        </Routes>
+      </MemoryRouter>
+    </HelmetProvider>
   );
 }
 
@@ -275,11 +278,13 @@ describe("PrestatairesListe — fallback behavior", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={[`/prestataires/photographe/${SLUG}`]}>
-        <Routes>
-          <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
-        </Routes>
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter initialEntries={[`/prestataires/photographe/${SLUG}`]}>
+          <Routes>
+            <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
     );
 
     // Advance the full retry sequence: 3s → 1s pause → 3s.
@@ -341,11 +346,13 @@ describe("PrestatairesListe — fallback behavior", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={[`/prestataires/photographe/${SLUG}`]}>
-        <Routes>
-          <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
-        </Routes>
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter initialEntries={[`/prestataires/photographe/${SLUG}`]}>
+          <Routes>
+            <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
     );
 
     // Component still schedules a 1s pause between retries via setTimeout;

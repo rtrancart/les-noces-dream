@@ -5,7 +5,7 @@ import ProviderCard, { type ProviderCardData } from "@/components/search/Provide
 import { resolveZoneSlug, ZoneApiError, type ResolvedZone } from "@/lib/zoneResolver";
 import { useZones } from "@/contexts/ZonesContext";
 import { haversineDistanceKm } from "@/lib/haversine";
-import { applySeo } from "@/lib/seo";
+import SeoHead from "@/components/SeoHead";
 
 interface CategorieRow {
   id: string;
@@ -240,16 +240,9 @@ export default function PrestatairesListe() {
     return { h1, intro, metaTitle, canonicalUrl: `${SITE_URL}${canonicalPath}` };
   }, [categorieMere, categorieFille, zone, providers.length, slugMere, slug2, fallbackSlug]);
 
-  useEffect(() => {
-    if (!seo) return;
-    const metaDesc = `${seo.h1}. ${seo.intro} Comparez les meilleurs prestataires sur LesNoces.net.`;
-    applySeo({
-      title: seo.metaTitle,
-      description: metaDesc,
-      canonicalUrl: seo.canonicalUrl,
-      siteName: "LesNoces.net",
-    });
-  }, [seo]);
+  const seoMetaDesc = seo
+    ? `${seo.h1}. ${seo.intro} Comparez les meilleurs prestataires sur LesNoces.net.`
+    : null;
 
   /* ───── Render ───── */
 
@@ -292,6 +285,14 @@ export default function PrestatairesListe() {
 
   return (
     <div className="min-h-screen bg-background">
+      {seo && seoMetaDesc && (
+        <SeoHead
+          title={seo.metaTitle}
+          description={seoMetaDesc}
+          canonicalUrl={seo.canonicalUrl}
+          siteName="LesNoces.net"
+        />
+      )}
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-12">
         <header className="mb-8">
           {seo ? (
