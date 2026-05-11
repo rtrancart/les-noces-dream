@@ -34,6 +34,7 @@ import ProviderCard, { type ProviderCardData } from "@/components/search/Provide
 import { trackEvent } from "@/lib/analytics";
 import { useTrackVisitePrestataire } from "@/hooks/useHistoriqueNavigation";
 import { regionNomToSlug } from "@/lib/regions";
+import SeoHead from "@/components/SeoHead";
 
 type Prestataire = {
   id: string;
@@ -172,12 +173,7 @@ export default function FichePrestataire() {
     }
   }, [presta?.id]);
 
-  // SEO
-  useEffect(() => {
-    if (presta) {
-      document.title = `${presta.nom_commercial} — ${catMere?.nom ?? ""} à ${presta.ville} | LesNoces.net`;
-    }
-  }, [presta, catMere]);
+  // SEO is rendered via <SeoHead> in JSX (see below) — no manual document.title.
 
   const revealPhone = () => {
     if (!presta) return;
