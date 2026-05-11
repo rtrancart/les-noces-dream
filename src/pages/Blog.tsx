@@ -77,6 +77,11 @@ export default function Blog() {
 
   return (
     <div className="bg-[#FBF8F3] min-h-screen text-bleu-abysse">
+      <SeoHead
+        title="Blog mariage — Inspirations et conseils | LesNoces.net"
+        description="Le carnet d'une rédaction qui parcourt la France des belles noces — chroniques, carnets de lieux, confidences d'artisans."
+        canonicalUrl="/blog"
+      />
       {/* Masthead */}
       <header className="text-center px-6 md:px-20 pt-20 md:pt-[120px] pb-16 border-b border-border">
         <div className="text-[10px] tracking-[0.5em] uppercase text-gris-cachemire mb-10">
