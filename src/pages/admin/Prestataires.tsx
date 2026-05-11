@@ -351,6 +351,7 @@ export default function Prestataires() {
       .order("created_at", { ascending: false })
       .limit(200);
     if (filterStatut !== "tous") query = query.eq("statut", filterStatut as StatutPrestataire);
+    if (filterCategorie !== "toutes") query = query.eq("categorie_mere_id", filterCategorie);
     if (search) query = query.ilike("nom_commercial", `%${search}%`);
 
     const [{ data: result, error }, { data: cats }] = await Promise.all([
@@ -363,7 +364,7 @@ export default function Prestataires() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, [filterStatut, search]);
+  useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
 
   const updateStatut = async (id: string, statut: StatutPrestataire) => {
     const { error } = await supabase.from("prestataires").update({ statut }).eq("id", id);
