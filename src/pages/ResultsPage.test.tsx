@@ -278,11 +278,13 @@ describe("PrestatairesListe — fallback behavior", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={[`/prestataires/photographe/${SLUG}`]}>
-        <Routes>
-          <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
-        </Routes>
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter initialEntries={[`/prestataires/photographe/${SLUG}`]}>
+          <Routes>
+            <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
     );
 
     // Advance the full retry sequence: 3s → 1s pause → 3s.
