@@ -271,6 +271,7 @@ export default function Prestataires() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("tous");
+  const [filterCategorie, setFilterCategorie] = useState<string>("toutes");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Prestataire | null>(null);
   const [form, setForm] = useState(emptyForm);
