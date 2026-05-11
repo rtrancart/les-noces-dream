@@ -1,10 +1,17 @@
 /**
  * Centralized SEO tag manager.
  *
- * All page-level SEO updates (title, description, canonical, Open Graph,
- * Twitter Card) must go through `applySeo()` so that fallback scenarios
- * (e.g. geo.api.gouv.fr failure) cannot produce inconsistent metadata
- * between, say, <title> and og:title.
+ * Single source of truth for every page's <head> metadata. All page-level
+ * SEO must go through `buildSeoMeta()` so that fallback scenarios (e.g.
+ * geo.api.gouv.fr failure) cannot produce inconsistent metadata between,
+ * say, <title> and og:title.
+ *
+ * For React pages, render the returned object via the <SeoHead> component
+ * (uses react-helmet-async, which is what Vercel's prerenderer snapshots
+ * into the static HTML).
+ *
+ * `applySeo()` is kept as a low-level DOM fallback used by legacy code paths
+ * and by tests that assert directly on document.head.
  */
 
 /**
@@ -14,38 +21,98 @@
  */
 export const DEFAULT_SEO_IMAGE_PATH = "/og-default.jpg";
 
-function resolveAbsoluteUrl(pathOrUrl: string): string {
-  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
-  const origin =
-    typeof window !== "undefined" ? window.location.origin : "https://lesnoces.net";
-  return `${origin}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
+const SITE_NAME_DEFAULT = "LesNoces.net";
+const SITE_ORIGIN_DEFAULT = "https://lesnoces.net";
+
+function resolveOrigin(): string {
+  return typeof window !== "undefined" ? window.location.origin : SITE_ORIGIN_DEFAULT;
 }
 
-export interface SeoTags {
-  /** <title> + og:title + twitter:title */
+function resolveAbsoluteUrl(pathOrUrl: string): string {
+  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  return `${resolveOrigin()}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
+}
+
+/** Input shape accepted by `buildSeoMeta()` — what each page provides. */
+export interface SeoInput {
+  /** Page title — used for <title>, og:title and twitter:title. */
   title: string;
-  /** meta[name=description] + og:description + twitter:description */
+  /** Description — used for meta description, og:description, twitter:description. */
   description: string;
-  /** link[rel=canonical] + og:url */
-  canonicalUrl: string;
-  /** og:type — defaults to "website" */
-  ogType?: string;
-  /** twitter:card — defaults to "summary_large_image" */
-  twitterCard?: string;
   /**
-   * og:image + twitter:image. If omitted, falls back to
-   * `DEFAULT_SEO_IMAGE_PATH` so the tags are always populated.
-   * Accepts either an absolute URL or a path starting with "/".
+   * Canonical URL or path. Used for <link rel=canonical> and og:url.
+   * Accepts absolute URL or path starting with "/".
    */
+  canonicalUrl: string;
+  /** og:image + twitter:image. Defaults to `DEFAULT_SEO_IMAGE_PATH`. */
   imageUrl?: string;
-  /** og:site_name (optional) */
+  /** og:type — defaults to "website". */
+  ogType?: string;
+  /** twitter:card — defaults to "summary_large_image". */
+  twitterCard?: string;
+  /** og:site_name — defaults to "LesNoces.net". */
   siteName?: string;
 }
 
+/**
+ * Fully-resolved SEO tag set. Every value is a non-empty string ready to
+ * be injected into <head>. There is no optionality at this layer — that is
+ * the whole point of the helper.
+ */
+export interface SeoMeta {
+  title: string;
+  description: string;
+  canonical: string;
+  ogTitle: string;
+  ogDescription: string;
+  ogImage: string;
+  ogUrl: string;
+  ogType: string;
+  ogSiteName: string;
+  twitterCard: string;
+  twitterTitle: string;
+  twitterDescription: string;
+  twitterImage: string;
+}
+
+/**
+ * Pure helper — takes a page's SEO input and returns the fully-expanded
+ * 13-tag set. All og:*/twitter:* tags are derived from the same source
+ * values so they can never drift.
+ */
+export function buildSeoMeta(input: SeoInput): SeoMeta {
+  const title = input.title;
+  const description = input.description;
+  const canonical = resolveAbsoluteUrl(input.canonicalUrl);
+  const image = resolveAbsoluteUrl(input.imageUrl ?? DEFAULT_SEO_IMAGE_PATH);
+  const ogType = input.ogType ?? "website";
+  const twitterCard = input.twitterCard ?? "summary_large_image";
+  const siteName = input.siteName ?? SITE_NAME_DEFAULT;
+
+  return {
+    title,
+    description,
+    canonical,
+    ogTitle: title,
+    ogDescription: description,
+    ogImage: image,
+    ogUrl: canonical,
+    ogType,
+    ogSiteName: siteName,
+    twitterCard,
+    twitterTitle: title,
+    twitterDescription: description,
+    twitterImage: image,
+  };
+}
+
+/* ───────── Legacy DOM applier (kept for tests + non-React callers) ───────── */
+
+/** @deprecated Prefer <SeoHead> with `buildSeoMeta()`. */
+export interface SeoTags extends SeoInput {}
+
 function setMetaName(name: string, content: string) {
-  let el = document.querySelector(
-    `meta[name="${name}"]`
-  ) as HTMLMetaElement | null;
+  let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
   if (!el) {
     el = document.createElement("meta");
     el.setAttribute("name", name);
@@ -67,9 +134,7 @@ function setMetaProperty(property: string, content: string) {
 }
 
 function setCanonicalLink(href: string) {
-  let el = document.querySelector(
-    'link[rel="canonical"]'
-  ) as HTMLLinkElement | null;
+  let el = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
   if (!el) {
     el = document.createElement("link");
     el.setAttribute("rel", "canonical");
@@ -79,35 +144,27 @@ function setCanonicalLink(href: string) {
 }
 
 /**
- * Apply a coherent set of SEO tags to <head>.
- *
- * The same `title`, `description`, and `canonicalUrl` values are propagated
- * to every related tag so we cannot end up with, for example, a fallback
- * slug in <title> but a stale resolved-city name in og:title.
+ * Directly mutate <head> with a coherent SEO tag set. Prefer <SeoHead> in
+ * React render trees; this exists for environments where rendering Helmet
+ * is not an option.
  */
-export function applySeo(tags: SeoTags): void {
+export function applySeo(input: SeoInput): void {
   if (typeof document === "undefined") return;
+  const m = buildSeoMeta(input);
 
-  const ogType = tags.ogType ?? "website";
-  const twitterCard = tags.twitterCard ?? "summary_large_image";
+  document.title = m.title;
+  setMetaName("description", m.description);
+  setCanonicalLink(m.canonical);
 
-  document.title = tags.title;
+  setMetaProperty("og:title", m.ogTitle);
+  setMetaProperty("og:description", m.ogDescription);
+  setMetaProperty("og:url", m.ogUrl);
+  setMetaProperty("og:type", m.ogType);
+  setMetaProperty("og:site_name", m.ogSiteName);
+  setMetaProperty("og:image", m.ogImage);
 
-  setMetaName("description", tags.description);
-  setCanonicalLink(tags.canonicalUrl);
-
-  setMetaProperty("og:title", tags.title);
-  setMetaProperty("og:description", tags.description);
-  setMetaProperty("og:url", tags.canonicalUrl);
-  setMetaProperty("og:type", ogType);
-
-  if (tags.siteName) setMetaProperty("og:site_name", tags.siteName);
-
-  const imageUrl = resolveAbsoluteUrl(tags.imageUrl ?? DEFAULT_SEO_IMAGE_PATH);
-  setMetaProperty("og:image", imageUrl);
-  setMetaName("twitter:image", imageUrl);
-
-  setMetaName("twitter:card", twitterCard);
-  setMetaName("twitter:title", tags.title);
-  setMetaName("twitter:description", tags.description);
+  setMetaName("twitter:card", m.twitterCard);
+  setMetaName("twitter:title", m.twitterTitle);
+  setMetaName("twitter:description", m.twitterDescription);
+  setMetaName("twitter:image", m.twitterImage);
 }
