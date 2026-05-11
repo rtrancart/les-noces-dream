@@ -1,4 +1,6 @@
-import { useEffect, useState, useRef, ReactNode } from "react";
+import { useEffect, useState, useRef, useMemo, ReactNode } from "react";
+import LocationPicker, { type CitySearchData } from "@/components/LocationPicker";
+import { haversineDistanceKm } from "@/lib/haversine";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -272,6 +274,8 @@ export default function Prestataires() {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("tous");
   const [filterCategorie, setFilterCategorie] = useState<string>("toutes");
+  const [locationZones, setLocationZones] = useState<string[]>([]);
+  const [citySearch, setCitySearch] = useState<CitySearchData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Prestataire | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -520,6 +524,27 @@ export default function Prestataires() {
   const childCategories = categories.filter((c) => c.parent_id === form.categorie_mere_id);
   const getCatName = (id: string | null) => categories.find((c) => c.id === id)?.nom ?? "—";
 
+  const filteredData = useMemo(() => {
+    return data.filter((p: any) => {
+      // City search → haversine
+      if (citySearch) {
+        if (p.latitude == null || p.longitude == null) return false;
+        return haversineDistanceKm(citySearch.lat, citySearch.lng, p.latitude, p.longitude) <= citySearch.radius;
+      }
+      // Zones
+      if (locationZones.length === 0) return true;
+      if (locationZones.includes("france_entiere")) return true;
+      const regionMatch = REGIONS.find((r) => r.label === p.region);
+      if (regionMatch) {
+        const deptValues = regionMatch.departements.map((d) => d.value);
+        if (deptValues.some((d) => locationZones.includes(d))) return true;
+        if (locationZones.includes(regionMatch.value)) return true;
+      }
+      const zones: string[] = p.zones_intervention ?? [];
+      return zones.some((z) => locationZones.includes(z));
+    });
+  }, [data, locationZones, citySearch]);
+
 
 
 
@@ -559,8 +584,19 @@ export default function Prestataires() {
               </SelectContent>
             </Select>
           </div>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2 flex-1 min-w-0 rounded-md border border-input bg-background px-3 py-2">
+              <LocationPicker
+                value={locationZones}
+                onChange={setLocationZones}
+                citySearch={citySearch}
+                onCitySearchChange={setCitySearch}
+                placeholder="Filtrer par région, département ou ville…"
+              />
+            </div>
+          </div>
           <p className="mt-3 font-sans text-xs text-muted-foreground">
-            {loading ? "Chargement…" : `${data.length} résultat${data.length > 1 ? "s" : ""}`}
+            {loading ? "Chargement…" : `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`}
           </p>
         </CardHeader>
         <CardContent className="p-0">
@@ -583,10 +619,10 @@ export default function Prestataires() {
                 Array.from({ length: 5 }).map((_, i) => (
                    <TableRow key={i}>{Array.from({ length: 9 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>
                 ))
-              ) : data.length === 0 ? (
+              ) : filteredData.length === 0 ? (
                 <TableRow><TableCell colSpan={9} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
               ) : (
-                data.map((p) => (
+                filteredData.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-sans text-sm font-medium">{p.nom_commercial}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.email_contact || "—"}</TableCell>
