@@ -619,10 +619,10 @@ export default function Prestataires() {
                 Array.from({ length: 5 }).map((_, i) => (
                    <TableRow key={i}>{Array.from({ length: 9 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>
                 ))
-              ) : data.length === 0 ? (
+              ) : filteredData.length === 0 ? (
                 <TableRow><TableCell colSpan={9} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
               ) : (
-                data.map((p) => (
+                filteredData.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-sans text-sm font-medium">{p.nom_commercial}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.email_contact || "—"}</TableCell>
