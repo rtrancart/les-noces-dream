@@ -23,7 +23,6 @@ export default function Blog() {
   const [activeCat, setActiveCat] = useState<string>("all");
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
   // SEO is rendered via <SeoHead> below.
 
   useEffect(() => {
