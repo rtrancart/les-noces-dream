@@ -47,11 +47,7 @@ export default function BlogArticle() {
       setArticle(art);
 
       if (art) {
-        document.title = art.meta_title || `${art.titre} | LesNoces.net`;
-        const meta = document.querySelector('meta[name="description"]');
-        if (meta && (art.meta_description || art.extrait)) {
-          meta.setAttribute("content", art.meta_description || art.extrait || "");
-        }
+        // SEO is rendered via <SeoHead> in JSX (see return).
 
         const { data: rel } = await supabase
           .from("articles_blog")
