@@ -285,6 +285,14 @@ export default function PrestatairesListe() {
 
   return (
     <div className="min-h-screen bg-background">
+      {seo && seoMetaDesc && (
+        <SeoHead
+          title={seo.metaTitle}
+          description={seoMetaDesc}
+          canonicalUrl={seo.canonicalUrl}
+          siteName="LesNoces.net"
+        />
+      )}
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-12">
         <header className="mb-8">
           {seo ? (
