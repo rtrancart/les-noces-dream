@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArticleTile } from "@/components/blog/ArticleTile";
 import { parseMarkdown, renderInlineHtml } from "@/lib/markdown";
+import SeoHead from "@/components/SeoHead";
 
 interface Article {
   id: string;
