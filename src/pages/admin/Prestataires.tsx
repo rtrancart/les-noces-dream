@@ -542,6 +542,15 @@ export default function Prestataires() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Rechercher un prestataire…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 font-sans text-sm" />
             </div>
+            <Select value={filterCategorie} onValueChange={setFilterCategorie}>
+              <SelectTrigger className="w-[200px] font-sans text-sm"><SelectValue placeholder="Filtrer par catégorie" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="toutes">Toutes les catégories</SelectItem>
+                {categories.filter((c) => !c.parent_id).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={filterStatut} onValueChange={setFilterStatut}>
               <SelectTrigger className="w-[180px] font-sans text-sm"><SelectValue placeholder="Filtrer par statut" /></SelectTrigger>
               <SelectContent>
@@ -550,6 +559,9 @@ export default function Prestataires() {
               </SelectContent>
             </Select>
           </div>
+          <p className="mt-3 font-sans text-xs text-muted-foreground">
+            {loading ? "Chargement…" : `${data.length} résultat${data.length > 1 ? "s" : ""}`}
+          </p>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
