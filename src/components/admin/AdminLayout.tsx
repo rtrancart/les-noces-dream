@@ -2,9 +2,17 @@ import { Outlet } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { Separator } from "@/components/ui/separator";
+import SeoHead from "@/components/SeoHead";
 
 export default function AdminLayout() {
   return (
+    <>
+      <SeoHead
+        title="Administration | LesNoces.net"
+        description="Espace d'administration LesNoces.net — accès réservé."
+        canonicalUrl="/admin"
+        noindex
+      />
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AdminSidebar />
@@ -22,5 +30,6 @@ export default function AdminLayout() {
         </div>
       </div>
     </SidebarProvider>
+    </>
   );
 }
