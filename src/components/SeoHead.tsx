@@ -10,9 +10,26 @@ import { buildSeoMeta, type SeoInput } from "@/lib/seo";
  *
  * Every tag's value flows through `buildSeoMeta()` — no hardcoded fallbacks
  * are allowed at the call site.
+ *
+ * When `noindex` is true, we deliberately emit ONLY the robots meta tag
+ * (plus title/description/canonical for the browser tab). Skipping og:/twitter:
+ * tags on noindex pages prevents them from being shared/indexed via social
+ * crawlers — the whole point of marking them noindex.
  */
 export default function SeoHead(input: SeoInput) {
   const m = buildSeoMeta(input);
+
+  if (input.noindex) {
+    return (
+      <Helmet>
+        <title>{m.title}</title>
+        <meta name="description" content={m.description} />
+        <meta name="robots" content={m.robots} />
+        <link rel="canonical" href={m.canonical} />
+      </Helmet>
+    );
+  }
+
   return (
     <Helmet>
       <title>{m.title}</title>
