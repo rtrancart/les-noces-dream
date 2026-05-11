@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArticleTile } from "@/components/blog/ArticleTile";
 import { Skeleton } from "@/components/ui/skeleton";
+import SeoHead from "@/components/SeoHead";
 
 interface Article {
   id: string;
@@ -23,15 +24,7 @@ export default function Blog() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    document.title = "Inspirations & Conseils — Le Journal | LesNoces.net";
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) {
-      meta.setAttribute(
-        "content",
-        "Le carnet d'une rédaction qui parcourt la France des belles noces — chroniques, carnets de lieux, confidences d'artisans."
-      );
-    }
-  }, []);
+  // SEO is rendered via <SeoHead> below.
 
   useEffect(() => {
     async function load() {
