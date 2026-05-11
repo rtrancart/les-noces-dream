@@ -346,11 +346,13 @@ describe("PrestatairesListe — fallback behavior", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={[`/prestataires/photographe/${SLUG}`]}>
-        <Routes>
-          <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
-        </Routes>
-      </MemoryRouter>
+      <HelmetProvider>
+        <MemoryRouter initialEntries={[`/prestataires/photographe/${SLUG}`]}>
+          <Routes>
+            <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
+          </Routes>
+        </MemoryRouter>
+      </HelmetProvider>
     );
 
     // Component still schedules a 1s pause between retries via setTimeout;
