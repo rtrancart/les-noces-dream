@@ -240,16 +240,9 @@ export default function PrestatairesListe() {
     return { h1, intro, metaTitle, canonicalUrl: `${SITE_URL}${canonicalPath}` };
   }, [categorieMere, categorieFille, zone, providers.length, slugMere, slug2, fallbackSlug]);
 
-  useEffect(() => {
-    if (!seo) return;
-    const metaDesc = `${seo.h1}. ${seo.intro} Comparez les meilleurs prestataires sur LesNoces.net.`;
-    applySeo({
-      title: seo.metaTitle,
-      description: metaDesc,
-      canonicalUrl: seo.canonicalUrl,
-      siteName: "LesNoces.net",
-    });
-  }, [seo]);
+  const seoMetaDesc = seo
+    ? `${seo.h1}. ${seo.intro} Comparez les meilleurs prestataires sur LesNoces.net.`
+    : null;
 
   /* ───── Render ───── */
 
