@@ -6,6 +6,7 @@ import { ProviderInfoBanner } from "./ProviderInfoBanner";
 import Header from "@/components/layout/Header";
 import { PrestataireProvider, useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import SeoHead from "@/components/SeoHead";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
