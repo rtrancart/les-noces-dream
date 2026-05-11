@@ -2,7 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { buildSeoMeta, type SeoInput } from "@/lib/seo";
 
 /**
- * Renders the canonical 13-tag SEO set into <head> via react-helmet-async.
+ * Renders the canonical SEO tag set into <head> via react-helmet-async.
  *
  * Vercel's prerenderer snapshots the DOM after Helmet has applied its tags,
  * so the resulting static HTML contains the full meta block — readable by
@@ -17,6 +17,7 @@ export default function SeoHead(input: SeoInput) {
     <Helmet>
       <title>{m.title}</title>
       <meta name="description" content={m.description} />
+      <meta name="robots" content={m.robots} />
       <link rel="canonical" href={m.canonical} />
 
       <meta property="og:title" content={m.ogTitle} />
