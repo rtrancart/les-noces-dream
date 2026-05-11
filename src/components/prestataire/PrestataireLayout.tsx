@@ -29,6 +29,12 @@ function PrestataireLayoutInner() {
 
   return (
     <>
+      <SeoHead
+        title={`${pageTitle} | LesNoces.net`}
+        description="Espace prestataire LesNoces.net — accès réservé."
+        canonicalUrl="/espace-pro"
+        noindex
+      />
       <Header />
       <div className="pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">

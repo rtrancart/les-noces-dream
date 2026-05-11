@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import { ClientSidebar, mainItems } from "./ClientSidebar";
 import Header from "@/components/layout/Header";
 import { useIsMobile } from "@/hooks/use-mobile";
+import SeoHead from "@/components/SeoHead";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
