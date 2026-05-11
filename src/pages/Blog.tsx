@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArticleTile } from "@/components/blog/ArticleTile";
 import { Skeleton } from "@/components/ui/skeleton";
+import SeoHead from "@/components/SeoHead";
 
 interface Article {
   id: string;
@@ -22,16 +23,7 @@ export default function Blog() {
   const [activeCat, setActiveCat] = useState<string>("all");
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    document.title = "Inspirations & Conseils — Le Journal | LesNoces.net";
-    const meta = document.querySelector('meta[name="description"]');
-    if (meta) {
-      meta.setAttribute(
-        "content",
-        "Le carnet d'une rédaction qui parcourt la France des belles noces — chroniques, carnets de lieux, confidences d'artisans."
-      );
-    }
-  }, []);
+  // SEO is rendered via <SeoHead> below.
 
   useEffect(() => {
     async function load() {
@@ -85,6 +77,11 @@ export default function Blog() {
 
   return (
     <div className="bg-[#FBF8F3] min-h-screen text-bleu-abysse">
+      <SeoHead
+        title="Blog mariage — Inspirations et conseils | LesNoces.net"
+        description="Le carnet d'une rédaction qui parcourt la France des belles noces — chroniques, carnets de lieux, confidences d'artisans."
+        canonicalUrl="/blog"
+      />
       {/* Masthead */}
       <header className="text-center px-6 md:px-20 pt-20 md:pt-[120px] pb-16 border-b border-border">
         <div className="text-[10px] tracking-[0.5em] uppercase text-gris-cachemire mb-10">

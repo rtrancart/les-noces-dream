@@ -5,6 +5,7 @@ import { Search, MapPin, Star, ChevronRight, ArrowRight, Clock, Shield, Award, U
 import { Button } from "@/components/ui/button";
 import LocationPicker, { type CitySearchData } from "@/components/LocationPicker";
 import CategoryPicker, { type CategoryOption } from "@/components/CategoryPicker";
+import SeoHead from "@/components/SeoHead";
 
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -661,6 +662,11 @@ export default function Index() {
 
   return (
     <>
+      <SeoHead
+        title="LesNoces.net — Prestataires de mariage haut de gamme sélectionnés"
+        description="Trouvez les meilleurs prestataires de mariage haut de gamme en France. Lieux de réception, photographes, traiteurs, fleuristes et plus encore — sélectionnés par LesNoces.net."
+        canonicalUrl="/"
+      />
       <HeroSection categories={categories} categoryTree={categoryTree} />
       <CategoriesSection categories={categories} />
       <FeaturedProviders providers={providers} />

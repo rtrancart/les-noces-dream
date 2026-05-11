@@ -52,6 +52,8 @@ export interface SeoInput {
   twitterCard?: string;
   /** og:site_name — defaults to "LesNoces.net". */
   siteName?: string;
+  /** When true, emits `<meta name="robots" content="noindex, nofollow">`. */
+  noindex?: boolean;
 }
 
 /**
@@ -73,6 +75,8 @@ export interface SeoMeta {
   twitterTitle: string;
   twitterDescription: string;
   twitterImage: string;
+  /** "index, follow" by default; "noindex, nofollow" when input.noindex is true. */
+  robots: string;
 }
 
 /**
@@ -103,6 +107,7 @@ export function buildSeoMeta(input: SeoInput): SeoMeta {
     twitterTitle: title,
     twitterDescription: description,
     twitterImage: image,
+    robots: input.noindex ? "noindex, nofollow" : "index, follow",
   };
 }
 
@@ -154,6 +159,7 @@ export function applySeo(input: SeoInput): void {
 
   document.title = m.title;
   setMetaName("description", m.description);
+  setMetaName("robots", m.robots);
   setCanonicalLink(m.canonical);
 
   setMetaProperty("og:title", m.ogTitle);

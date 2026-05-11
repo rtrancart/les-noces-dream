@@ -1,4 +1,5 @@
 import React from "react";
+import SeoHead from "@/components/SeoHead";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -9,6 +10,12 @@ interface AuthLayoutProps {
 const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) => {
   return (
     <div className="flex min-h-screen">
+      <SeoHead
+        title={`${title} | LesNoces.net`}
+        description={subtitle ?? "Espace d'authentification LesNoces.net."}
+        canonicalUrl="/connexion"
+        noindex
+      />
       {/* Left — decorative panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-abysse relative overflow-hidden items-end p-12">
         <div className="absolute inset-0 bg-[url('/placeholder.svg')] bg-cover bg-center opacity-10" />

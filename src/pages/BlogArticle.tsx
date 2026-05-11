@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArticleTile } from "@/components/blog/ArticleTile";
 import { parseMarkdown, renderInlineHtml } from "@/lib/markdown";
+import SeoHead from "@/components/SeoHead";
 
 interface Article {
   id: string;
@@ -46,11 +47,7 @@ export default function BlogArticle() {
       setArticle(art);
 
       if (art) {
-        document.title = art.meta_title || `${art.titre} | LesNoces.net`;
-        const meta = document.querySelector('meta[name="description"]');
-        if (meta && (art.meta_description || art.extrait)) {
-          meta.setAttribute("content", art.meta_description || art.extrait || "");
-        }
+        // SEO is rendered via <SeoHead> in JSX (see return).
 
         const { data: rel } = await supabase
           .from("articles_blog")
@@ -130,7 +127,13 @@ export default function BlogArticle() {
 
   return (
     <div className="bg-[#FBF8F3] min-h-screen text-bleu-abysse">
-      {/* Breadcrumb */}
+      <SeoHead
+        title={article.meta_title || `${article.titre} | LesNoces.net`}
+        description={article.meta_description || article.extrait || `${article.titre} — chronique LesNoces.net.`}
+        canonicalUrl={`/blog/${article.slug}`}
+        imageUrl={article.image_couverture_url ?? undefined}
+        ogType="article"
+      />
       <div className="px-6 md:px-20 pt-10 max-w-[1280px] mx-auto text-[10px] tracking-[0.3em] uppercase text-gris-cachemire">
         <Link to="/blog" className="hover:text-bleu-abysse">Le Journal</Link>
         {article.categorie_blog && (

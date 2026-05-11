@@ -6,6 +6,7 @@ import { ProviderInfoBanner } from "./ProviderInfoBanner";
 import Header from "@/components/layout/Header";
 import { PrestataireProvider, useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import SeoHead from "@/components/SeoHead";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -29,6 +30,12 @@ function PrestataireLayoutInner() {
 
   return (
     <>
+      <SeoHead
+        title={`${pageTitle} | LesNoces.net`}
+        description="Espace prestataire LesNoces.net — accès réservé."
+        canonicalUrl="/espace-pro"
+        noindex
+      />
       <Header />
       <div className="pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">

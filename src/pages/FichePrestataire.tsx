@@ -34,6 +34,7 @@ import ProviderCard, { type ProviderCardData } from "@/components/search/Provide
 import { trackEvent } from "@/lib/analytics";
 import { useTrackVisitePrestataire } from "@/hooks/useHistoriqueNavigation";
 import { regionNomToSlug } from "@/lib/regions";
+import SeoHead from "@/components/SeoHead";
 
 type Prestataire = {
   id: string;
@@ -172,12 +173,7 @@ export default function FichePrestataire() {
     }
   }, [presta?.id]);
 
-  // SEO
-  useEffect(() => {
-    if (presta) {
-      document.title = `${presta.nom_commercial} — ${catMere?.nom ?? ""} à ${presta.ville} | LesNoces.net`;
-    }
-  }, [presta, catMere]);
+  // SEO is rendered via <SeoHead> in JSX (see below) — no manual document.title.
 
   const revealPhone = () => {
     if (!presta) return;
@@ -210,7 +206,15 @@ export default function FichePrestataire() {
 
   return (
     <div className="pb-24 md:pb-8">
-      {/* Breadcrumb */}
+      <SeoHead
+        title={`${presta.nom_commercial} — ${catMere?.nom ?? "Prestataire de mariage"} à ${presta.ville} | LesNoces.net`}
+        description={
+          presta.description_courte ??
+          `Découvrez ${presta.nom_commercial}, ${catMere?.nom ?? "prestataire"} à ${presta.ville}. Avis, photos, tarifs et demande de devis sur LesNoces.net.`
+        }
+        canonicalUrl={`/prestataire/${presta.slug}`}
+        imageUrl={presta.photo_principale_url ?? undefined}
+      />
       <nav className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-1.5 text-sm text-muted-foreground overflow-x-auto">
         <Link to="/" className="hover:text-foreground shrink-0">Accueil</Link>
         <ChevronRight size={14} />

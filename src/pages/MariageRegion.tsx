@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import SeoHead from "@/components/SeoHead";
 import { supabase } from "@/integrations/supabase/client";
 import { regionSlugToNom } from "@/lib/regions";
 import { REGIONS as ZONES_REGIONS } from "@/lib/zonesIntervention";
@@ -368,15 +369,13 @@ export default function MariageRegion() {
 
   return (
     <>
+      <SeoHead
+        title={metaTitle}
+        description={metaDesc}
+        canonicalUrl={`/mariage/${page.slug_region}`}
+        imageUrl={page.image_hero_url ?? undefined}
+      />
       <Helmet>
-        <title>{metaTitle}</title>
-        <meta name="description" content={metaDesc} />
-        <link rel="canonical" href={canonical} />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content={metaTitle} />
-        <meta property="og:description" content={metaDesc} />
-        <meta property="og:url" content={canonical} />
-        {page.image_hero_url && <meta property="og:image" content={page.image_hero_url} />}
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
