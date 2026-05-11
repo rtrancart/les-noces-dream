@@ -143,12 +143,14 @@ import PrestatairesListe from "./PrestatairesListe";
 
 function renderAt(path: string) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
-        <Route path="/prestataires/:slugMere" element={<PrestatairesListe />} />
-      </Routes>
-    </MemoryRouter>
+    <HelmetProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
+          <Route path="/prestataires/:slugMere" element={<PrestatairesListe />} />
+        </Routes>
+      </MemoryRouter>
+    </HelmetProvider>
   );
 }
 
