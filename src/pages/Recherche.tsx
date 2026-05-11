@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { REGIONS, DOM, getZoneLabel, getCondensedZoneNames } from "@/lib/zonesIntervention";
 import { haversineDistanceKm } from "@/lib/haversine";
 import { trackEvent } from "@/lib/analytics";
+import SeoHead from "@/components/SeoHead";
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
 
@@ -236,10 +237,7 @@ export default function Recherche() {
     return `${catPart}${locPart}`;
   }, [categorySlugs, locationZones, categoryTree, citySearch]);
 
-  // SEO title
-  useEffect(() => {
-    document.title = `${dynamicTitle} | LesNoces.net`;
-  }, [dynamicTitle]);
+  // SEO is rendered via <SeoHead> in JSX (see return).
 
   const togglePrice = (p: string) =>
     setPriceFilters((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
