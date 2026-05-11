@@ -131,7 +131,13 @@ export default function BlogArticle() {
 
   return (
     <div className="bg-[#FBF8F3] min-h-screen text-bleu-abysse">
-      {/* Breadcrumb */}
+      <SeoHead
+        title={article.meta_title || `${article.titre} | LesNoces.net`}
+        description={article.meta_description || article.extrait || `${article.titre} — chronique LesNoces.net.`}
+        canonicalUrl={`/blog/${article.slug}`}
+        imageUrl={article.image_couverture_url ?? undefined}
+        ogType="article"
+      />
       <div className="px-6 md:px-20 pt-10 max-w-[1280px] mx-auto text-[10px] tracking-[0.3em] uppercase text-gris-cachemire">
         <Link to="/blog" className="hover:text-bleu-abysse">Le Journal</Link>
         {article.categorie_blog && (
