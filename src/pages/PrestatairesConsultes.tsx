@@ -7,6 +7,7 @@ import { fetchHistorique, type HistoriqueEntry } from "@/hooks/useHistoriqueNavi
 import HistoriqueByCategory from "@/components/historique/HistoriqueByCategory";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import SeoHead from "@/components/SeoHead";
 
 export default function PrestatairesConsultes() {
   const { user } = useAuth();

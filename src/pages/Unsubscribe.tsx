@@ -3,6 +3,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, XCircle, Loader2, Mail } from "lucide-react";
+import SeoHead from "@/components/SeoHead";
 
 type Status = "validating" | "valid" | "already" | "invalid" | "confirming" | "success" | "error";
 
@@ -78,6 +79,12 @@ export default function Unsubscribe() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <SeoHead
+        title="Désinscription | LesNoces.net"
+        description="Gestion de votre désinscription LesNoces.net."
+        canonicalUrl="/unsubscribe"
+        noindex
+      />
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
