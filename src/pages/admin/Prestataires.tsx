@@ -524,6 +524,27 @@ export default function Prestataires() {
   const childCategories = categories.filter((c) => c.parent_id === form.categorie_mere_id);
   const getCatName = (id: string | null) => categories.find((c) => c.id === id)?.nom ?? "—";
 
+  const filteredData = useMemo(() => {
+    return data.filter((p: any) => {
+      // City search → haversine
+      if (citySearch) {
+        if (p.latitude == null || p.longitude == null) return false;
+        return haversineDistanceKm(citySearch.lat, citySearch.lng, p.latitude, p.longitude) <= citySearch.radius;
+      }
+      // Zones
+      if (locationZones.length === 0) return true;
+      if (locationZones.includes("france_entiere")) return true;
+      const regionMatch = REGIONS.find((r) => r.label === p.region);
+      if (regionMatch) {
+        const deptValues = regionMatch.departements.map((d) => d.value);
+        if (deptValues.some((d) => locationZones.includes(d))) return true;
+        if (locationZones.includes(regionMatch.value)) return true;
+      }
+      const zones: string[] = p.zones_intervention ?? [];
+      return zones.some((z) => locationZones.includes(z));
+    });
+  }, [data, locationZones, citySearch]);
+
 
 
 
