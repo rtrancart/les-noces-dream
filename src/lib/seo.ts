@@ -77,7 +77,7 @@ export interface SeoMeta {
 
 /**
  * Pure helper — takes a page's SEO input and returns the fully-expanded
- * 13-tag set. All og:*/twitter:* tags are derived from the same source
+ * 13-tag set. All og: and twitter: tags are derived from the same source
  * values so they can never drift.
  */
 export function buildSeoMeta(input: SeoInput): SeoMeta {
