@@ -271,6 +271,7 @@ export default function Prestataires() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("tous");
+  const [filterCategorie, setFilterCategorie] = useState<string>("toutes");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Prestataire | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -350,6 +351,7 @@ export default function Prestataires() {
       .order("created_at", { ascending: false })
       .limit(200);
     if (filterStatut !== "tous") query = query.eq("statut", filterStatut as StatutPrestataire);
+    if (filterCategorie !== "toutes") query = query.eq("categorie_mere_id", filterCategorie);
     if (search) query = query.ilike("nom_commercial", `%${search}%`);
 
     const [{ data: result, error }, { data: cats }] = await Promise.all([
@@ -362,7 +364,7 @@ export default function Prestataires() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, [filterStatut, search]);
+  useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
 
   const updateStatut = async (id: string, statut: StatutPrestataire) => {
     const { error } = await supabase.from("prestataires").update({ statut }).eq("id", id);
@@ -540,6 +542,15 @@ export default function Prestataires() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Rechercher un prestataire…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 font-sans text-sm" />
             </div>
+            <Select value={filterCategorie} onValueChange={setFilterCategorie}>
+              <SelectTrigger className="w-[200px] font-sans text-sm"><SelectValue placeholder="Filtrer par catégorie" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="toutes">Toutes les catégories</SelectItem>
+                {categories.filter((c) => !c.parent_id).map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={filterStatut} onValueChange={setFilterStatut}>
               <SelectTrigger className="w-[180px] font-sans text-sm"><SelectValue placeholder="Filtrer par statut" /></SelectTrigger>
               <SelectContent>
@@ -548,6 +559,9 @@ export default function Prestataires() {
               </SelectContent>
             </Select>
           </div>
+          <p className="mt-3 font-sans text-xs text-muted-foreground">
+            {loading ? "Chargement…" : `${data.length} résultat${data.length > 1 ? "s" : ""}`}
+          </p>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
