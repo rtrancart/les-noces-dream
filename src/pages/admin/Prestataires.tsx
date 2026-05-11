@@ -1,4 +1,6 @@
-import { useEffect, useState, useRef, ReactNode } from "react";
+import { useEffect, useState, useRef, useMemo, ReactNode } from "react";
+import LocationPicker, { type CitySearchData } from "@/components/LocationPicker";
+import { haversineDistanceKm } from "@/lib/haversine";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
