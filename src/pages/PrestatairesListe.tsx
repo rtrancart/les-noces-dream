@@ -5,7 +5,7 @@ import ProviderCard, { type ProviderCardData } from "@/components/search/Provide
 import { resolveZoneSlug, ZoneApiError, type ResolvedZone } from "@/lib/zoneResolver";
 import { useZones } from "@/contexts/ZonesContext";
 import { haversineDistanceKm } from "@/lib/haversine";
-import { applySeo } from "@/lib/seo";
+import SeoHead from "@/components/SeoHead";
 
 interface CategorieRow {
   id: string;
