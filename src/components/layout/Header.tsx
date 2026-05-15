@@ -59,14 +59,24 @@ export default function Header() {
             </Link>
         </div>
 
-        {/* Mobile Burger */}
-        <button
-          className="md:hidden text-white"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Menu"
-        >
-          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        {/* Mobile Actions */}
+        <div className="md:hidden flex items-center gap-4">
+          <button
+            onClick={() => navigate("/prestataires")}
+            className="text-white/90 hover:text-white transition-colors"
+            aria-label="Rechercher"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+          <HeaderHistoriqueButton />
+          <button
+            className="text-white"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Menu"
+          >
+            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
