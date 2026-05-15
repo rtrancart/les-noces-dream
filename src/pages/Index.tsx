@@ -586,16 +586,11 @@ function BlogSection({ articles }: { articles: ArticleData[] }) {
 
 /* ─── Section: Régions ───────────────────────────────────── */
 
-const REGIONS_DATA = [
-  { name: "Île-de-France", slug: "ile-de-france" },
-  { name: "Provence-Alpes-Côte d'Azur", slug: "provence-alpes-cote-d-azur" },
-  { name: "Auvergne-Rhône-Alpes", slug: "auvergne-rhone-alpes" },
-  { name: "Nouvelle-Aquitaine", slug: "nouvelle-aquitaine" },
-  { name: "Occitanie", slug: "occitanie" },
-  { name: "Bretagne", slug: "bretagne" },
-];
+import { REGIONS as ALL_REGIONS } from "@/lib/regions";
 
-const MORE_REGIONS = ["Normandie", "Grand Est", "Hauts-de-France", "Pays de la Loire"];
+const REGIONS_DATA = ALL_REGIONS.slice(0, 6).map((r) => ({ name: r.nom, slug: r.slug }));
+
+const MORE_REGIONS = ALL_REGIONS.slice(6).map((r) => ({ name: r.nom, slug: r.slug }));
 
 function RegionCard({ region }: { region: { name: string; slug: string } }) {
   return (
@@ -642,9 +637,9 @@ function RegionalSection() {
         <p className="text-center text-muted-foreground text-sm font-sans mt-8">
           Plus de régions :{" "}
           {MORE_REGIONS.map((r, i) => (
-            <span key={r}>
-              <Link to={`/mariage/${r.toLowerCase().replace(/\s+/g, "-").replace(/'/g, "")}`} className="text-primary hover:underline">
-                {r}
+            <span key={r.slug}>
+              <Link to={`/mariage/${r.slug}`} className="text-primary hover:underline">
+                {r.name}
               </Link>
               {i < MORE_REGIONS.length - 1 && ", "}
             </span>
