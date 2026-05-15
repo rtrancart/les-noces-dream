@@ -637,9 +637,9 @@ function RegionalSection() {
         <p className="text-center text-muted-foreground text-sm font-sans mt-8">
           Plus de régions :{" "}
           {MORE_REGIONS.map((r, i) => (
-            <span key={r}>
-              <Link to={`/mariage/${r.toLowerCase().replace(/\s+/g, "-").replace(/'/g, "")}`} className="text-primary hover:underline">
-                {r}
+            <span key={r.slug}>
+              <Link to={`/mariage/${r.slug}`} className="text-primary hover:underline">
+                {r.name}
               </Link>
               {i < MORE_REGIONS.length - 1 && ", "}
             </span>
