@@ -11,6 +11,8 @@ import {
   Settings,
   Mail,
   MapPin,
+  UserPlus,
+  FileSignature,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
