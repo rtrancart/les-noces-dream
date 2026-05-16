@@ -101,8 +101,7 @@ export default function PrestatairesPreInscrits() {
     }
   };
 
-  const statusLabel = (s: string) =>
-    s === "pre_inscrit" ? "Pré-inscrit" : s === "en_attente_signature" ? "En attente signature" : s;
+  const statusLabel = (s: string) => (s === "pre_inscrit" ? "Pré-inscrit" : s);
 
   return (
     <div className="space-y-6">
