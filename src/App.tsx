@@ -22,6 +22,9 @@ import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
 import MariageRegion from "./pages/MariageRegion";
 import PrestatairesListe from "./pages/PrestatairesListe";
+import AccepterInvitation from "./pages/AccepterInvitation";
+import SignerLaCharte from "./pages/SignerLaCharte";
+import CharteQualite from "./pages/CharteQualite";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
@@ -56,6 +59,8 @@ import AdminPages from "./pages/admin/Pages";
 import AdminLogs from "./pages/admin/Logs";
 import AdminEmails from "./pages/admin/Emails";
 import AdminRegions from "./pages/admin/Regions";
+import AdminPrestatairesPreInscrits from "./pages/admin/PrestatairesPreInscrits";
+import AdminChartes from "./pages/admin/Chartes";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +85,7 @@ const App = () => (
               <Route path="/mariage/:slug" element={<MariageRegion />} />
               <Route path="/prestataires/:slugMere" element={<PrestatairesListe />} />
               <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
+              <Route path="/charte-qualite" element={<CharteQualite />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}
@@ -88,6 +94,8 @@ const App = () => (
             <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/accept-invitation" element={<AccepterInvitation />} />
+            <Route path="/signer-la-charte" element={<ProtectedRoute><SignerLaCharte /></ProtectedRoute>} />
 
             {/* Espace client */}
             <Route
@@ -144,6 +152,8 @@ const App = () => (
               <Route path="logs" element={<AdminLogs />} />
               <Route path="emails" element={<AdminEmails />} />
               <Route path="regions" element={<AdminRegions />} />
+              <Route path="prestataires-pre-inscrits" element={<AdminPrestatairesPreInscrits />} />
+              <Route path="chartes" element={<AdminChartes />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
