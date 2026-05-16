@@ -14,6 +14,7 @@ import { Loader2, FilePlus, Download, BellRing } from "lucide-react";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { logAdmin } from "@/lib/logAdmin";
 
 interface ChartVersion {
   id: string;
