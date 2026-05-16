@@ -113,7 +113,7 @@ export default function AccepterInvitation() {
 
   return (
     <>
-      <SeoHead title="Activer mon compte | LesNoces.net" noindex canonicalUrl="/accept-invitation" />
+      <SeoHead title="Activer mon compte | LesNoces.net" description="Activation du compte prestataire LesNoces.net" noindex canonicalUrl="/accept-invitation" />
       <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
         <Card className="w-full max-w-md p-8 space-y-6">
           <header className="space-y-2 text-center">
