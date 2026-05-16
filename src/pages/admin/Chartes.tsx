@@ -155,6 +155,7 @@ export default function AdminChartes() {
     try {
       const { error } = await supabase.functions.invoke("notify-charte-version-update", { body: {} });
       if (error) throw error;
+      await logAdmin("notify_charte_version_update", "chartes_versions");
       toast.success("Notifications envoyées.");
     } catch (e: any) {
       toast.error(e.message ?? "Erreur lors de l'envoi.");
