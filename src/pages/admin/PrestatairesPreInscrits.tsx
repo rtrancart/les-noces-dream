@@ -63,6 +63,7 @@ export default function PrestatairesPreInscrits() {
         body: { nom_commercial: nom, email_contact: email, notes_pre_inscription: notes },
       });
       if (error) throw error;
+      await logAdmin("invite_prestataire", "prestataires", undefined, { nom_commercial: nom, email_contact: email });
       toast.success("Invitation envoyée.");
       setOpen(false);
       setNom("");
