@@ -88,7 +88,14 @@ Deno.serve(async (req) => {
     });
     if (upErr && !String(upErr.message).includes("already exists")) throw upErr;
 
-    // Cannot UPDATE signatures_charte (trigger blocks). Store url in a side-channel: use upsert via storage path convention. We attempt direct update with service role (the trigger blocks any UPDATE). Workaround: trigger only blocks UPDATE/DELETE — pdf_preuve_url cannot be set after insert. So we set it via raw service-role bypass impossible. We accept the path convention and return URL.
+    // Write-once callback : le trigger autorise UPDATE pdf_preuve_url uniquement
+    // si la valeur actuelle est NULL. La clause `IS NULL` est une ceinture en plus.
+    await adminClient
+      .from("signatures_charte")
+      .update({ pdf_preuve_url: path })
+      .eq("id", sig.id)
+      .is("pdf_preuve_url", null);
+
     const { data: signed } = await adminClient.storage.from("signatures-preuve").createSignedUrl(path, 60 * 60 * 24 * 365);
     return new Response(JSON.stringify({ success: true, path, signed_url: signed?.signedUrl }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
