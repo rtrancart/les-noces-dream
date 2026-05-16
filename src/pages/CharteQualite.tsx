@@ -104,10 +104,32 @@ export default function CharteQualite() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : current ? (
-              <article
-                className="prose prose-sm md:prose-base max-w-none font-sans"
-                dangerouslySetInnerHTML={{ __html: current.contenu_html }}
-              />
+              <>
+                <article
+                  className="prose prose-sm md:prose-base max-w-none font-sans"
+                  dangerouslySetInnerHTML={{ __html: current.contenu_html }}
+                />
+                <footer className="mt-10 pt-6 border-t border-border text-center font-sans text-xs text-muted-foreground space-y-1">
+                  <p>
+                    Charte Qualité LesNoces.net — <strong>version {current.numero_version}</strong>{" "}
+                    {current.archivee_le ? "(archivée)" : "(en vigueur)"}
+                  </p>
+                  <p>
+                    En vigueur depuis le{" "}
+                    {new Date(current.entree_en_vigueur_le).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                    {current.archivee_le &&
+                      ` — archivée le ${new Date(current.archivee_le).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}`}
+                  </p>
+                </footer>
+              </>
             ) : (
               <p className="text-center text-muted-foreground py-12">
                 Aucune Charte publiée pour le moment.
