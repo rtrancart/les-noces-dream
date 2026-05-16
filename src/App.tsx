@@ -85,6 +85,7 @@ const App = () => (
               <Route path="/mariage/:slug" element={<MariageRegion />} />
               <Route path="/prestataires/:slugMere" element={<PrestatairesListe />} />
               <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
+              <Route path="/charte-qualite" element={<CharteQualite />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}
@@ -93,6 +94,8 @@ const App = () => (
             <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/accept-invitation" element={<AccepterInvitation />} />
+            <Route path="/signer-la-charte" element={<ProtectedRoute><SignerLaCharte /></ProtectedRoute>} />
 
             {/* Espace client */}
             <Route
