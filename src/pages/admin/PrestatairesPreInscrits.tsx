@@ -40,7 +40,7 @@ export default function PrestatairesPreInscrits() {
     const { data, error } = await supabase
       .from("prestataires")
       .select("id, nom_commercial, email_contact, statut, magic_link_envoye_le, magic_link_ouvert, premier_login_le, relances_envoyees, notes_pre_inscription, created_at")
-      .in("statut", ["pre_inscrit", "en_attente_signature"])
+      .eq("statut", "pre_inscrit")
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
     else setItems((data ?? []) as PreInscrit[]);
