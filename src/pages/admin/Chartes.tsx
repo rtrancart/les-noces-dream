@@ -55,7 +55,23 @@ export default function AdminChartes() {
   const [numero, setNumero] = useState("");
   const [titre, setTitre] = useState("Charte Qualité — LesNoces.net");
   const [contenu, setContenu] = useState("");
+  const [contenuHash, setContenuHash] = useState("");
   const [creating, setCreating] = useState(false);
+
+  // Live SHA-256 (informational only — server recomputes the authoritative hash)
+  useEffect(() => {
+    let cancelled = false;
+    if (!contenu) {
+      setContenuHash("");
+      return;
+    }
+    sha256(contenu).then((h) => {
+      if (!cancelled) setContenuHash(h);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [contenu]);
 
   const load = async () => {
     setLoading(true);
