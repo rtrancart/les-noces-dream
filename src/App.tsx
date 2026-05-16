@@ -59,6 +59,8 @@ import AdminPages from "./pages/admin/Pages";
 import AdminLogs from "./pages/admin/Logs";
 import AdminEmails from "./pages/admin/Emails";
 import AdminRegions from "./pages/admin/Regions";
+import AdminPrestatairesPreInscrits from "./pages/admin/PrestatairesPreInscrits";
+import AdminChartes from "./pages/admin/Chartes";
 
 const queryClient = new QueryClient();
 
