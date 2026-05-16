@@ -34,6 +34,8 @@ import { Button } from "@/components/ui/button";
 const mainItems = [
   { title: "Tableau de bord", url: "/admin", icon: LayoutDashboard },
   { title: "Prestataires", url: "/admin/prestataires", icon: Store },
+  { title: "Pré-inscrits", url: "/admin/prestataires-pre-inscrits", icon: UserPlus },
+  { title: "Charte Qualité", url: "/admin/chartes", icon: FileSignature },
   { title: "Catégories", url: "/admin/categories", icon: FolderTree },
   { title: "Demandes de devis", url: "/admin/demandes", icon: FileText },
   { title: "Avis", url: "/admin/avis", icon: Star },
