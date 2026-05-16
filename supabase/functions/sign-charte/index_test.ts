@@ -200,7 +200,7 @@ Deno.test({ name: "Cron suspend : actif avec notification > 15 jours sans signer
 Deno.test({ name: "Flux complet : sign-charte → trigger statut actif → PDF preuve généré", sanitizeOps: false, sanitizeResources: false }, async () => {
   const a = admin();
   const charte = await seedActiveCharte();
-  const { user, prestataire } = await seedUserAndPrestataire("en_attente_signature");
+  const { user, prestataire } = await seedUserAndPrestataire("validee");
 
   // Récupère un access_token pour ce user (sign-charte utilise auth.getUser)
   const { data: link } = await a.auth.admin.generateLink({ type: "magiclink", email: user.email! });
