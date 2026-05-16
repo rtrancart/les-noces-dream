@@ -83,6 +83,7 @@ export default function PrestatairesPreInscrits() {
         body: { prestataire_id: id },
       });
       if (error) throw error;
+      await logAdmin("resend_magic_link", "prestataires", id);
       toast.success("Magic link renvoyé.");
       load();
     } catch (e: any) {
