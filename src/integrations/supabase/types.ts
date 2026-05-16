@@ -425,6 +425,53 @@ export type Database = {
           },
         ]
       }
+      chartes_versions: {
+        Row: {
+          archivee_le: string | null
+          contenu_hash: string
+          contenu_html: string
+          created_at: string
+          cree_par: string | null
+          entree_en_vigueur_le: string
+          id: string
+          numero_version: string
+          pdf_url: string | null
+          titre: string
+        }
+        Insert: {
+          archivee_le?: string | null
+          contenu_hash: string
+          contenu_html: string
+          created_at?: string
+          cree_par?: string | null
+          entree_en_vigueur_le: string
+          id?: string
+          numero_version: string
+          pdf_url?: string | null
+          titre: string
+        }
+        Update: {
+          archivee_le?: string | null
+          contenu_hash?: string
+          contenu_html?: string
+          created_at?: string
+          cree_par?: string | null
+          entree_en_vigueur_le?: string
+          id?: string
+          numero_version?: string
+          pdf_url?: string | null
+          titre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chartes_versions_cree_par_fkey"
+            columns: ["cree_par"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts_anonymes: {
         Row: {
           created_at: string
@@ -1072,9 +1119,12 @@ export type Database = {
       prestataires: {
         Row: {
           adresse: string | null
+          archivage_reporte_a: string | null
           categorie_fille_id: string | null
           categorie_mere_id: string
           champs_specifiques: Json | null
+          charte_signee_le: string | null
+          charte_version_signee: string | null
           code_postal: string | null
           created_at: string
           cree_par_admin: boolean | null
@@ -1089,8 +1139,12 @@ export type Database = {
           id: string
           latitude: number | null
           longitude: number | null
+          magic_link_envoye_le: string | null
+          magic_link_ouvert: boolean
           metadonnees_seo: Json | null
-          motif_suspension: string | null
+          motif_suspension:
+            | Database["public"]["Enums"]["motif_suspension_enum"]
+            | null
           nom_commercial: string
           nombre_avis: number | null
           nombre_demandes: number | null
@@ -1100,10 +1154,13 @@ export type Database = {
           note_qualite_prestation: number | null
           note_rapport_qualite_prix: number | null
           notes_admin: string | null
+          notes_pre_inscription: string | null
           photo_principale_url: string | null
+          premier_login_le: string | null
           prix_depart: number | null
           prix_max: number | null
           region: string
+          relances_envoyees: number
           site_web: string | null
           slug: string
           statut: Database["public"]["Enums"]["statut_prestataire"]
@@ -1118,9 +1175,12 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          archivage_reporte_a?: string | null
           categorie_fille_id?: string | null
           categorie_mere_id: string
           champs_specifiques?: Json | null
+          charte_signee_le?: string | null
+          charte_version_signee?: string | null
           code_postal?: string | null
           created_at?: string
           cree_par_admin?: boolean | null
@@ -1135,8 +1195,12 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          magic_link_envoye_le?: string | null
+          magic_link_ouvert?: boolean
           metadonnees_seo?: Json | null
-          motif_suspension?: string | null
+          motif_suspension?:
+            | Database["public"]["Enums"]["motif_suspension_enum"]
+            | null
           nom_commercial: string
           nombre_avis?: number | null
           nombre_demandes?: number | null
@@ -1146,10 +1210,13 @@ export type Database = {
           note_qualite_prestation?: number | null
           note_rapport_qualite_prix?: number | null
           notes_admin?: string | null
+          notes_pre_inscription?: string | null
           photo_principale_url?: string | null
+          premier_login_le?: string | null
           prix_depart?: number | null
           prix_max?: number | null
           region: string
+          relances_envoyees?: number
           site_web?: string | null
           slug: string
           statut?: Database["public"]["Enums"]["statut_prestataire"]
@@ -1164,9 +1231,12 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          archivage_reporte_a?: string | null
           categorie_fille_id?: string | null
           categorie_mere_id?: string
           champs_specifiques?: Json | null
+          charte_signee_le?: string | null
+          charte_version_signee?: string | null
           code_postal?: string | null
           created_at?: string
           cree_par_admin?: boolean | null
@@ -1181,8 +1251,12 @@ export type Database = {
           id?: string
           latitude?: number | null
           longitude?: number | null
+          magic_link_envoye_le?: string | null
+          magic_link_ouvert?: boolean
           metadonnees_seo?: Json | null
-          motif_suspension?: string | null
+          motif_suspension?:
+            | Database["public"]["Enums"]["motif_suspension_enum"]
+            | null
           nom_commercial?: string
           nombre_avis?: number | null
           nombre_demandes?: number | null
@@ -1192,10 +1266,13 @@ export type Database = {
           note_qualite_prestation?: number | null
           note_rapport_qualite_prix?: number | null
           notes_admin?: string | null
+          notes_pre_inscription?: string | null
           photo_principale_url?: string | null
+          premier_login_le?: string | null
           prix_depart?: number | null
           prix_max?: number | null
           region?: string
+          relances_envoyees?: number
           site_web?: string | null
           slug?: string
           statut?: Database["public"]["Enums"]["statut_prestataire"]
@@ -1236,6 +1313,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           cgu_acceptees_le: string | null
+          cgu_version_acceptee: string | null
           compte_supprime_le: string | null
           created_at: string
           date_naissance: string | null
@@ -1250,6 +1328,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           cgu_acceptees_le?: string | null
+          cgu_version_acceptee?: string | null
           compte_supprime_le?: string | null
           created_at?: string
           date_naissance?: string | null
@@ -1264,6 +1343,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           cgu_acceptees_le?: string | null
+          cgu_version_acceptee?: string | null
           compte_supprime_le?: string | null
           created_at?: string
           date_naissance?: string | null
@@ -1276,6 +1356,76 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      signatures_charte: {
+        Row: {
+          charte_hash: string
+          charte_numero_version: string
+          charte_version_id: string
+          created_at: string
+          email_confirmation_envoye_le: string | null
+          id: string
+          ip_signataire: unknown
+          methode_auth: string
+          pdf_preuve_url: string | null
+          prestataire_id: string
+          profile_id: string
+          signe_le: string
+          user_agent: string
+        }
+        Insert: {
+          charte_hash: string
+          charte_numero_version: string
+          charte_version_id: string
+          created_at?: string
+          email_confirmation_envoye_le?: string | null
+          id?: string
+          ip_signataire?: unknown
+          methode_auth: string
+          pdf_preuve_url?: string | null
+          prestataire_id: string
+          profile_id: string
+          signe_le?: string
+          user_agent: string
+        }
+        Update: {
+          charte_hash?: string
+          charte_numero_version?: string
+          charte_version_id?: string
+          created_at?: string
+          email_confirmation_envoye_le?: string | null
+          id?: string
+          ip_signataire?: unknown
+          methode_auth?: string
+          pdf_preuve_url?: string | null
+          prestataire_id?: string
+          profile_id?: string
+          signe_le?: string
+          user_agent?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signatures_charte_charte_version_id_fkey"
+            columns: ["charte_version_id"]
+            isOneToOne: false
+            referencedRelation: "chartes_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signatures_charte_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signatures_charte_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppressed_emails: {
         Row: {
@@ -1426,6 +1576,12 @@ export type Database = {
         | "listing_sidebar"
         | "accueil_coups_de_coeur"
       expediteur_type: "prestataire" | "visiteur"
+      motif_suspension_enum:
+        | "non_paiement"
+        | "admin"
+        | "archive"
+        | "charte_non_signee"
+        | "charte_obsolete"
       objet_demande: "mariage" | "evenement_entreprise" | "cocktail" | "autre"
       pack_boost: "5j_5eur" | "15j_12eur" | "30j_20eur"
       plan_abonnement: "essai" | "mensuel" | "annuel"
@@ -1599,6 +1755,13 @@ export const Constants = {
         "accueil_coups_de_coeur",
       ],
       expediteur_type: ["prestataire", "visiteur"],
+      motif_suspension_enum: [
+        "non_paiement",
+        "admin",
+        "archive",
+        "charte_non_signee",
+        "charte_obsolete",
+      ],
       objet_demande: ["mariage", "evenement_entreprise", "cocktail", "autre"],
       pack_boost: ["5j_5eur", "15j_12eur", "30j_20eur"],
       plan_abonnement: ["essai", "mensuel", "annuel"],
