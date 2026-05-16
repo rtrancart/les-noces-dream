@@ -40,11 +40,12 @@ async function cleanup() {
   for (const uid of created.users) await a.auth.admin.deleteUser(uid).catch(() => {});
 }
 
+let charteSeq = 0;
 async function seedActiveCharte() {
   const a = admin();
   // Archive any current active
   await a.from("chartes_versions").update({ archivee_le: new Date().toISOString() }).is("archivee_le", null);
-  const numero = `T-${TAG}`;
+  const numero = `T-${TAG}-${++charteSeq}`;
   const contenu = `<p>Charte test ${TAG}</p>`;
   const hash = await sha256(contenu);
   const { data, error } = await a.from("chartes_versions").insert({
