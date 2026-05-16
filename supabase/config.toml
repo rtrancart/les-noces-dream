@@ -17,3 +17,13 @@ verify_jwt = false
 
 [functions.generate-sitemap]
 verify_jwt = false
+
+[functions.cron-archive-unsigned-prestataires]
+verify_jwt = false
+
+[functions.cron-suspend-charte-obsolete]
+verify_jwt = false
+
+[functions.generate-charte-pdf-preuve]
+verify_jwt = false
+
