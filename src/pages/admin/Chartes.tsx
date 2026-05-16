@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Loader2, FilePlus, Download, BellRing } from "lucide-react";
 import { toast } from "sonner";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 interface ChartVersion {
   id: string;
@@ -53,7 +55,23 @@ export default function AdminChartes() {
   const [numero, setNumero] = useState("");
   const [titre, setTitre] = useState("Charte Qualité — LesNoces.net");
   const [contenu, setContenu] = useState("");
+  const [contenuHash, setContenuHash] = useState("");
   const [creating, setCreating] = useState(false);
+
+  // Live SHA-256 (informational only — server recomputes the authoritative hash)
+  useEffect(() => {
+    let cancelled = false;
+    if (!contenu) {
+      setContenuHash("");
+      return;
+    }
+    sha256(contenu).then((h) => {
+      if (!cancelled) setContenuHash(h);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [contenu]);
 
   const load = async () => {
     setLoading(true);
@@ -165,7 +183,7 @@ export default function AdminChartes() {
                   <FilePlus className="h-4 w-4 mr-2" /> Nouvelle version
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-3xl">
+              <DialogContent className="max-w-6xl">
                 <DialogHeader>
                   <DialogTitle>Publier une nouvelle version</DialogTitle>
                 </DialogHeader>
@@ -180,20 +198,66 @@ export default function AdminChartes() {
                       <Input id="titre" value={titre} onChange={(e) => setTitre(e.target.value)} />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contenu">Contenu HTML</Label>
-                    <Textarea
-                      id="contenu"
-                      value={contenu}
-                      onChange={(e) => setContenu(e.target.value)}
-                      rows={14}
-                      className="font-mono text-xs"
-                      placeholder="<h2>Article 1...</h2><p>...</p>"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      La version actuellement active sera automatiquement archivée. Le hash SHA-256 est calculé côté client.
-                    </p>
+
+                  {/* Editor + Preview: 50/50 desktop, collapsible on mobile */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contenu">Contenu HTML</Label>
+                      <Textarea
+                        id="contenu"
+                        value={contenu}
+                        onChange={(e) => setContenu(e.target.value)}
+                        placeholder="<h2>Article 1...</h2><p>...</p>"
+                        className="min-h-[500px] resize-y"
+                        style={{
+                          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                          fontSize: "14px",
+                          lineHeight: "1.5",
+                        }}
+                      />
+                    </div>
+
+                    {/* Desktop preview */}
+                    <div className="hidden md:flex md:flex-col space-y-2">
+                      <Label>Prévisualisation</Label>
+                      <div className="border rounded-md bg-card overflow-auto min-h-[500px] max-h-[600px] p-6">
+                        <article
+                          className="prose prose-sm md:prose-base max-w-none font-sans"
+                          dangerouslySetInnerHTML={{ __html: contenu || "<p class='text-muted-foreground'>La prévisualisation apparaîtra ici…</p>" }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Mobile preview (accordion) */}
+                    <div className="md:hidden">
+                      <Collapsible>
+                        <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 border rounded-md text-sm font-medium">
+                          Prévisualisation
+                          <ChevronDown className="h-4 w-4" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="border border-t-0 rounded-b-md bg-card overflow-auto max-h-[400px] p-4">
+                            <article
+                              className="prose prose-sm max-w-none font-sans"
+                              dangerouslySetInnerHTML={{ __html: contenu || "<p class='text-muted-foreground'>La prévisualisation apparaîtra ici…</p>" }}
+                            />
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
                   </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-muted-foreground border-t pt-3">
+                    <span>
+                      {contenu.length.toLocaleString("fr-FR")} caractères
+                    </span>
+                    <span className="font-mono">
+                      SHA-256 (indicatif) : {contenuHash ? `${contenuHash.slice(0, 16)}…${contenuHash.slice(-8)}` : "—"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    La version actuellement active sera automatiquement archivée. Le hash affiché est calculé côté client à titre indicatif ; le hash probatoire est recalculé côté serveur à l'enregistrement.
+                  </p>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpenNew(false)}>Annuler</Button>
