@@ -31,18 +31,22 @@ type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
 type Categorie = Database["public"]["Tables"]["categories"]["Row"];
 
 const statutLabels: Record<StatutPrestataire, string> = {
+  pre_inscrit: "Pré-inscrit",
   brouillon: "Brouillon",
   en_attente: "En attente",
   a_corriger: "À corriger",
+  validee: "Validée",
   actif: "Actif",
   suspendu: "Suspendu",
   archive: "Archivé",
 };
 
 const statutColors: Record<StatutPrestataire, string> = {
+  pre_inscrit: "bg-or/20 text-or",
   brouillon: "bg-muted/40 text-muted-foreground",
   en_attente: "bg-champagne/30 text-foreground",
   a_corriger: "bg-destructive/10 text-destructive",
+  validee: "bg-champagne/40 text-foreground",
   actif: "bg-sauge/20 text-sauge",
   suspendu: "bg-destructive/10 text-destructive",
   archive: "bg-muted/40 text-muted-foreground",
