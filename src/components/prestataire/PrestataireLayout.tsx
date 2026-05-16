@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { PrestataireSidebar, mainItems } from "./PrestataireSidebar";
 import { ProviderInfoBanner } from "./ProviderInfoBanner";
+import { ChartePendingBanner } from "./ChartePendingBanner";
 import Header from "@/components/layout/Header";
 import { PrestataireProvider, useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -41,7 +42,8 @@ function PrestataireLayoutInner() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
           {/* Provider Info Banner */}
           {!loading && prestataire && (
-            <div className="mb-4 md:mb-6">
+            <div className="mb-4 md:mb-6 space-y-3">
+              <ChartePendingBanner />
               <ProviderInfoBanner prestataire={prestataire} />
             </div>
           )}
