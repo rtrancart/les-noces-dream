@@ -22,6 +22,9 @@ import Blog from "./pages/Blog";
 import BlogArticle from "./pages/BlogArticle";
 import MariageRegion from "./pages/MariageRegion";
 import PrestatairesListe from "./pages/PrestatairesListe";
+import AccepterInvitation from "./pages/AccepterInvitation";
+import SignerLaCharte from "./pages/SignerLaCharte";
+import CharteQualite from "./pages/CharteQualite";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
