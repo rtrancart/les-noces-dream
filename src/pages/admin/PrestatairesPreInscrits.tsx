@@ -93,12 +93,15 @@ export default function PrestatairesPreInscrits() {
 
   const handleArchive = async (id: string) => {
     if (!confirm("Archiver ce prestataire pré-inscrit ?")) return;
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("prestataires")
       .update({ statut: "archive", motif_suspension: "archive" })
-      .eq("id", id);
-    if (error) toast.error(error.message);
-    else {
+      .eq("id", id)
+      .select("id");
+    if (error || !data?.length) {
+      toast.error(error?.message ?? "Archivage refusé (RLS).");
+    } else {
+      await logAdmin("archive_prestataire_pre_inscrit", "prestataires", id);
       toast.success("Prestataire archivé.");
       load();
     }
