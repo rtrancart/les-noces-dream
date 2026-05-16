@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, UserPlus, Send, Archive, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { logAdmin } from "@/lib/logAdmin";
 
 interface PreInscrit {
   id: string;
@@ -62,6 +63,7 @@ export default function PrestatairesPreInscrits() {
         body: { nom_commercial: nom, email_contact: email, notes_pre_inscription: notes },
       });
       if (error) throw error;
+      await logAdmin("invite_prestataire", "prestataires", undefined, { nom_commercial: nom, email_contact: email });
       toast.success("Invitation envoyée.");
       setOpen(false);
       setNom("");
@@ -81,6 +83,7 @@ export default function PrestatairesPreInscrits() {
         body: { prestataire_id: id },
       });
       if (error) throw error;
+      await logAdmin("resend_magic_link", "prestataires", id);
       toast.success("Magic link renvoyé.");
       load();
     } catch (e: any) {
@@ -90,12 +93,15 @@ export default function PrestatairesPreInscrits() {
 
   const handleArchive = async (id: string) => {
     if (!confirm("Archiver ce prestataire pré-inscrit ?")) return;
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("prestataires")
       .update({ statut: "archive", motif_suspension: "archive" })
-      .eq("id", id);
-    if (error) toast.error(error.message);
-    else {
+      .eq("id", id)
+      .select("id");
+    if (error || !data?.length) {
+      toast.error(error?.message ?? "Archivage refusé (RLS).");
+    } else {
+      await logAdmin("archive_prestataire_pre_inscrit", "prestataires", id);
       toast.success("Prestataire archivé.");
       load();
     }

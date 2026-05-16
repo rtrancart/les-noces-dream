@@ -14,6 +14,7 @@ import { Loader2, FilePlus, Download, BellRing } from "lucide-react";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { logAdmin } from "@/lib/logAdmin";
 
 interface ChartVersion {
   id: string;
@@ -118,14 +119,24 @@ export default function AdminChartes() {
       }
 
       // 2. Insert new active version
-      const { error: insErr } = await supabase.from("chartes_versions").insert({
-        numero_version: numero.trim(),
-        titre: titre.trim(),
-        contenu_html: contenu,
-        contenu_hash: hash,
-        entree_en_vigueur_le: now,
-      });
+      const { data: inserted, error: insErr } = await supabase
+        .from("chartes_versions")
+        .insert({
+          numero_version: numero.trim(),
+          titre: titre.trim(),
+          contenu_html: contenu,
+          contenu_hash: hash,
+          entree_en_vigueur_le: now,
+        })
+        .select("id")
+        .maybeSingle();
       if (insErr) throw insErr;
+
+      await logAdmin("publish_charte_version", "chartes_versions", inserted?.id, {
+        numero_version: numero.trim(),
+        archived_previous: current?.numero_version ?? null,
+        client_hash_preview: hash.slice(0, 16),
+      });
 
       toast.success("Nouvelle version publiée.");
       setOpenNew(false);
@@ -144,6 +155,7 @@ export default function AdminChartes() {
     try {
       const { error } = await supabase.functions.invoke("notify-charte-version-update", { body: {} });
       if (error) throw error;
+      await logAdmin("notify_charte_version_update", "chartes_versions");
       toast.success("Notifications envoyées.");
     } catch (e: any) {
       toast.error(e.message ?? "Erreur lors de l'envoi.");
