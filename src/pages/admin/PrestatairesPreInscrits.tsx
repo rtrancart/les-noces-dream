@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, UserPlus, Send, Archive, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { logAdmin } from "@/lib/logAdmin";
 
 interface PreInscrit {
   id: string;
