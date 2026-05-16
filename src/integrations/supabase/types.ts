@@ -1129,6 +1129,8 @@ export type Database = {
           created_at: string
           cree_par_admin: boolean | null
           date_premiere_publication: string | null
+          demande_reactivation_le: string | null
+          demande_reactivation_message: string | null
           description: string | null
           description_courte: string | null
           email_contact: string | null
@@ -1155,6 +1157,7 @@ export type Database = {
           note_rapport_qualite_prix: number | null
           notes_admin: string | null
           notes_pre_inscription: string | null
+          notification_charte_obsolete_envoyee_le: string | null
           photo_principale_url: string | null
           premier_login_le: string | null
           prix_depart: number | null
@@ -1185,6 +1188,8 @@ export type Database = {
           created_at?: string
           cree_par_admin?: boolean | null
           date_premiere_publication?: string | null
+          demande_reactivation_le?: string | null
+          demande_reactivation_message?: string | null
           description?: string | null
           description_courte?: string | null
           email_contact?: string | null
@@ -1211,6 +1216,7 @@ export type Database = {
           note_rapport_qualite_prix?: number | null
           notes_admin?: string | null
           notes_pre_inscription?: string | null
+          notification_charte_obsolete_envoyee_le?: string | null
           photo_principale_url?: string | null
           premier_login_le?: string | null
           prix_depart?: number | null
@@ -1241,6 +1247,8 @@ export type Database = {
           created_at?: string
           cree_par_admin?: boolean | null
           date_premiere_publication?: string | null
+          demande_reactivation_le?: string | null
+          demande_reactivation_message?: string | null
           description?: string | null
           description_courte?: string | null
           email_contact?: string | null
@@ -1267,6 +1275,7 @@ export type Database = {
           note_rapport_qualite_prix?: number | null
           notes_admin?: string | null
           notes_pre_inscription?: string | null
+          notification_charte_obsolete_envoyee_le?: string | null
           photo_principale_url?: string | null
           premier_login_le?: string | null
           prix_depart?: number | null
