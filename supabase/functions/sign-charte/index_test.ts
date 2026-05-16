@@ -80,7 +80,7 @@ async function seedUserAndPrestataire(statut: string = "pre_inscrit", extra: Rec
 }
 
 // ===========================================================================
-Deno.test("Trigger immuabilité : DELETE d'une signature interdit (service_role)", async () => {
+Deno.test({ name: "Trigger immuabilité : DELETE d'une signature interdit (service_role)", sanitizeOps: false, sanitizeResources: false }, async () => {
   const a = admin();
   const charte = await seedActiveCharte();
   const { user, prestataire } = await seedUserAndPrestataire();
@@ -97,7 +97,7 @@ Deno.test("Trigger immuabilité : DELETE d'une signature interdit (service_role)
   assert((del.error?.message || "").toLowerCase().includes("immuable"), `Message attendu: immuable. Reçu: ${del.error?.message}`);
 });
 
-Deno.test("Trigger immuabilité : UPDATE colonnes probatoires interdit", async () => {
+Deno.test({ name: "Trigger immuabilité : UPDATE colonnes probatoires interdit", sanitizeOps: false, sanitizeResources: false }, async () => {
   const a = admin();
   const charte = await seedActiveCharte();
   const { user, prestataire } = await seedUserAndPrestataire();
@@ -112,7 +112,7 @@ Deno.test("Trigger immuabilité : UPDATE colonnes probatoires interdit", async (
   assert(upd.error, "UPDATE charte_hash doit échouer");
 });
 
-Deno.test("Trigger write-once : pdf_preuve_url ne peut être renseigné qu'une fois", async () => {
+Deno.test({ name: "Trigger write-once : pdf_preuve_url ne peut être renseigné qu'une fois", sanitizeOps: false, sanitizeResources: false }, async () => {
   const a = admin();
   const charte = await seedActiveCharte();
   const { user, prestataire } = await seedUserAndPrestataire();
@@ -131,7 +131,7 @@ Deno.test("Trigger write-once : pdf_preuve_url ne peut être renseigné qu'une f
 });
 
 // ===========================================================================
-Deno.test("Cron archive : pré-inscrit > 60 jours sans signature est archivé", async () => {
+Deno.test({ name: "Cron archive : pré-inscrit > 60 jours sans signature est archivé", sanitizeOps: false, sanitizeResources: false }, async () => {
   const a = admin();
   const sixtyOne = new Date(Date.now() - 61 * 24 * 3600 * 1000).toISOString();
   const { prestataire } = await seedUserAndPrestataire("pre_inscrit", { premier_login_le: sixtyOne });
@@ -148,7 +148,7 @@ Deno.test("Cron archive : pré-inscrit > 60 jours sans signature est archivé", 
   assertEquals(p?.motif_suspension, "charte_non_signee");
 });
 
-Deno.test("Cron archive : report d'archivage respecté", async () => {
+Deno.test({ name: "Cron archive : report d'archivage respecté", sanitizeOps: false, sanitizeResources: false }, async () => {
   const a = admin();
   const sixtyOne = new Date(Date.now() - 61 * 24 * 3600 * 1000).toISOString();
   const futureReport = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString();
@@ -165,7 +165,7 @@ Deno.test("Cron archive : report d'archivage respecté", async () => {
 });
 
 // ===========================================================================
-Deno.test("Cron suspend : actif avec notification > 15 jours sans signer nouvelle version", async () => {
+Deno.test({ name: "Cron suspend : actif avec notification > 15 jours sans signer nouvelle version", sanitizeOps: false, sanitizeResources: false }, async () => {
   const a = admin();
   const charte = await seedActiveCharte();
   const sixteenDaysAgo = new Date(Date.now() - 16 * 24 * 3600 * 1000).toISOString();
@@ -197,7 +197,7 @@ Deno.test("Cron suspend : actif avec notification > 15 jours sans signer nouvell
 });
 
 // ===========================================================================
-Deno.test("Flux complet : sign-charte → trigger statut actif → PDF preuve généré", async () => {
+Deno.test({ name: "Flux complet : sign-charte → trigger statut actif → PDF preuve généré", sanitizeOps: false, sanitizeResources: false }, async () => {
   const a = admin();
   const charte = await seedActiveCharte();
   const { user, prestataire } = await seedUserAndPrestataire("en_attente_signature");
@@ -235,6 +235,6 @@ Deno.test("Flux complet : sign-charte → trigger statut actif → PDF preuve g�
 });
 
 // ===========================================================================
-Deno.test("Cleanup", async () => {
+Deno.test({ name: "Cleanup", sanitizeOps: false, sanitizeResources: false }, async () => {
   await cleanup();
 });
