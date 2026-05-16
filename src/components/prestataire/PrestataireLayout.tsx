@@ -42,7 +42,8 @@ function PrestataireLayoutInner() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
           {/* Provider Info Banner */}
           {!loading && prestataire && (
-            <div className="mb-4 md:mb-6">
+            <div className="mb-4 md:mb-6 space-y-3">
+              <ChartePendingBanner />
               <ProviderInfoBanner prestataire={prestataire} />
             </div>
           )}
