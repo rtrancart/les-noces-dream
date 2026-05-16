@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { PrestataireSidebar, mainItems } from "./PrestataireSidebar";
 import { ProviderInfoBanner } from "./ProviderInfoBanner";
+import { ChartePendingBanner } from "./ChartePendingBanner";
 import Header from "@/components/layout/Header";
 import { PrestataireProvider, useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { useIsMobile } from "@/hooks/use-mobile";
