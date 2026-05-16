@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, ScrollText } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
-import PublicLayout from "@/components/layout/PublicLayout";
+
 
 interface ChartVersion {
   id: string;
