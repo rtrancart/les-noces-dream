@@ -1002,9 +1002,15 @@ export default function Prestataires() {
               </TabsContent>
             )}
           </Tabs>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setDialogOpen(false)} className="font-sans text-sm">Annuler</Button>
-            <Button onClick={handleSave} disabled={saving} className="font-sans text-sm">{saving ? "Enregistrement…" : editItem ? "Enregistrer" : "Créer"}</Button>
+          <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={handleSave} disabled={saving} className="font-sans text-sm">
+              {saving ? "Enregistrement…" : "Sauvegarder et continuer plus tard"}
+            </Button>
+            {(!editItem || editItem.statut === "brouillon" || editItem.statut === "pre_inscrit") && (
+              <Button onClick={handleSendInvitation} disabled={saving} className="font-sans text-sm">
+                {saving ? "Envoi…" : "Sauvegarder et envoyer l'invitation"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
