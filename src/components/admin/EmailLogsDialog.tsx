@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ interface EmailLog {
   status: string;
   error_message: string | null;
   created_at: string;
+  total_count: number;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -53,6 +54,7 @@ const PAGE_SIZE = 10;
 
 export function EmailLogsDialog({ open, onOpenChange, recipientEmail, nomCommercial }: Props) {
   const [logs, setLogs] = useState<EmailLog[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [periodFilter, setPeriodFilter] = useState<string>("30d");
@@ -61,52 +63,42 @@ export function EmailLogsDialog({ open, onOpenChange, recipientEmail, nomCommerc
   const fetchLogs = async () => {
     if (!recipientEmail) return;
     setLoading(true);
-    let query = supabase
-      .from("email_send_log")
-      .select("id, message_id, template_name, recipient_email, status, error_message, created_at")
-      .eq("recipient_email", recipientEmail.toLowerCase())
-      .order("created_at", { ascending: false })
-      .limit(500);
-
     const period = PERIOD_OPTIONS.find((p) => p.value === periodFilter);
-    if (period?.hours) {
-      const since = new Date(Date.now() - period.hours * 3600 * 1000).toISOString();
-      query = query.gte("created_at", since);
-    }
+    const since = period?.hours
+      ? new Date(Date.now() - period.hours * 3600 * 1000).toISOString()
+      : null;
 
-    const { data, error } = await query;
+    const { data, error } = await supabase.rpc("get_email_logs_for_recipient", {
+      p_recipient: recipientEmail,
+      p_status: statusFilter === "all" ? null : statusFilter,
+      p_since: since,
+      p_limit: PAGE_SIZE,
+      p_offset: page * PAGE_SIZE,
+    });
+
     if (!error && data) {
-      const seen = new Set<string>();
-      const deduped: EmailLog[] = [];
-      for (const row of data as EmailLog[]) {
-        const key = row.message_id ?? row.id;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        deduped.push(row);
-      }
-      setLogs(deduped);
+      const rows = data as EmailLog[];
+      setLogs(rows);
+      setTotal(rows[0]?.total_count ?? 0);
+    } else {
+      setLogs([]);
+      setTotal(0);
     }
     setLoading(false);
   };
 
+  // Reset to page 0 when filters or recipient change
   useEffect(() => {
-    if (open) {
-      setPage(0);
-      fetchLogs();
-    }
-  }, [open, recipientEmail, periodFilter]);
+    if (open) setPage(0);
+  }, [open, recipientEmail, periodFilter, statusFilter]);
 
+  // Refetch on page change / open
   useEffect(() => {
-    setPage(0);
-  }, [statusFilter]);
+    if (open) fetchLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, recipientEmail, periodFilter, statusFilter, page]);
 
-  const filteredLogs = useMemo(
-    () => (statusFilter === "all" ? logs : logs.filter((l) => l.status === statusFilter)),
-    [logs, statusFilter],
-  );
-
-  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / PAGE_SIZE));
-  const pagedLogs = filteredLogs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -152,7 +144,7 @@ export function EmailLogsDialog({ open, onOpenChange, recipientEmail, nomCommerc
             </Button>
 
             <span className="text-xs text-muted-foreground font-sans ml-auto">
-              {filteredLogs.length} envoi{filteredLogs.length > 1 ? "s" : ""}
+              {total} envoi{total > 1 ? "s" : ""}
             </span>
           </div>
 
@@ -160,13 +152,13 @@ export function EmailLogsDialog({ open, onOpenChange, recipientEmail, nomCommerc
             <div className="flex justify-center py-6">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          ) : pagedLogs.length === 0 ? (
+          ) : logs.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6 font-sans">
               Aucun envoi correspondant.
             </p>
           ) : (
             <div className="divide-y divide-border">
-              {pagedLogs.map((log) => (
+              {logs.map((log) => (
                 <div key={log.id} className="py-2.5 flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium font-sans truncate">
@@ -191,14 +183,14 @@ export function EmailLogsDialog({ open, onOpenChange, recipientEmail, nomCommerc
             </div>
           )}
 
-          {filteredLogs.length > PAGE_SIZE && (
+          {total > PAGE_SIZE && (
             <div className="flex items-center justify-between pt-2">
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-8"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
+                disabled={page === 0 || loading}
               >
                 <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Précédent
               </Button>
@@ -210,7 +202,7 @@ export function EmailLogsDialog({ open, onOpenChange, recipientEmail, nomCommerc
                 size="sm"
                 className="h-8"
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
+                disabled={page >= totalPages - 1 || loading}
               >
                 Suivant <ChevronRight className="h-3.5 w-3.5 ml-1" />
               </Button>
