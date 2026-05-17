@@ -380,9 +380,51 @@ export default function Prestataires() {
   useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
 
   const updateStatut = async (id: string, statut: StatutPrestataire) => {
-    const { error } = await supabase.from("prestataires").update({ statut }).eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Statut mis à jour"); logAdmin("update_statut_prestataire", "prestataires", id, { statut }); fetchData(); }
+    const { data: updated, error } = await supabase
+      .from("prestataires")
+      .update({ statut })
+      .eq("id", id)
+      .select("id, nom_commercial, slug, statut, user_id, email_contact")
+      .maybeSingle();
+    if (error) { toast.error(error.message); return; }
+    toast.success("Statut mis à jour");
+    logAdmin("update_statut_prestataire", "prestataires", id, { statut });
+
+    // Trigger publication email when the prestataire becomes actif
+    // (statut validee + charte signée auto-flip to actif via DB trigger).
+    if (updated && updated.statut === "actif") {
+      let recipient = updated.email_contact;
+      let prenom = "";
+      if (updated.user_id) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("email, prenom")
+          .eq("id", updated.user_id)
+          .maybeSingle();
+        if (prof?.email) recipient = prof.email;
+        prenom = prof?.prenom ?? "";
+      }
+      if (recipient) {
+        const siteUrl = window.location.origin;
+        const { error: mailErr } = await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "validation_publication_fiche",
+            recipientEmail: recipient,
+            idempotencyKey: `publication-${id}`,
+            templateData: {
+              prenom,
+              nom_commercial: updated.nom_commercial,
+              lien_fiche_publique: `${siteUrl}/prestataire/${updated.slug}`,
+              lien_dashboard: `${siteUrl}/espace-pro`,
+            },
+          },
+        });
+        if (mailErr) toast.error("Email de publication non envoyé : " + mailErr.message);
+        else toast.success("Email de publication envoyé au prestataire");
+      }
+    }
+
+    fetchData();
   };
 
   const openCreate = () => {
