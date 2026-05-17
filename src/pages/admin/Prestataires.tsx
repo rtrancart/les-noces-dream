@@ -597,6 +597,25 @@ export default function Prestataires() {
 
 
 
+  // KPI counts (par statut)
+  const kpis = useMemo(() => {
+    const counts: Record<string, number> = { tous: data.length };
+    for (const k of Object.keys(statutLabels)) counts[k] = 0;
+    for (const p of data) counts[p.statut] = (counts[p.statut] ?? 0) + 1;
+    return counts;
+  }, [data]);
+
+  const kpiCards: { key: string; label: string; tone: string }[] = [
+    { key: "tous", label: "Tous", tone: "bg-muted/40 text-foreground" },
+    { key: "brouillon", label: "Brouillons", tone: statutColors.brouillon },
+    { key: "pre_inscrit", label: "Pré-inscrits", tone: statutColors.pre_inscrit },
+    { key: "en_attente", label: "À valider", tone: statutColors.en_attente },
+    { key: "a_corriger", label: "À corriger", tone: statutColors.a_corriger },
+    { key: "actif", label: "Actifs", tone: statutColors.actif },
+    { key: "suspendu", label: "Suspendus", tone: statutColors.suspendu },
+    { key: "archive", label: "Archivés", tone: statutColors.archive },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -607,6 +626,28 @@ export default function Prestataires() {
         <Button onClick={openCreate} className="gap-2 font-sans text-sm">
           <Plus className="h-4 w-4" /> Créer un prestataire
         </Button>
+      </div>
+
+      {/* KPI cards cliquables */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+        {kpiCards.map((c) => {
+          const active = filterStatut === c.key;
+          return (
+            <button
+              key={c.key}
+              onClick={() => setFilterStatut(c.key)}
+              className={cn(
+                "rounded-md border p-3 text-left transition-colors hover:bg-accent",
+                active ? "border-primary bg-primary/5" : "border-border bg-background"
+              )}
+            >
+              <div className={cn("inline-block rounded px-1.5 py-0.5 text-[10px] font-sans uppercase tracking-wider", c.tone)}>
+                {c.label}
+              </div>
+              <div className="mt-1.5 font-serif text-xl text-foreground">{kpis[c.key] ?? 0}</div>
+            </button>
+          );
+        })}
       </div>
 
       <Card className="shadow-card">
