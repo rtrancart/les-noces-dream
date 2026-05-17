@@ -1,4 +1,5 @@
-// invite-prestataire — Admin invites a new prestataire via magic link
+// invite-prestataire — Admin invites a prestataire via magic link.
+// Accepts a NEW prestataire OR an existing one in `brouillon` to flip → `pre_inscrit`.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -36,9 +37,12 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const {
+      prestataire_id,
       email, prenom, nom, nom_commercial, telephone,
       categorie_mere_id, categorie_fille_id,
-      ville, region, code_postal, notes_pre_inscription,
+      ville, region, code_postal,
+      description, description_courte,
+      notes_pre_inscription,
     } = body;
 
     if (!email || !nom_commercial || !categorie_mere_id || !ville || !region) {
@@ -46,7 +50,7 @@ Deno.serve(async (req) => {
     }
     const cleanEmail = String(email).trim().toLowerCase();
 
-    // 1. Check or create auth user
+    // 1. Auth user (create or reuse)
     const { data: list } = await adminClient.auth.admin.listUsers();
     let userId = list?.users?.find((u: any) => u.email?.toLowerCase() === cleanEmail)?.id;
     if (!userId) {
@@ -58,38 +62,65 @@ Deno.serve(async (req) => {
       if (createError) throw createError;
       userId = newUser.user!.id;
     }
-    // Ensure prestataire role
     await adminClient.from("user_roles").upsert({ user_id: userId, role: "prestataire" }, { onConflict: "user_id,role" });
 
-    // 2. Create prestataire row (pre_inscrit)
-    let slug = slugify(nom_commercial);
-    let attempt = 0;
-    while (attempt < 5) {
-      const { data: existing } = await adminClient.from("prestataires").select("id").eq("slug", slug).maybeSingle();
-      if (!existing) break;
-      attempt++;
-      slug = `${slugify(nom_commercial)}-${attempt + 1}`;
+    // Update profile prenom/nom if provided
+    if (prenom || nom) {
+      await adminClient.from("profiles").update({
+        prenom: prenom ?? null,
+        nom: nom ?? null,
+      }).eq("id", userId);
     }
 
-    const { data: presta, error: prestaError } = await adminClient.from("prestataires").insert({
-      user_id: userId,
-      nom_commercial,
-      slug,
-      categorie_mere_id,
-      categorie_fille_id: categorie_fille_id ?? null,
-      ville,
-      region,
-      code_postal: code_postal ?? null,
-      telephone: telephone ?? null,
-      email_contact: cleanEmail,
-      statut: "pre_inscrit",
-      cree_par_admin: true,
-      notes_pre_inscription: notes_pre_inscription ?? null,
-      magic_link_envoye_le: new Date().toISOString(),
-    }).select().single();
-    if (prestaError) throw prestaError;
+    // 2. Resolve prestataire row: update existing or create new
+    let presta: any = null;
+    if (prestataire_id) {
+      const { data: updated, error: updErr } = await adminClient.from("prestataires").update({
+        user_id: userId,
+        nom_commercial, categorie_mere_id,
+        categorie_fille_id: categorie_fille_id ?? null,
+        ville, region,
+        code_postal: code_postal ?? null,
+        telephone: telephone ?? null,
+        email_contact: cleanEmail,
+        description: description ?? null,
+        description_courte: description_courte ?? null,
+        notes_pre_inscription: notes_pre_inscription ?? null,
+        statut: "pre_inscrit",
+        magic_link_envoye_le: new Date().toISOString(),
+      }).eq("id", prestataire_id).select().single();
+      if (updErr) throw updErr;
+      presta = updated;
+    } else {
+      let slug = slugify(nom_commercial);
+      let attempt = 0;
+      while (attempt < 5) {
+        const { data: existing } = await adminClient.from("prestataires").select("id").eq("slug", slug).maybeSingle();
+        if (!existing) break;
+        attempt++;
+        slug = `${slugify(nom_commercial)}-${attempt + 1}`;
+      }
 
-    // 3. Generate magic link (invite type)
+      const { data: created, error: prestaError } = await adminClient.from("prestataires").insert({
+        user_id: userId,
+        nom_commercial, slug, categorie_mere_id,
+        categorie_fille_id: categorie_fille_id ?? null,
+        ville, region,
+        code_postal: code_postal ?? null,
+        telephone: telephone ?? null,
+        email_contact: cleanEmail,
+        description: description ?? null,
+        description_courte: description_courte ?? null,
+        statut: "pre_inscrit",
+        cree_par_admin: true,
+        notes_pre_inscription: notes_pre_inscription ?? null,
+        magic_link_envoye_le: new Date().toISOString(),
+      }).select().single();
+      if (prestaError) throw prestaError;
+      presta = created;
+    }
+
+    // 3. Magic link
     const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
       type: "invite",
       email: cleanEmail,
@@ -98,24 +129,24 @@ Deno.serve(async (req) => {
     if (linkError) throw linkError;
     const magicLink = linkData.properties.action_link;
 
-    // 4. Send email via send-transactional-email
+    // 4. Email
     await adminClient.functions.invoke("send-transactional-email", {
       body: {
         templateName: "invitation_prestataire",
         recipientEmail: cleanEmail,
-        idempotencyKey: `invite-${presta.id}`,
+        idempotencyKey: `invite-${presta.id}-${Date.now()}`,
         templateData: { prenom: prenom ?? null, nom_commercial, magic_link: magicLink, expiration_heures: 24 },
       },
     });
 
-    // 5. Admin log
+    // 5. Admin log (correct columns: entite/entite_id)
     await adminClient.from("logs_admin").insert({
       admin_id: caller.id,
-      action: "invite_prestataire",
-      cible_type: "prestataire",
-      cible_id: presta.id,
+      action: "invitation_envoyee",
+      entite: "prestataires",
+      entite_id: presta.id,
       details: { email: cleanEmail, nom_commercial },
-    }).then(() => {}, () => {});
+    });
 
     return new Response(JSON.stringify({ success: true, prestataire_id: presta.id, user_id: userId }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });

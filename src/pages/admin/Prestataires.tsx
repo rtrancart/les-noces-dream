@@ -74,6 +74,9 @@ const emptyForm = {
   cree_par_admin: true,
   zones_intervention: [] as string[],
   create_password: "",
+  prenom_contact: "",
+  nom_contact: "",
+  notes_pre_inscription: "",
 };
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -386,11 +389,19 @@ export default function Prestataires() {
     setDialogOpen(true);
   };
 
-  const openEdit = (p: Prestataire) => {
+  const openEdit = async (p: Prestataire) => {
     setEditItem(p);
     setNewPassword("");
     setConfirmPassword("");
     setShowPassword(false);
+    // Fetch profile prenom/nom from linked user_id if any
+    let prenom = "";
+    let nom = "";
+    if (p.user_id) {
+      const { data: prof } = await supabase.from("profiles").select("prenom, nom").eq("id", p.user_id).maybeSingle();
+      prenom = prof?.prenom ?? "";
+      nom = prof?.nom ?? "";
+    }
     setForm({
       nom_commercial: p.nom_commercial,
       slug: p.slug,
@@ -413,6 +424,9 @@ export default function Prestataires() {
       cree_par_admin: p.cree_par_admin ?? false,
       zones_intervention: (p as any).zones_intervention ?? [],
       create_password: "",
+      prenom_contact: prenom,
+      nom_contact: nom,
+      notes_pre_inscription: (p as any).notes_pre_inscription ?? "",
     });
     setDialogOpen(true);
   };
@@ -430,21 +444,15 @@ export default function Prestataires() {
   };
 
   const handleSave = async () => {
+    // Brouillon save : minimum nom_commercial + categorie_mere + ville + region
     if (!form.nom_commercial || !form.slug || !form.ville || !form.region || !form.categorie_mere_id) {
-      toast.error("Remplissez les champs obligatoires (nom, slug, ville, région, catégorie)");
-      return;
-    }
-    if (!editItem && form.email_contact && form.create_password && form.create_password.length < 6) {
-      toast.error("Le mot de passe doit contenir au moins 6 caractères");
-      return;
-    }
-    if (!editItem && !form.email_contact) {
-      toast.error("L'email de contact est requis pour créer le compte utilisateur");
+      toast.error("Renseignez au minimum : nom commercial, catégorie, ville et région.");
       return;
     }
     setSaving(true);
     const isUnique = await checkSlugUniqueness();
     if (!isUnique) { setSaving(false); return; }
+
     const payload = {
       nom_commercial: form.nom_commercial,
       slug: form.slug,
@@ -464,6 +472,7 @@ export default function Prestataires() {
       statut: form.statut,
       fin_premium: form.fin_premium ? `${form.fin_premium}T23:59:59` : null,
       notes_admin: form.notes_admin || null,
+      notes_pre_inscription: form.notes_pre_inscription || null,
       cree_par_admin: form.cree_par_admin,
       zones_intervention: form.zones_intervention,
     };
@@ -473,49 +482,85 @@ export default function Prestataires() {
       if (error) toast.error(error.message);
       else if (!updated || updated.length === 0) toast.error("Mise à jour refusée (permissions insuffisantes)");
       else {
-        toast.success("Prestataire mis à jour");
+        toast.success(form.statut === "brouillon" ? "Brouillon sauvegardé" : "Prestataire mis à jour");
         logAdmin("update_prestataire", "prestataires", editItem.id, { nom: form.nom_commercial });
         const addressChanged = editItem.ville !== form.ville || editItem.code_postal !== (form.code_postal || null) || editItem.adresse !== (form.adresse || null);
         if (addressChanged) triggerGeocode(editItem.id);
         setDialogOpen(false); fetchData();
       }
     } else {
-      // For new prestataire: create user account first if email provided
-      let linkedUserId: string | null = null;
-      if (form.email_contact) {
-        const password = form.create_password || Math.random().toString(36).slice(-10) + "A1!";
-        try {
-          const res = await supabase.functions.invoke("admin-create-user", {
-            body: {
-              email: form.email_contact.trim(),
-              password,
-              role: "prestataire",
-            },
-          });
-          if (res.error) throw new Error(res.error.message);
-          if (res.data?.error) throw new Error(res.data.error);
-          linkedUserId = res.data.user_id;
-        } catch (e: any) {
-          toast.error("Erreur création compte : " + e.message);
-          setSaving(false);
-          return;
-        }
-      }
-
+      // New prestataire as brouillon → no user account, no email
       const { data: created, error } = await supabase.from("prestataires").insert({
         ...payload,
-        user_id: linkedUserId,
+        statut: "brouillon",
+        user_id: null,
       }).select();
       if (error) toast.error(error.message);
       else if (!created || created.length === 0) toast.error("Création refusée (permissions insuffisantes)");
       else {
-        toast.success("Prestataire créé" + (linkedUserId ? " avec compte utilisateur" : ""));
-        logAdmin("create_prestataire", "prestataires", created[0].id, { nom: form.nom_commercial });
+        toast.success("Brouillon sauvegardé");
+        logAdmin("create_prestataire_brouillon", "prestataires", created[0].id, { nom: form.nom_commercial });
         triggerGeocode(created[0].id);
         setDialogOpen(false); fetchData();
       }
     }
     setSaving(false);
+  };
+
+  const handleSendInvitation = async () => {
+    if (!form.email_contact) {
+      toast.error("L'email du prestataire est obligatoire pour envoyer l'invitation.");
+      return;
+    }
+    if (!form.nom_commercial || !form.categorie_mere_id || !form.ville || !form.region || !form.telephone) {
+      toast.error("Champs obligatoires manquants (nom, catégorie, ville, région, téléphone).");
+      return;
+    }
+    if (!form.prenom_contact || !form.nom_contact) {
+      toast.error("Prénom et nom du contact sont obligatoires pour l'invitation.");
+      return;
+    }
+    if (!window.confirm(`Envoyer l'invitation à ${form.email_contact} ? Le prestataire recevra un email pour activer son espace et signer la Charte Qualité.`)) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-prestataire", {
+        body: {
+          prestataire_id: editItem?.id,
+          email: form.email_contact,
+          prenom: form.prenom_contact,
+          nom: form.nom_contact,
+          nom_commercial: form.nom_commercial,
+          telephone: form.telephone,
+          categorie_mere_id: form.categorie_mere_id,
+          categorie_fille_id: form.categorie_fille_id || null,
+          ville: form.ville,
+          region: form.region,
+          code_postal: form.code_postal || null,
+          description: form.description || null,
+          description_courte: form.description_courte || null,
+          notes_pre_inscription: form.notes_pre_inscription || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Invitation envoyée à ${form.email_contact}`);
+      setDialogOpen(false);
+      fetchData();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur lors de l'envoi de l'invitation.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    // Detect "dirty" state when creating
+    if (!editItem && (form.nom_commercial || form.email_contact || form.ville)) {
+      if (!window.confirm("Annuler la création ? Les informations saisies seront perdues.")) return;
+    }
+    setDialogOpen(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -560,7 +605,7 @@ export default function Prestataires() {
           <p className="mt-1 font-sans text-sm text-muted-foreground">Gérez les fiches prestataires de la plateforme</p>
         </div>
         <Button onClick={openCreate} className="gap-2 font-sans text-sm">
-          <Plus className="h-4 w-4" /> Nouveau prestataire
+          <Plus className="h-4 w-4" /> Créer un prestataire
         </Button>
       </div>
 
@@ -678,10 +723,10 @@ export default function Prestataires() {
       </Card>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) { handleCloseDialog(); } else { setDialogOpen(true); } }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-lg">{editItem ? "Modifier le prestataire" : "Nouveau prestataire"}</DialogTitle>
+            <DialogTitle className="font-serif text-lg">{editItem ? `Modifier — ${editItem.nom_commercial}` : "Créer un prestataire"}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="general" className="mt-2">
             <TabsList className={`grid w-full ${editItem ? "grid-cols-5" : "grid-cols-3"}`}>
@@ -739,17 +784,17 @@ export default function Prestataires() {
                   <Input type="number" value={form.prix_max} onChange={(e) => setForm({ ...form, prix_max: e.target.value })} />
                 </Field>
               </div>
-              {!editItem && (
-                <Field label="Mot de passe du compte *">
-                  <Input
-                    type="password"
-                    value={form.create_password}
-                    onChange={(e) => setForm({ ...form, create_password: e.target.value })}
-                    placeholder="Min. 6 caractères — un compte sera créé avec l'email de contact"
-                  />
-                  <p className="text-[11px] text-muted-foreground">Un compte utilisateur sera automatiquement créé avec l'email de contact</p>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Prénom contact *">
+                  <Input value={form.prenom_contact} onChange={(e) => setForm({ ...form, prenom_contact: e.target.value })} />
                 </Field>
-              )}
+                <Field label="Nom contact *">
+                  <Input value={form.nom_contact} onChange={(e) => setForm({ ...form, nom_contact: e.target.value })} />
+                </Field>
+              </div>
+              <Field label="Notes internes (pré-inscription)">
+                <Textarea value={form.notes_pre_inscription} onChange={(e) => setForm({ ...form, notes_pre_inscription: e.target.value })} rows={3} placeholder="Notes visibles uniquement par les admins" />
+              </Field>
             </TabsContent>
 
             <TabsContent value="coordonnees" className="space-y-4 pt-4">
@@ -957,9 +1002,15 @@ export default function Prestataires() {
               </TabsContent>
             )}
           </Tabs>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setDialogOpen(false)} className="font-sans text-sm">Annuler</Button>
-            <Button onClick={handleSave} disabled={saving} className="font-sans text-sm">{saving ? "Enregistrement…" : editItem ? "Enregistrer" : "Créer"}</Button>
+          <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={handleSave} disabled={saving} className="font-sans text-sm">
+              {saving ? "Enregistrement…" : "Sauvegarder et continuer plus tard"}
+            </Button>
+            {(!editItem || editItem.statut === "brouillon" || editItem.statut === "pre_inscrit") && (
+              <Button onClick={handleSendInvitation} disabled={saving} className="font-sans text-sm">
+                {saving ? "Envoi…" : "Sauvegarder et envoyer l'invitation"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
