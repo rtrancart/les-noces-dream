@@ -16,6 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon, X, ChevronDown, ChevronRight, EyeOff, ImageIcon } from "lucide-react";
 import PrestatairePhotosTab from "@/components/admin/PrestatairePhotosTab";
+import { EmailLogsDialog } from "@/components/admin/EmailLogsDialog";
+import { Mail } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
