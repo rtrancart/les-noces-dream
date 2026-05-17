@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, Send, CheckCircle2, AlertCircle } from "lucide-react";
 import AddressAutocomplete from "@/components/prestataire/AddressAutocomplete";
 
 const MAX_DESC_COURTE = 160;
@@ -15,6 +15,7 @@ const MAX_DESC_COURTE = 160;
 export default function PrestataireProfil() {
   const { prestataire, loading, refetch } = useSharedPrestataire();
   const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     nom_commercial: "",
     description_courte: "",
@@ -49,6 +50,25 @@ export default function PrestataireProfil() {
     }
   }, [prestataire]);
 
+  // Critères obligatoires pour soumission
+  const missingFields = useMemo(() => {
+    if (!prestataire) return [];
+    const m: string[] = [];
+    if (!prestataire.nom_commercial) m.push("Nom commercial");
+    if (!prestataire.description || prestataire.description.length < 50) m.push("Description détaillée (≥ 50 caractères)");
+    if (!prestataire.ville) m.push("Ville");
+    if (!prestataire.region) m.push("Région");
+    if (!prestataire.telephone) m.push("Téléphone");
+    if (!prestataire.email_contact) m.push("Email de contact");
+    if (!prestataire.photo_principale_url) m.push("Photo principale");
+    if (!prestataire.prix_depart) m.push("Prix de départ");
+    if (!prestataire.zones_intervention || prestataire.zones_intervention.length === 0) m.push("Zones d'intervention");
+    return m;
+  }, [prestataire]);
+
+  const canSubmit = missingFields.length === 0;
+  const canShowSubmit = prestataire && ["pre_inscrit", "a_corriger"].includes(prestataire.statut);
+
   const handleSave = async () => {
     if (!prestataire) return;
     setSaving(true);
@@ -79,6 +99,33 @@ export default function PrestataireProfil() {
     } else {
       toast.success("Profil mis à jour avec succès");
       refetch();
+    }
+  };
+
+  const handleSubmitForValidation = async () => {
+    if (!prestataire || !canSubmit) return;
+    if (!window.confirm("Soumettre la fiche à validation ? L'équipe éditoriale la relit sous 48h.")) return;
+    setSubmitting(true);
+    try {
+      const { data: updated, error } = await supabase
+        .from("prestataires")
+        .update({ statut: "en_attente" })
+        .eq("id", prestataire.id)
+        .select();
+      if (error) throw error;
+      if (!updated || updated.length === 0) throw new Error("Mise à jour refusée");
+
+      // Fire notification (non-blocking)
+      supabase.functions.invoke("notify-nouvelle-soumission", {
+        body: { prestataire_id: prestataire.id },
+      }).catch((e) => console.error("notify failed", e));
+
+      toast.success("Fiche soumise pour validation 🎉");
+      refetch();
+    } catch (e: any) {
+      toast.error(e.message || "Erreur lors de la soumission");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -117,6 +164,38 @@ export default function PrestataireProfil() {
           Enregistrer
         </Button>
       </div>
+
+      {/* Encart soumission à validation */}
+      {canShowSubmit && (
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-champagne/10">
+          <CardContent className="p-5 space-y-3">
+            <div className="flex items-start gap-3">
+              {canSubmit ? (
+                <CheckCircle2 className="h-5 w-5 text-sauge shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-or shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1 space-y-2">
+                <h3 className="font-serif text-lg">
+                  {canSubmit ? "Votre fiche est prête à être soumise" : "Complétez votre fiche pour pouvoir la soumettre"}
+                </h3>
+                {!canSubmit && (
+                  <ul className="list-disc list-inside font-sans text-sm text-muted-foreground space-y-0.5">
+                    {missingFields.map((f) => <li key={f}>{f}</li>)}
+                  </ul>
+                )}
+                <p className="font-sans text-xs text-muted-foreground">
+                  Une fois soumise, l'équipe éditoriale relit votre fiche sous 48h.
+                </p>
+              </div>
+            </div>
+            <Button onClick={handleSubmitForValidation} disabled={!canSubmit || submitting} className="gap-2 w-full sm:w-auto">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Soumettre pour validation
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Informations générales */}
       <Card>
