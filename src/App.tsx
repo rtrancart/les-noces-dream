@@ -59,7 +59,8 @@ import AdminPages from "./pages/admin/Pages";
 import AdminLogs from "./pages/admin/Logs";
 import AdminEmails from "./pages/admin/Emails";
 import AdminRegions from "./pages/admin/Regions";
-import AdminPrestatairesPreInscrits from "./pages/admin/PrestatairesPreInscrits";
+import { Navigate } from "react-router-dom";
+import ChartePendingGuard from "@/components/auth/ChartePendingGuard";
 import AdminChartes from "./pages/admin/Chartes";
 
 const queryClient = new QueryClient();
@@ -152,7 +153,7 @@ const App = () => (
               <Route path="logs" element={<AdminLogs />} />
               <Route path="emails" element={<AdminEmails />} />
               <Route path="regions" element={<AdminRegions />} />
-              <Route path="prestataires-pre-inscrits" element={<AdminPrestatairesPreInscrits />} />
+              <Route path="prestataires-pre-inscrits" element={<Navigate to="/admin/prestataires" replace />} />
               <Route path="chartes" element={<AdminChartes />} />
             </Route>
 
