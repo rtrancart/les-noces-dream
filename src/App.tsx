@@ -74,6 +74,7 @@ const App = () => (
         <ScrollToTop />
         <AuthProvider>
           <ZonesProvider>
+          <ChartePendingGuard>
           <Routes>
             {/* Public pages with Header + Footer */}
             <Route element={<PublicLayout />}>
