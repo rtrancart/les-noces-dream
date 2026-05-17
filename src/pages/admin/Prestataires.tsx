@@ -287,6 +287,7 @@ export default function Prestataires() {
   const [citySearch, setCitySearch] = useState<CitySearchData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Prestataire | null>(null);
+  const [logsFor, setLogsFor] = useState<Prestataire | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [slugError, setSlugError] = useState<string | null>(null);
