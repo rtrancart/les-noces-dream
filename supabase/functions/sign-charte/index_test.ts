@@ -26,23 +26,35 @@ function admin(): SupabaseClient {
 
 const TAG = `e2e-charte-${Date.now()}`;
 const created = { users: [] as string[], prestataires: [] as string[], versions: [] as string[], signatures: [] as string[] };
+let originalActiveVersionId: string | null = null;
+
+async function captureOriginalActive() {
+  if (originalActiveVersionId !== null) return;
+  const a = admin();
+  const { data } = await a.from("chartes_versions").select("id").is("archivee_le", null).maybeSingle();
+  originalActiveVersionId = data?.id ?? null;
+}
+
+async function restoreOriginalActive() {
+  if (!originalActiveVersionId) return;
+  const a = admin();
+  await a.from("chartes_versions").update({ archivee_le: null }).eq("id", originalActiveVersionId).then(() => {}, () => {});
+}
 
 async function cleanup() {
   const a = admin();
-  if (created.signatures.length) {
-    // We cannot DELETE signatures (trigger interdit). On les laisse — base de test.
-  }
   for (const id of created.prestataires) await a.from("prestataires").delete().eq("id", id);
   for (const id of created.versions) {
-    // Désarchiver puis supprimer (trigger interdit modif contenu si archivée)
-    await a.from("chartes_versions").delete().eq("id", id);
+    await a.from("chartes_versions").delete().eq("id", id).then(() => {}, () => {});
   }
   for (const uid of created.users) await a.auth.admin.deleteUser(uid).catch(() => {});
+  await restoreOriginalActive();
 }
 
 let charteSeq = 0;
 async function seedActiveCharte() {
   const a = admin();
+  await captureOriginalActive();
   // Archive any current active
   await a.from("chartes_versions").update({ archivee_le: new Date().toISOString() }).is("archivee_le", null);
   const numero = `T-${TAG}-${++charteSeq}`;
@@ -232,6 +244,58 @@ Deno.test({ name: "Flux complet : sign-charte → trigger statut actif → PDF p
 
   const { data: sig2 } = await a.from("signatures_charte").select("pdf_preuve_url").eq("id", sig!.id).single();
   assertExists(sig2?.pdf_preuve_url, "pdf_preuve_url doit être renseigné par le callback write-once");
+});
+
+// ===========================================================================
+Deno.test({ name: "Cycle unifié : brouillon → pre_inscrit → signature → en_attente → validee → actif", sanitizeOps: false, sanitizeResources: false }, async () => {
+  const a = admin();
+  const charte = await seedActiveCharte();
+
+  // 1) Création brouillon (sans user_id)
+  const slug = `e2e-brouillon-${Math.random().toString(36).slice(2, 8)}`;
+  const { data: brouillon, error: e1 } = await a.from("prestataires").insert({
+    nom_commercial: `Brouillon ${slug}`, slug, categorie_mere_id: CATEGORIE_MERE_ID,
+    ville: "Lyon", region: "Auvergne-Rhône-Alpes", statut: "brouillon",
+  }).select().single();
+  assertEquals(e1, null);
+  created.prestataires.push(brouillon.id);
+  assertEquals(brouillon.statut, "brouillon");
+  assertEquals(brouillon.user_id, null);
+
+  // 2) Transition brouillon → pre_inscrit (création du user + lien)
+  const email = `${TAG}-cycle-${Math.random().toString(36).slice(2, 8)}@e2e.local`;
+  const { data: u } = await a.auth.admin.createUser({ email, password: "Test1234!", email_confirm: true });
+  created.users.push(u.user!.id);
+  const { error: e2 } = await a.from("prestataires").update({
+    user_id: u.user!.id, email_contact: email, statut: "pre_inscrit",
+    magic_link_envoye_le: new Date().toISOString(),
+  }).eq("id", brouillon.id);
+  assertEquals(e2, null);
+
+  // 3) Signature de la charte → trigger reste sur pre_inscrit (statut != validee)
+  const { data: sig, error: e3 } = await a.from("signatures_charte").insert({
+    prestataire_id: brouillon.id, profile_id: u.user!.id, charte_version_id: charte.id,
+    charte_numero_version: charte.numero_version, charte_hash: charte.contenu_hash,
+    user_agent: "deno-cycle", methode_auth: "session_supabase",
+  }).select().single();
+  assertEquals(e3, null);
+  created.signatures.push(sig!.id);
+  const { data: afterSign } = await a.from("prestataires").select("statut, charte_signee_le").eq("id", brouillon.id).single();
+  assertExists(afterSign?.charte_signee_le);
+  assertEquals(afterSign?.statut, "pre_inscrit", "Le trigger ne doit basculer en actif que depuis validee");
+
+  // 4) Prestataire complète et soumet → en_attente
+  await a.from("prestataires").update({
+    statut: "en_attente", description: "Une longue description prestataire de plus de 50 caractères ok.",
+    telephone: "0102030405", prix_depart: 1000, photo_principale_url: "https://example.com/p.jpg",
+    zones_intervention: ["region-ara"],
+  }).eq("id", brouillon.id);
+
+  // 5) Admin valide → trigger on_prestataire_validation bascule en 'actif'
+  const { error: e5 } = await a.from("prestataires").update({ statut: "validee" }).eq("id", brouillon.id);
+  assertEquals(e5, null);
+  const { data: final } = await a.from("prestataires").select("statut").eq("id", brouillon.id).single();
+  assertEquals(final?.statut, "actif", "Validation + charte signée doit basculer en actif");
 });
 
 // ===========================================================================
