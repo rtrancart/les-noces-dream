@@ -29,13 +29,12 @@ const created = { users: [] as string[], prestataires: [] as string[], versions:
 
 async function cleanup() {
   const a = admin();
-  if (created.signatures.length) {
-    // We cannot DELETE signatures (trigger interdit). On les laisse — base de test.
-  }
+  // Détache les signatures de leurs versions de test (signatures immuables, on les laisse)
   for (const id of created.prestataires) await a.from("prestataires").delete().eq("id", id);
   for (const id of created.versions) {
-    // Désarchiver puis supprimer (trigger interdit modif contenu si archivée)
-    await a.from("chartes_versions").delete().eq("id", id);
+    // Désarchive d'abord pour permettre delete (les signatures sont reliées par charte_version_id; on tente delete, ignore si FK)
+    await a.from("chartes_versions").update({ archivee_le: null, contenu_html: 'cleanup', contenu_hash: 'cleanup' }).eq("id", id).then(() => {}, () => {});
+    await a.from("chartes_versions").delete().eq("id", id).then(() => {}, () => {});
   }
   for (const uid of created.users) await a.auth.admin.deleteUser(uid).catch(() => {});
 }
