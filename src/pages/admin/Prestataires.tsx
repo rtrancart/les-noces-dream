@@ -1103,6 +1103,12 @@ export default function Prestataires() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <EmailLogsDialog
+        open={!!logsFor}
+        onOpenChange={(o) => !o && setLogsFor(null)}
+        recipientEmail={logsFor?.email_contact ?? null}
+        nomCommercial={logsFor?.nom_commercial ?? ""}
+      />
     </div>
   );
 }
