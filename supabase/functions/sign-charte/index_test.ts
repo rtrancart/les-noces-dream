@@ -26,20 +26,35 @@ function admin(): SupabaseClient {
 
 const TAG = `e2e-charte-${Date.now()}`;
 const created = { users: [] as string[], prestataires: [] as string[], versions: [] as string[], signatures: [] as string[] };
+let originalActiveVersionId: string | null = null;
+
+async function captureOriginalActive() {
+  if (originalActiveVersionId !== null) return;
+  const a = admin();
+  const { data } = await a.from("chartes_versions").select("id").is("archivee_le", null).maybeSingle();
+  originalActiveVersionId = data?.id ?? null;
+}
+
+async function restoreOriginalActive() {
+  if (!originalActiveVersionId) return;
+  const a = admin();
+  await a.from("chartes_versions").update({ archivee_le: null }).eq("id", originalActiveVersionId).then(() => {}, () => {});
+}
 
 async function cleanup() {
   const a = admin();
   for (const id of created.prestataires) await a.from("prestataires").delete().eq("id", id);
-  // Tentative best-effort de suppression des versions de charte (FK signatures peut bloquer)
   for (const id of created.versions) {
     await a.from("chartes_versions").delete().eq("id", id).then(() => {}, () => {});
   }
   for (const uid of created.users) await a.auth.admin.deleteUser(uid).catch(() => {});
+  await restoreOriginalActive();
 }
 
 let charteSeq = 0;
 async function seedActiveCharte() {
   const a = admin();
+  await captureOriginalActive();
   // Archive any current active
   await a.from("chartes_versions").update({ archivee_le: new Date().toISOString() }).is("archivee_le", null);
   const numero = `T-${TAG}-${++charteSeq}`;
