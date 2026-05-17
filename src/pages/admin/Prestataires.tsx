@@ -16,6 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon, X, ChevronDown, ChevronRight, EyeOff, ImageIcon } from "lucide-react";
 import PrestatairePhotosTab from "@/components/admin/PrestatairePhotosTab";
+import { EmailLogsDialog } from "@/components/admin/EmailLogsDialog";
+import { Mail } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -285,6 +287,7 @@ export default function Prestataires() {
   const [citySearch, setCitySearch] = useState<CitySearchData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Prestataire | null>(null);
+  const [logsFor, setLogsFor] = useState<Prestataire | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [slugError, setSlugError] = useState<string | null>(null);
@@ -378,9 +381,51 @@ export default function Prestataires() {
   useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
 
   const updateStatut = async (id: string, statut: StatutPrestataire) => {
-    const { error } = await supabase.from("prestataires").update({ statut }).eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Statut mis à jour"); logAdmin("update_statut_prestataire", "prestataires", id, { statut }); fetchData(); }
+    const { data: updated, error } = await supabase
+      .from("prestataires")
+      .update({ statut })
+      .eq("id", id)
+      .select("id, nom_commercial, slug, statut, user_id, email_contact")
+      .maybeSingle();
+    if (error) { toast.error(error.message); return; }
+    toast.success("Statut mis à jour");
+    logAdmin("update_statut_prestataire", "prestataires", id, { statut });
+
+    // Trigger publication email when the prestataire becomes actif
+    // (statut validee + charte signée auto-flip to actif via DB trigger).
+    if (updated && updated.statut === "actif") {
+      let recipient = updated.email_contact;
+      let prenom = "";
+      if (updated.user_id) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("email, prenom")
+          .eq("id", updated.user_id)
+          .maybeSingle();
+        if (prof?.email) recipient = prof.email;
+        prenom = prof?.prenom ?? "";
+      }
+      if (recipient) {
+        const siteUrl = window.location.origin;
+        const { error: mailErr } = await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "validation_publication_fiche",
+            recipientEmail: recipient,
+            idempotencyKey: `publication-${id}`,
+            templateData: {
+              prenom,
+              nom_commercial: updated.nom_commercial,
+              lien_fiche_publique: `${siteUrl}/prestataire/${updated.slug}`,
+              lien_dashboard: `${siteUrl}/espace-pro`,
+            },
+          },
+        });
+        if (mailErr) toast.error("Email de publication non envoyé : " + mailErr.message);
+        else toast.success("Email de publication envoyé au prestataire");
+      }
+    }
+
+    fetchData();
   };
 
   const openCreate = () => {
@@ -733,6 +778,9 @@ export default function Prestataires() {
                     <TableCell className="font-sans text-sm">{p.note_moyenne ? `${p.note_moyenne.toFixed(1)}/5` : "—"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Voir les emails envoyés" onClick={() => setLogsFor(p)}>
+                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Button>
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(p)}>
                           <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                         </Button>
@@ -1055,6 +1103,12 @@ export default function Prestataires() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <EmailLogsDialog
+        open={!!logsFor}
+        onOpenChange={(o) => !o && setLogsFor(null)}
+        recipientEmail={logsFor?.email_contact ?? null}
+        nomCommercial={logsFor?.nom_commercial ?? ""}
+      />
     </div>
   );
 }
