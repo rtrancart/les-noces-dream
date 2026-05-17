@@ -74,6 +74,9 @@ const emptyForm = {
   cree_par_admin: true,
   zones_intervention: [] as string[],
   create_password: "",
+  prenom_contact: "",
+  nom_contact: "",
+  notes_pre_inscription: "",
 };
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -386,11 +389,19 @@ export default function Prestataires() {
     setDialogOpen(true);
   };
 
-  const openEdit = (p: Prestataire) => {
+  const openEdit = async (p: Prestataire) => {
     setEditItem(p);
     setNewPassword("");
     setConfirmPassword("");
     setShowPassword(false);
+    // Fetch profile prenom/nom from linked user_id if any
+    let prenom = "";
+    let nom = "";
+    if (p.user_id) {
+      const { data: prof } = await supabase.from("profiles").select("prenom, nom").eq("id", p.user_id).maybeSingle();
+      prenom = prof?.prenom ?? "";
+      nom = prof?.nom ?? "";
+    }
     setForm({
       nom_commercial: p.nom_commercial,
       slug: p.slug,
@@ -413,6 +424,9 @@ export default function Prestataires() {
       cree_par_admin: p.cree_par_admin ?? false,
       zones_intervention: (p as any).zones_intervention ?? [],
       create_password: "",
+      prenom_contact: prenom,
+      nom_contact: nom,
+      notes_pre_inscription: (p as any).notes_pre_inscription ?? "",
     });
     setDialogOpen(true);
   };
