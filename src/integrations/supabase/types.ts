@@ -1538,6 +1538,25 @@ export type Database = {
         Args: { p_prestataire_id: string }
         Returns: undefined
       }
+      get_email_logs_for_recipient: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_recipient: string
+          p_since?: string
+          p_status?: string
+        }
+        Returns: {
+          created_at: string
+          error_message: string
+          id: string
+          message_id: string
+          recipient_email: string
+          status: string
+          template_name: string
+          total_count: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
