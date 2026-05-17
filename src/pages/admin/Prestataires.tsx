@@ -605,7 +605,7 @@ export default function Prestataires() {
           <p className="mt-1 font-sans text-sm text-muted-foreground">Gérez les fiches prestataires de la plateforme</p>
         </div>
         <Button onClick={openCreate} className="gap-2 font-sans text-sm">
-          <Plus className="h-4 w-4" /> Nouveau prestataire
+          <Plus className="h-4 w-4" /> Créer un prestataire
         </Button>
       </div>
 
