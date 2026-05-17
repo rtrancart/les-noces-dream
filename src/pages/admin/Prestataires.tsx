@@ -444,21 +444,15 @@ export default function Prestataires() {
   };
 
   const handleSave = async () => {
+    // Brouillon save : minimum nom_commercial + categorie_mere + ville + region
     if (!form.nom_commercial || !form.slug || !form.ville || !form.region || !form.categorie_mere_id) {
-      toast.error("Remplissez les champs obligatoires (nom, slug, ville, région, catégorie)");
-      return;
-    }
-    if (!editItem && form.email_contact && form.create_password && form.create_password.length < 6) {
-      toast.error("Le mot de passe doit contenir au moins 6 caractères");
-      return;
-    }
-    if (!editItem && !form.email_contact) {
-      toast.error("L'email de contact est requis pour créer le compte utilisateur");
+      toast.error("Renseignez au minimum : nom commercial, catégorie, ville et région.");
       return;
     }
     setSaving(true);
     const isUnique = await checkSlugUniqueness();
     if (!isUnique) { setSaving(false); return; }
+
     const payload = {
       nom_commercial: form.nom_commercial,
       slug: form.slug,
@@ -478,6 +472,7 @@ export default function Prestataires() {
       statut: form.statut,
       fin_premium: form.fin_premium ? `${form.fin_premium}T23:59:59` : null,
       notes_admin: form.notes_admin || null,
+      notes_pre_inscription: form.notes_pre_inscription || null,
       cree_par_admin: form.cree_par_admin,
       zones_intervention: form.zones_intervention,
     };
@@ -487,49 +482,85 @@ export default function Prestataires() {
       if (error) toast.error(error.message);
       else if (!updated || updated.length === 0) toast.error("Mise à jour refusée (permissions insuffisantes)");
       else {
-        toast.success("Prestataire mis à jour");
+        toast.success(form.statut === "brouillon" ? "Brouillon sauvegardé" : "Prestataire mis à jour");
         logAdmin("update_prestataire", "prestataires", editItem.id, { nom: form.nom_commercial });
         const addressChanged = editItem.ville !== form.ville || editItem.code_postal !== (form.code_postal || null) || editItem.adresse !== (form.adresse || null);
         if (addressChanged) triggerGeocode(editItem.id);
         setDialogOpen(false); fetchData();
       }
     } else {
-      // For new prestataire: create user account first if email provided
-      let linkedUserId: string | null = null;
-      if (form.email_contact) {
-        const password = form.create_password || Math.random().toString(36).slice(-10) + "A1!";
-        try {
-          const res = await supabase.functions.invoke("admin-create-user", {
-            body: {
-              email: form.email_contact.trim(),
-              password,
-              role: "prestataire",
-            },
-          });
-          if (res.error) throw new Error(res.error.message);
-          if (res.data?.error) throw new Error(res.data.error);
-          linkedUserId = res.data.user_id;
-        } catch (e: any) {
-          toast.error("Erreur création compte : " + e.message);
-          setSaving(false);
-          return;
-        }
-      }
-
+      // New prestataire as brouillon → no user account, no email
       const { data: created, error } = await supabase.from("prestataires").insert({
         ...payload,
-        user_id: linkedUserId,
+        statut: "brouillon",
+        user_id: null,
       }).select();
       if (error) toast.error(error.message);
       else if (!created || created.length === 0) toast.error("Création refusée (permissions insuffisantes)");
       else {
-        toast.success("Prestataire créé" + (linkedUserId ? " avec compte utilisateur" : ""));
-        logAdmin("create_prestataire", "prestataires", created[0].id, { nom: form.nom_commercial });
+        toast.success("Brouillon sauvegardé");
+        logAdmin("create_prestataire_brouillon", "prestataires", created[0].id, { nom: form.nom_commercial });
         triggerGeocode(created[0].id);
         setDialogOpen(false); fetchData();
       }
     }
     setSaving(false);
+  };
+
+  const handleSendInvitation = async () => {
+    if (!form.email_contact) {
+      toast.error("L'email du prestataire est obligatoire pour envoyer l'invitation.");
+      return;
+    }
+    if (!form.nom_commercial || !form.categorie_mere_id || !form.ville || !form.region || !form.telephone) {
+      toast.error("Champs obligatoires manquants (nom, catégorie, ville, région, téléphone).");
+      return;
+    }
+    if (!form.prenom_contact || !form.nom_contact) {
+      toast.error("Prénom et nom du contact sont obligatoires pour l'invitation.");
+      return;
+    }
+    if (!window.confirm(`Envoyer l'invitation à ${form.email_contact} ? Le prestataire recevra un email pour activer son espace et signer la Charte Qualité.`)) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-prestataire", {
+        body: {
+          prestataire_id: editItem?.id,
+          email: form.email_contact,
+          prenom: form.prenom_contact,
+          nom: form.nom_contact,
+          nom_commercial: form.nom_commercial,
+          telephone: form.telephone,
+          categorie_mere_id: form.categorie_mere_id,
+          categorie_fille_id: form.categorie_fille_id || null,
+          ville: form.ville,
+          region: form.region,
+          code_postal: form.code_postal || null,
+          description: form.description || null,
+          description_courte: form.description_courte || null,
+          notes_pre_inscription: form.notes_pre_inscription || null,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Invitation envoyée à ${form.email_contact}`);
+      setDialogOpen(false);
+      fetchData();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur lors de l'envoi de l'invitation.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    // Detect "dirty" state when creating
+    if (!editItem && (form.nom_commercial || form.email_contact || form.ville)) {
+      if (!window.confirm("Annuler la création ? Les informations saisies seront perdues.")) return;
+    }
+    setDialogOpen(false);
   };
 
   const handleDelete = async (id: string) => {
