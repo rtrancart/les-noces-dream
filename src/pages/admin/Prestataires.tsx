@@ -723,10 +723,10 @@ export default function Prestataires() {
       </Card>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) { handleCloseDialog(); } else { setDialogOpen(true); } }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-serif text-lg">{editItem ? "Modifier le prestataire" : "Nouveau prestataire"}</DialogTitle>
+            <DialogTitle className="font-serif text-lg">{editItem ? `Modifier — ${editItem.nom_commercial}` : "Créer un prestataire"}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="general" className="mt-2">
             <TabsList className={`grid w-full ${editItem ? "grid-cols-5" : "grid-cols-3"}`}>
@@ -784,17 +784,17 @@ export default function Prestataires() {
                   <Input type="number" value={form.prix_max} onChange={(e) => setForm({ ...form, prix_max: e.target.value })} />
                 </Field>
               </div>
-              {!editItem && (
-                <Field label="Mot de passe du compte *">
-                  <Input
-                    type="password"
-                    value={form.create_password}
-                    onChange={(e) => setForm({ ...form, create_password: e.target.value })}
-                    placeholder="Min. 6 caractères — un compte sera créé avec l'email de contact"
-                  />
-                  <p className="text-[11px] text-muted-foreground">Un compte utilisateur sera automatiquement créé avec l'email de contact</p>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Prénom contact *">
+                  <Input value={form.prenom_contact} onChange={(e) => setForm({ ...form, prenom_contact: e.target.value })} />
                 </Field>
-              )}
+                <Field label="Nom contact *">
+                  <Input value={form.nom_contact} onChange={(e) => setForm({ ...form, nom_contact: e.target.value })} />
+                </Field>
+              </div>
+              <Field label="Notes internes (pré-inscription)">
+                <Textarea value={form.notes_pre_inscription} onChange={(e) => setForm({ ...form, notes_pre_inscription: e.target.value })} rows={3} placeholder="Notes visibles uniquement par les admins" />
+              </Field>
             </TabsContent>
 
             <TabsContent value="coordonnees" className="space-y-4 pt-4">
