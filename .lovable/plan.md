@@ -1,51 +1,77 @@
+# Plan : Unification du flow prestataire
 
-## Analyse mobile de la page historique
+Refonte majeure : un seul chemin de création (brouillon ou invitation), modale unique, parcours post-signature avec soumission pour validation.
 
-**Problèmes identifiés sur 390px :**
+## 1. Base de données (migration)
 
-1. **Pills de filtres** : avec 10+ catégories, les pills `flex-wrap` créent 4-5 lignes qui poussent le contenu vers le bas. Mauvaise lisibilité.
-2. **Bouton "Tout effacer"** : prend une ligne entière sous le titre à cause du `flex-wrap`, alourdit le header.
-3. **Sous-titre stats** : "X fiches · Y catégories · 90 jours" — info redondante avec les compteurs déjà visibles dans les pills.
+- **Cleanup** : DELETE des 12 `chartes_versions` de test (T-e2e-*) + insertion d'une vraie version active "v1.0".
+- **Enum `statut_prestataire`** : vérifier que `brouillon`, `pre_inscrit`, `en_attente`, `a_corriger`, `validee`, `actif`, `suspendu`, `archive` existent. Ajouter `a_corriger` si absent.
+- **Trigger `prevent_brouillon_public`** : RLS déjà ok (statut = 'actif' uniquement public). Rien à ajouter.
+- **Cleanup test data** : modifier `index_test.ts` pour DELETE aussi les `chartes_versions` en cleanup.
+- **Templates email** : INSERT dans `email_textes` les deux nouveaux templates (`notif_nouvelle_soumission_fiche`, `validation_publication_fiche`).
 
-## Plan d'amélioration
+## 2. Frontend admin
 
-### 1. Filtres en scroll horizontal sur mobile
-Remplacer `flex-wrap` par un scroll horizontal one-line sur mobile (`overflow-x-auto` + `flex-nowrap`), garder le wrap sur desktop (`sm:flex-wrap`). Ajouter un masque dégradé à droite pour signaler le scroll. Pills légèrement plus compactes.
+### Fichiers à supprimer
+- `src/pages/admin/PrestatairesPreInscrits.tsx`
 
-### 2. CTA "Tout effacer" : icône seule sur mobile
-- Mobile (<640px) : bouton icône carré (juste `<Trash2 />`) sur la même ligne que le titre, alignement à droite via `justify-between` (sans `flex-wrap`).
-- Desktop : conserver le bouton avec texte "Tout effacer".
-- Ajouter un `aria-label` et un `title` pour l'accessibilité.
+### Fichiers à modifier
+- `src/App.tsx` : retirer route `/admin/prestataires-pre-inscrits`, ajouter redirect → `/admin/prestataires`.
+- `src/components/admin/AdminSidebar.tsx` : retirer entrée "Pré-inscrits".
+- `src/pages/admin/Prestataires.tsx` : refonte complète
+  - KPI cards cliquables (tous + chaque statut)
+  - Filtres rapides en haut
+  - Bouton unique "Créer un prestataire"
+  - Colonnes toggleables (premier_login_le, magic_link_envoye_le, magic_link_ouvert, jours_depuis_invitation, charte_signee_le)
+  - Actions contextuelles par statut
+  - Clic sur ligne brouillon → rouvre modale
 
-### 3. Suppression de la ligne stats
-Retirer le `<p>` "X fiches · Y catégories · 90 jours" dans les deux pages. Les compteurs des pills suffisent. Conserver uniquement le titre (h1).
+### Nouveau composant
+- `src/components/admin/PrestataireFormDialog.tsx` : modale unifiée
+  - Champs obligatoires + facultatifs
+  - Upload photos (bucket `prestataires-photos`)
+  - 3 actions : croix (annuler avec confirm si dirty), "Sauvegarder et continuer plus tard" (brouillon, pas d'email), "Sauvegarder et envoyer l'invitation" (avec confirm modal)
+  - Mode édition : pré-rempli depuis prestataire existant
 
-### 4. Application sur les deux pages
-Modifier de manière cohérente :
-- `src/pages/client/Historique.tsx`
-- `src/pages/PrestatairesConsultes.tsx` (garder le breadcrumb)
-- `src/components/historique/HistoriqueByCategory.tsx` (filtres en scroll horizontal)
+## 3. Frontend prestataire (parcours post-signature)
 
-### Détails techniques
+### Modifications
+- `src/pages/SignerLaCharte.tsx` : après signature, rediriger vers `/espace-pro` (déjà le cas probablement).
+- `src/components/prestataire/PrestataireLayout.tsx` ou Dashboard : ajouter bandeau d'accueil inspirationnel si `statut = pre_inscrit` ET charte signée.
+- `src/pages/prestataire/Profil.tsx` ou `Prestation.tsx` : bouton "Soumettre pour validation" actif quand champs obligatoires remplis (zones_intervention, champs spécifiques, prix, photo principale). Au clic : UPDATE statut → en_attente + invoke edge function `notify-nouvelle-soumission`.
 
-```tsx
-// Header — same line on mobile
-<div className="flex items-center justify-between gap-3">
-  <h1 className="font-serif text-2xl sm:text-3xl">Prestataires consultés</h1>
-  {entries.length > 0 && (
-    <Button variant="outline" size="sm" onClick={clearAll}
-      className="text-destructive hover:text-destructive shrink-0"
-      aria-label="Tout effacer">
-      <Trash2 className="h-4 w-4 sm:mr-2" />
-      <span className="hidden sm:inline">Tout effacer</span>
-    </Button>
-  )}
-</div>
+### Garde charte (déjà demandée par message précédent — confirmation)
+- Créer `src/components/auth/ChartePendingGuard.tsx` : wrapper qui redirige tout prestataire connecté sans charte signée vers `/signer-la-charte` (sauf si déjà sur `/signer-la-charte`, `/deconnexion`, `/cgu`).
+- L'appliquer dans `App.tsx` au niveau `AuthProvider`.
 
-// Filter pills — horizontal scroll on mobile
-<div className="flex gap-2 overflow-x-auto sm:flex-wrap pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
-  {/* pills with shrink-0 */}
-</div>
-```
+## 4. Edge Functions
 
-Aucune modification BDD. Aucun changement de logique.
+### Nouvelle
+- `supabase/functions/notify-nouvelle-soumission/index.ts` : envoie l'email `notif_nouvelle_soumission_fiche` à tous les admins + crée notification in-app.
+
+### Modifiée
+- `supabase/functions/invite-prestataire/index.ts` : accepter prestataire existant (brouillon → pre_inscrit) en plus de création.
+
+## 5. Tests E2E
+
+- Mettre à jour `supabase/functions/sign-charte/index_test.ts` :
+  - cleanup `chartes_versions` dans `cleanup()`
+  - ajouter test : brouillon → pre_inscrit → invite → signature → completion → en_attente → validee → actif
+
+## Sections techniques
+
+### Champs obligatoires modale création
+email, prenom, nom (du contact → profile), nom_commercial, categorie_mere_id, categorie_fille_id, ville, region, telephone
+
+### Champs obligatoires soumission validation (côté prestataire)
+Tout ce qui précède + zones_intervention non vide, photo_principale_url, prix_depart, description.
+
+### Récap cycle de vie
+`brouillon` (admin) → `pre_inscrit` (invitation) → [magic link + signature + complétion] → `en_attente` (soumission) → `validee` (admin) → `actif` (auto via trigger) → [suspendu/archive]
+
+## Hors-scope de ce ticket
+- Pas de refonte complète du Dashboard prestataire (juste le bandeau).
+- Pas de "démonstration messagerie" ni "découverte autres prestataires" dans cette itération (placeholder uniquement).
+- Pas de modification du Stripe trial (déclenchement à la publication actif sera traité ailleurs).
+
+Confirme et je commence l'implémentation.
