@@ -293,7 +293,7 @@ export default function SignerLaCharte() {
                     <>Patientez ({countdown})</>
                   ) : (
                     <>
-                      {step === totalSteps - 1 ? "Acceptation" : "Article suivant"}
+                      {step === totalSteps - 1 ? "Signer la Charte Qualité" : "Article suivant"}
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </>
                   )}
@@ -307,9 +307,9 @@ export default function SignerLaCharte() {
             <Card className="p-8 md:p-12 space-y-6">
               <header className="text-center space-y-3">
                 <ShieldCheck className="h-12 w-12 text-primary mx-auto" />
-                <h1 className="font-serif text-3xl">Acceptation de la Charte Qualité</h1>
+                <h1 className="font-serif text-3xl">Signer la Charte Qualité de LesNoces.net</h1>
                 <p className="font-sans text-sm text-muted-foreground">
-                  Vous avez parcouru les <strong>{totalSteps} articles</strong> de la Charte Qualité {charte.numero_version}.
+                  Vous avez parcouru les <strong>{totalSteps} articles</strong> de la Charte Qualité.
                 </p>
               </header>
 
