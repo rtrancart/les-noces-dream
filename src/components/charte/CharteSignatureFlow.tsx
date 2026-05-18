@@ -45,7 +45,7 @@ function parseCharte(html: string): { articles: ArticleSection[]; engagementsTit
   return { articles, engagementsTitles };
 }
 
-const COUNTDOWN_SECONDS = 3;
+const COUNTDOWN_SECONDS = 0;
 
 export interface CharteSignatureFlowProps {
   /** "inscription" : tunnel d'onboarding presta nouvellement inscrit.
