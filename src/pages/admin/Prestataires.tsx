@@ -27,6 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import type { Database } from "@/integrations/supabase/types";
 import { logAdmin } from "@/lib/logAdmin";
 import { REGIONS, DOM, PAYS_LIMITROPHES, getZoneLabel, getDepartementsByRegion, regionFieldToZoneValue } from "@/lib/zonesIntervention";
+import { REGIONS as REGIONS_FR } from "@/lib/regions";
 
 type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
 type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
@@ -892,7 +893,14 @@ export default function Prestataires() {
                   <Input value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} />
                 </Field>
                 <Field label="Région *">
-                  <Input value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} />
+                  <Select value={form.region || undefined} onValueChange={(v) => setForm({ ...form, region: v })}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner une région" /></SelectTrigger>
+                    <SelectContent>
+                      {REGIONS_FR.map((r) => (
+                        <SelectItem key={r.slug} value={r.nom}>{r.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -1092,13 +1100,24 @@ export default function Prestataires() {
             )}
           </Tabs>
           <DialogFooter className="mt-4 flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={handleSave} disabled={saving} className="font-sans text-sm">
-              {saving ? "Enregistrement…" : "Sauvegarder et continuer plus tard"}
-            </Button>
-            {(!editItem || editItem.statut === "brouillon" || editItem.statut === "pre_inscrit") && (
-              <Button onClick={handleSendInvitation} disabled={saving} className="font-sans text-sm">
-                {saving ? "Envoi…" : "Sauvegarder et envoyer l'invitation"}
-              </Button>
+            {editItem ? (
+              <>
+                <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving} className="font-sans text-sm">
+                  Annuler
+                </Button>
+                <Button onClick={handleSave} disabled={saving} className="font-sans text-sm">
+                  {saving ? "Enregistrement…" : "Enregistrer les modifications"}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={handleSave} disabled={saving} className="font-sans text-sm">
+                  {saving ? "Enregistrement…" : "Sauvegarder et continuer plus tard"}
+                </Button>
+                <Button onClick={handleSendInvitation} disabled={saving} className="font-sans text-sm">
+                  {saving ? "Envoi…" : "Sauvegarder et envoyer l'invitation"}
+                </Button>
+              </>
             )}
           </DialogFooter>
         </DialogContent>
