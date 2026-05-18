@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Mail, Lock, User, Heart, Briefcase } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 
 const Inscription = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [prenom, setPrenom] = useState("");
@@ -23,11 +24,11 @@ const Inscription = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}${role === "prestataire" ? "/pro/charte" : "/"}`,
         data: {
           prenom,
           nom,
@@ -39,10 +40,19 @@ const Inscription = () => {
     setLoading(false);
     if (error) {
       toast.error(error.message);
-    } else {
-      trackEvent("inscription", { role });
-      setSuccess(true);
+      return;
     }
+
+    trackEvent("inscription", { role });
+
+    // Si la session est créée immédiatement (auto-confirm) et que c'est un prestataire,
+    // on l'envoie directement valider la Charte Qualité.
+    if (role === "prestataire" && data.session) {
+      navigate("/pro/charte", { replace: true });
+      return;
+    }
+
+    setSuccess(true);
   };
 
   if (success) {
