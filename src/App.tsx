@@ -25,6 +25,7 @@ import PrestatairesListe from "./pages/PrestatairesListe";
 import AccepterInvitation from "./pages/AccepterInvitation";
 import SignerLaCharte from "./pages/SignerLaCharte";
 import CharteQualite from "./pages/CharteQualite";
+import Reactivation from "./pages/Reactivation";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
@@ -98,6 +99,7 @@ const App = () => (
             <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/accept-invitation" element={<AccepterInvitation />} />
             <Route path="/signer-la-charte" element={<ProtectedRoute><SignerLaCharte /></ProtectedRoute>} />
+            <Route path="/reactivation" element={<Reactivation />} />
 
             {/* Espace client */}
             <Route

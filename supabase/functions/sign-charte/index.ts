@@ -48,9 +48,17 @@ Deno.serve(async (req) => {
 
     // Locate prestataire owned by user
     const { data: presta, error: prestaErr } = await adminClient
-      .from("prestataires").select("id, statut, charte_signee_le").eq("user_id", user.id).maybeSingle();
+      .from("prestataires").select("id, statut, motif_suspension, charte_signee_le").eq("user_id", user.id).maybeSingle();
     if (prestaErr) throw prestaErr;
     if (!presta) throw new Error("Aucune fiche prestataire trouvée pour cet utilisateur");
+
+    // Archive verrouillée : magic link expiré ou tentative tardive de signature après archivage J+60
+    if (presta.statut === "archive" && presta.motif_suspension === "charte_non_signee") {
+      return new Response(
+        JSON.stringify({ error: "archive_locked", code: "archive_locked", prestataire_id: presta.id }),
+        { status: 423, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Get active charte version
     const { data: charte, error: charteErr } = await adminClient

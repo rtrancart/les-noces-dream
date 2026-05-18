@@ -27,3 +27,6 @@ verify_jwt = false
 [functions.generate-charte-pdf-preuve]
 verify_jwt = false
 
+[functions.request-reactivation-archive]
+verify_jwt = false
+

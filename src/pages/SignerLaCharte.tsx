@@ -111,7 +111,21 @@ export default function SignerLaCharte() {
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke("sign-charte", { body: {} });
-      if (error) throw error;
+      if (error) {
+        // Détection 423 archive_locked → redirection vers /reactivation
+        const ctx: any = (error as any).context;
+        try {
+          const text = ctx ? await ctx.text() : null;
+          const parsed = text ? JSON.parse(text) : null;
+          if (parsed?.code === "archive_locked") {
+            navigate(`/reactivation?pid=${parsed.prestataire_id}`, { replace: true });
+            return;
+          }
+        } catch {
+          /* ignore */
+        }
+        throw error;
+      }
       if (data?.already_signed) {
         toast.info("Vous avez déjà signé cette version.");
       } else {
