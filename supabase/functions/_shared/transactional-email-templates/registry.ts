@@ -17,6 +17,7 @@ import { template as invitationPrestataire } from './invitation-prestataire.tsx'
 import { template as relanceSignatureCharte } from './relance-signature-charte.tsx'
 import { template as notifNouvelleVersionCharte } from './notif-nouvelle-version-charte.tsx'
 import { template as demandeReactivationAdmin } from './demande-reactivation-admin.tsx'
+import { template as demandeReactivation } from './demande-reactivation.tsx'
 import { template as notifNouvelleSoumissionFiche } from './notif-nouvelle-soumission-fiche.tsx'
 import { template as validationPublicationFiche } from './validation-publication-fiche.tsx'
 
@@ -29,6 +30,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'relance_signature_charte': relanceSignatureCharte,
   'notif_nouvelle_version_charte': notifNouvelleVersionCharte,
   'demande_reactivation_admin': demandeReactivationAdmin,
+  'demande_reactivation': demandeReactivation,
   'notif_nouvelle_soumission_fiche': notifNouvelleSoumissionFiche,
   'validation_publication_fiche': validationPublicationFiche,
 }
