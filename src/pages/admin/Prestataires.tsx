@@ -659,13 +659,12 @@ export default function Prestataires() {
 
 
 
-  // KPI counts (par statut)
+  // KPI counts (par statut) — toujours globaux, indépendants des filtres
   const kpis = useMemo(() => {
-    const counts: Record<string, number> = { tous: data.length };
-    for (const k of Object.keys(statutLabels)) counts[k] = 0;
-    for (const p of data) counts[p.statut] = (counts[p.statut] ?? 0) + 1;
+    const counts: Record<string, number> = { tous: globalCounts.tous ?? 0 };
+    for (const k of Object.keys(statutLabels)) counts[k] = globalCounts[k] ?? 0;
     return counts;
-  }, [data]);
+  }, [globalCounts]);
 
   const kpiCards: { key: string; label: string; tone: string }[] = [
     { key: "tous", label: "Tous", tone: "bg-muted/40 text-foreground" },
