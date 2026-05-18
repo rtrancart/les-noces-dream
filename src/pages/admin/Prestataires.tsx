@@ -892,7 +892,14 @@ export default function Prestataires() {
                   <Input value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} />
                 </Field>
                 <Field label="Région *">
-                  <Input value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })} />
+                  <Select value={form.region || undefined} onValueChange={(v) => setForm({ ...form, region: v })}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner une région" /></SelectTrigger>
+                    <SelectContent>
+                      {REGIONS_FR.map((r) => (
+                        <SelectItem key={r.slug} value={r.nom}>{r.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-4">
