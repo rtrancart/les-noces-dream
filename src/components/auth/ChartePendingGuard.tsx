@@ -1,88 +1,64 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 /**
- * Garde globale : tout prestataire connecté qui n'a pas signé la version
- * active de la Charte Qualité est redirigé vers /signer-la-charte.
- * Sauf sur certaines routes blanchies (signature, CGU, déconnexion, accept-invitation).
+ * Garde globale prestataire :
+ * Tout prestataire connecté qui n'a pas encore validé la Charte Qualité
+ * (profile.cgu_acceptees_le IS NULL) est automatiquement redirigé vers
+ * /pro/charte, où qu'il aille, tant qu'il n'a pas terminé la séquence.
+ *
+ * Cela couvre le cas d'un prestataire qui ferme le navigateur après l'inscription
+ * mais avant la fin de la charte : à sa prochaine connexion, il atterrit
+ * directement sur /pro/charte.
  */
-// Routes qui exigent une signature à jour. Tout le reste de l'espace pro
-// est librement accessible (espace de préparation conforme à la section 4.7
-// du cahier des charges).
-const BLOCKED_WITHOUT_SIGNATURE = [
-  "/espace-pro/abonnement",
+
+// Routes exemptées de la redirection forcée vers /pro/charte
+const ALLOW_LIST = [
+  "/pro/charte",
+  "/connexion",
+  "/inscription",
+  "/accept-invitation",
+  "/reset-password",
+  "/mot-de-passe-oublie",
+  "/charte-qualite",
+  "/unsubscribe",
+  "/signer-la-charte",
+  "/reactivation",
 ];
 
 export default function ChartePendingGuard({ children }: { children: React.ReactNode }) {
-  const { user, isPrestataire, isLoading } = useAuth();
+  const { user, profile, isPrestataire, isLoading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading) {
+      setChecked(false);
+      return;
+    }
+
     if (!user || !isPrestataire) {
       setChecked(true);
       return;
     }
-    // On ne contrôle la signature que sur les routes restreintes
-    if (!BLOCKED_WITHOUT_SIGNATURE.some((p) => location.pathname.startsWith(p))) {
+
+    // Si la charte est déjà acceptée, rien à faire
+    if (profile?.cgu_acceptees_le) {
       setChecked(true);
       return;
     }
 
-    let cancelled = false;
-    (async () => {
-      const { data: active } = await supabase
-        .from("chartes_versions")
-        .select("id")
-        .is("archivee_le", null)
-        .maybeSingle();
-
-      if (!active) {
-        if (!cancelled) setChecked(true);
-        return;
-      }
-
-      const { data: sig } = await supabase
-        .from("signatures_charte")
-        .select("id")
-        .eq("charte_version_id", active.id)
-        .limit(1)
-        .maybeSingle();
-
-      if (cancelled) return;
-      if (!sig) {
-        navigate("/signer-la-charte", { replace: true });
-      } else {
-        // Check this specific user has signed
-        const { data: presta } = await supabase
-          .from("prestataires")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (presta) {
-          const { data: ownSig } = await supabase
-            .from("signatures_charte")
-            .select("id")
-            .eq("prestataire_id", presta.id)
-            .eq("charte_version_id", active.id)
-            .maybeSingle();
-          if (!ownSig) {
-            navigate("/signer-la-charte", { replace: true });
-            return;
-          }
-        }
-      }
+    // Si la route est dans l'allow-list, on laisse passer
+    if (ALLOW_LIST.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`))) {
       setChecked(true);
-    })();
+      return;
+    }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, isPrestataire, isLoading, location.pathname, navigate]);
+    // Sinon redirection forcée
+    navigate("/pro/charte", { replace: true });
+  }, [user?.id, isPrestataire, profile?.cgu_acceptees_le, isLoading, location.pathname, navigate]);
 
   if (!checked && user && isPrestataire) return null;
   return <>{children}</>;
