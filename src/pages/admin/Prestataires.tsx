@@ -381,6 +381,22 @@ export default function Prestataires() {
 
   useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
 
+  // Compteurs globaux par statut (indépendants des filtres)
+  const [globalCounts, setGlobalCounts] = useState<Record<string, number>>({});
+  const fetchGlobalCounts = async () => {
+    const statuts = Object.keys(statutLabels) as StatutPrestataire[];
+    const [totalRes, ...perStatut] = await Promise.all([
+      supabase.from("prestataires").select("id", { count: "exact", head: true }),
+      ...statuts.map((s) =>
+        supabase.from("prestataires").select("id", { count: "exact", head: true }).eq("statut", s)
+      ),
+    ]);
+    const counts: Record<string, number> = { tous: totalRes.count ?? 0 };
+    statuts.forEach((s, i) => { counts[s] = perStatut[i].count ?? 0; });
+    setGlobalCounts(counts);
+  };
+  useEffect(() => { fetchGlobalCounts(); }, []);
+
   const updateStatut = async (id: string, statut: StatutPrestataire) => {
     const { data: updated, error } = await supabase
       .from("prestataires")
