@@ -29,15 +29,15 @@ export function WelcomeBanner() {
   if (!cguOk) return null;
   if (!welcomeParam && !fichePending) return null;
 
+  const prenom = profile?.prenom ?? "";
+
   const checklist = [
     { label: "Charte Qualité validée", done: cguOk },
-    { label: "Informations de base (nom, ville, catégorie)", done: !!prestataire?.nom_commercial && !!prestataire?.ville },
-    { label: "Description et tarifs", done: !!prestataire?.description && !!prestataire?.prix_depart },
+    { label: "Informations de base (nom, prénom, email)", done: !!profile?.nom && !!profile?.prenom && !!profile?.email },
+    { label: "Description et coordonnées", done: !!prestataire?.description && !!prestataire?.telephone },
+    { label: "Détail de votre prestation", done: !!prestataire?.prix_depart },
     { label: "Photos de la galerie", done: !!prestataire?.urls_galerie && prestataire.urls_galerie.length > 0 },
-    { label: "Fiche soumise à validation", done: prestataire?.statut === "en_attente" || prestataire?.statut === "actif" },
   ];
-
-  const prenom = profile?.prenom ?? "";
 
   return (
     <div className="rounded-lg border border-primary/30 bg-gradient-to-br from-primary/5 to-champagne/10 p-6">
@@ -48,11 +48,10 @@ export function WelcomeBanner() {
             <h3 className="font-serif text-xl md:text-2xl">
               {welcomeParam
                 ? `Bienvenue ${prenom}. Votre Charte est validée.`
-                : `Plus qu'une étape ${prenom ? prenom + " " : ""}avant que les couples vous découvrent.`}
+                : `${prenom ? prenom + ", vous êtes" : "Vous êtes"} proche du but.`}
             </h3>
             <p className="font-sans text-sm text-muted-foreground mt-1">
               Complétez votre fiche pour la soumettre à notre équipe éditoriale.
-              Validation sous 48h.
             </p>
           </div>
 
