@@ -162,8 +162,10 @@ Deno.serve(async (req) => {
     }
 
     // 3. Magic link
+    // Supabase invite links only work for brand-new emails. For an existing account,
+    // generate a magic link so admins can safely resend the onboarding email.
     const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
-      type: "invite",
+      type: "magiclink",
       email: cleanEmail,
       options: { redirectTo: `${siteUrl}/accept-invitation` },
     });
