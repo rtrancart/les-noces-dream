@@ -381,6 +381,22 @@ export default function Prestataires() {
 
   useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
 
+  // Compteurs globaux par statut (indépendants des filtres)
+  const [globalCounts, setGlobalCounts] = useState<Record<string, number>>({});
+  const fetchGlobalCounts = async () => {
+    const statuts = Object.keys(statutLabels) as StatutPrestataire[];
+    const [totalRes, ...perStatut] = await Promise.all([
+      supabase.from("prestataires").select("id", { count: "exact", head: true }),
+      ...statuts.map((s) =>
+        supabase.from("prestataires").select("id", { count: "exact", head: true }).eq("statut", s)
+      ),
+    ]);
+    const counts: Record<string, number> = { tous: totalRes.count ?? 0 };
+    statuts.forEach((s, i) => { counts[s] = perStatut[i].count ?? 0; });
+    setGlobalCounts(counts);
+  };
+  useEffect(() => { fetchGlobalCounts(); }, []);
+
   const updateStatut = async (id: string, statut: StatutPrestataire) => {
     const { data: updated, error } = await supabase
       .from("prestataires")
@@ -426,7 +442,7 @@ export default function Prestataires() {
       }
     }
 
-    fetchData();
+    fetchData(); fetchGlobalCounts();
   };
 
   const openCreate = () => {
@@ -532,7 +548,7 @@ export default function Prestataires() {
         logAdmin("update_prestataire", "prestataires", editItem.id, { nom: form.nom_commercial });
         const addressChanged = editItem.ville !== form.ville || editItem.code_postal !== (form.code_postal || null) || editItem.adresse !== (form.adresse || null);
         if (addressChanged) triggerGeocode(editItem.id);
-        setDialogOpen(false); fetchData();
+        setDialogOpen(false); fetchData(); fetchGlobalCounts();
       }
     } else {
       // New prestataire as brouillon → no user account, no email
@@ -547,7 +563,7 @@ export default function Prestataires() {
         toast.success("Brouillon sauvegardé");
         logAdmin("create_prestataire_brouillon", "prestataires", created[0].id, { nom: form.nom_commercial });
         triggerGeocode(created[0].id);
-        setDialogOpen(false); fetchData();
+        setDialogOpen(false); fetchData(); fetchGlobalCounts();
       }
     }
     setSaving(false);
@@ -593,7 +609,7 @@ export default function Prestataires() {
       if (data?.error) throw new Error(data.error);
       toast.success(`Invitation envoyée à ${form.email_contact}`);
       setDialogOpen(false);
-      fetchData();
+      fetchData(); fetchGlobalCounts();
     } catch (e: any) {
       toast.error(e.message ?? "Erreur lors de l'envoi de l'invitation.");
     } finally {
@@ -612,7 +628,7 @@ export default function Prestataires() {
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("prestataires").delete().eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Prestataire supprimé"); logAdmin("delete_prestataire", "prestataires", id); fetchData(); }
+    else { toast.success("Prestataire supprimé"); logAdmin("delete_prestataire", "prestataires", id); fetchData(); fetchGlobalCounts(); }
   };
 
   const parentCategories = categories.filter((c) => !c.parent_id);
@@ -643,13 +659,12 @@ export default function Prestataires() {
 
 
 
-  // KPI counts (par statut)
+  // KPI counts (par statut) — toujours globaux, indépendants des filtres
   const kpis = useMemo(() => {
-    const counts: Record<string, number> = { tous: data.length };
-    for (const k of Object.keys(statutLabels)) counts[k] = 0;
-    for (const p of data) counts[p.statut] = (counts[p.statut] ?? 0) + 1;
+    const counts: Record<string, number> = { tous: globalCounts.tous ?? 0 };
+    for (const k of Object.keys(statutLabels)) counts[k] = globalCounts[k] ?? 0;
     return counts;
-  }, [data]);
+  }, [globalCounts]);
 
   const kpiCards: { key: string; label: string; tone: string }[] = [
     { key: "tous", label: "Tous", tone: "bg-muted/40 text-foreground" },
@@ -935,7 +950,7 @@ export default function Prestataires() {
                   prestataireId={editItem.id}
                   photoUrl={editItem.photo_principale_url}
                   galerieUrls={(editItem.urls_galerie as string[]) ?? []}
-                  onUpdate={() => { fetchData(); supabase.from("prestataires").select("*").eq("id", editItem.id).single().then(({ data }) => { if (data) setEditItem(data); }); }}
+                  onUpdate={() => { fetchData(); fetchGlobalCounts(); supabase.from("prestataires").select("*").eq("id", editItem.id).single().then(({ data }) => { if (data) setEditItem(data); }); }}
                 />
               </TabsContent>
             )}
@@ -1082,7 +1097,7 @@ export default function Prestataires() {
                           await logAdmin("create_user_for_prestataire", "prestataires", editItem.id, { email: editItem.email_contact });
                           setNewPassword("");
                           setDialogOpen(false);
-                          fetchData();
+                          fetchData(); fetchGlobalCounts();
                         } catch (e: any) {
                           toast.error(e.message || "Erreur lors de la création du compte");
                         } finally {
