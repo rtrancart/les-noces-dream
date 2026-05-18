@@ -75,7 +75,7 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
             {prestataire.ville}, {prestataire.region}
           </p>
           <Badge
-            className="mt-1.5 md:mt-2"
+            className={cn("mt-1.5 md:mt-2", statusClasses[prestataire.statut])}
             variant={prestataire.statut === "actif" ? "default" : "secondary"}
           >
             {statusLabels[prestataire.statut] ?? prestataire.statut}
