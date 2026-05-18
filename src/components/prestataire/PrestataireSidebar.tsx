@@ -139,12 +139,14 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
             {showIncomplete && !showBadge && (
               <span
                 className={cn(
-                  "ml-auto flex h-5 w-5 items-center justify-center rounded-full shrink-0",
-                  active ? "bg-primary-foreground text-primary" : "bg-terracotta text-white"
+                  "ml-auto flex h-5 w-5 items-center justify-center rounded-full shrink-0 border-2",
+                  active
+                    ? "bg-transparent border-primary-foreground text-primary-foreground"
+                    : "bg-transparent border-terracotta text-terracotta"
                 )}
                 title="Section à compléter"
               >
-                <AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} />
+                <span className="font-bold text-[11px] leading-none">!</span>
               </span>
             )}
             {showBadge && (
