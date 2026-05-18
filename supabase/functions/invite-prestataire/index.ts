@@ -111,32 +111,54 @@ Deno.serve(async (req) => {
       if (updErr) throw updErr;
       presta = updated;
     } else {
-      let slug = slugify(nom_commercial);
-      let attempt = 0;
-      while (attempt < 5) {
-        const { data: existing } = await adminClient.from("prestataires").select("id").eq("slug", slug).maybeSingle();
-        if (!existing) break;
-        attempt++;
-        slug = `${slugify(nom_commercial)}-${attempt + 1}`;
-      }
+      // Reuse any existing prestataire row already linked to this user_id
+      const { data: existingPresta } = await adminClient
+        .from("prestataires").select("id").eq("user_id", userId).maybeSingle();
 
-      const { data: created, error: prestaError } = await adminClient.from("prestataires").insert({
-        user_id: userId,
-        nom_commercial, slug, categorie_mere_id,
-        categorie_fille_id: categorie_fille_id ?? null,
-        ville, region,
-        code_postal: code_postal ?? null,
-        telephone: telephone ?? null,
-        email_contact: cleanEmail,
-        description: description ?? null,
-        description_courte: description_courte ?? null,
-        statut: "pre_inscrit",
-        cree_par_admin: true,
-        notes_pre_inscription: notes_pre_inscription ?? null,
-        magic_link_envoye_le: new Date().toISOString(),
-      }).select().single();
-      if (prestaError) throw prestaError;
-      presta = created;
+      if (existingPresta) {
+        const { data: updated, error: updErr } = await adminClient.from("prestataires").update({
+          nom_commercial, categorie_mere_id,
+          categorie_fille_id: categorie_fille_id ?? null,
+          ville, region,
+          code_postal: code_postal ?? null,
+          telephone: telephone ?? null,
+          email_contact: cleanEmail,
+          description: description ?? null,
+          description_courte: description_courte ?? null,
+          notes_pre_inscription: notes_pre_inscription ?? null,
+          statut: "pre_inscrit",
+          magic_link_envoye_le: new Date().toISOString(),
+        }).eq("id", existingPresta.id).select().single();
+        if (updErr) throw updErr;
+        presta = updated;
+      } else {
+        let slug = slugify(nom_commercial);
+        let attempt = 0;
+        while (attempt < 5) {
+          const { data: existing } = await adminClient.from("prestataires").select("id").eq("slug", slug).maybeSingle();
+          if (!existing) break;
+          attempt++;
+          slug = `${slugify(nom_commercial)}-${attempt + 1}`;
+        }
+
+        const { data: created, error: prestaError } = await adminClient.from("prestataires").insert({
+          user_id: userId,
+          nom_commercial, slug, categorie_mere_id,
+          categorie_fille_id: categorie_fille_id ?? null,
+          ville, region,
+          code_postal: code_postal ?? null,
+          telephone: telephone ?? null,
+          email_contact: cleanEmail,
+          description: description ?? null,
+          description_courte: description_courte ?? null,
+          statut: "pre_inscrit",
+          cree_par_admin: true,
+          notes_pre_inscription: notes_pre_inscription ?? null,
+          magic_link_envoye_le: new Date().toISOString(),
+        }).select().single();
+        if (prestaError) throw prestaError;
+        presta = created;
+      }
     }
 
     // 3. Magic link
