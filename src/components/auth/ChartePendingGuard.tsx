@@ -8,16 +8,11 @@ import { useAuth } from "@/contexts/AuthContext";
  * active de la Charte Qualité est redirigé vers /signer-la-charte.
  * Sauf sur certaines routes blanchies (signature, CGU, déconnexion, accept-invitation).
  */
-const WHITELIST = [
-  "/signer-la-charte",
-  "/accept-invitation",
-  "/cgu",
-  "/charte-qualite",
-  "/connexion",
-  "/inscription",
-  "/mot-de-passe-oublie",
-  "/reset-password",
-  "/unsubscribe",
+// Routes qui exigent une signature à jour. Tout le reste de l'espace pro
+// est librement accessible (espace de préparation conforme à la section 4.7
+// du cahier des charges).
+const BLOCKED_WITHOUT_SIGNATURE = [
+  "/espace-pro/abonnement",
 ];
 
 export default function ChartePendingGuard({ children }: { children: React.ReactNode }) {
@@ -32,7 +27,8 @@ export default function ChartePendingGuard({ children }: { children: React.React
       setChecked(true);
       return;
     }
-    if (WHITELIST.some((p) => location.pathname.startsWith(p))) {
+    // On ne contrôle la signature que sur les routes restreintes
+    if (!BLOCKED_WITHOUT_SIGNATURE.some((p) => location.pathname.startsWith(p))) {
       setChecked(true);
       return;
     }
