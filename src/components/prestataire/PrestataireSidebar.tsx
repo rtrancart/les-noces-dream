@@ -137,13 +137,15 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
             <item.icon className="h-4 w-4 shrink-0" />
             <span className="flex-1">{item.title}</span>
             {showIncomplete && !showBadge && (
-              <AlertCircle
+              <span
                 className={cn(
-                  "h-4 w-4 shrink-0",
-                  active ? "text-primary-foreground" : "text-terracotta"
+                  "ml-auto flex h-5 w-5 items-center justify-center rounded-full shrink-0",
+                  active ? "bg-primary-foreground text-primary" : "bg-terracotta text-white"
                 )}
-                aria-label="Section à compléter"
-              />
+                title="Section à compléter"
+              >
+                <AlertCircle className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </span>
             )}
             {showBadge && (
               <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
