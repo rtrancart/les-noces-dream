@@ -241,7 +241,7 @@ export default function SignerLaCharte() {
                   onClick={handleReportLater}
                   className="font-sans text-sm text-[#1F4E5F] hover:underline self-center"
                 >
-                  Je prends le temps de la lire — je signerai plus tard
+                  J'accède tout de suite à mon espace, je signerai la Charte Qualité plus tard
                 </button>
               </div>
             </Card>
@@ -322,9 +322,9 @@ export default function SignerLaCharte() {
                     className="mt-1 h-4 w-4 accent-primary"
                   />
                   <span className="font-sans text-sm">
-                    J'ai lu intégralement la Charte Qualité <strong>{charte.numero_version}</strong> et
-                    j'en accepte sans réserve l'ensemble des stipulations. Je comprends que ma signature
-                    électronique a la même valeur qu'une signature manuscrite (art. 1366 du Code civil).
+                    J'ai lu intégralement la Charte Qualité et j'en accepte sans réserve
+                    l'ensemble des stipulations. Je comprends que ma signature électronique
+                    a la même valeur qu'une signature manuscrite (art. 1366 du Code civil).
                   </span>
                 </label>
               </div>
@@ -337,13 +337,13 @@ export default function SignerLaCharte() {
                   className="w-full"
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  Je signe et je publie ma fiche
+                  Je signe la Charte Qualité de LesNoces.net
                 </Button>
                 <button
                   onClick={handleReportLater}
                   className="font-sans text-sm text-[#1F4E5F] hover:underline self-center"
                 >
-                  Je prends le temps de la lire — je signerai plus tard
+                  J'accède tout de suite à mon espace, je signerai la Charte Qualité plus tard
                 </button>
               </div>
 
