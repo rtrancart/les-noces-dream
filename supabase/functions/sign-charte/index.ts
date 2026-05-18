@@ -137,13 +137,12 @@ Deno.serve(async (req) => {
     }).select().single();
     if (sigError) throw sigError;
 
-    // Clear "charte obsolete" notification flag now that they signed.
-    // A self-registered/pre-registered provider must land on a private draft after signing.
+    // Self-registered providers keep statut 'pre_inscrit' (= "Profil à compléter")
+    // until they submit their fiche. 'brouillon' is reserved for internal admin creation.
     const prestatairePatch: Record<string, unknown> = {
       notification_charte_obsolete_envoyee_le: null,
       motif_suspension: null,
     };
-    if (presta.statut === "pre_inscrit") prestatairePatch.statut = "brouillon";
 
     await adminClient.from("prestataires")
       .update(prestatairePatch)
