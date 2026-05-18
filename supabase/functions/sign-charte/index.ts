@@ -29,6 +29,10 @@ function parseClientIp(xff: string | null): string | null {
   return null;
 }
 
+function buildDraftSlug(userId: string): string {
+  return `prestataire-${userId.slice(0, 8)}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -47,10 +51,54 @@ Deno.serve(async (req) => {
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     // Locate prestataire owned by user
-    const { data: presta, error: prestaErr } = await adminClient
+    let { data: presta, error: prestaErr } = await adminClient
       .from("prestataires").select("id, statut, motif_suspension, charte_signee_le").eq("user_id", user.id).maybeSingle();
     if (prestaErr) throw prestaErr;
-    if (!presta) throw new Error("Aucune fiche prestataire trouvée pour cet utilisateur");
+
+    // Self-signup accounts receive the prestataire role before the draft fiche exists.
+    // Create the minimal private fiche lazily so the signature flow can complete.
+    if (!presta) {
+      const { data: roleRows, error: roleErr } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      if (roleErr) throw roleErr;
+      const canCreatePrestataire = (roleRows ?? []).some((r) => r.role === "prestataire");
+      if (!canCreatePrestataire) throw new Error("Aucune fiche prestataire trouvée pour cet utilisateur");
+
+      const [{ data: profile, error: profileErr }, { data: category, error: categoryErr }] = await Promise.all([
+        adminClient.from("profiles").select("prenom, nom, email").eq("id", user.id).maybeSingle(),
+        adminClient
+          .from("categories")
+          .select("id")
+          .is("parent_id", null)
+          .eq("est_active", true)
+          .order("ordre_affichage", { ascending: true })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+      if (profileErr) throw profileErr;
+      if (categoryErr) throw categoryErr;
+      if (!category) throw new Error("Aucune catégorie active disponible");
+
+      const displayName = [profile?.prenom, profile?.nom].filter(Boolean).join(" ").trim();
+      const { data: createdPresta, error: createPrestaErr } = await adminClient
+        .from("prestataires")
+        .insert({
+          user_id: user.id,
+          nom_commercial: displayName || "Prestataire à compléter",
+          slug: buildDraftSlug(user.id),
+          categorie_mere_id: category.id,
+          ville: "À compléter",
+          region: "À compléter",
+          email_contact: profile?.email ?? user.email ?? null,
+          statut: "pre_inscrit",
+        })
+        .select("id, statut, motif_suspension, charte_signee_le")
+        .single();
+      if (createPrestaErr) throw createPrestaErr;
+      presta = createdPresta;
+    }
 
     // Archive verrouillée : magic link expiré ou tentative tardive de signature après archivage J+60
     if (presta.statut === "archive" && presta.motif_suspension === "charte_non_signee") {
@@ -77,11 +125,6 @@ Deno.serve(async (req) => {
     const ip = parseClientIp(req.headers.get("x-forwarded-for"));
     const ua = req.headers.get("user-agent") ?? "unknown";
 
-    // If prestataire was 'en_attente_signature' or 'pre_inscrit', move to 'validee' first then trigger flips to 'actif'
-    if (presta.statut === "pre_inscrit" || presta.statut === "en_attente_signature") {
-      await adminClient.from("prestataires").update({ statut: "validee" }).eq("id", presta.id);
-    }
-
     const { data: signature, error: sigError } = await adminClient.from("signatures_charte").insert({
       prestataire_id: presta.id,
       profile_id: user.id,
@@ -94,9 +137,16 @@ Deno.serve(async (req) => {
     }).select().single();
     if (sigError) throw sigError;
 
-    // Clear "charte obsolete" notification flag now that they signed
+    // Clear "charte obsolete" notification flag now that they signed.
+    // A self-registered/pre-registered provider must land on a private draft after signing.
+    const prestatairePatch: Record<string, unknown> = {
+      notification_charte_obsolete_envoyee_le: null,
+      motif_suspension: null,
+    };
+    if (presta.statut === "pre_inscrit") prestatairePatch.statut = "brouillon";
+
     await adminClient.from("prestataires")
-      .update({ notification_charte_obsolete_envoyee_le: null, motif_suspension: null })
+      .update(prestatairePatch)
       .eq("id", presta.id);
 
     // Async: generate proof PDF (fire and forget)

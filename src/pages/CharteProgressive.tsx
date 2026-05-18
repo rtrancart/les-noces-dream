@@ -40,7 +40,7 @@ export default function CharteProgressive() {
         .is("archivee_le", null)
         .maybeSingle();
 
-      await supabase
+      const { data: updatedProfile, error: updateError } = await supabase
         .from("profiles")
         .update({
           cgu_acceptees_le: new Date().toISOString(),
@@ -48,10 +48,13 @@ export default function CharteProgressive() {
         })
         .eq("id", user.id)
         .select();
+
+      if (updateError) throw updateError;
+      if (!updatedProfile || updatedProfile.length === 0) throw new Error("Mise à jour du profil refusée");
     } catch {
       /* sign-charte a déjà acté la signature, on n'échoue pas pour cette mise à jour */
     } finally {
-      navigate("/espace-pro?welcome=1", { replace: true });
+      window.location.replace("/espace-pro?welcome=1");
     }
   };
 
