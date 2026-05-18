@@ -9,6 +9,7 @@ import {
   LogOut,
   CreditCard,
   ClipboardList,
+  AlertCircle,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -93,11 +94,32 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
     return () => { supabase.removeChannel(channel); };
   }, [fetchUnread, prestataire?.id]);
 
+  const incompleteByUrl: Record<string, boolean> = {
+    "/espace-pro/profil": !!prestataire && (
+      !prestataire.nom_commercial ||
+      !prestataire.categorie_mere_id ||
+      !prestataire.ville ||
+      !prestataire.telephone ||
+      !prestataire.email_contact ||
+      !prestataire.site_web
+    ),
+    "/espace-pro/prestation": !!prestataire && (
+      !prestataire.description ||
+      !prestataire.description_courte ||
+      prestataire.prix_depart == null
+    ),
+    "/espace-pro/galerie": !!prestataire && (
+      !prestataire.photo_principale_url ||
+      (prestataire.urls_galerie?.length ?? 0) === 0
+    ),
+  };
+
   return (
     <nav className="bg-card rounded-lg shadow-sm p-3 lg:sticky lg:top-24 space-y-1">
       {mainItems.map((item) => {
         const active = isActive(item.url);
         const showBadge = item.url === "/espace-pro/demandes" && unreadCount > 0;
+        const showIncomplete = incompleteByUrl[item.url];
         return (
           <NavLink
             key={item.url}
@@ -114,6 +136,15 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
           >
             <item.icon className="h-4 w-4 shrink-0" />
             <span className="flex-1">{item.title}</span>
+            {showIncomplete && !showBadge && (
+              <AlertCircle
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  active ? "text-primary-foreground" : "text-terracotta"
+                )}
+                aria-label="Section à compléter"
+              />
+            )}
             {showBadge && (
               <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
                 {unreadCount}

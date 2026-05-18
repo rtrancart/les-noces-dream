@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, AlertCircle, X } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { cn } from "@/lib/utils";
 
 interface ProviderInfoBannerProps {
   prestataire: Tables<"prestataires">;
@@ -41,10 +42,16 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
   const statusLabels: Record<string, string> = {
     actif: "Actif",
     brouillon: "Brouillon",
-    en_attente: "En attente",
+    pre_inscrit: "Profil à compléter",
+    en_attente: "En attente de validation",
     a_corriger: "À corriger",
     suspendu: "Suspendu",
     archive: "Archivé",
+  };
+
+  const statusClasses: Record<string, string> = {
+    pre_inscrit: "bg-terracotta text-white hover:bg-terracotta/90 border-transparent",
+    en_attente: "bg-bleu-petrole text-white hover:bg-bleu-petrole/90 border-transparent",
   };
 
   const circumference = 2 * Math.PI * 28;
@@ -69,7 +76,7 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
             {prestataire.ville}, {prestataire.region}
           </p>
           <Badge
-            className="mt-1.5 md:mt-2"
+            className={cn("mt-1.5 md:mt-2", statusClasses[prestataire.statut])}
             variant={prestataire.statut === "actif" ? "default" : "secondary"}
           >
             {statusLabels[prestataire.statut] ?? prestataire.statut}
