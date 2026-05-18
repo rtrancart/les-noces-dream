@@ -50,17 +50,36 @@ Deno.serve(async (req) => {
     }
     const cleanEmail = String(email).trim().toLowerCase();
 
-    // 1. Auth user (create or reuse)
-    const { data: list } = await adminClient.auth.admin.listUsers();
-    let userId = list?.users?.find((u: any) => u.email?.toLowerCase() === cleanEmail)?.id;
+    // 1. Auth user (create or reuse) — paginate listUsers since there's no email filter
+    let userId: string | undefined;
+    const perPage = 1000;
+    for (let page = 1; page <= 20 && !userId; page++) {
+      const { data: list, error: listErr } = await adminClient.auth.admin.listUsers({ page, perPage });
+      if (listErr) throw listErr;
+      userId = list?.users?.find((u: any) => u.email?.toLowerCase() === cleanEmail)?.id;
+      if (!list?.users || list.users.length < perPage) break;
+    }
     if (!userId) {
       const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
         email: cleanEmail,
         email_confirm: true,
         user_metadata: { prenom: prenom ?? null, nom: nom ?? null, role_souhaite: "prestataire" },
       });
-      if (createError) throw createError;
-      userId = newUser.user!.id;
+      if (createError) {
+        // Race / already exists — retry lookup across all pages
+        if (/already|exist|registered/i.test(createError.message)) {
+          for (let page = 1; page <= 20 && !userId; page++) {
+            const { data: list } = await adminClient.auth.admin.listUsers({ page, perPage });
+            userId = list?.users?.find((u: any) => u.email?.toLowerCase() === cleanEmail)?.id;
+            if (!list?.users || list.users.length < perPage) break;
+          }
+          if (!userId) throw createError;
+        } else {
+          throw createError;
+        }
+      } else {
+        userId = newUser.user!.id;
+      }
     }
     await adminClient.from("user_roles").upsert({ user_id: userId, role: "prestataire" }, { onConflict: "user_id,role" });
 
