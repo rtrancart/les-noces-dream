@@ -65,7 +65,7 @@ export function ChartePendingBanner() {
           </p>
           <p className="font-sans text-xs text-foreground/70">
             {isFirstSignature
-              ? "Signez la Charte Qualité pour la rendre visible aux couples."
+              ? "Signez la Charte Qualité rendre votre profil visible sur LesNoces.net"
               : "Vous devez la signer pour conserver votre statut de prestataire actif."}
           </p>
         </div>
