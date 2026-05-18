@@ -442,7 +442,7 @@ export default function Prestataires() {
       }
     }
 
-    fetchData();
+    fetchData(); fetchGlobalCounts();
   };
 
   const openCreate = () => {
@@ -548,7 +548,7 @@ export default function Prestataires() {
         logAdmin("update_prestataire", "prestataires", editItem.id, { nom: form.nom_commercial });
         const addressChanged = editItem.ville !== form.ville || editItem.code_postal !== (form.code_postal || null) || editItem.adresse !== (form.adresse || null);
         if (addressChanged) triggerGeocode(editItem.id);
-        setDialogOpen(false); fetchData();
+        setDialogOpen(false); fetchData(); fetchGlobalCounts();
       }
     } else {
       // New prestataire as brouillon → no user account, no email
@@ -563,7 +563,7 @@ export default function Prestataires() {
         toast.success("Brouillon sauvegardé");
         logAdmin("create_prestataire_brouillon", "prestataires", created[0].id, { nom: form.nom_commercial });
         triggerGeocode(created[0].id);
-        setDialogOpen(false); fetchData();
+        setDialogOpen(false); fetchData(); fetchGlobalCounts();
       }
     }
     setSaving(false);
@@ -609,7 +609,7 @@ export default function Prestataires() {
       if (data?.error) throw new Error(data.error);
       toast.success(`Invitation envoyée à ${form.email_contact}`);
       setDialogOpen(false);
-      fetchData();
+      fetchData(); fetchGlobalCounts();
     } catch (e: any) {
       toast.error(e.message ?? "Erreur lors de l'envoi de l'invitation.");
     } finally {
@@ -628,7 +628,7 @@ export default function Prestataires() {
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("prestataires").delete().eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Prestataire supprimé"); logAdmin("delete_prestataire", "prestataires", id); fetchData(); }
+    else { toast.success("Prestataire supprimé"); logAdmin("delete_prestataire", "prestataires", id); fetchData(); fetchGlobalCounts(); }
   };
 
   const parentCategories = categories.filter((c) => !c.parent_id);
@@ -950,7 +950,7 @@ export default function Prestataires() {
                   prestataireId={editItem.id}
                   photoUrl={editItem.photo_principale_url}
                   galerieUrls={(editItem.urls_galerie as string[]) ?? []}
-                  onUpdate={() => { fetchData(); supabase.from("prestataires").select("*").eq("id", editItem.id).single().then(({ data }) => { if (data) setEditItem(data); }); }}
+                  onUpdate={() => { fetchData(); fetchGlobalCounts(); supabase.from("prestataires").select("*").eq("id", editItem.id).single().then(({ data }) => { if (data) setEditItem(data); }); }}
                 />
               </TabsContent>
             )}
@@ -1097,7 +1097,7 @@ export default function Prestataires() {
                           await logAdmin("create_user_for_prestataire", "prestataires", editItem.id, { email: editItem.email_contact });
                           setNewPassword("");
                           setDialogOpen(false);
-                          fetchData();
+                          fetchData(); fetchGlobalCounts();
                         } catch (e: any) {
                           toast.error(e.message || "Erreur lors de la création du compte");
                         } finally {
