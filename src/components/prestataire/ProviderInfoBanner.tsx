@@ -50,6 +50,7 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
   };
 
   const statusClasses: Record<string, string> = {
+    brouillon: "bg-terracotta text-white hover:bg-terracotta/90 border-transparent",
     pre_inscrit: "bg-terracotta text-white hover:bg-terracotta/90 border-transparent",
     en_attente: "bg-bleu-petrole text-white hover:bg-bleu-petrole/90 border-transparent",
   };
