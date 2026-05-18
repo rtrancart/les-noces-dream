@@ -1,65 +1,56 @@
-# Page /reactivation + Edge Function `request-reactivation-archive`
+## Objectif
 
-## 1. Page publique `src/pages/Reactivation.tsx`
+Unifier le parcours de signature de la Charte pour les prestataires qui s'inscrivent seuls avec celui des prestataires invités par magic-link, et retirer toute mention de version visible côté utilisateur.
 
-Route ajoutée dans `src/App.tsx` (hors `ProtectedRoute`, hors `PublicLayout` pour rester sobre comme `/accept-invitation`) :
-```tsx
-<Route path="/reactivation" element={<Reactivation />} />
-```
+## Décisions
 
-Comportement :
-- Récupère `pid` depuis l'URL (`useSearchParams`). Fallback : si user connecté, on récupère le `prestataire_id` lié à `user_id`.
-- Layout centré, fond champagne, carte blanche, max-w-2xl.
-- **Titre** Playfair Display : « Votre profil a été archivé ».
-- **Texte** Montserrat : « Le délai de 60 jours pour signer la Charte Qualité LesNoces.net est écoulé. Votre profil a été archivé et n'a pas été publié. La réactivation et la publication de votre profil seront soumises à la validation de l'équipe LesNoces.net. »
-- **CTA or** (`bg-[hsl(var(--gold))]` / token `--primary` selon existant) : « Demander la réactivation de mon profil ».
-- États gérés via `useState` : `idle | loading | success | error`.
-  - `loading` → bouton désactivé + spinner.
-  - `success` → remplace CTA par : « Votre demande a bien été transmise. Notre équipe vous recontacte sous 48 heures ouvrées. » (icône check or).
-  - `error` → message rouge sobre : « Une erreur est survenue. Contactez-nous à contact@lesnoces.net » + mailto.
-- Appel : `supabase.functions.invoke("request-reactivation-archive", { body: { prestataire_id: pid } })`. Si réponse `409` → message spécifique « Une demande a déjà été enregistrée aujourd'hui. ».
-- SEO : `<SeoHead>` avec `noindex`.
+- **Option A** : `/pro/charte` (tunnel inscription) utilise exactement le même composant et le même processus que `/signer-la-charte` : 6 articles complets parcourus un par un, compte à rebours, checkbox finale, appel à `sign-charte` qui génère le PDF de preuve et insère dans `signatures_charte` (avec IP, user-agent, hash, version).
+- **Aucune mention de version** affichée à l'utilisateur (ni "v1.0", ni "v0", ni "version X"). La version reste stockée en base comme preuve juridique mais n'apparaît jamais dans l'UI ni dans les emails côté presta.
 
-## 2. Refonte `supabase/functions/request-reactivation-archive/index.ts`
+## Étapes
 
-Changements clés :
-- **Auth optionnelle** : si pas de header `Authorization`, on accepte mais on exige `prestataire_id` dans le body.
-- Si auth présente : on résout le `prestataire_id` via `user_id` (priorité body si fourni et cohérent).
-- Vérifications (sinon **422**) :
-  - `prestataires.statut = 'archive'`
-  - `motif_suspension = 'charte_non_signee'`
-- Anti-spam (**409**) : si `demande_reactivation_le >= today 00:00`, refuser.
-- Envoi email Scaleway via `send-transactional-email` :
-  - `templateName: "demande_reactivation"`
-  - `recipientEmail: Deno.env.get("REACTIVATION_TEAM_EMAIL")`
-  - `templateData`: `{ nom_commercial, email_prestataire, prestataire_id, lien_backoffice }`
-- Update `prestataires.demande_reactivation_le = now()`.
-- Codes retour : **200** OK, **409** déjà demandé aujourd'hui, **422** conditions non remplies, **400** payload invalide, **500** erreur interne. CORS sur toutes les réponses.
+### 1. Mutualiser le composant de signature
 
-## 3. Edge Function `sign-charte` — branche `archive_locked`
+Extraire le contenu de `SignerLaCharte.tsx` dans un composant réutilisable `<CharteSignatureFlow />` qui gère intro + 6 articles + écran final + appel `sign-charte`. Props :
+- `mode: "inscription" | "resignature"` (contrôle texte d'intro et redirection finale)
+- `onSigned: () => void`
 
-Avant la résolution de la version active de la charte, si `presta.statut = 'archive'` ET `motif_suspension = 'charte_non_signee'`, retourner :
-```
-status 423
-body { error: "archive_locked", code: "archive_locked", prestataire_id: presta.id }
-```
-Le front (`SignerLaCharte.tsx`) détecte ce code et redirige : `navigate('/reactivation?pid=' + id)`.
+Les deux pages (`/pro/charte` et `/signer-la-charte`) deviennent de simples wrappers autour de ce composant avec leurs gardes d'accès respectifs.
 
-## 4. Template email
+### 2. Refondre `/pro/charte` (CharteProgressive.tsx)
 
-Créer `supabase/functions/_shared/transactional-email-templates/demande-reactivation.tsx` (équipe interne), et l'enregistrer dans `registry.ts` sous la clé `demande_reactivation`. Contenu : sujet « [Réactivation] {nom_commercial} demande la republication », corps listant `nom_commercial`, `email_prestataire`, lien back-office.
+- Supprimer les 4 écrans courts (Réactivité / Exactitude / Qualité / Sanctions) et le récap.
+- Remplacer par `<CharteSignatureFlow mode="inscription" />`.
+- Garde d'accès inchangée : prestataire connecté + `cgu_acceptees_le IS NULL`.
+- Après signature réussie via `sign-charte`, en plus de ce que fait déjà l'edge function (insert `signatures_charte` + update `charte_signee_le`) :
+  - Mettre à jour `profiles.cgu_acceptees_le = NOW()` et `cgu_version_acceptee = <version active>` (lecture interne, jamais affichée).
+  - Si la fiche prestataire est en `pre_inscrit`, la passer en `brouillon`.
+  - Rediriger vers `/espace-pro?welcome=1`.
 
-## 5. Secret
+### 3. Retirer toutes les mentions de version visibles
 
-Ajouter `REACTIVATION_TEAM_EMAIL` via `secrets--add_secret` (valeur fournie par l'utilisateur, ex. `equipe@lesnoces.net`). Documenter dans `supabase/functions/request-reactivation-archive/index.ts` en tête de fichier.
+À nettoyer :
+- `CharteProgressive.tsx` : retirer "Charte Qualité — version v1.0".
+- `SignerLaCharte.tsx` (intro) : retirer "Version X — en vigueur depuis le …" (garder éventuellement la date d'entrée en vigueur seule, à confirmer ou retirer aussi).
+- `ChartePendingBanner.tsx` : vérifier qu'aucun "version" n'apparaît.
+- Templates d'email côté presta (`relance-signature-charte`, `notif-nouvelle-version-charte`, `validation-publication-fiche`, certificat de signature généré par `generate-charte-pdf-preuve`) : audit complet, retirer toute mention de "version X".
 
-## 6. Déploiement
+Le numéro de version reste écrit en base (`profiles.cgu_version_acceptee`, `signatures_charte.charte_numero_version`, `prestataires.charte_version_signee`) pour la traçabilité juridique, mais n'est jamais rendu à l'écran.
 
-Déployer `request-reactivation-archive` et `sign-charte` après code change.
+### 4. Tests manuels
 
-## Détails techniques
+- Inscription presta fraîche → redirection `/pro/charte` → parcours 6 articles → signature → PDF reçu par email → presta atterrit sur `/espace-pro` avec bandeau bienvenue, `cgu_acceptees_le` renseigné, signature présente dans `signatures_charte`.
+- Magic-link admin → `/signer-la-charte` → parcours identique → mêmes effets.
+- Vérifier qu'aucun écran ni email n'affiche le mot "version" + numéro.
 
-- `supabase/config.toml` : ajouter `[functions.request-reactivation-archive] verify_jwt = false` (auth optionnelle).
-- Validation : zod facultatif, mais au minimum vérifier que `prestataire_id` est un UUID valide via regex.
-- Pas de migration DB nécessaire (colonnes existent déjà : `demande_reactivation_le`, `demande_reactivation_message`, `motif_suspension`).
-- Le template `demande_reactivation_admin` actuel (multi-admins) reste utilisé ailleurs ; on introduit `demande_reactivation` (mail unique équipe) distinct pour ne rien casser.
+## Points techniques
+
+- `sign-charte` existe déjà et fait tout le travail probatoire ; on ne le modifie pas.
+- La mise à jour de `profiles.cgu_acceptees_le` se fera côté client après succès de `sign-charte` (déjà le pattern actuel de `CharteProgressive`).
+- Le composant mutualisé continue de lire `chartes_versions` pour récupérer le HTML, mais n'affiche plus `numero_version` ni `entree_en_vigueur_le` côté presta.
+- Aucune migration DB nécessaire pour cette itération.
+
+## Hors scope
+
+- Refonte de la machine à états `statut_prestataire` (fusion `validee`/`actif`) traitée dans une itération séparée.
+- Modifications du flow `AccepterInvitation.tsx` (qui redirige déjà vers `/signer-la-charte`).

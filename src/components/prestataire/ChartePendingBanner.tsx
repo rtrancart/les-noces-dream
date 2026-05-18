@@ -61,7 +61,7 @@ export function ChartePendingBanner() {
           <p className="font-sans font-medium text-sm text-foreground">
             {isFirstSignature
               ? "Votre fiche n'est pas encore publiée."
-              : `Nouvelle version de la Charte Qualité disponible (${pendingVersion}).`}
+              : "Une nouvelle Charte Qualité est en vigueur."}
           </p>
           <p className="font-sans text-xs text-foreground/70">
             {isFirstSignature
