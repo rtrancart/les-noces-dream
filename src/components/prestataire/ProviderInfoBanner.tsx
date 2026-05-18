@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, AlertCircle, X } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { cn } from "@/lib/utils";
 
 interface ProviderInfoBannerProps {
   prestataire: Tables<"prestataires">;
