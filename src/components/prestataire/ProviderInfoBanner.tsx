@@ -41,10 +41,16 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
   const statusLabels: Record<string, string> = {
     actif: "Actif",
     brouillon: "Brouillon",
-    en_attente: "En attente",
+    pre_inscrit: "Profil à compléter",
+    en_attente: "En attente de validation",
     a_corriger: "À corriger",
     suspendu: "Suspendu",
     archive: "Archivé",
+  };
+
+  const statusClasses: Record<string, string> = {
+    pre_inscrit: "bg-terracotta text-white hover:bg-terracotta/90 border-transparent",
+    en_attente: "bg-bleu-petrole text-white hover:bg-bleu-petrole/90 border-transparent",
   };
 
   const circumference = 2 * Math.PI * 28;
