@@ -34,7 +34,7 @@ export function WelcomeBanner() {
   const checklist = [
     { label: "Charte Qualité validée", done: cguOk },
     { label: "Informations de base (nom, prénom, email)", done: !!profile?.nom && !!profile?.prenom && !!profile?.email },
-    { label: "Description et coordonnées", done: !!prestataire?.description && !!prestataire?.telephone },
+    { label: "Description et coordonnées", done: !!prestataire?.description && !!prestataire?.telephone_contact },
     { label: "Détail de votre prestation", done: !!prestataire?.prix_depart },
     { label: "Photos de la galerie", done: !!prestataire?.urls_galerie && prestataire.urls_galerie.length > 0 },
   ];
