@@ -95,15 +95,14 @@ Deno.serve(async (req) => {
     }).select().single();
     if (sigError) throw sigError;
 
-    // Self-registered providers keep statut 'pre_inscrit' (= "Profil à compléter")
-    // until they submit their fiche. 'brouillon' is reserved for internal admin creation.
-    const prestatairePatch: Record<string, unknown> = {
-      notification_charte_obsolete_envoyee_le: null,
-      motif_suspension: null,
-    };
-
+    // Le trigger DB on_signature_charte_created met à jour charte_signee_le,
+    // charte_version_signee et bascule en 'actif' si statut = 'validee'.
+    // Ici on nettoie uniquement les marqueurs d'obsolescence/suspension.
     await adminClient.from("prestataires")
-      .update(prestatairePatch)
+      .update({
+        notification_charte_obsolete_envoyee_le: null,
+        motif_suspension: null,
+      })
       .eq("id", presta.id);
 
     // Async: generate proof PDF (fire and forget)

@@ -103,6 +103,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     void fetchProfileAndRoles(user.id);
   }, [user?.id, fetchProfileAndRoles]);
 
+  // À chaque session prestataire, on s'assure que premier_login_le est renseigné
+  // et que pre_inscrit (magic link envoyé) bascule en a_completer.
+  useEffect(() => {
+    if (!user?.id) return;
+    if (!roles.includes("prestataire")) return;
+    void supabase.rpc("mark_prestataire_first_login").then(({ error }) => {
+      if (error) console.warn("mark_prestataire_first_login:", error.message);
+    });
+  }, [user?.id, roles]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setSession(null);
