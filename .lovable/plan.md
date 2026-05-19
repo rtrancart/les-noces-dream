@@ -1,56 +1,132 @@
-## Objectif
+## Architecture définitive des statuts prestataires
 
-Unifier le parcours de signature de la Charte pour les prestataires qui s'inscrivent seuls avec celui des prestataires invités par magic-link, et retirer toute mention de version visible côté utilisateur.
+Le modèle introduit un nouveau statut `a_completer`, sépare la dimension éditoriale (`statut`) de la dimension contractuelle (`charte_signee_le`), et verrouille `actif` au niveau de la base : seuls deux triggers peuvent l'écrire.
 
-## Décisions
+### 1. Migration base de données
 
-- **Option A** : `/pro/charte` (tunnel inscription) utilise exactement le même composant et le même processus que `/signer-la-charte` : 6 articles complets parcourus un par un, compte à rebours, checkbox finale, appel à `sign-charte` qui génère le PDF de preuve et insère dans `signatures_charte` (avec IP, user-agent, hash, version).
-- **Aucune mention de version** affichée à l'utilisateur (ni "v1.0", ni "v0", ni "version X"). La version reste stockée en base comme preuve juridique mais n'apparaît jamais dans l'UI ni dans les emails côté presta.
+**a) Enum `statut_prestataire`**
 
-## Étapes
+- `ALTER TYPE public.statut_prestataire ADD VALUE IF NOT EXISTS 'a_completer';`
+- L'enum complet devient : `brouillon, pre_inscrit, a_completer, en_attente, a_corriger, validee, actif, suspendu, archive`.
+- L'enum `motif_suspension_enum` est déjà conforme (`non_paiement, admin, archive, charte_non_signee, charte_obsolete`) — aucun changement.
 
-### 1. Mutualiser le composant de signature
+**b) Migration de données ponctuelle**
 
-Extraire le contenu de `SignerLaCharte.tsx` dans un composant réutilisable `<CharteSignatureFlow />` qui gère intro + 6 articles + écran final + appel `sign-charte`. Props :
-- `mode: "inscription" | "resignature"` (contrôle texte d'intro et redirection finale)
-- `onSigned: () => void`
+- `UPDATE prestataires SET statut = 'a_completer' WHERE statut = 'pre_inscrit' AND premier_login_le IS NOT NULL;`
+  → un prestataire déjà connecté n'est plus "pré-inscrit", il est "à compléter".
 
-Les deux pages (`/pro/charte` et `/signer-la-charte`) deviennent de simples wrappers autour de ce composant avec leurs gardes d'accès respectifs.
+**c) Trigger verrou `actif` — `prevent_direct_actif_write`**
 
-### 2. Refondre `/pro/charte` (CharteProgressive.tsx)
+- `BEFORE INSERT OR UPDATE ON prestataires`.
+- Lève `EXCEPTION 'Le statut actif ne peut être écrit que par les triggers on_charte_signed ou on_prestataire_validated'` si :
+  - `NEW.statut = 'actif'` ET
+  - le paramètre de session `app.allow_actif_write` n'est pas `'on'`.
+- Les deux triggers autorisés font `PERFORM set_config('app.allow_actif_write', 'on', true);` (scope transaction) juste avant leur `UPDATE`.
+- Aucun rôle (y compris `service_role` et `super_admin`) ne peut contourner.
 
-- Supprimer les 4 écrans courts (Réactivité / Exactitude / Qualité / Sanctions) et le récap.
-- Remplacer par `<CharteSignatureFlow mode="inscription" />`.
-- Garde d'accès inchangée : prestataire connecté + `cgu_acceptees_le IS NULL`.
-- Après signature réussie via `sign-charte`, en plus de ce que fait déjà l'edge function (insert `signatures_charte` + update `charte_signee_le`) :
-  - Mettre à jour `profiles.cgu_acceptees_le = NOW()` et `cgu_version_acceptee = <version active>` (lecture interne, jamais affichée).
-  - Si la fiche prestataire est en `pre_inscrit`, la passer en `brouillon`.
-  - Rediriger vers `/espace-pro?welcome=1`.
+**d) Trigger `on_prestataire_validated` (remplace `on_prestataire_validation`)**
 
-### 3. Retirer toutes les mentions de version visibles
+- `BEFORE UPDATE ON prestataires`.
+- Si `NEW.statut = 'validee'` ET `NEW.charte_signee_le IS NOT NULL` → `NEW.statut := 'actif'` après avoir activé le flag autorisé.
 
-À nettoyer :
-- `CharteProgressive.tsx` : retirer "Charte Qualité — version v1.0".
-- `SignerLaCharte.tsx` (intro) : retirer "Version X — en vigueur depuis le …" (garder éventuellement la date d'entrée en vigueur seule, à confirmer ou retirer aussi).
-- `ChartePendingBanner.tsx` : vérifier qu'aucun "version" n'apparaît.
-- Templates d'email côté presta (`relance-signature-charte`, `notif-nouvelle-version-charte`, `validation-publication-fiche`, certificat de signature généré par `generate-charte-pdf-preuve`) : audit complet, retirer toute mention de "version X".
+**e) Trigger `on_charte_signed` (remplace `on_signature_charte_created`)**
 
-Le numéro de version reste écrit en base (`profiles.cgu_version_acceptee`, `signatures_charte.charte_numero_version`, `prestataires.charte_version_signee`) pour la traçabilité juridique, mais n'est jamais rendu à l'écran.
+- `AFTER INSERT ON signatures_charte`.
+- Met à jour `charte_signee_le` et `charte_version_signee` sur le prestataire.
+- Si `statut = 'validee'` → bascule en `actif` via le flag autorisé.
+- Ne touche jamais `a_completer`, `en_attente`, `pre_inscrit`, etc.
 
-### 4. Tests manuels
+**f) Trigger d'audit `log_statut_transitions`** (bonus utile)
 
-- Inscription presta fraîche → redirection `/pro/charte` → parcours 6 articles → signature → PDF reçu par email → presta atterrit sur `/espace-pro` avec bandeau bienvenue, `cgu_acceptees_le` renseigné, signature présente dans `signatures_charte`.
-- Magic-link admin → `/signer-la-charte` → parcours identique → mêmes effets.
-- Vérifier qu'aucun écran ni email n'affiche le mot "version" + numéro.
+- `AFTER UPDATE OF statut ON prestataires` → insert dans `logs_admin` avec `action = 'statut_transition'`, ancien et nouveau statut, et `auth.uid()` si disponible.
 
-## Points techniques
+### 2. Edge functions
 
-- `sign-charte` existe déjà et fait tout le travail probatoire ; on ne le modifie pas.
-- La mise à jour de `profiles.cgu_acceptees_le` se fera côté client après succès de `sign-charte` (déjà le pattern actuel de `CharteProgressive`).
-- Le composant mutualisé continue de lire `chartes_versions` pour récupérer le HTML, mais n'affiche plus `numero_version` ni `entree_en_vigueur_le` côté presta.
-- Aucune migration DB nécessaire pour cette itération.
+**`sign-charte/index.ts`**
 
-## Hors scope
+- Supprimer la création paresseuse de la fiche prestataire (la fiche existe déjà après signup, cf. point 3).
+- Le patch sur `prestataires` ne contient plus que `notification_charte_obsolete_envoyee_le = null` et `motif_suspension = null`. Aucun changement de statut — le trigger `on_charte_signed` s'en charge.
+- Si `presta.statut = 'archive'` et `motif_suspension = 'charte_non_signee'` → réponse 423 inchangée.
 
-- Refonte de la machine à états `statut_prestataire` (fusion `validee`/`actif`) traitée dans une itération séparée.
-- Modifications du flow `AccepterInvitation.tsx` (qui redirige déjà vers `/signer-la-charte`).
+**`invite-prestataire/index.ts`**
+
+- Continue d'écrire `statut: 'pre_inscrit'` quand l'admin envoie le magic link.
+- À la première connexion du prestataire (handler `premier_login_le`), bascule automatique en `a_completer` (cf. point 3).
+
+**`cron-archive-unsigned-prestataires/index.ts`**
+
+- Élargit le filtre : `WHERE statut IN ('pre_inscrit', 'a_completer') AND charte_signee_le IS NULL AND premier_login_le < NOW() - INTERVAL '60 days'`.
+- Bascule en `archive` + `motif_suspension = 'charte_non_signee'` (autorisé : pas `actif`).
+
+**`cron-suspend-charte-obsolete/index.ts`** — pas de changement, n'écrit jamais `actif`.
+
+### 3. Application : création de la fiche prestataire
+
+La création paresseuse dans `sign-charte` disparaît. À la place :
+
+- **Auto-inscription** : le handler `handle_new_user` (SECURITY DEFINER) détecte `role = 'prestataire'` dans les metadata et insère immédiatement une fiche `prestataires` minimale avec `statut = 'a_completer'`, `user_id`, `email_contact`, `nom_commercial = "Prestataire à compléter"`, `categorie_mere_id` par défaut, `slug` provisoire, `ville/region = "À compléter"`.
+- **Pré-inscription admin** : l'admin crée explicitement la fiche → `statut = 'brouillon'`. Quand le magic link est envoyé → `statut = 'pre_inscrit'`. À la première connexion (mise à jour de `premier_login_le` dans un handler côté `AuthContext` ou edge function dédiée `on-first-login`) → bascule en `a_completer`.
+
+### 4. Front-end
+
+**`src/pages/admin/Prestataires.tsx`**
+
+- Ajouter `a_completer` aux labels/couleurs/KPI (entre `pre_inscrit` et `en_attente`). Label : « À compléter ».
+- Supprimer `actif` de la liste des valeurs sélectionnables dans le `<Select>` de mise à jour de statut et dans le formulaire de création/édition.
+- Le bouton « Valider » écrit toujours `statut = 'validee'`. L'UI relit ensuite la fiche : si la lecture renvoie `actif` (trigger), afficher le badge « Actif » ; sinon afficher « Validée — En attente de signature charte ».
+- Toute tentative d'écriture `actif` doit afficher un toast d'erreur explicite si le trigger lève (filet de sécurité).
+
+**`src/components/prestataire/ProviderInfoBanner.tsx`**
+
+- Ajouter `a_completer: "Profil à compléter"` dans `statusLabels`.
+- Ajouter `a_completer: "bg-terracotta text-white …"` dans `statusClasses` (même tonalité que `pre_inscrit`).
+- Ajouter un second badge "En attente de signature charte" (champagne) si `statut = 'validee'` et `charte_signee_le IS NULL`.
+
+**`src/components/prestataire/WelcomeBanner.tsx`**
+
+- Condition d'affichage : `statut ∈ {brouillon, pre_inscrit, a_completer}` (au lieu de `{brouillon, pre_inscrit}`).
+- Checklist : item "Charte Qualité validée" devient **non bloquant** — visible mais cochable indépendamment, et **l'absence ne désactive pas** le bouton "Soumettre ma fiche" (cf. règle CAS 1).
+
+**`src/components/auth/ChartePendingGuard.tsx`** (et redirections `/pro/charte`)
+
+- La signature de la charte n'est plus un préalable obligatoire à l'accès à l'espace pro. Le guard devient un **rappel non bloquant** (bandeau persistant) plutôt qu'une redirection forcée.
+- `CharteProgressive` reste accessible mais l'auto-redirection depuis `/espace-pro` doit être supprimée.
+
+### 5. Tests à mettre à jour
+
+- `supabase/functions/sign-charte/index_test.ts` : adapter le scénario "Cycle unifié" → `brouillon → pre_inscrit → a_completer → en_attente → validee → actif`, et vérifier qu'aucune tentative d'`UPDATE statut = 'actif'` directe ne réussit.
+
+### 6. Mémoire projet
+
+Mettre à jour `mem://logic/statuts-prestataires` (nouveau fichier) avec le tableau définitif et l'invariant `actif = (statut = validee) ∧ (charte_signee_le ≠ NULL)`, et ajouter une ligne Core dans `mem://index.md`.
+
+---
+
+### Détails techniques sur le verrou `actif`
+
+```sql
+CREATE OR REPLACE FUNCTION public.prevent_direct_actif_write()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.statut = 'actif'::statut_prestataire
+     AND COALESCE(current_setting('app.allow_actif_write', true), 'off') <> 'on' THEN
+    RAISE EXCEPTION
+      'Statut actif interdit en écriture directe (utilisez le workflow validee + charte signée)';
+  END IF;
+  RETURN NEW;
+END$$;
+
+CREATE TRIGGER trg_prevent_direct_actif_write
+BEFORE INSERT OR UPDATE OF statut ON public.prestataires
+FOR EACH ROW EXECUTE FUNCTION public.prevent_direct_actif_write();
+```
+
+Les deux triggers autorisés appellent `PERFORM set_config('app.allow_actif_write', 'on', true);` juste avant la bascule, ce qui est limité à la transaction courante (`is_local = true`) et indétectable depuis l'API.
+
+### Ordre de déploiement
+
+1. Migration SQL (enum + triggers + remplacement des deux triggers existants).
+2. Migration de données (`pre_inscrit` connectés → `a_completer`).
+3. Déploiement des edge functions modifiées.
+4. Mise à jour front (labels, guards, banners, admin select).
+5. Mise à jour de la mémoire projet.
