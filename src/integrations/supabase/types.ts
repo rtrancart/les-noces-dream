@@ -1564,6 +1564,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_prestataire_first_login: { Args: never; Returns: undefined }
       move_to_dlq: {
         Args: {
           dlq_name: string
