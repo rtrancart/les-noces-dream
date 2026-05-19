@@ -29,10 +29,6 @@ function parseClientIp(xff: string | null): string | null {
   return null;
 }
 
-function buildDraftSlug(userId: string): string {
-  return `prestataire-${userId.slice(0, 8)}`;
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -50,55 +46,17 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Locate prestataire owned by user
-    let { data: presta, error: prestaErr } = await adminClient
-      .from("prestataires").select("id, statut, motif_suspension, charte_signee_le").eq("user_id", user.id).maybeSingle();
+    // Locate prestataire owned by user. La fiche est créée :
+    //   - par handle_new_user (auto-inscription → a_completer)
+    //   - par l'admin en back-office (brouillon → pre_inscrit)
+    // sign-charte ne crée plus la fiche.
+    const { data: presta, error: prestaErr } = await adminClient
+      .from("prestataires")
+      .select("id, statut, motif_suspension, charte_signee_le")
+      .eq("user_id", user.id)
+      .maybeSingle();
     if (prestaErr) throw prestaErr;
-
-    // Self-signup accounts receive the prestataire role before the draft fiche exists.
-    // Create the minimal private fiche lazily so the signature flow can complete.
-    if (!presta) {
-      const { data: roleRows, error: roleErr } = await adminClient
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id);
-      if (roleErr) throw roleErr;
-      const canCreatePrestataire = (roleRows ?? []).some((r) => r.role === "prestataire");
-      if (!canCreatePrestataire) throw new Error("Aucune fiche prestataire trouvée pour cet utilisateur");
-
-      const [{ data: profile, error: profileErr }, { data: category, error: categoryErr }] = await Promise.all([
-        adminClient.from("profiles").select("prenom, nom, email").eq("id", user.id).maybeSingle(),
-        adminClient
-          .from("categories")
-          .select("id")
-          .is("parent_id", null)
-          .eq("est_active", true)
-          .order("ordre_affichage", { ascending: true })
-          .limit(1)
-          .maybeSingle(),
-      ]);
-      if (profileErr) throw profileErr;
-      if (categoryErr) throw categoryErr;
-      if (!category) throw new Error("Aucune catégorie active disponible");
-
-      const displayName = [profile?.prenom, profile?.nom].filter(Boolean).join(" ").trim();
-      const { data: createdPresta, error: createPrestaErr } = await adminClient
-        .from("prestataires")
-        .insert({
-          user_id: user.id,
-          nom_commercial: displayName || "Prestataire à compléter",
-          slug: buildDraftSlug(user.id),
-          categorie_mere_id: category.id,
-          ville: "À compléter",
-          region: "À compléter",
-          email_contact: profile?.email ?? user.email ?? null,
-          statut: "pre_inscrit",
-        })
-        .select("id, statut, motif_suspension, charte_signee_le")
-        .single();
-      if (createPrestaErr) throw createPrestaErr;
-      presta = createdPresta;
-    }
+    if (!presta) throw new Error("Aucune fiche prestataire trouvée pour cet utilisateur");
 
     // Archive verrouillée : magic link expiré ou tentative tardive de signature après archivage J+60
     if (presta.statut === "archive" && presta.motif_suspension === "charte_non_signee") {
