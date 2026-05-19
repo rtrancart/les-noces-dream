@@ -979,20 +979,19 @@ export default function Prestataires() {
 
             <TabsContent value="admin" className="space-y-4 pt-4">
               <Field label="Statut">
-                {form.statut === "actif" ? (
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${statutColors.actif} font-sans text-[11px] font-normal`}>{statutLabels.actif}</Badge>
-                    <span className="font-sans text-xs text-muted-foreground">
-                      Statut automatique (validée + charte signée). Non modifiable manuellement.
-                    </span>
-                  </div>
-                ) : (
-                  <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as StatutPrestataire })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {SELECTABLE_STATUTS.map((k) => (<SelectItem key={k} value={k}>{statutLabels[k]}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
+                <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as StatutPrestataire })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {form.statut === "actif" && (
+                      <SelectItem value="actif" disabled>{statutLabels.actif}</SelectItem>
+                    )}
+                    {SELECTABLE_STATUTS.map((k) => (<SelectItem key={k} value={k}>{statutLabels[k]}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+                {form.statut === "actif" && (
+                  <p className="font-sans text-xs text-muted-foreground mt-1.5">
+                    Sélectionnez un nouveau statut pour suspendre, archiver ou repasser la fiche en correction. Le statut <em>actif</em> est attribué automatiquement (validée + charte signée) et ne peut pas être ré-appliqué manuellement.
+                  </p>
                 )}
               </Field>
               <Field label="Fin Premium (laisser vide = non premium)">
