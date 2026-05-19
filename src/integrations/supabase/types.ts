@@ -1564,6 +1564,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_prestataire_first_login: { Args: never; Returns: undefined }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -1639,6 +1640,7 @@ export type Database = {
         | "suspendu"
         | "archive"
         | "pre_inscrit"
+        | "a_completer"
         | "validee"
       type_champ: "texte" | "nombre" | "booleen" | "liste" | "date"
       type_notification:
@@ -1821,6 +1823,7 @@ export const Constants = {
         "suspendu",
         "archive",
         "pre_inscrit",
+        "a_completer",
         "validee",
       ],
       type_champ: ["texte", "nombre", "booleen", "liste", "date"],

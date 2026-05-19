@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
 
     const { data: candidates, error } = await adminClient.from("prestataires")
       .select("id, nom_commercial, archivage_reporte_a")
-      .eq("statut", "pre_inscrit")
+      .in("statut", ["pre_inscrit", "a_completer"])
       .is("charte_signee_le", null)
       .not("premier_login_le", "is", null)
       .lt("premier_login_le", sixtyDaysAgo);

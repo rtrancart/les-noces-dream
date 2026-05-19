@@ -1,0 +1,1 @@
+ALTER TYPE public.statut_prestataire ADD VALUE IF NOT EXISTS 'a_completer' AFTER 'pre_inscrit';

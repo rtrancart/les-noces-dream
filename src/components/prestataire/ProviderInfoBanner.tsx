@@ -43,16 +43,23 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
     actif: "Actif",
     brouillon: "Brouillon",
     pre_inscrit: "Profil à compléter",
+    a_completer: "Profil à compléter",
     en_attente: "En attente de validation",
     a_corriger: "À corriger",
+    validee: "Validée",
     suspendu: "Suspendu",
     archive: "Archivé",
   };
 
   const statusClasses: Record<string, string> = {
     pre_inscrit: "bg-terracotta text-white hover:bg-terracotta/90 border-transparent",
+    a_completer: "bg-terracotta text-white hover:bg-terracotta/90 border-transparent",
     en_attente: "bg-bleu-petrole text-white hover:bg-bleu-petrole/90 border-transparent",
+    validee: "bg-champagne text-foreground hover:bg-champagne/90 border-transparent",
   };
+
+  const charteEnAttente =
+    prestataire.statut === "validee" && !prestataire.charte_signee_le;
 
   const circumference = 2 * Math.PI * 28;
 
@@ -75,12 +82,19 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
             {categoryName && <>{categoryName} · </>}
             {prestataire.ville}, {prestataire.region}
           </p>
-          <Badge
-            className={cn("mt-1.5 md:mt-2", statusClasses[prestataire.statut])}
-            variant={prestataire.statut === "actif" ? "default" : "secondary"}
-          >
-            {statusLabels[prestataire.statut] ?? prestataire.statut}
-          </Badge>
+          <div className="mt-1.5 md:mt-2 flex flex-wrap items-center gap-1.5">
+            <Badge
+              className={cn(statusClasses[prestataire.statut])}
+              variant={prestataire.statut === "actif" ? "default" : "secondary"}
+            >
+              {statusLabels[prestataire.statut] ?? prestataire.statut}
+            </Badge>
+            {charteEnAttente && (
+              <Badge className="bg-champagne text-foreground hover:bg-champagne/90 border-transparent" variant="secondary">
+                En attente de signature charte
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Right: Profile completion — hidden at 100% */}

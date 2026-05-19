@@ -24,7 +24,8 @@ export function WelcomeBanner() {
   const fichePending =
     !prestataire ||
     prestataire.statut === "brouillon" ||
-    prestataire.statut === "pre_inscrit";
+    prestataire.statut === "pre_inscrit" ||
+    prestataire.statut === "a_completer";
 
   if (!cguOk) return null;
   if (!welcomeParam && !fichePending) return null;
