@@ -798,20 +798,17 @@ export default function Prestataires() {
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.ville}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString("fr-FR")}</TableCell>
                     <TableCell>
-                      {p.statut === "actif" ? (
-                        <Badge className={`${statutColors.actif} font-sans text-[11px] font-normal`}>
-                          {statutLabels.actif}
-                        </Badge>
-                      ) : (
-                        <Select value={p.statut} onValueChange={(val) => updateStatut(p.id, val as StatutPrestataire)}>
-                          <SelectTrigger className="h-7 w-[130px] border-0 p-0">
-                            <Badge className={`${statutColors[p.statut]} font-sans text-[11px] font-normal`}>{statutLabels[p.statut]}</Badge>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {SELECTABLE_STATUTS.map((k) => (<SelectItem key={k} value={k}>{statutLabels[k]}</SelectItem>))}
-                          </SelectContent>
-                        </Select>
-                      )}
+                      <Select value={p.statut} onValueChange={(val) => updateStatut(p.id, val as StatutPrestataire)}>
+                        <SelectTrigger className="h-7 w-[130px] border-0 p-0">
+                          <Badge className={`${statutColors[p.statut]} font-sans text-[11px] font-normal`}>{statutLabels[p.statut]}</Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {p.statut === "actif" && (
+                            <SelectItem value="actif" disabled>{statutLabels.actif}</SelectItem>
+                          )}
+                          {SELECTABLE_STATUTS.map((k) => (<SelectItem key={k} value={k}>{statutLabels[k]}</SelectItem>))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="font-sans text-sm">{p.note_moyenne ? `${p.note_moyenne.toFixed(1)}/5` : "—"}</TableCell>
                     <TableCell className="text-right">
