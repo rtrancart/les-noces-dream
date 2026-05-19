@@ -67,7 +67,7 @@ export default function PrestataireProfil() {
   }, [prestataire]);
 
   const canSubmit = missingFields.length === 0;
-  const canShowSubmit = prestataire && ["pre_inscrit", "a_corriger"].includes(prestataire.statut);
+  const canShowSubmit = prestataire && ["a_completer", "a_corriger"].includes(prestataire.statut);
 
   const handleSave = async () => {
     if (!prestataire) return;

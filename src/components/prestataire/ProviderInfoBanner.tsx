@@ -95,6 +95,15 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
               </Badge>
             )}
           </div>
+          {(prestataire.statut === "archive" || prestataire.statut === "suspendu") && (
+            <p className="font-sans text-xs text-muted-foreground mt-2">
+              La réactivation de votre fiche passe par notre équipe.{" "}
+              <a href="/reactivation" className="underline hover:text-foreground">
+                Demander une réactivation
+              </a>
+              .
+            </p>
+          )}
         </div>
 
         {/* Right: Profile completion — hidden at 100% */}
