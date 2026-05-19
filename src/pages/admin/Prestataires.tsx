@@ -34,8 +34,9 @@ type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
 type Categorie = Database["public"]["Tables"]["categories"]["Row"];
 
 const statutLabels: Record<StatutPrestataire, string> = {
-  pre_inscrit: "Pré-inscrit",
   brouillon: "Brouillon",
+  pre_inscrit: "Pré-inscrit",
+  a_completer: "À compléter",
   en_attente: "En attente",
   a_corriger: "À corriger",
   validee: "Validée",
@@ -45,8 +46,9 @@ const statutLabels: Record<StatutPrestataire, string> = {
 };
 
 const statutColors: Record<StatutPrestataire, string> = {
-  pre_inscrit: "bg-or/20 text-or",
   brouillon: "bg-muted/40 text-muted-foreground",
+  pre_inscrit: "bg-or/20 text-or",
+  a_completer: "bg-terracotta/20 text-terracotta",
   en_attente: "bg-champagne/30 text-foreground",
   a_corriger: "bg-destructive/10 text-destructive",
   validee: "bg-champagne/40 text-foreground",
@@ -54,6 +56,19 @@ const statutColors: Record<StatutPrestataire, string> = {
   suspendu: "bg-destructive/10 text-destructive",
   archive: "bg-muted/40 text-muted-foreground",
 };
+
+// Statuts sélectionnables manuellement par l'admin.
+// 'actif' est exclu : il ne peut être obtenu qu'en signant validee + charte (trigger DB).
+const SELECTABLE_STATUTS: StatutPrestataire[] = [
+  "brouillon",
+  "pre_inscrit",
+  "a_completer",
+  "en_attente",
+  "a_corriger",
+  "validee",
+  "suspendu",
+  "archive",
+];
 
 const emptyForm = {
   nom_commercial: "",
@@ -670,6 +685,7 @@ export default function Prestataires() {
     { key: "tous", label: "Tous", tone: "bg-muted/40 text-foreground" },
     { key: "brouillon", label: "Brouillons", tone: statutColors.brouillon },
     { key: "pre_inscrit", label: "Pré-inscrits", tone: statutColors.pre_inscrit },
+    { key: "a_completer", label: "À compléter", tone: statutColors.a_completer },
     { key: "en_attente", label: "À valider", tone: statutColors.en_attente },
     { key: "a_corriger", label: "À corriger", tone: statutColors.a_corriger },
     { key: "actif", label: "Actifs", tone: statutColors.actif },
@@ -782,14 +798,20 @@ export default function Prestataires() {
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.ville}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{new Date(p.created_at).toLocaleDateString("fr-FR")}</TableCell>
                     <TableCell>
-                      <Select value={p.statut} onValueChange={(val) => updateStatut(p.id, val as StatutPrestataire)}>
-                        <SelectTrigger className="h-7 w-[130px] border-0 p-0">
-                          <Badge className={`${statutColors[p.statut]} font-sans text-[11px] font-normal`}>{statutLabels[p.statut]}</Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(statutLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
+                      {p.statut === "actif" ? (
+                        <Badge className={`${statutColors.actif} font-sans text-[11px] font-normal`}>
+                          {statutLabels.actif}
+                        </Badge>
+                      ) : (
+                        <Select value={p.statut} onValueChange={(val) => updateStatut(p.id, val as StatutPrestataire)}>
+                          <SelectTrigger className="h-7 w-[130px] border-0 p-0">
+                            <Badge className={`${statutColors[p.statut]} font-sans text-[11px] font-normal`}>{statutLabels[p.statut]}</Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SELECTABLE_STATUTS.map((k) => (<SelectItem key={k} value={k}>{statutLabels[k]}</SelectItem>))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </TableCell>
                     <TableCell className="font-sans text-sm">{p.note_moyenne ? `${p.note_moyenne.toFixed(1)}/5` : "—"}</TableCell>
                     <TableCell className="text-right">
@@ -957,10 +979,21 @@ export default function Prestataires() {
 
             <TabsContent value="admin" className="space-y-4 pt-4">
               <Field label="Statut">
-                <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as StatutPrestataire })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{Object.entries(statutLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}</SelectContent>
-                </Select>
+                {form.statut === "actif" ? (
+                  <div className="flex items-center gap-2">
+                    <Badge className={`${statutColors.actif} font-sans text-[11px] font-normal`}>{statutLabels.actif}</Badge>
+                    <span className="font-sans text-xs text-muted-foreground">
+                      Statut automatique (validée + charte signée). Non modifiable manuellement.
+                    </span>
+                  </div>
+                ) : (
+                  <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as StatutPrestataire })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {SELECTABLE_STATUTS.map((k) => (<SelectItem key={k} value={k}>{statutLabels[k]}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                )}
               </Field>
               <Field label="Fin Premium (laisser vide = non premium)">
                 <Popover>
