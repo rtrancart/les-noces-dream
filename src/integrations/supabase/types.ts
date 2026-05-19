@@ -1639,6 +1639,7 @@ export type Database = {
         | "suspendu"
         | "archive"
         | "pre_inscrit"
+        | "a_completer"
         | "validee"
       type_champ: "texte" | "nombre" | "booleen" | "liste" | "date"
       type_notification:
@@ -1821,6 +1822,7 @@ export const Constants = {
         "suspendu",
         "archive",
         "pre_inscrit",
+        "a_completer",
         "validee",
       ],
       type_champ: ["texte", "nombre", "booleen", "liste", "date"],
