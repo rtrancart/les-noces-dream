@@ -7,6 +7,7 @@ import { Send } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { trackEvent } from "@/lib/analytics";
+import { toast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
 type ExpediteurType = Database["public"]["Enums"]["expediteur_type"];
