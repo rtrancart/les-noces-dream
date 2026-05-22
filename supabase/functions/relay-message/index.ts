@@ -1,0 +1,248 @@
+// Edge Function : relay-message
+// Centralise l'insertion d'un message de la messagerie + déclenche l'email de notification
+// adéquat (3 cas) + génère un magic token pour accès direct à la conversation.
+
+import { createClient } from 'npm:@supabase/supabase-js@2'
+import { create as createJwt, getNumericDate } from 'https://deno.land/x/djwt@v3.0.2/mod.ts'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+
+async function signMagicToken(secret: string, payload: Record<string, unknown>) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign', 'verify'],
+  )
+  return await createJwt(
+    { alg: 'HS256', typ: 'JWT' },
+    { ...payload, exp: getNumericDate(60 * 60 * 24 * 7) },
+    key,
+  )
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
+
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+  const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
+  const MAGIC_SECRET = Deno.env.get('MAGIC_LINK_SECRET')!
+
+  // --- Auth ---
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401)
+  const token = authHeader.slice(7)
+
+  const authClient = createClient(SUPABASE_URL, ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+  })
+  const { data: claimsData, error: claimsErr } = await authClient.auth.getClaims(token)
+  if (claimsErr || !claimsData?.claims) return json({ error: 'Unauthorized' }, 401)
+  const userId = claimsData.claims.sub as string
+  const isImpersonation = (claimsData.claims as Record<string, unknown>).is_impersonation === true
+
+  const admin = createClient(SUPABASE_URL, SERVICE_KEY)
+
+  // --- Garde-fou impersonnification ---
+  if (isImpersonation) {
+    await admin.from('logs_admin').insert({
+      admin_id: userId,
+      action: 'impersonation_action_bloquee',
+      entite: 'relay-message',
+      entite_id: userId,
+      details: { action_tentee: 'relay-message' },
+    })
+    return json({ error: 'Action non autorisée en mode impersonnification' }, 403)
+  }
+
+  // --- Validation body ---
+  let body: { demande_id?: string; contenu?: string; expediteur_type?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return json({ error: 'Invalid JSON' }, 400)
+  }
+  const demande_id = body.demande_id?.trim()
+  const contenu = body.contenu?.trim()
+  const expediteur_type = body.expediteur_type
+  if (
+    !demande_id ||
+    !contenu ||
+    contenu.length > 5000 ||
+    (expediteur_type !== 'prestataire' && expediteur_type !== 'visiteur')
+  ) {
+    return json({ error: 'Paramètres invalides' }, 400)
+  }
+
+  // --- Contexte ---
+  const { data: demande, error: demErr } = await admin
+    .from('demandes_devis')
+    .select(`
+      id, statut, profile_id, contact_id, email_contact, nom_contact,
+      prestataire:prestataires!demandes_devis_prestataire_id_fkey (
+        id, user_id, nom_commercial, telephone, email_contact, site_web, slug
+      )
+    `)
+    .eq('id', demande_id)
+    .maybeSingle()
+
+  if (demErr || !demande || !demande.prestataire) {
+    console.error('Demande introuvable', demErr)
+    return json({ error: 'Demande introuvable' }, 400)
+  }
+  if (demande.statut === 'archive' || demande.statut === 'archivee') {
+    return json({ error: 'Conversation archivée' }, 400)
+  }
+
+  const presta = demande.prestataire as {
+    id: string; user_id: string; nom_commercial: string;
+    telephone: string | null; email_contact: string; site_web: string | null; slug: string;
+  }
+
+  // --- Autorisation métier ---
+  if (expediteur_type === 'prestataire' && presta.user_id !== userId) {
+    return json({ error: 'Accès refusé' }, 403)
+  }
+  if (expediteur_type === 'visiteur' && demande.profile_id && demande.profile_id !== userId) {
+    return json({ error: 'Accès refusé' }, 403)
+  }
+
+  // --- Récupérer infos destinataire ---
+  let clientEmail: string | null = null
+  let clientPrenom: string | null = null
+  if (demande.profile_id) {
+    const { data: prof } = await admin
+      .from('profiles')
+      .select('email, prenom')
+      .eq('id', demande.profile_id)
+      .maybeSingle()
+    clientEmail = prof?.email ?? demande.email_contact
+    clientPrenom = prof?.prenom ?? (demande.nom_contact?.split(' ')[0] ?? null)
+  } else if (demande.contact_id) {
+    const { data: ca } = await admin
+      .from('contacts_anonymes')
+      .select('email, prenom')
+      .eq('id', demande.contact_id)
+      .maybeSingle()
+    clientEmail = ca?.email ?? demande.email_contact
+    clientPrenom = ca?.prenom ?? (demande.nom_contact?.split(' ')[0] ?? null)
+  } else {
+    clientEmail = demande.email_contact
+    clientPrenom = demande.nom_contact?.split(' ')[0] ?? null
+  }
+
+  // --- Insert message ---
+  const { data: inserted, error: insErr } = await admin
+    .from('messages')
+    .insert({
+      demande_id,
+      expediteur_type,
+      expediteur_id: userId,
+      contenu,
+    })
+    .select('id')
+    .single()
+
+  if (insErr || !inserted) {
+    console.error('Insert message échec', insErr)
+    return json({ error: 'Insertion impossible' }, 500)
+  }
+  const message_id = inserted.id as string
+
+  // --- Update statut ---
+  await admin
+    .from('demandes_devis')
+    .update({ statut: 'en_discussion', updated_at: new Date().toISOString() })
+    .eq('id', demande_id)
+    .in('statut', ['nouveau', 'lu'])
+
+  // --- Magic token ---
+  let magic = ''
+  try {
+    magic = await signMagicToken(MAGIC_SECRET, {
+      demande_id,
+      sub: expediteur_type === 'prestataire' ? (demande.profile_id ?? clientEmail) : presta.user_id,
+      action: 'reply',
+    })
+  } catch (e) {
+    console.error('Magic token error', e)
+  }
+
+  // --- Email dispatch ---
+  const messageExtrait = contenu.length > 280 ? contenu.slice(0, 280) + '…' : contenu
+  let templateName: string | null = null
+  let recipientEmail: string | null = null
+  let templateData: Record<string, unknown> = {}
+
+  if (expediteur_type === 'prestataire' && demande.profile_id) {
+    // CAS A : client avec compte
+    templateName = 'notif_reponse_client_avec_compte'
+    recipientEmail = clientEmail
+    templateData = {
+      clientPrenom,
+      prestataireNom: presta.nom_commercial,
+      messageExtrait,
+      lienMessagerie: `https://lesnoces.net/mon-espace/messages/${demande_id}?token=${magic}`,
+    }
+  } else if (expediteur_type === 'prestataire' && !demande.profile_id) {
+    // CAS B : client sans compte
+    templateName = 'notif_reponse_client_sans_compte'
+    recipientEmail = clientEmail
+    templateData = {
+      clientPrenom,
+      prestataireNom: presta.nom_commercial,
+      messageExtrait,
+      lienMagique: `https://lesnoces.net/messagerie/${demande_id}?token=${magic}`,
+      lienInscription: `https://lesnoces.net/inscription?email=${encodeURIComponent(clientEmail ?? '')}&demande_id=${demande_id}`,
+    }
+  } else if (expediteur_type === 'visiteur') {
+    // CAS C : notification prestataire
+    templateName = 'notif_reponse_presta'
+    recipientEmail = presta.email_contact
+    templateData = {
+      prestataireNom: presta.nom_commercial,
+      clientNom: demande.nom_contact ?? clientPrenom ?? 'Un client',
+      messageExtrait,
+      lienMessagerie: `https://lesnoces.net/pro/messages/${demande_id}?token=${magic}`,
+    }
+  }
+
+  let emailError = false
+  if (templateName && recipientEmail) {
+    try {
+      const { error: mailErr } = await admin.functions.invoke('send-transactional-email', {
+        body: {
+          templateName,
+          recipientEmail,
+          idempotencyKey: `msg-${message_id}`,
+          templateData,
+        },
+      })
+      if (mailErr) {
+        console.error('send-transactional-email error', mailErr)
+        emailError = true
+      } else {
+        await admin
+          .from('messages')
+          .update({ envoye_par_email: true })
+          .eq('id', message_id)
+      }
+    } catch (e) {
+      console.error('invoke email function failed', e)
+      emailError = true
+    }
+  }
+
+  return json({ success: true, message_id, email_error: emailError })
+})
