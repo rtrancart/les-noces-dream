@@ -7,6 +7,7 @@ import { Send } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { trackEvent } from "@/lib/analytics";
+import { toast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
 type ExpediteurType = Database["public"]["Enums"]["expediteur_type"];
@@ -116,23 +117,22 @@ export default function ConversationThread({
     if (!newMessage.trim() || !user?.id || sending) return;
 
     setSending(true);
-    const { error } = await supabase.from("messages").insert({
-      demande_id: demandeId,
-      expediteur_type: role,
-      expediteur_id: user.id,
-      contenu: newMessage.trim(),
+    const { data, error } = await supabase.functions.invoke("relay-message", {
+      body: {
+        demande_id: demandeId,
+        contenu: newMessage.trim(),
+        expediteur_type: role,
+      },
     });
 
-    if (!error) {
+    if (error || !(data as { success?: boolean } | null)?.success) {
+      toast({
+        title: "Votre message n'a pas pu être envoyé, veuillez réessayer.",
+        variant: "destructive",
+      });
+    } else {
       setNewMessage("");
       trackEvent("envoi_message", { role });
-      // Update demande status to en_discussion if needed
-      await supabase
-        .from("demandes_devis")
-        .update({ statut: "en_discussion" })
-        .eq("id", demandeId)
-        .in("statut", ["nouveau", "lu"]);
-
       onMessageSent?.();
     }
     setSending(false);

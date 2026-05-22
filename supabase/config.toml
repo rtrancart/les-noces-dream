@@ -30,3 +30,6 @@ verify_jwt = false
 [functions.request-reactivation-archive]
 verify_jwt = false
 
+[functions.relay-message]
+verify_jwt = true
+
