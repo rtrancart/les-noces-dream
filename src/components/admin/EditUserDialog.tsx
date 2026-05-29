@@ -152,11 +152,11 @@ export default function EditUserDialog({ open, onOpenChange, user, onSaved, avai
         </DialogHeader>
         {user && (
           <Tabs defaultValue="profil" className="mt-2">
-            <TabsList className={`grid w-full grid-cols-${tabCount}`}>
-              <TabsTrigger value="profil" className="font-sans text-xs">Profil</TabsTrigger>
-              <TabsTrigger value="roles" className="font-sans text-xs">Rôles</TabsTrigger>
+            <TabsList className={`grid w-full h-auto gap-1 bg-muted/30 p-1.5 grid-cols-${tabCount}`}>
+              <TabsTrigger value="profil" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Profil</TabsTrigger>
+              <TabsTrigger value="roles" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Rôles</TabsTrigger>
               {canChangePassword && (
-                <TabsTrigger value="password" className="font-sans text-xs">Mot de passe</TabsTrigger>
+                <TabsTrigger value="password" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Mot de passe</TabsTrigger>
               )}
             </TabsList>
 
