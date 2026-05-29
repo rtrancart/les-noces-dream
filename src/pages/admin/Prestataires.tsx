@@ -853,15 +853,15 @@ export default function Prestataires() {
             <DialogTitle className="font-serif text-lg">{editItem ? `Modifier — ${editItem.nom_commercial}` : "Créer un prestataire"}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="general" className="mt-2">
-            <TabsList className={`grid w-full ${editItem ? "grid-cols-5" : "grid-cols-3"}`}>
-              <TabsTrigger value="general" className="font-sans text-xs">Général</TabsTrigger>
-              <TabsTrigger value="coordonnees" className="font-sans text-xs">Coordonnées</TabsTrigger>
+            <TabsList className={`grid w-full h-auto gap-1 bg-muted/30 p-1.5 ${editItem ? "grid-cols-5" : "grid-cols-3"}`}>
+              <TabsTrigger value="general" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Général</TabsTrigger>
+              <TabsTrigger value="coordonnees" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Coordonnées</TabsTrigger>
               {editItem && (
-                <TabsTrigger value="photos" className="font-sans text-xs">Photos</TabsTrigger>
+                <TabsTrigger value="photos" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Photos</TabsTrigger>
               )}
-              <TabsTrigger value="admin" className="font-sans text-xs">Admin</TabsTrigger>
+              <TabsTrigger value="admin" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Admin</TabsTrigger>
               {editItem && (
-                <TabsTrigger value="password" className="font-sans text-xs">Mot de passe</TabsTrigger>
+                <TabsTrigger value="password" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Mot de passe</TabsTrigger>
               )}
             </TabsList>
 
