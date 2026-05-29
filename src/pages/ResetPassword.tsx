@@ -16,9 +16,23 @@ const ResetPassword = () => {
   const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
-    // Check for recovery event from URL hash
+    // PKCE flow: ?code=xxx in query → exchange for session
+    // Legacy flow: #type=recovery in hash
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get("code");
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    if (hashParams.get("type") === "recovery") {
+
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          toast.error("Lien invalide ou expiré.");
+        } else {
+          setIsRecovery(true);
+          // Clean the URL
+          window.history.replaceState({}, "", "/reset-password");
+        }
+      });
+    } else if (hashParams.get("type") === "recovery") {
       setIsRecovery(true);
     }
 
