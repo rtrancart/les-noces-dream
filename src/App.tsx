@@ -91,6 +91,10 @@ const App = () => (
               <Route path="/prestataires/:slugMere" element={<PrestatairesListe />} />
               <Route path="/prestataires/:slugMere/:slug2" element={<PrestatairesListe />} />
               <Route path="/charte-qualite" element={<CharteQualite />} />
+              <Route path="/cgu" element={<PageContenu />} />
+              <Route path="/mentions-legales" element={<PageContenu />} />
+              <Route path="/confidentialite" element={<PageContenu />} />
+              <Route path="/page/:slug" element={<PageContenu />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}
