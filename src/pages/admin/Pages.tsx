@@ -16,7 +16,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type PageContenu = Database["public"]["Tables"]["pages_contenu"]["Row"];
 
-const emptyForm = { titre: "", slug: "", meta_title: "", meta_description: "", est_publiee: false };
+const emptyForm = { titre: "", slug: "", meta_title: "", meta_description: "", contenu: "", est_publiee: false };
 
 export default function Pages() {
   const [data, setData] = useState<PageContenu[]>([]);
