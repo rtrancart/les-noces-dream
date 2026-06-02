@@ -65,25 +65,31 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (consumeErr) {
+      console.error("[auth-verify] db_error", { jti: payload.jti, err: consumeErr.message });
       return json({ error: "db_error", detail: consumeErr.message }, 500);
     }
     if (!consumed) {
-      // Either jti unknown (not stored) or already consumed.
       const { data: existing } = await admin
         .from("invitation_tokens")
         .select("consumed_at")
         .eq("jti", payload.jti)
         .maybeSingle();
-      if (existing?.consumed_at) return json({ error: "token_consumed" }, 409);
+      if (existing?.consumed_at) {
+        console.error("[auth-verify] token_consumed", { jti: payload.jti });
+        return json({ error: "token_consumed" }, 409);
+      }
+      console.error("[auth-verify] token_unknown", { jti: payload.jti });
       return json({ error: "token_unknown" }, 404);
     }
     if (new Date(consumed.expires_at).getTime() < Date.now()) {
+      console.error("[auth-verify] token_expired", { jti: payload.jti });
       return json({ error: "token_expired" }, 401);
     }
 
-    // 3. Resolve the user's email and open a session via magiclink → /verify
+    // 3. Resolve the user's email and open a session via magiclink → verifyOtp
     const { data: userResp, error: userErr } = await admin.auth.admin.getUserById(payload.sub);
     if (userErr || !userResp?.user?.email) {
+      console.error("[auth-verify] user_not_found", { jti: payload.jti, err: userErr?.message });
       return json({ error: "user_not_found" }, 404);
     }
     const email = userResp.user.email;
@@ -93,25 +99,27 @@ Deno.serve(async (req) => {
       email,
     });
     if (linkErr || !linkData) {
+      console.error("[auth-verify] session_generation_failed", { jti: payload.jti, err: linkErr?.message });
       return json({ error: "session_generation_failed", detail: linkErr?.message }, 500);
     }
 
-    // Extract OTP from the generated link and exchange it for a real session.
-    // generateLink returns { properties: { hashed_token, email_otp, ... } }.
     const hashedToken = (linkData.properties as any)?.hashed_token;
     if (!hashedToken) {
+      console.error("[auth-verify] session_generation_failed: no hashed_token", { jti: payload.jti });
       return json({ error: "session_generation_failed", detail: "no hashed_token" }, 500);
     }
 
+    // Exchange the magiclink hashed_token for a real session using the SDK.
+    // Must use token_hash (not token+email) per Supabase Auth v2 API.
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
-    const verifyResp = await fetch(`${supabaseUrl}/auth/v1/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: anonKey },
-      body: JSON.stringify({ type: "magiclink", token: hashedToken }),
+    const anon = createClient(supabaseUrl, anonKey);
+    const { data: sessionData, error: verifyErr } = await anon.auth.verifyOtp({
+      type: "magiclink",
+      token_hash: hashedToken,
     });
-    const verifyBody = await verifyResp.json();
-    if (!verifyResp.ok || !verifyBody.access_token) {
-      return json({ error: "session_exchange_failed", detail: verifyBody }, 500);
+    if (verifyErr || !sessionData?.session) {
+      console.error("[auth-verify] session_exchange_failed", { jti: payload.jti, err: verifyErr?.message });
+      return json({ error: "session_exchange_failed", detail: verifyErr?.message ?? "no session" }, 500);
     }
 
     // 4. Log
@@ -125,12 +133,14 @@ Deno.serve(async (req) => {
 
     return json({
       success: true,
-      access_token: verifyBody.access_token,
-      refresh_token: verifyBody.refresh_token,
+      access_token: sessionData.session.access_token,
+      refresh_token: sessionData.session.refresh_token,
       user: { id: payload.sub, email },
       prestataire_id: payload.presta_id,
     });
   } catch (e: any) {
+    console.error("[auth-verify] unexpected", { err: String(e?.message ?? e) });
     return json({ error: "unexpected", detail: String(e?.message ?? e) }, 500);
   }
 });
+
