@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -57,20 +57,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const currentUidRef = useRef<string | null>(null);
+
   useEffect(() => {
     let isMounted = true;
 
     const applySession = (nextSession: Session | null) => {
       if (!isMounted) return;
 
+      const prevUid = currentUidRef.current;
+      const nextUid = nextSession?.user?.id ?? null;
+
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
-      setIsRoleLoading(Boolean(nextSession?.user));
 
-      if (!nextSession) {
-        setProfile(null);
-        setRoles([]);
+      if (nextUid !== prevUid) {
+        // Real identity change (login / logout / switch user) → reload profile + roles
+        currentUidRef.current = nextUid;
+        setIsRoleLoading(Boolean(nextUid));
+        if (!nextSession) {
+          setProfile(null);
+          setRoles([]);
+        }
       }
+      // Otherwise (USER_UPDATED, TOKEN_REFRESHED, INITIAL_SESSION with same uid):
+      // keep profile/roles intact, do NOT flip isRoleLoading back to true.
     };
 
     const {
@@ -115,6 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    currentUidRef.current = null;
     setSession(null);
     setUser(null);
     setProfile(null);
