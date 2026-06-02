@@ -16,7 +16,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type PageContenu = Database["public"]["Tables"]["pages_contenu"]["Row"];
 
-const emptyForm = { titre: "", slug: "", meta_title: "", meta_description: "", est_publiee: false };
+const emptyForm = { titre: "", slug: "", meta_title: "", meta_description: "", contenu: "", est_publiee: false };
 
 export default function Pages() {
   const [data, setData] = useState<PageContenu[]>([]);
@@ -39,14 +39,14 @@ export default function Pages() {
   const openCreate = () => { setEditItem(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (p: PageContenu) => {
     setEditItem(p);
-    setForm({ titre: p.titre, slug: p.slug, meta_title: p.meta_title ?? "", meta_description: p.meta_description ?? "", est_publiee: p.est_publiee ?? false });
+    setForm({ titre: p.titre, slug: p.slug, meta_title: p.meta_title ?? "", meta_description: p.meta_description ?? "", contenu: (p as any).contenu ?? "", est_publiee: p.est_publiee ?? false });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.titre || !form.slug) { toast.error("Titre et slug requis"); return; }
     setSaving(true);
-    const payload = { titre: form.titre, slug: form.slug, meta_title: form.meta_title || null, meta_description: form.meta_description || null, est_publiee: form.est_publiee };
+    const payload = { titre: form.titre, slug: form.slug, meta_title: form.meta_title || null, meta_description: form.meta_description || null, contenu: form.contenu || null, est_publiee: form.est_publiee };
     if (editItem) {
       const { error } = await supabase.from("pages_contenu").update(payload).eq("id", editItem.id);
       if (error) toast.error(error.message);
@@ -118,13 +118,14 @@ export default function Pages() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-serif text-lg">{editItem ? "Modifier la page" : "Nouvelle page"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Titre *</Label><Input value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} /></div>
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Slug *</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="font-mono text-sm" /></div>
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Meta Title</Label><Input value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} /></div>
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Meta Description</Label><Textarea value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} rows={2} /></div>
+            <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Contenu (Markdown)</Label><Textarea value={form.contenu} onChange={(e) => setForm({ ...form, contenu: e.target.value })} rows={16} className="font-mono text-xs" placeholder="# Titre\n\n## Section\n\nParagraphe..." /></div>
             <div className="flex items-center gap-2"><Switch checked={form.est_publiee} onCheckedChange={(v) => setForm({ ...form, est_publiee: v })} /><Label className="font-sans text-sm">Publier</Label></div>
           </div>
           <DialogFooter>

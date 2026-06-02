@@ -1009,6 +1009,7 @@ export type Database = {
       pages_contenu: {
         Row: {
           builder_io_content_id: string | null
+          contenu: string | null
           created_at: string
           est_publiee: boolean | null
           id: string
@@ -1020,6 +1021,7 @@ export type Database = {
         }
         Insert: {
           builder_io_content_id?: string | null
+          contenu?: string | null
           created_at?: string
           est_publiee?: boolean | null
           id?: string
@@ -1031,6 +1033,7 @@ export type Database = {
         }
         Update: {
           builder_io_content_id?: string | null
+          contenu?: string | null
           created_at?: string
           est_publiee?: boolean | null
           id?: string

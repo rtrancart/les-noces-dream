@@ -2,11 +2,13 @@
 // Supporte : ## H2, ### H3, **gras**, *italique*, > citation, - liste, paragraphes.
 
 type Block =
+  | { type: "h1"; text: string }
   | { type: "h2"; text: string }
   | { type: "h3"; text: string }
   | { type: "p"; text: string }
   | { type: "quote"; text: string }
-  | { type: "ul"; items: string[] };
+  | { type: "ul"; items: string[] }
+  | { type: "hr" };
 
 function renderInline(text: string): string {
   let t = text;
@@ -47,6 +49,13 @@ export function parseMarkdown(md: string): Block[] {
       continue;
     }
 
+    if (/^---+$/.test(line)) {
+      flushParagraph();
+      flushList();
+      blocks.push({ type: "hr" });
+      continue;
+    }
+
     if (line.startsWith("### ")) {
       flushParagraph();
       flushList();
@@ -57,6 +66,12 @@ export function parseMarkdown(md: string): Block[] {
       flushParagraph();
       flushList();
       blocks.push({ type: "h2", text: line.slice(3).trim() });
+      continue;
+    }
+    if (line.startsWith("# ")) {
+      flushParagraph();
+      flushList();
+      blocks.push({ type: "h1", text: line.slice(2).trim() });
       continue;
     }
     if (line.startsWith("> ")) {
