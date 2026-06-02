@@ -14,7 +14,9 @@ type PageRow = {
 };
 
 export default function PageContenu() {
-  const { slug } = useParams<{ slug: string }>();
+  const params = useParams<{ slug: string }>();
+  const location = useLocation();
+  const slug = params.slug ?? location.pathname.replace(/^\/+/, "").split("/")[0];
   const [page, setPage] = useState<PageRow | null>(null);
   const [loading, setLoading] = useState(true);
 
