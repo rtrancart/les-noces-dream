@@ -1,5 +1,6 @@
 // resend-magic-link — Admin resends magic link to a pre-registered prestataire
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { signInvitationToken } from "../_shared/invitation-token.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
