@@ -592,21 +592,25 @@ const REGIONS_DATA = ALL_REGIONS.slice(0, 6).map((r) => ({ name: r.nom, slug: r.
 
 const MORE_REGIONS = ALL_REGIONS.slice(6).map((r) => ({ name: r.nom, slug: r.slug }));
 
-function RegionCard({ region }: { region: { name: string; slug: string } }) {
+function RegionCard({ region, imageUrl }: { region: { name: string; slug: string }; imageUrl?: string }) {
+  const optimized = imageUrl
+    ? `${imageUrl}${imageUrl.includes("?") ? "&" : "?"}width=400&quality=75`
+    : null;
   return (
     <Link
       to={`/mariage/${region.slug}`}
       className="relative overflow-hidden rounded-md block group h-56 md:h-72"
     >
-      <div className="absolute inset-0 bg-secondary/30 flex items-center justify-center">
-        <MapPin className="w-12 h-12 text-muted-foreground/20" />
-      </div>
+      {optimized ? (
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+          style={{ backgroundImage: `url(${optimized})` }}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-secondary/30" />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-foreground via-foreground/40 via-50% to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-champagne" />
-          <span className="text-champagne text-sm font-sans">Prestataires</span>
-        </div>
+      <div className="absolute bottom-0 left-0 right-0 p-5">
         <h3 className="text-primary-foreground text-lg md:text-2xl font-medium font-serif">
           Organiser son mariage en {region.name}
         </h3>
@@ -616,6 +620,23 @@ function RegionCard({ region }: { region: { name: string; slug: string } }) {
 }
 
 function RegionalSection() {
+  const [images, setImages] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    supabase
+      .from("pages_regions_mariage")
+      .select("slug_region, image_hero_url")
+      .eq("est_publiee", true)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, string> = {};
+        data.forEach((r: any) => {
+          if (r.image_hero_url) map[r.slug_region] = r.image_hero_url;
+        });
+        setImages(map);
+      });
+  }, []);
+
   return (
     <section className="bg-card py-20 md:py-24 px-6 lg:px-8">
       <div className="max-w-[1099px] mx-auto">
@@ -630,7 +651,7 @@ function RegionalSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {REGIONS_DATA.map((region) => (
-            <RegionCard key={region.slug} region={region} />
+            <RegionCard key={region.slug} region={region} imageUrl={images[region.slug]} />
           ))}
         </div>
 
