@@ -843,6 +843,42 @@ export type Database = {
           },
         ]
       }
+      invitation_tokens: {
+        Row: {
+          action: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          ip_consumed: unknown
+          jti: string
+          prestataire_id: string | null
+          user_agent_consumed: string | null
+          user_id: string
+        }
+        Insert: {
+          action?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          ip_consumed?: unknown
+          jti: string
+          prestataire_id?: string | null
+          user_agent_consumed?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          ip_consumed?: unknown
+          jti?: string
+          prestataire_id?: string | null
+          user_agent_consumed?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       logs_admin: {
         Row: {
           action: string
