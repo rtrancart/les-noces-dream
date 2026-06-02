@@ -49,6 +49,13 @@ export function parseMarkdown(md: string): Block[] {
       continue;
     }
 
+    if (/^---+$/.test(line)) {
+      flushParagraph();
+      flushList();
+      blocks.push({ type: "hr" });
+      continue;
+    }
+
     if (line.startsWith("### ")) {
       flushParagraph();
       flushList();
@@ -59,6 +66,12 @@ export function parseMarkdown(md: string): Block[] {
       flushParagraph();
       flushList();
       blocks.push({ type: "h2", text: line.slice(3).trim() });
+      continue;
+    }
+    if (line.startsWith("# ")) {
+      flushParagraph();
+      flushList();
+      blocks.push({ type: "h1", text: line.slice(2).trim() });
       continue;
     }
     if (line.startsWith("> ")) {
