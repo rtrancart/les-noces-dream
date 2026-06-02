@@ -118,13 +118,14 @@ export default function Pages() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-serif text-lg">{editItem ? "Modifier la page" : "Nouvelle page"}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Titre *</Label><Input value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} /></div>
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Slug *</Label><Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="font-mono text-sm" /></div>
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Meta Title</Label><Input value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} /></div>
             <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Meta Description</Label><Textarea value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} rows={2} /></div>
+            <div className="space-y-1.5"><Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Contenu (Markdown)</Label><Textarea value={form.contenu} onChange={(e) => setForm({ ...form, contenu: e.target.value })} rows={16} className="font-mono text-xs" placeholder="# Titre\n\n## Section\n\nParagraphe..." /></div>
             <div className="flex items-center gap-2"><Switch checked={form.est_publiee} onCheckedChange={(v) => setForm({ ...form, est_publiee: v })} /><Label className="font-sans text-sm">Publier</Label></div>
           </div>
           <DialogFooter>
