@@ -259,7 +259,7 @@ function HeroSection({ categories, categoryTree }: { categories: CategoryData[];
 function CategoryCard({ cat }: { cat: CategoryData }) {
   return (
     <Link
-      to={`/categories/${cat.slug}`}
+      to={`/prestataires/${cat.slug}`}
       className="relative overflow-hidden rounded-md block group aspect-square"
     >
       {/* Background photo */}
