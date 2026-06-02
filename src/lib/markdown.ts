@@ -2,11 +2,13 @@
 // Supporte : ## H2, ### H3, **gras**, *italique*, > citation, - liste, paragraphes.
 
 type Block =
+  | { type: "h1"; text: string }
   | { type: "h2"; text: string }
   | { type: "h3"; text: string }
   | { type: "p"; text: string }
   | { type: "quote"; text: string }
-  | { type: "ul"; items: string[] };
+  | { type: "ul"; items: string[] }
+  | { type: "hr" };
 
 function renderInline(text: string): string {
   let t = text;
