@@ -33,3 +33,6 @@ verify_jwt = false
 [functions.relay-message]
 verify_jwt = true
 
+[functions.auth-verify-email-token]
+verify_jwt = false
+
