@@ -162,16 +162,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Magic link
-    // Supabase invite links only work for brand-new emails. For an existing account,
-    // generate a magic link so admins can safely resend the onboarding email.
-    const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
-      type: "magiclink",
-      email: cleanEmail,
-      options: { redirectTo: `${siteUrl}/accept-invitation` },
+    // 3. Custom signed token (immune to Gmail/Outlook link scanners)
+    const { token: invitationToken, jti, expiresAt } = await signInvitationToken({
+      userId: userId!,
+      prestataireId: presta.id,
     });
-    if (linkError) throw linkError;
-    const magicLink = linkData.properties.action_link;
+    const { error: tokenInsertErr } = await adminClient.from("invitation_tokens").insert({
+      jti,
+      user_id: userId,
+      prestataire_id: presta.id,
+      action: "accept_invitation",
+      expires_at: expiresAt.toISOString(),
+    });
+    if (tokenInsertErr) throw tokenInsertErr;
+    const magicLink = `${siteUrl}/accept-invitation?token=${invitationToken}`;
 
     // 4. Email
     await adminClient.functions.invoke("send-transactional-email", {
