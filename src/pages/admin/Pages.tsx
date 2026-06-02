@@ -39,14 +39,14 @@ export default function Pages() {
   const openCreate = () => { setEditItem(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (p: PageContenu) => {
     setEditItem(p);
-    setForm({ titre: p.titre, slug: p.slug, meta_title: p.meta_title ?? "", meta_description: p.meta_description ?? "", est_publiee: p.est_publiee ?? false });
+    setForm({ titre: p.titre, slug: p.slug, meta_title: p.meta_title ?? "", meta_description: p.meta_description ?? "", contenu: (p as any).contenu ?? "", est_publiee: p.est_publiee ?? false });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.titre || !form.slug) { toast.error("Titre et slug requis"); return; }
     setSaving(true);
-    const payload = { titre: form.titre, slug: form.slug, meta_title: form.meta_title || null, meta_description: form.meta_description || null, est_publiee: form.est_publiee };
+    const payload = { titre: form.titre, slug: form.slug, meta_title: form.meta_title || null, meta_description: form.meta_description || null, contenu: form.contenu || null, est_publiee: form.est_publiee };
     if (editItem) {
       const { error } = await supabase.from("pages_contenu").update(payload).eq("id", editItem.id);
       if (error) toast.error(error.message);
