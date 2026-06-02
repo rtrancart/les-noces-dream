@@ -456,7 +456,7 @@ function TrustSection() {
       <div className="max-w-[1099px] mx-auto">
         <div className="text-center mb-14">
           <h2 className="text-foreground text-3xl md:text-5xl font-medium font-serif mb-4">
-            Pourquoi LesNoces.net ?
+            Parce que votre réception mérite les meilleurs talents.
           </h2>
           <p className="text-muted-foreground text-lg font-sans">
             La différence qui fait toute la différence

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,8 @@ export default function AccepterInvitation() {
   // Form state
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [cgu, setCgu] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -161,20 +164,42 @@ export default function AccepterInvitation() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="password">Mot de passe</Label>
-                  <Input
-                    id="password" type="password" value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    minLength={8} required autoComplete="new-password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password" type={showPassword ? "text" : "password"} value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      minLength={8} required autoComplete="new-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <p className="text-xs text-muted-foreground">Minimum 8 caractères.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm">Confirmer le mot de passe</Label>
-                  <Input
-                    id="confirm" type="password" value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    required autoComplete="new-password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirm" type={showConfirm ? "text" : "password"} value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      required autoComplete="new-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      tabIndex={-1}
+                    >
+                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <label className="flex items-start gap-2 text-sm">

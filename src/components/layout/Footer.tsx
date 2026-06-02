@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Phone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,6 +48,14 @@ export default function Footer() {
               La plateforme de référence pour trouver les meilleurs prestataires
               de mariage haut de gamme.
             </p>
+            <div className="mt-4 space-y-1 text-card/60 text-sm font-sans">
+              <p className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-primary" />
+                <span>02 96 01 00 17</span>
+              </p>
+              <p>Du mardi au vendredi de 9h à 13h</p>
+              <p>Le reste du temps par mail</p>
+            </div>
           </div>
 
           {/* Catégories */}
