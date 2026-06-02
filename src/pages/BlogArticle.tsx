@@ -240,6 +240,16 @@ export default function BlogArticle() {
                     </ul>
                   );
                 }
+                if (b.type === "hr") {
+                  return <hr key={i} className="my-12 border-border" />;
+                }
+                if (b.type === "h1") {
+                  return (
+                    <h1 key={i} className="font-serif text-4xl mt-12 mb-6">
+                      {b.text}
+                    </h1>
+                  );
+                }
                 // Paragraphe : drop cap sur le tout premier
                 if (i === firstParaIdx && firstPara) {
                   return (
