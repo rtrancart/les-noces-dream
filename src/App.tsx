@@ -27,6 +27,7 @@ import SignerLaCharte from "./pages/SignerLaCharte";
 import CharteQualite from "./pages/CharteQualite";
 import Reactivation from "./pages/Reactivation";
 import CharteProgressive from "./pages/CharteProgressive";
+import PageContenu from "./pages/PageContenu";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
