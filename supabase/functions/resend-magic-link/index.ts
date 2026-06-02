@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
         templateData: {
           prenom: profile?.prenom ?? null,
           nom_commercial: presta.nom_commercial,
-          magic_link: linkData.properties.action_link,
+          magic_link: magicLink,
           jours_restants: joursRestants,
         },
       },
