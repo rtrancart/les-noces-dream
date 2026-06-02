@@ -1,118 +1,92 @@
-# Plan — Notifications email messagerie via Edge Function `relay-message`
+# Plan : invitation prestataire robuste
 
-## Objectif
+## 1. Court terme — `PUBLIC_SITE_URL` preview
 
-Combler le gap critique : aujourd'hui un message posté dans la messagerie ne déclenche **aucune notification**. On centralise l'envoi via une Edge Function qui insère le message + déclenche le bon template email parmi 3, et on génère un magic token pour accès direct à la conversation.
+Ajouter le secret `PUBLIC_SITE_URL` = `https://id-preview--0e72174c-74d1-4db3-9e26-0b8167e53603.lovable.app` via le tool secrets.
+
+Effet immédiat : les Edge Functions `invite-prestataire` et `resend-magic-link` génèreront des liens pointant vers l'URL preview au lieu de `https://lesnoces.net` (404 actuel). Le magic link Supabase natif fonctionnera enfin en preview, le temps de mettre en place le flux custom.
+
+À la publication sur le domaine définitif (lesnoces.net), mettre à jour ce secret. À noter : le proxy preview peut encore faire échouer `POST /auth/v1/token` côté navigateur — c'est précisément pourquoi l'étape 2 est nécessaire.
 
 ---
 
-## 1. Nouveau template email `notif-reponse-presta` (déjà présent)
+## 2. Moyen terme — Token custom signé (HMAC `MAGIC_LINK_SECRET`)
 
-Vérification rapide : le registry contient déjà `notif_reponse_presta` (notification au prestataire quand le client répond). Pas besoin de créer un nouveau template — on réutilise les 3 existants :
-- `notif_reponse_client_avec_compte`
-- `notif_reponse_client_sans_compte`
-- `notif_reponse_presta`
+Objectif : remplacer le magic link Supabase (consommable par Gmail/Outlook, dépendant du proxy preview) par un token signé qu'on contrôle de bout en bout.
 
-Aucune migration sur `email_templates` nécessaire (les templates vivent dans le code, pas en base).
+### Architecture
 
-## 2. Migration DB — RLS impersonnification + colonne `envoye_par_email`
+```text
+Admin clique "Inviter"
+  └─ Edge invite-prestataire
+       ├─ crée user (admin.createUser sans email)
+       ├─ crée/MAJ prestataire (statut pre_inscrit)
+       ├─ signe JWT HS256 { sub: user_id, presta_id, action:'accept_invitation', exp: now+7j, jti }
+       ├─ stocke jti en DB (table invitation_tokens, pour révocation/usage unique)
+       └─ envoie email avec lien {PUBLIC_SITE_URL}/accept-invitation?token=JWT
 
-Migration unique :
-
-```sql
--- Colonne pour traquer si la notif a été envoyée
-ALTER TABLE public.messages
-  ADD COLUMN IF NOT EXISTS envoye_par_email boolean NOT NULL DEFAULT false;
-
--- Bloquer les inserts en mode impersonnification
-CREATE POLICY "Bloquer insert messages en impersonnification"
-ON public.messages
-FOR INSERT
-TO authenticated
-WITH CHECK ((auth.jwt() ->> 'is_impersonation')::boolean IS NOT TRUE);
+Prestataire clique le lien
+  └─ Page /accept-invitation (front)
+       ├─ POST {token} → Edge auth-verify-email-token
+       │     ├─ vérifie signature + exp + jti non consommé
+       │     ├─ marque jti consommé (atomique)
+       │     ├─ admin.generateLink type='magiclink' email-only OU
+       │     │   crée une session via admin.createSession (preferred si dispo)
+       │     │   → renvoie { access_token, refresh_token } au front
+       │     └─ log invitation_acceptee
+       ├─ supabase.auth.setSession({ access_token, refresh_token })
+       └─ Formulaire mot de passe + CGU → updateUser → /signer-la-charte
 ```
 
-Note : la policy existante d'insert (client/prestataire authentifié) reste en place, ce nouveau WITH CHECK s'additionne.
+### Pourquoi ça résiste aux scanners
+- Le token JWT n'est PAS un token Supabase. Un GET de Gmail ne consomme rien côté Supabase.
+- La consommation a lieu uniquement lors du POST explicite depuis la page front (les scanners ne déclenchent pas de POST).
+- `jti` en DB garantit usage unique : même si un scanner POSTait, le clic légitime suivant échouerait — donc on rend le POST déclenché par interaction (bouton "Activer mon compte") plutôt qu'auto au mount, pour éviter ce risque.
 
-## 3. Edge Function `relay-message`
+### Changements de fichiers
 
-Fichier : `supabase/functions/relay-message/index.ts`
-Config : `verify_jwt = true` dans `supabase/config.toml`.
+**Nouveaux**
+- `supabase/functions/auth-verify-email-token/index.ts` — vérifie JWT, consomme `jti`, ouvre la session.
+- Migration SQL : table `invitation_tokens (jti pk, user_id, presta_id, created_at, expires_at, consumed_at, ip_consumed)` + GRANTs + RLS (lecture admin only, écriture service_role).
 
-**Flow :**
+**Modifiés**
+- `supabase/functions/invite-prestataire/index.ts` — remplacer `admin.generateLink({type:'magiclink'})` par : signature JWT HS256 avec `MAGIC_LINK_SECRET` + insert `invitation_tokens`. Lien final = `${siteUrl}/accept-invitation?token=${jwt}`.
+- `supabase/functions/resend-magic-link/index.ts` — même remplacement, réutilise la logique JWT (extraire dans `_shared/invitation-token.ts`).
+- `src/pages/AccepterInvitation.tsx` — réécrire :
+  - lit `?token=` dans l'URL
+  - affiche un écran "Bienvenue, cliquez pour activer" (CTA explicite → évite déclenchement scanner)
+  - au clic : `functions.invoke('auth-verify-email-token', { body:{ token } })` → reçoit `{access_token, refresh_token}` → `supabase.auth.setSession(...)` → affiche le formulaire mot de passe + CGU (logique actuelle conservée)
+  - si erreur `token_expired` → écran dédié avec CTA "Demander un nouveau lien" (POST email → re-trigger `resend-magic-link` côté admin OU endpoint public rate-limité)
+  - si erreur `token_consumed` → message "Ce lien a déjà été utilisé, connectez-vous normalement"
+- `supabase/config.toml` — ajouter `[functions.auth-verify-email-token] verify_jwt = false` (public).
+- `supabase/functions/_shared/transactional-email-templates/invitation-prestataire.tsx` — pas de changement structurel, juste le `magic_link` reste la variable (le contenu change en amont).
 
-1. **Auth** — `getClaims(token)` → `user_id = claims.sub`, `is_impersonation = claims.is_impersonation`.
-2. **Garde impersonnification** — si `is_impersonation === true` :
-   - INSERT `logs_admin` (action `impersonation_action_bloquee`, entite `relay-message`, entite_id = user_id, details `{action_tentee:'relay-message'}`)
-   - retour 403.
-3. **Validation body** (Zod) : `demande_id` uuid, `contenu` string (1..5000), `expediteur_type` enum `prestataire|visiteur`.
-4. **Contexte** via service role : `SELECT` `demandes_devis` + join `prestataires` (nom_commercial, telephone, email_contact, site_web, user_id, slug) + join `contacts_anonymes` (email, prenom, profile_id) + `profiles` client (prenom, email) si `profile_id IS NOT NULL`. Si demande introuvable / archivée → 400.
-5. **Autorisation métier** — vérifier que `user_id` correspond bien soit au prestataire (`prestataires.user_id`), soit au client (`profile_id`). Sinon 403.
-6. **INSERT message** (service role) avec `expediteur_id = user_id`.
-7. **UPDATE statut** demande à `en_discussion` si `statut IN ('nouveau','lu')`.
-8. **Magic token** — JWT signé HS256 avec `MAGIC_LINK_SECRET` : `{sub, demande_id, exp: now+7j, action:'reply'}`.
-9. **Dispatch email** selon cas A/B/C (cf. ci-dessous) via `supabase.functions.invoke('send-transactional-email', { body: { templateName, recipientEmail, idempotencyKey: 'msg-'+message_id, templateData } })`.
-10. **UPDATE** `messages.envoye_par_email = true` si succès email.
-11. Retour `{success:true, message_id, email_error?:true}`.
+### Détails techniques JWT
+- Algo : HS256 (symétrique, secret unique côté Supabase).
+- Lib Deno : `import { create, verify } from "https://deno.land/x/djwt@v3.0.2/mod.ts"`.
+- Payload : `{ sub, presta_id, action: 'accept_invitation', jti: crypto.randomUUID(), iat, exp }`.
+- Expiration : 7 jours (vs 24h Supabase actuel) — paramétrable.
 
-**Cas email :**
+### Sécurité
+- `MAGIC_LINK_SECRET` déjà présent ✓
+- `jti` en table empêche le replay
+- Token signé : non forgeable sans le secret
+- Pas d'info sensible dans le payload (juste IDs)
+- L'Edge Function `auth-verify-email-token` n'expose jamais service_role au client ; elle renvoie uniquement des tokens de session utilisateur
 
-| Cas | Trigger | Template | Destinataire |
-|---|---|---|---|
-| A | `prestataire` + `profile_id` ≠ null | `notif_reponse_client_avec_compte` | `profiles.email` |
-| B | `prestataire` + `profile_id` null | `notif_reponse_client_sans_compte` | `contacts_anonymes.email` |
-| C | `visiteur` | `notif_reponse_presta` | `prestataires.email_contact` |
+### Endpoint "renvoyer un lien" (public)
+Optionnel mais recommandé : Edge `request-invitation-resend` qui prend `{email}`, vérifie qu'un prestataire en `pre_inscrit` existe, rate-limite (1/heure par email), et déclenche un nouvel email. Sinon on garde le flux admin uniquement (resend-magic-link existant).
 
-**Variables injectées :**
-- A : `clientPrenom`, `prestataireNom`, `messageExtrait`, `lienMessagerie = https://lesnoces.net/mon-espace/messages/{demande_id}?token={magic}`
-- B : `clientPrenom`, `prestataireNom`, `messageExtrait`, `lienMagique = https://lesnoces.net/messagerie/{demande_id}?token={magic}`, `lienInscription = https://lesnoces.net/inscription?email={enc}&demande_id={id}`
-- C : variables équivalentes côté presta (à confirmer avec le template `notif-reponse-presta.tsx` existant)
+---
 
-**Secret requis :** `MAGIC_LINK_SECRET` — à ajouter via `add_secret`. Utilisé uniquement côté Edge Function pour signer/vérifier les magic tokens de conversation.
+## Ordre d'exécution proposé
+1. Ajouter `PUBLIC_SITE_URL` (déblocage immédiat des tests).
+2. Migration `invitation_tokens`.
+3. Shared `_shared/invitation-token.ts` (sign + verify).
+4. Edge `auth-verify-email-token` + config.toml.
+5. Modifier `invite-prestataire` et `resend-magic-link`.
+6. Réécrire `src/pages/AccepterInvitation.tsx` (CTA explicite, gestion erreurs).
+7. Tester bout-en-bout en preview.
+8. (Optionnel) Edge `request-invitation-resend` + page "lien expiré".
 
-## 4. Modification `src/components/messaging/ConversationThread.tsx`
-
-Remplacer `handleSend` :
-
-```ts
-const handleSend = async () => {
-  if (!newMessage.trim() || !user?.id || sending) return;
-  setSending(true);
-
-  const { data, error } = await supabase.functions.invoke('relay-message', {
-    body: { demande_id: demandeId, contenu: newMessage.trim(), expediteur_type: role },
-  });
-
-  if (error || !data?.success) {
-    toast({ title: "Votre message n'a pas pu être envoyé, veuillez réessayer.", variant: "destructive" });
-  } else {
-    setNewMessage("");
-    trackEvent("envoi_message", { role });
-    onMessageSent?.();
-  }
-  setSending(false);
-};
-```
-
-→ Suppression du `insert` direct et du `update` statut (déplacés serveur).
-→ Le realtime subscribe existant affichera le message une fois inséré.
-
-## 5. Config
-
-Ajouter dans `supabase/config.toml` :
-```toml
-[functions.relay-message]
-verify_jwt = true
-```
-
-## 6. Hors-scope explicite
-
-- Pas de modif des templates existants (juste les appeler).
-- Pas de table `email_templates` (les templates sont des composants React Email).
-- Pas de page publique `/messagerie/{id}?token=…` dans ce plan — à traiter dans un plan suivant (route + validation token côté serveur). En attendant, le `lienMagique` envoie vers une route à créer ; les clients avec compte fonctionneront immédiatement via `/mon-espace/messages`.
-- L'impersonnification (table `sessions_impersonnification`, Edge Function `admin-impersonate`, etc.) reste sur son plan dédié — ici on ne fait que poser le garde-fou dans `relay-message` + la policy RLS qui lisent un claim JWT `is_impersonation` qui sera renseigné par ce futur flux.
-
-## Risques
-
-- **Magic token vers `/messagerie/{id}`** : route inexistante pour les clients sans compte. À planifier ensuite, sinon le CTA mène à un 404. Acceptable court-terme car le template prévoit aussi un CTA "Créer mon compte".
-- **Doublon de notification** si le client clique vite sur Envoyer 2× : l'`idempotencyKey = msg-{message_id}` rend l'envoi idempotent côté `send-transactional-email`.
+Confirmes-tu ce plan ? Souhaites-tu inclure l'étape 8 (auto-resend public) dès maintenant, ou la garder pour plus tard ?
