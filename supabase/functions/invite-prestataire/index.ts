@@ -1,6 +1,7 @@
 // invite-prestataire — Admin invites a prestataire via magic link.
 // Accepts a NEW prestataire OR an existing one in `brouillon` to flip → `pre_inscrit`.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { signInvitationToken } from "../_shared/invitation-token.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
