@@ -1,5 +1,6 @@
 // resend-magic-link — Admin resends magic link to a pre-registered prestataire
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { signInvitationToken } from "../_shared/invitation-token.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,12 +42,20 @@ Deno.serve(async (req) => {
 
     const { data: profile } = await adminClient.from("profiles").select("prenom").eq("id", presta.user_id).maybeSingle();
 
-    const { data: linkData, error: linkError } = await adminClient.auth.admin.generateLink({
-      type: "magiclink",
-      email: presta.email_contact,
-      options: { redirectTo: `${siteUrl}/espace-pro/charte` },
+    // Custom signed token (immune to Gmail/Outlook link scanners)
+    const { token: invitationToken, jti, expiresAt } = await signInvitationToken({
+      userId: presta.user_id,
+      prestataireId: presta.id,
     });
-    if (linkError) throw linkError;
+    const { error: tokenInsertErr } = await adminClient.from("invitation_tokens").insert({
+      jti,
+      user_id: presta.user_id,
+      prestataire_id: presta.id,
+      action: "accept_invitation",
+      expires_at: expiresAt.toISOString(),
+    });
+    if (tokenInsertErr) throw tokenInsertErr;
+    const magicLink = `${siteUrl}/accept-invitation?token=${invitationToken}`;
 
     // Compute remaining days before auto-archive
     let joursRestants: number | null = null;
@@ -63,7 +72,7 @@ Deno.serve(async (req) => {
         templateData: {
           prenom: profile?.prenom ?? null,
           nom_commercial: presta.nom_commercial,
-          magic_link: linkData.properties.action_link,
+          magic_link: magicLink,
           jours_restants: joursRestants,
         },
       },
