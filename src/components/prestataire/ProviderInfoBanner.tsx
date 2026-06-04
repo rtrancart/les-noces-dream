@@ -120,8 +120,18 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
         {/* Right: Profile completion — hidden at 100% */}
         {completionRate < 100 && (
           <>
-            {/* Mobile version */}
-            <div className="flex md:hidden flex-col gap-1.5">
+            {/* Mobile version — tappable to open the missing-fields sheet */}
+            <button
+              type="button"
+              onClick={() => missingFields.length > 0 && setSheetOpen(true)}
+              disabled={missingFields.length === 0}
+              className="flex md:hidden flex-col gap-1.5 text-left w-full"
+              aria-label={
+                missingFields.length > 0
+                  ? `Voir les ${missingFields.length} champs à compléter`
+                  : "Profil complété"
+              }
+            >
               <p className="font-sans text-xs text-muted-foreground">
                 Profil complété à
               </p>
@@ -130,8 +140,49 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
                   <Progress value={completionRate} className="h-2" />
                 </div>
                 <span className="font-serif text-sm text-foreground shrink-0">{completionRate}%</span>
+                {missingFields.length > 0 && (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                )}
               </div>
-            </div>
+              {missingFields.length > 0 && (
+                <p className="font-sans text-[11px] text-primary underline-offset-2 underline">
+                  Voir les {missingFields.length} champ{missingFields.length > 1 ? "s" : ""} à compléter
+                </p>
+              )}
+            </button>
+
+            {/* Mobile bottom sheet listing missing fields with direct links */}
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+              <SheetContent side="bottom" className="rounded-t-xl">
+                <SheetHeader className="text-left">
+                  <SheetTitle className="font-serif text-xl flex items-center gap-2">
+                    <AlertCircle className="text-primary" size={20} />
+                    Champs à compléter
+                  </SheetTitle>
+                  <SheetDescription className="font-sans">
+                    Complétez ces informations pour atteindre 100 % et améliorer votre visibilité.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-4 divide-y divide-border">
+                  {missingFields.map((field) => (
+                    <Link
+                      key={field.key}
+                      to={field.to}
+                      onClick={() => setSheetOpen(false)}
+                      className="flex items-center justify-between gap-3 py-3 active:bg-secondary/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <X className="text-destructive shrink-0" size={16} />
+                        <span className="font-sans text-sm text-foreground truncate">
+                          {field.label}
+                        </span>
+                      </div>
+                      <ChevronRight className="text-muted-foreground shrink-0" size={16} />
+                    </Link>
+                  ))}
+                </div>
+              </SheetContent>
+            </Sheet>
 
             {/* Desktop version */}
             <div className="relative group hidden md:block">
