@@ -54,20 +54,22 @@ Deno.serve(async (req) => {
       throw new Error("Seul un super admin peut supprimer un administrateur");
     }
 
-    // Delete user roles, signatures (bypass via SECURITY DEFINER RPC), profile, then auth user
-    await adminClient.from("user_roles").delete().eq("user_id", target_user_id);
-
-    // Purge signatures de la Charte (le trigger d'immutabilité bloque le CASCADE sinon).
-    // Le RPC vérifie le rôle admin via auth.uid() — on l'appelle avec le client du caller.
+    // Nettoyage public complet via RPC SECURITY DEFINER, avec le contexte du caller.
+    // Important : ne pas supprimer user_roles/profile avant ce RPC, sinon les FK restantes
+    // font échouer la suppression auth avec le message générique "Database error deleting user".
     const { error: sigErr } = await callerClient.rpc("admin_delete_user_cascade", {
       p_user_id: target_user_id,
     });
-    if (sigErr) throw sigErr;
-
-    await adminClient.from("profiles").delete().eq("id", target_user_id);
+    if (sigErr) {
+      console.error("admin_delete_user_cascade failed", sigErr);
+      throw sigErr;
+    }
     
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(target_user_id);
-    if (deleteError) throw deleteError;
+    if (deleteError) {
+      console.error("auth.admin.deleteUser failed", deleteError);
+      throw deleteError;
+    }
 
     return new Response(
       JSON.stringify({ success: true }),
