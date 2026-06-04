@@ -1,22 +1,18 @@
-## Objectif
-Remplacer le picto `MapPin` et le label "Prestataires" des cartes régions sur la home par la hero image de chaque région (`pages_regions_mariage.image_hero_url`).
+## Diagnostic
 
-## Étapes
+La suppression lancée depuis `/admin/prestataires` ne passe pas par la fonction sécurisée `admin-delete-user`. Elle exécute encore une suppression directe sur la table `prestataires`, ce qui déclenche la suppression en cascade de `signatures_charte` sans activer le bypass prévu. Le trigger bloque donc toujours avec : “Les signatures sont immuables…”.
 
-1. **Charger les images hero**
-   - Dans `src/pages/Index.tsx`, ajouter une requête Supabase (via `useQuery`) : `SELECT slug_region, image_hero_url FROM pages_regions_mariage WHERE est_publiee = true`.
-   - Construire une map `{ slug → image_hero_url }`.
+## Plan d’implémentation
 
-2. **Mettre à jour `RegionCard`**
-   - Accepter une prop `imageUrl?: string`.
-   - Si présente : utiliser comme `background-image` (avec `?width=400&quality=75` via transformations Supabase Storage) + overlay sombre pour lisibilité du nom de région.
-   - Si absente : conserver un fallback neutre (dégradé subtil, sans le `MapPin`).
-   - Supprimer l'icône `MapPin` et le texte "Prestataires".
+1. Modifier `src/pages/admin/Prestataires.tsx`
+   - Remplacer la suppression directe `supabase.from("prestataires").delete()` par l’appel à `admin-delete-user` quand le prestataire est lié à un compte utilisateur (`user_id`).
+   - Conserver une suppression directe uniquement pour les fiches sans compte utilisateur associé, si elles existent.
+   - Afficher un message d’erreur clair si la fiche n’a pas les données nécessaires.
 
-3. **Garder le reste intact**
-   - Nom de la région, lien vers `/mariage/[slug]`, hover, layout grid : inchangés.
+2. Sécuriser l’affichage/action
+   - Vérifier que la liste récupère bien `user_id` pour chaque prestataire.
+   - Adapter le handler de suppression pour recevoir l’objet prestataire plutôt que seulement son `id`.
 
-## Détails techniques
-- Requête légère (~13 lignes), cachée par React Query → impact perf négligeable.
-- Images servies via CDN Supabase Storage, redimensionnées à 400px de large.
-- Fallback gracieux si une région n'a pas encore d'`image_hero_url`.
+3. Valider
+   - Vérifier que le code appelle bien la fonction `admin-delete-user` depuis la page prestataires.
+   - La suppression d’un prestataire avec charte signée passera alors par le RPC `admin_delete_user_cascade`, donc le trigger d’immutabilité ne bloquera plus.
