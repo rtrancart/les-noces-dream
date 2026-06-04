@@ -38,15 +38,17 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
   const completionRate = Math.round((completedFields / totalFields) * 100);
 
   const missingFields = [
-    { key: "hasShortDesc", label: "Description courte" },
-    { key: "hasDescription", label: "Description détaillée" },
-    { key: "hasPhoto", label: "Photo principale" },
-    { key: "hasGallery", label: "Galerie photos" },
-    { key: "hasPhone", label: "Numéro de téléphone" },
-    { key: "hasEmail", label: "Email de contact" },
-    { key: "hasWebsite", label: "Site web" },
-    { key: "hasPriceMin", label: "Tarif de départ" },
+    { key: "hasShortDesc", label: "Description courte", to: "/espace-pro/prestation" },
+    { key: "hasDescription", label: "Description détaillée", to: "/espace-pro/prestation" },
+    { key: "hasPhoto", label: "Photo principale", to: "/espace-pro/galerie" },
+    { key: "hasGallery", label: "Galerie photos", to: "/espace-pro/galerie" },
+    { key: "hasPhone", label: "Numéro de téléphone", to: "/espace-pro/profil" },
+    { key: "hasEmail", label: "Email de contact", to: "/espace-pro/profil" },
+    { key: "hasWebsite", label: "Site web", to: "/espace-pro/profil" },
+    { key: "hasPriceMin", label: "Tarif de départ", to: "/espace-pro/prestation" },
   ].filter((f) => !profileFields[f.key as keyof typeof profileFields]);
+
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const statusLabels: Record<string, string> = {
     actif: "Actif",
