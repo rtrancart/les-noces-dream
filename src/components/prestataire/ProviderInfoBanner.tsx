@@ -1,6 +1,15 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, AlertCircle, X } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { CheckCircle2, AlertCircle, X, ChevronRight } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
 
