@@ -1561,6 +1561,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user_cascade: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       can_review_prestataire: {
         Args: { p_prestataire_id: string }
         Returns: boolean
