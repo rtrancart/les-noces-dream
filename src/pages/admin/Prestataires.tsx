@@ -640,11 +640,28 @@ export default function Prestataires() {
     setDialogOpen(false);
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("prestataires").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Prestataire supprimé"); logAdmin("delete_prestataire", "prestataires", id); fetchData(); fetchGlobalCounts(); }
+  const handleDelete = async (id: string, userId: string | null) => {
+    try {
+      if (userId) {
+        // Passe par l'edge function qui bypass le trigger d'immutabilité des signatures
+        const { data, error } = await supabase.functions.invoke("admin-delete-user", {
+          body: { target_user_id: userId },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+      } else {
+        const { error } = await supabase.from("prestataires").delete().eq("id", id);
+        if (error) throw error;
+      }
+      toast.success("Prestataire supprimé");
+      logAdmin("delete_prestataire", "prestataires", id);
+      fetchData();
+      fetchGlobalCounts();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur lors de la suppression");
+    }
   };
+
 
   const parentCategories = categories.filter((c) => !c.parent_id);
   const childCategories = categories.filter((c) => c.parent_id === form.categorie_mere_id);
