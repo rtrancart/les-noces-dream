@@ -84,11 +84,11 @@ export default function SearchMap({ providers, hoveredId, onHover }: SearchMapPr
       const marker = L.marker([lat, lng], { icon })
         .addTo(map)
         .bindPopup(
-          `<div style="font-family:var(--font-sans);min-width:180px;">
-            <strong style="font-size:13px;">${escapeHtml(p.nom_commercial)}</strong><br/>
-            <span style="font-size:11px;color:#666;">${escapeHtml(p.ville)}${p.region ? `, ${escapeHtml(p.region)}` : ""}</span>
-            ${p.note_moyenne ? `<br/><span style="font-size:11px;">⭐ ${p.note_moyenne.toFixed(1)}</span>` : ""}
-            <a href="/prestataire/${encodeURIComponent(p.slug)}" style="display:block;margin-top:10px;padding:8px 12px;background:#A57D27;color:#fff;text-align:center;text-decoration:none;font-weight:600;font-size:12px;border-radius:6px;min-height:36px;line-height:20px;">Voir la fiche →</a>
+          `<div style="font-family:var(--font-sans);min-width:220px;">
+            <strong style="font-size:14px;">${escapeHtml(p.nom_commercial)}</strong><br/>
+            <span style="font-size:12px;color:#666;">${escapeHtml(p.ville)}${p.region ? `, ${escapeHtml(p.region)}` : ""}</span>
+            ${p.note_moyenne ? `<br/><span style="font-size:12px;">⭐ ${p.note_moyenne.toFixed(1)}</span>` : ""}
+            <a href="/prestataire/${encodeURIComponent(p.slug)}" style="display:block;margin-top:12px;padding:14px 16px;background:linear-gradient(135deg,#A57D27,#c49a3b);color:#fff;text-align:center;text-decoration:none;font-weight:700;font-size:14px;border-radius:10px;min-height:48px;line-height:20px;box-shadow:0 4px 12px rgba(165,125,39,0.4);letter-spacing:0.3px;">Voir la fiche →</a>
           </div>`
         );
 
