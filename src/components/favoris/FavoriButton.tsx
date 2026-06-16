@@ -31,6 +31,7 @@ export default function FavoriButton({
   stopPropagation = true,
 }: Props) {
   const { user } = useAuth();
+  const { trackAddToWishlist } = useTracking();
   const [isFav, setIsFav] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
