@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTracking } from "@/hooks/useTracking";
 
 interface Props {
   prestataireId: string;
