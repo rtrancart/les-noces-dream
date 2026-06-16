@@ -13,7 +13,7 @@ import { useTracking } from "@/hooks/useTracking";
 const Connexion = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+  const { trackLogin } = useTracking();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
