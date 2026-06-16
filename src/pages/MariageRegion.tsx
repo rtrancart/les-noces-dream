@@ -814,13 +814,58 @@ export default function MariageRegion() {
               <h2 className="font-serif text-2xl md:text-3xl text-bleu-abysse mb-6">
                 Tout savoir sur le mariage en {page.nom_region}
               </h2>
-              <div
-                className="prose prose-sm md:prose-base max-w-none text-gris-cachemire leading-relaxed
-                  prose-headings:font-serif prose-headings:text-bleu-abysse
-                  prose-p:text-gris-cachemire prose-p:leading-loose
-                  prose-strong:text-bleu-abysse"
-                dangerouslySetInnerHTML={{ __html: page.contenu_seo_bas }}
-              />
+              <div className="max-w-none text-gris-cachemire leading-relaxed space-y-4">
+                {parseMarkdown(page.contenu_seo_bas).map((b, i) => {
+                  switch (b.type) {
+                    case "h1":
+                      return (
+                        <h2 key={i} className="font-serif text-2xl md:text-3xl text-bleu-abysse mt-8 mb-3">
+                          <span dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }} />
+                        </h2>
+                      );
+                    case "h2":
+                      return (
+                        <h3 key={i} className="font-serif text-xl md:text-2xl text-bleu-abysse mt-8 mb-3 flex items-baseline gap-2">
+                          <span className="inline-block w-6 h-px bg-or-riche shrink-0 translate-y-[-4px]" />
+                          <span dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }} />
+                        </h3>
+                      );
+                    case "h3":
+                      return (
+                        <h4 key={i} className="font-serif text-base md:text-lg text-bleu-abysse mt-5 mb-2">
+                          <span dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }} />
+                        </h4>
+                      );
+                    case "p":
+                      return (
+                        <p key={i} className="text-sm md:text-base leading-loose">
+                          <span dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text).replace(/<strong>/g, '<strong class="text-bleu-abysse font-semibold">') }} />
+                        </p>
+                      );
+                    case "ul":
+                      return (
+                        <ul key={i} className="list-none space-y-1.5 pl-1 text-sm md:text-base">
+                          {b.items.map((it, j) => (
+                            <li key={j} className="flex gap-2.5 leading-relaxed">
+                              <span className="text-or-riche mt-1.5 text-[10px]">◆</span>
+                              <span dangerouslySetInnerHTML={{ __html: renderInlineHtml(it).replace(/<strong>/g, '<strong class="text-bleu-abysse font-semibold">') }} />
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    case "quote":
+                      return (
+                        <blockquote key={i} className="border-l-2 border-or-riche bg-card rounded-r-lg pl-4 pr-4 py-3 italic text-sm md:text-base text-bleu-abysse/85">
+                          <span dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }} />
+                        </blockquote>
+                      );
+                    case "hr":
+                      return <hr key={i} className="border-nude-poudre/60 my-6" />;
+                    default:
+                      return null;
+                  }
+                })}
+              </div>
             </div>
           </section>
         )}
