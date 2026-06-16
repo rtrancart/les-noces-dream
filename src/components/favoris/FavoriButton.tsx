@@ -91,6 +91,7 @@ export default function FavoriButton({
       } else {
         setIsFav(true);
         toast.success("Ajouté aux favoris ♥");
+        trackAddToWishlist(prestataireId);
       }
     }
     setLoading(false);
