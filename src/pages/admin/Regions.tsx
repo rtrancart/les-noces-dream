@@ -483,10 +483,13 @@ export default function Regions() {
             <AccordionItem value="seo-bas">
               <AccordionTrigger className="font-sans text-sm uppercase tracking-wider">Contenu SEO bas de page</AccordionTrigger>
               <AccordionContent className="space-y-2 pt-2">
-                <Textarea rows={12} className="font-mono text-xs" placeholder="Texte long éditorial (HTML autorisé)" value={form.contenu_seo_bas} onChange={(e) => setForm({ ...form, contenu_seo_bas: e.target.value })} />
+                <Textarea rows={14} className="font-mono text-xs" placeholder={"Markdown :\n## Titre de section\n### Sous-titre\nParagraphe avec **gras** et *italique*.\n\n- item 1\n- item 2\n\n> Citation"} value={form.contenu_seo_bas} onChange={(e) => setForm({ ...form, contenu_seo_bas: e.target.value })} />
                 <p className={cn("font-sans text-[10px] tabular-nums", (() => { const w = wordCount(form.contenu_seo_bas); return w >= 800 && w <= 1200 ? "text-sauge" : "text-muted-foreground"; })())}>
                   {wordCount(form.contenu_seo_bas)} mots (cible : 800-1200)
                 </p>
+                <div className="font-sans text-[10px] text-muted-foreground leading-relaxed border border-border rounded-md p-2 bg-muted/30">
+                  <strong className="text-foreground">Format Markdown supporté</strong> — <code>## Titre</code> · <code>### Sous-titre</code> · <code>**gras**</code> · <code>*italique*</code> · <code>- liste</code> · <code>&gt; citation</code> · ligne vide entre paragraphes.
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>

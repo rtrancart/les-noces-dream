@@ -1,21 +1,45 @@
-## Contexte
-Sur la carte des résultats de recherche, le popup Leaflet affiche le nom, la ville et la note du prestataire, mais ne permet pas d'accéder directement a sa fiche.
+## Pourquoi le rendu actuel est cassé
 
-## Objectif
-Ajouter un CTA "Voir la fiche" dans chaque popup de marqueur pour ouvrir la fiche prestataire (`/prestataire/:slug`), en desktop et mobile.
+Sur `MariageRegion.tsx` (lignes 810-822), le champ `contenu_seo_bas` est injecté tel quel via `dangerouslySetInnerHTML` dans un conteneur `prose`. Le rendu attend donc du **HTML brut** (`<h2>`, `<p>`, `<ul><li>`, `<strong>`…). Or les 13 textes en base sont aujourd'hui stockés en **texte brut** (paragraphes séparés par des sauts de ligne, sans balises). Résultat : tout s'affiche en un seul bloc sans hiérarchie, sans gras, sans liste.
 
-## Implémentation
-Modifier `src/components/search/SearchMap.tsx` :
+Le projet contient déjà un mini-parser Markdown (`src/lib/markdown.ts`) utilisé ailleurs — on s'appuie dessus.
 
-1. **Ajouter le CTA dans le contenu du popup** : enrichir le `bindPopup` HTML string avec un lien stylise "Voir la fiche".
-2. **Navigation** : utiliser un `<a href="/prestataire/${p.slug}">` dans le HTML du popup. Leaflet popups utilisent du HTML brut, donc un lien standard `a` pointant vers une route interne du SPA est la solution la plus robuste.
-3. **Styling desktop** : le lien sera stylise en CSS inline dans le popup pour matcher la charte (couleur or `#A57D27`, texte en gras, petite marge en haut pour le separer des infos).
-4. **Styling mobile** : le lien doit avoir une zone tactile confortable (min-height 44px, padding genereux) car les popups Leaflet sur mobile sont interactifs au tap. Pas de comportement special necessaire, Leaflet gere le touch natif.
+## Ce que je vais faire
 
-### Ajustement technique
-- Le `ProviderCardData` contient deja le `slug` necessaire.
-- Aucune dépendance supplémentaire necessaire.
-- Sur mobile, la carte est affichee en plein ecran via `showMobileMap`, le popup fonctionne identiquement (tap sur le marqueur, tap sur le lien).
+### 1. Renderer Markdown sur la page publique
+Dans `src/pages/MariageRegion.tsx`, remplacer le bloc `dangerouslySetInnerHTML` (l. 816-822) par un rendu basé sur `parseMarkdown()` qui produit du vrai JSX (`<h2>`, `<h3>`, `<p>`, `<ul><li>`, `<strong>`, `<em>`, `<blockquote>`), stylé avec les classes Tailwind déjà en place (`prose` + tokens `text-bleu-abysse`, `text-or-riche`, `font-serif`). Aucune balise HTML brute n'est attendue côté admin — on tape en Markdown.
 
-## Fichier concerne
-- `src/components/search/SearchMap.tsx`
+### 2. Mettre à jour l'admin
+Dans `src/pages/admin/Regions.tsx` (l. 486-488) :
+- Changer le placeholder du `<Textarea>` : « Markdown : `## Titre`, `### Sous-titre`, `**gras**`, `- liste`, ligne vide entre paragraphes ».
+- Ajouter sous le compteur de mots un mini-mémo des balises supportées.
+
+### 3. Reformater les 13 textes existants
+Lire les 13 `contenu_seo_bas` actuels (déjà identifiés), produire pour chacun une version Markdown structurée :
+- un `## H2` d'ouverture par grand chapitre (≈ 3-5 par région) déduit du contenu existant,
+- `### H3` pour les sous-sections (lieux, gastronomie, budget, logistique, saison…),
+- `**gras**` sur les chiffres-clés et noms propres importants,
+- `- liste` pour les énumérations existantes (qui sont aujourd'hui en phrases),
+- paragraphes séparés par une ligne vide.
+
+Aucun mot n'est ajouté ni retiré : on respecte la cible 800-1200 mots déjà en place et le ton éditorial. Mise à jour via `UPDATE pages_regions_mariage SET contenu_seo_bas = ... WHERE slug_region = ...` (13 lignes, opération data).
+
+## Format Markdown supporté côté admin
+
+```text
+## Titre de section
+### Sous-titre
+Paragraphe normal avec **gras** et *italique*.
+
+- Premier item
+- Deuxième item
+
+> Citation ou mise en avant
+```
+
+## Périmètre
+
+- 1 fichier modifié : `src/pages/MariageRegion.tsx` (rendu).
+- 1 fichier modifié : `src/pages/admin/Regions.tsx` (placeholder + aide).
+- 13 `UPDATE` data sur `pages_regions_mariage` (un par région publiée).
+- Aucun changement de schéma, aucune migration, aucune RLS.
