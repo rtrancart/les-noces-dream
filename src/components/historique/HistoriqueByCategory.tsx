@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import FavoriButton from "@/components/favoris/FavoriButton";
 import type { HistoriqueEntry } from "@/hooks/useHistoriqueNavigation";
 import { getImageUrl } from "@/lib/images";
+import { useTracking } from "@/hooks/useTracking";
 
 interface Props {
   entries: HistoriqueEntry[];
