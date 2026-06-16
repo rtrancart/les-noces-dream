@@ -104,6 +104,7 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
 
       toast.success("Votre demande de devis a été envoyée !");
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);
+      trackDemandeDevis(prestataireId, values.objet);
       form.reset();
       onOpenChange(false);
     } catch (e) {
