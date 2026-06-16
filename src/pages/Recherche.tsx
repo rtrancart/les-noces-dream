@@ -259,7 +259,13 @@ export default function Recherche() {
         title={`${dynamicTitle} | LesNoces.net`}
         description={`${dynamicTitle}. Comparez les meilleurs prestataires de mariage sélectionnés par LesNoces.net.`}
         canonicalUrl="/recherche"
+        noindex={
+          searchParams.has("lieu") ||
+          searchParams.has("categorie") ||
+          searchParams.has("ville")
+        }
       />
+
       <div className="sticky top-20 z-20 bg-card border-b border-border shadow-sm">
         <div className="px-3 md:px-6 py-4">
           <div className="max-w-[2000px] mx-auto">
