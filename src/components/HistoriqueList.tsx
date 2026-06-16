@@ -3,12 +3,15 @@ import { Clock, ImageIcon } from "lucide-react";
 import FavoriButton from "@/components/favoris/FavoriButton";
 import type { HistoriqueEntry } from "@/hooks/useHistoriqueNavigation";
 import { getImageUrl } from "@/lib/images";
+import { useTracking } from "@/hooks/useTracking";
 
 interface Props {
   entries: HistoriqueEntry[];
   emptyLabel?: string;
   onItemClick?: () => void;
   variant?: "compact" | "full";
+  /** Origine du clic, pour le tracking dataLayer. */
+  source?: "dropdown" | "page";
 }
 
 function formatRelative(date: string): string {
