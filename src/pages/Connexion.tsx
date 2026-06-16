@@ -31,6 +31,7 @@ const Connexion = () => {
         : error.message);
     } else {
       trackEvent("connexion");
+      trackLogin("password");
       toast.success("Connexion réussie !");
       navigate(from, { replace: true });
     }
