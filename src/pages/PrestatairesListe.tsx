@@ -7,7 +7,11 @@ import { useZones } from "@/contexts/ZonesContext";
 import { haversineDistanceKm } from "@/lib/haversine";
 import SeoHead from "@/components/SeoHead";
 import JsonLd from "@/components/JsonLd";
-import { buildCategoryListJsonLd, buildBreadcrumbJsonLd } from "@/lib/jsonld";
+import {
+  buildCategoryListJsonLd,
+  buildBreadcrumbJsonLd,
+  buildCategoryFaqJsonLd,
+} from "@/lib/jsonld";
 
 
 interface CategorieRow {
@@ -323,6 +327,15 @@ export default function PrestatairesListe() {
                       ]
                     : []),
                 ]),
+                // FAQ contextualisée — émise uniquement si la catégorie mère
+                // a un set de questions défini dans CATEGORY_FAQ_MAP.
+                ...(() => {
+                  const faq = buildCategoryFaqJsonLd(
+                    slugMere,
+                    categorieFille?.nom ?? categorieMere.nom,
+                  );
+                  return faq ? [faq] : [];
+                })(),
               ]}
             />
           )}
