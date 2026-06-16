@@ -22,10 +22,22 @@
 export const DEFAULT_SEO_IMAGE_PATH = "/og-default.jpg";
 
 const SITE_NAME_DEFAULT = "LesNoces.net";
-const SITE_ORIGIN_DEFAULT = "https://lesnoces.net";
 
+/**
+ * Resolves the canonical site origin used to absolutise URLs.
+ *
+ * Priority:
+ *   1. `import.meta.env.VITE_SITE_URL` (env-driven, single source of truth)
+ *   2. `window.location.origin` (browser fallback when the env var is unset)
+ *   3. Empty string — forces an obvious malformed URL in SSR/tests if the
+ *      env var was forgotten. Never silently fall back to a hardcoded prod
+ *      domain: that would mask preview/staging misconfiguration.
+ */
 function resolveOrigin(): string {
-  return typeof window !== "undefined" ? window.location.origin : SITE_ORIGIN_DEFAULT;
+  const envOrigin = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/+$/, "");
+  if (envOrigin) return envOrigin;
+  if (typeof window !== "undefined") return window.location.origin;
+  return "";
 }
 
 export function resolveAbsoluteUrl(pathOrUrl: string): string {

@@ -6,7 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SITE_URL = "https://lesnoces.net";
+// Domaine public piloté par secret — change selon environnement (preview / prod)
+// sans modification de code. Fallback prod uniquement si le secret est absent.
+const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://lesnoces.net";
 
 const STATIC_URLS = [
   { loc: "/", priority: "1.0", changefreq: "daily" },
@@ -39,14 +41,32 @@ Deno.serve(async (req) => {
 
     const urls: Array<{ loc: string; lastmod?: string; priority: string; changefreq: string }> = [];
 
+    // 1. URLs statiques
     for (const u of STATIC_URLS) urls.push({ ...u });
 
+    // 2. Régions
+    for (const r of regionsRes.data ?? []) {
+      urls.push({
+        loc: `/mariage/${r.slug_region}`,
+        lastmod: (r as any).updated_at,
+        priority: "0.8",
+        changefreq: "monthly",
+      });
+    }
+
+    // 3. Catégories mères
     const meresById = new Map<string, { slug: string }>();
     for (const c of categoriesRes.data ?? []) {
       meresById.set((c as any).id, { slug: (c as any).slug });
-      urls.push({ loc: `/prestataires/${(c as any).slug}`, lastmod: (c as any).updated_at, priority: "0.7", changefreq: "weekly" });
+      urls.push({
+        loc: `/prestataires/${(c as any).slug}`,
+        lastmod: (c as any).updated_at,
+        priority: "0.7",
+        changefreq: "weekly",
+      });
     }
 
+    // 4. Catégories filles
     for (const sub of subCategoriesRes.data ?? []) {
       const parent = meresById.get((sub as any).parent_id);
       if (!parent) continue;
@@ -58,19 +78,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    for (const r of regionsRes.data ?? []) {
-      urls.push({ loc: `/mariage/${r.slug_region}`, lastmod: r.updated_at, priority: "0.8", changefreq: "monthly" });
-    }
-
+    // 5. Articles blog
     for (const a of articlesRes.data ?? []) {
       if ((a as any).noindex || (a as any).inclure_sitemap === false) continue;
-      urls.push({ loc: `/blog/${a.slug}`, lastmod: a.updated_at, priority: "0.6", changefreq: "monthly" });
+      urls.push({
+        loc: `/blog/${a.slug}`,
+        lastmod: (a as any).updated_at,
+        priority: "0.6",
+        changefreq: "monthly",
+      });
     }
 
+    // 6. Fiches prestataires
     for (const p of prestasRes.data ?? []) {
-      urls.push({ loc: `/prestataire/${p.slug}`, lastmod: p.updated_at, priority: "0.7", changefreq: "weekly" });
+      urls.push({
+        loc: `/prestataire/${p.slug}`,
+        lastmod: (p as any).updated_at,
+        priority: "0.7",
+        changefreq: "weekly",
+      });
     }
-
 
     const xml =
       `<?xml version="1.0" encoding="UTF-8"?>\n` +
