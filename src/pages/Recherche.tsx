@@ -110,6 +110,7 @@ export default function Recherche() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { providers: allProviders, categoryTree, loading } = useSearchData();
   const isMobile = useIsMobile();
+  const { trackSearch } = useTracking();
 
   const [locationZones, setLocationZones] = useState<string[]>(() => {
     const lieu = searchParams.get("lieu");
