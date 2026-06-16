@@ -120,6 +120,8 @@ export default function FichePrestataire() {
   const [devisOpen, setDevisOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const { trackViewItem, trackRevealPhone } = useTracking();
+
   useTrackVisitePrestataire(presta?.id);
 
   const fetchData = async () => {
