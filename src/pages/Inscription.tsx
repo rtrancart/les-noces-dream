@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Mail, Lock, User, Heart, Briefcase } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { useTracking } from "@/hooks/useTracking";
 
 const Inscription = () => {
   const navigate = useNavigate();
