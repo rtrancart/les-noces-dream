@@ -5,6 +5,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArticleTile } from "@/components/blog/ArticleTile";
 import { parseMarkdown, renderInlineHtml } from "@/lib/markdown";
 import SeoHead from "@/components/SeoHead";
+import JsonLd from "@/components/JsonLd";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "@/lib/jsonld";
+
 
 interface Article {
   id: string;
@@ -134,6 +137,24 @@ export default function BlogArticle() {
         imageUrl={article.image_couverture_url ?? undefined}
         ogType="article"
       />
+      <JsonLd
+        schema={[
+          buildArticleJsonLd({
+            titre: article.titre,
+            slug: article.slug,
+            extrait: article.extrait,
+            image_couverture_url: article.image_couverture_url,
+            publie_le: article.publie_le,
+            authorName: authorName(article.auteur),
+          }),
+          buildBreadcrumbJsonLd([
+            { name: "Accueil", url: "/" },
+            { name: "Le Journal", url: "/blog" },
+            { name: article.titre, url: `/blog/${article.slug}` },
+          ]),
+        ]}
+      />
+
       <div className="px-6 md:px-20 pt-10 max-w-[1280px] mx-auto text-[10px] tracking-[0.3em] uppercase text-gris-cachemire">
         <Link to="/blog" className="hover:text-bleu-abysse">Le Journal</Link>
         {article.categorie_blog && (
