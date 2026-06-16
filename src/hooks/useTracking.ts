@@ -10,11 +10,7 @@
  *    en parallèle par `lib/analytics.ts#trackEvent` — deux responsabilités distinctes.
  */
 
-declare global {
-  interface Window {
-    dataLayer?: Array<Record<string, unknown>>;
-  }
-}
+// `window.dataLayer` est déjà déclaré (any[]) dans src/lib/analytics.ts.
 
 function push(event: string, payload: Record<string, unknown> = {}) {
   if (typeof window === "undefined") return;
