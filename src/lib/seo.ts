@@ -28,10 +28,11 @@ function resolveOrigin(): string {
   return typeof window !== "undefined" ? window.location.origin : SITE_ORIGIN_DEFAULT;
 }
 
-function resolveAbsoluteUrl(pathOrUrl: string): string {
+export function resolveAbsoluteUrl(pathOrUrl: string): string {
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
   return `${resolveOrigin()}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
 }
+
 
 /** Input shape accepted by `buildSeoMeta()` — what each page provides. */
 export interface SeoInput {
