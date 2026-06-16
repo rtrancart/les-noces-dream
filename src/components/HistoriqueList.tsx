@@ -39,14 +39,17 @@ export default function HistoriqueList({ entries, emptyLabel = "Aucune fiche con
 
   return (
     <ul className="space-y-0">
-      {entries.map((e) => {
+      {entries.map((e, idx) => {
         if (!e.prestataire) return null;
         const p = e.prestataire;
         return (
           <li key={e.prestataire_id} className="flex items-center gap-2 -mx-2 px-2 rounded-sm hover:bg-secondary/50 transition-colors border-b border-border last:border-0">
             <Link
               to={`/prestataire/${p.slug}`}
-              onClick={onItemClick}
+              onClick={() => {
+                trackClickHistoryItem(p.slug, idx + 1, source);
+                onItemClick?.();
+              }}
               className="flex items-center gap-3 py-2.5 flex-1 min-w-0"
             >
               <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
