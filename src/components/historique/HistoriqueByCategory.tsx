@@ -147,11 +147,13 @@ function FilterPill({
   );
 }
 
-function HistoriqueCard({ entry }: { entry: HistoriqueEntry }) {
+function HistoriqueCard({ entry, position }: { entry: HistoriqueEntry; position: number }) {
   const p = entry.prestataire!;
+  const { trackClickHistoryItem } = useTracking();
   return (
     <Link
       to={`/prestataire/${p.slug}`}
+      onClick={() => trackClickHistoryItem(p.slug, position, "page")}
       className="group block rounded-xl overflow-hidden bg-card hover:shadow-elevated transition-all"
     >
       <div className="relative aspect-[4/3] bg-secondary/30 overflow-hidden">
