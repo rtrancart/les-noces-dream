@@ -103,8 +103,8 @@ export default function HistoriqueByCategory({ entries, categorySlugByName = {} 
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map((e) => (
-                  <HistoriqueCard key={e.prestataire_id} entry={e} />
+                {items.map((e, idx) => (
+                  <HistoriqueCard key={e.prestataire_id} entry={e} position={idx + 1} />
                 ))}
               </div>
             </section>
