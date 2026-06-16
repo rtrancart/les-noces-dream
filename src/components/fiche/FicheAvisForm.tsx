@@ -39,7 +39,12 @@ const avisSchema = z.object({
   note_professionnalisme: z.number().min(1, "Obligatoire").max(5),
   note_rapport_qualite_prix: z.number().min(1, "Obligatoire").max(5),
   note_flexibilite: z.number().min(1, "Obligatoire").max(5),
-  commentaire: z.string().min(20, "Minimum 20 caractères"),
+  commentaire: z
+    .string()
+    .min(
+      100,
+      "Votre avis doit contenir au moins 100 caractères pour être publié. Les avis détaillés aident les autres couples à choisir.",
+    ),
 });
 
 type AvisFormValues = z.infer<typeof avisSchema>;
@@ -278,8 +283,8 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
                   <FormLabel>Votre avis</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Décrivez votre expérience (min. 20 caractères)…"
-                      rows={4}
+                      placeholder="Décrivez votre expérience (min. 100 caractères)…"
+                      rows={5}
                       {...field}
                     />
                   </FormControl>
