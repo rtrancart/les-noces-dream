@@ -5,6 +5,7 @@ import SeoHead from "@/components/SeoHead";
 import { supabase } from "@/integrations/supabase/client";
 import { regionSlugToNom } from "@/lib/regions";
 import { REGIONS as ZONES_REGIONS } from "@/lib/zonesIntervention";
+import { parseMarkdown, renderInlineHtml } from "@/lib/markdown";
 
 const regionLieuParam = (nom: string): string =>
   ZONES_REGIONS.find((r) => r.label === nom)?.value ?? "";
