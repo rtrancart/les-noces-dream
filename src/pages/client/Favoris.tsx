@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/images";
 
 interface FavoriItem {
   id: string;
@@ -110,8 +111,10 @@ export default function ClientFavoris() {
                 >
                   {f.prestataire.photo_principale_url ? (
                     <img
-                      src={f.prestataire.photo_principale_url}
+                      src={getImageUrl(f.prestataire.photo_principale_url, "thumb")}
                       alt={f.prestataire.nom_commercial}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover"
                     />
                   ) : (

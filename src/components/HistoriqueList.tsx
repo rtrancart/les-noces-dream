@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Clock, ImageIcon } from "lucide-react";
 import FavoriButton from "@/components/favoris/FavoriButton";
 import type { HistoriqueEntry } from "@/hooks/useHistoriqueNavigation";
+import { getImageUrl } from "@/lib/images";
 
 interface Props {
   entries: HistoriqueEntry[];
@@ -46,7 +47,7 @@ export default function HistoriqueList({ entries, emptyLabel = "Aucune fiche con
             >
               <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
                 {p.photo_principale_url ? (
-                  <img src={p.photo_principale_url} alt={p.nom_commercial} className="h-full w-full object-cover" loading="lazy" />
+                  <img src={getImageUrl(p.photo_principale_url, "thumb")} alt={p.nom_commercial} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <ImageIcon className="h-4 w-4 text-muted-foreground" />
                 )}

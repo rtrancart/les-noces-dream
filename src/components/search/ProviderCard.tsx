@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Star, MapPin } from "lucide-react";
 import FavoriButton from "@/components/favoris/FavoriButton";
 import { regionNomToSlug } from "@/lib/regions";
+import { getImageUrl } from "@/lib/images";
 
 export interface ProviderCardData {
   id: string;
@@ -33,10 +34,11 @@ export default function ProviderCard({ provider }: { provider: ProviderCardData 
         <div className="relative aspect-[4/3] overflow-hidden rounded-xl mb-3">
           {provider.photo_principale_url ? (
             <img
-              src={provider.photo_principale_url}
+              src={getImageUrl(provider.photo_principale_url, "thumb")}
               alt={provider.nom_commercial}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
+              decoding="async"
             />
           ) : (
             <div className="w-full h-full bg-secondary/30 flex items-center justify-center">

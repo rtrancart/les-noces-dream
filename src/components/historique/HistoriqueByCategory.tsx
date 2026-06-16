@@ -4,6 +4,7 @@ import { Clock, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FavoriButton from "@/components/favoris/FavoriButton";
 import type { HistoriqueEntry } from "@/hooks/useHistoriqueNavigation";
+import { getImageUrl } from "@/lib/images";
 
 interface Props {
   entries: HistoriqueEntry[];
@@ -155,10 +156,11 @@ function HistoriqueCard({ entry }: { entry: HistoriqueEntry }) {
       <div className="relative aspect-[4/3] bg-secondary/30 overflow-hidden">
         {p.photo_principale_url ? (
           <img
-            src={p.photo_principale_url}
+            src={getImageUrl(p.photo_principale_url, "thumb")}
             alt={p.nom_commercial}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, MessageSquare, Calendar, Star } from "lucide-react";
 import BudgetModule from "@/components/client/BudgetModule";
 import HistoriqueWidget from "@/components/client/HistoriqueWidget";
+import { getImageUrl } from "@/lib/images";
 
 interface DashboardStats {
   favorisCount: number;
@@ -226,8 +227,10 @@ export default function ClientDashboard() {
                   <div className="h-9 w-9 rounded-md bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
                     {f.prestataire.photo_principale_url ? (
                       <img
-                        src={f.prestataire.photo_principale_url}
+                        src={getImageUrl(f.prestataire.photo_principale_url, "thumb")}
                         alt={f.prestataire.nom_commercial}
+                        loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover"
                       />
                     ) : (

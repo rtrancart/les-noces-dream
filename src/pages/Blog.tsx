@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import SeoHead from "@/components/SeoHead";
 import JsonLd from "@/components/JsonLd";
 import { buildBlogIndexJsonLd, buildBreadcrumbJsonLd } from "@/lib/jsonld";
+import { getImageUrl } from "@/lib/images";
 
 
 interface Article {
@@ -162,8 +163,10 @@ export default function Blog() {
               <div className="md:col-span-7">
                 {featured.image_couverture_url ? (
                   <img
-                    src={featured.image_couverture_url}
+                    src={getImageUrl(featured.image_couverture_url, "hero")}
                     alt={featured.titre}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-[420px] md:h-[620px] object-cover"
                   />
                 ) : (

@@ -7,6 +7,7 @@ import { parseMarkdown, renderInlineHtml } from "@/lib/markdown";
 import SeoHead from "@/components/SeoHead";
 import JsonLd from "@/components/JsonLd";
 import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "@/lib/jsonld";
+import { getImageUrl } from "@/lib/images";
 
 
 interface Article {
@@ -191,8 +192,11 @@ export default function BlogArticle() {
         <div>
           {article.image_couverture_url ? (
             <img
-              src={article.image_couverture_url}
+              src={getImageUrl(article.image_couverture_url, "hero")}
               alt={article.titre}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
               className="w-full h-[320px] md:h-[520px] object-cover"
             />
           ) : (
