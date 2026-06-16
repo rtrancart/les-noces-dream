@@ -26,7 +26,8 @@ function formatRelative(date: string): string {
   return new Date(date).toLocaleDateString("fr-FR");
 }
 
-export default function HistoriqueList({ entries, emptyLabel = "Aucune fiche consultée pour le moment", onItemClick, variant = "compact" }: Props) {
+export default function HistoriqueList({ entries, emptyLabel = "Aucune fiche consultée pour le moment", onItemClick, variant = "compact", source = "dropdown" }: Props) {
+  const { trackClickHistoryItem } = useTracking();
   if (entries.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-6 text-center">
