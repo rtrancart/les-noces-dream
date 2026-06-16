@@ -218,10 +218,14 @@ export default function Recherche() {
 
     // Track search event
     if (categorySlugs.length > 0 || locationZones.length > 0 || citySearch) {
+      const search_term = citySearch?.label
+        ? citySearch.label.toLowerCase().replace(/\s+/g, "-")
+        : locationZones.join(",");
       trackEvent("recherche", {
         categorie: categorySlugs.join(",") || undefined,
         lieu: citySearch?.label || locationZones.join(",") || undefined,
       });
+      trackSearch(search_term, categorySlugs[0]);
     }
   }, [categorySlugs, locationZones, citySearch]);
 
