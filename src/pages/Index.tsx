@@ -8,6 +8,7 @@ import CategoryPicker, { type CategoryOption } from "@/components/CategoryPicker
 import SeoHead from "@/components/SeoHead";
 import JsonLd from "@/components/JsonLd";
 import { buildHomeCategoriesJsonLd } from "@/lib/jsonld";
+import { getImageUrl } from "@/lib/images";
 
 
 
@@ -268,10 +269,11 @@ function CategoryCard({ cat }: { cat: CategoryData }) {
       {/* Background photo */}
       {cat.photo_url ? (
         <img
-          src={cat.photo_url}
+          src={getImageUrl(cat.photo_url, "thumb")}
           alt={cat.nom}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
+          decoding="async"
         />
       ) : (
         <div className="absolute inset-0 bg-muted/30" />
@@ -336,10 +338,11 @@ function ProviderCard({ provider }: { provider: ProviderData }) {
       <div className="relative h-52 md:h-64 bg-secondary/30 flex items-center justify-center shrink-0">
         {provider.photo_principale_url ? (
           <img
-            src={provider.photo_principale_url}
+            src={getImageUrl(provider.photo_principale_url, "thumb")}
             alt={provider.nom_commercial}
             className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-20 h-20 text-muted-foreground/30">

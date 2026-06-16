@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getImageUrl } from "@/lib/images";
 
 interface Props {
   photoUrl: string | null;
@@ -9,7 +10,11 @@ interface Props {
 }
 
 export default function FicheGalerie({ photoUrl, galerie, nom }: Props) {
-  const images = [photoUrl, ...galerie].filter(Boolean) as string[];
+  const rawImages = [photoUrl, ...galerie].filter(Boolean) as string[];
+  // Premier visuel = LCP (preset cover), les suivants en thumb
+  const images = rawImages.map((img, i) => getImageUrl(img, i === 0 ? "cover" : "thumb"));
+  // URLs pleine résolution pour la lightbox
+  const fullImages = rawImages.map((img) => getImageUrl(img, "cover"));
   const [current, setCurrent] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
 
@@ -35,6 +40,9 @@ export default function FicheGalerie({ photoUrl, galerie, nom }: Props) {
                 src={img}
                 alt={`${nom} - photo ${i + 1}`}
                 className="w-full h-full object-cover cursor-pointer"
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "auto"}
+                decoding="async"
                 onClick={() => setLightbox(i)}
               />
               {i === 5 && images.length > 6 && (
@@ -59,6 +67,9 @@ export default function FicheGalerie({ photoUrl, galerie, nom }: Props) {
         <img
           src={images[0]}
           alt={`${nom} - photo 1`}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
           className={cn(
             "w-full h-full object-cover cursor-pointer",
             images.length >= 3 && "row-span-2"
@@ -71,6 +82,8 @@ export default function FicheGalerie({ photoUrl, galerie, nom }: Props) {
             key={i}
             src={img}
             alt={`${nom} - photo ${i + 2}`}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover cursor-pointer"
             onClick={() => setLightbox(i + 1)}
           />
@@ -101,8 +114,10 @@ export default function FicheGalerie({ photoUrl, galerie, nom }: Props) {
             <ChevronLeft size={32} />
           </button>
           <img
-            src={images[lightbox]}
+            src={fullImages[lightbox]}
             alt={`${nom} - photo ${lightbox + 1}`}
+            loading="eager"
+            decoding="async"
             className="max-h-[90vh] max-w-[90vw] object-contain"
           />
           <button

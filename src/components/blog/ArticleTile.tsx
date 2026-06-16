@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getImageUrl } from "@/lib/images";
 
 interface ArticleTileProps {
   article: {
@@ -39,9 +40,10 @@ export function ArticleTile({ article, size = "default" }: ArticleTileProps) {
         <div className={`w-full ${h} relative overflow-hidden`}>
           {article.image_couverture_url ? (
             <img
-              src={article.image_couverture_url}
+              src={getImageUrl(article.image_couverture_url, "thumb")}
               alt={article.titre}
               loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
           ) : (

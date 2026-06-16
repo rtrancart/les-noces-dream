@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { regionSlugToNom } from "@/lib/regions";
 import { REGIONS as ZONES_REGIONS } from "@/lib/zonesIntervention";
 import { parseMarkdown, renderInlineHtml } from "@/lib/markdown";
+import { getImageUrl } from "@/lib/images";
 
 const regionLieuParam = (nom: string): string =>
   ZONES_REGIONS.find((r) => r.label === nom)?.value ?? "";
@@ -448,9 +449,11 @@ export default function MariageRegion() {
             <div className="relative overflow-hidden min-h-[260px] md:min-h-[480px]">
               {page.image_hero_url ? (
                 <img
-                  src={page.image_hero_url}
+                  src={getImageUrl(page.image_hero_url, "hero")}
                   alt={`Mariage en ${page.nom_region}`}
+                  loading="eager"
                   fetchPriority="high"
+                  decoding="async"
                   className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
