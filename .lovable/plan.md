@@ -1,75 +1,73 @@
-# Phase 10 — Core Web Vitals
+# Phase 9 SEO — Finalisation
 
-Cibles : LCP < 2.5s, CLS < 0.1, INP < 100ms sur pages publiques.
+## Étape 1 — Variable `VITE_SITE_URL`
 
-Prérequis confirmé : Supabase Pro → image renderer (`/storage/v1/render/image/public/...`) disponible. Helper avec fallback noop pour URLs non-Supabase.
+**`.env`** : ajouter
+```
+VITE_SITE_URL="https://id-preview--0e72174c-74d1-4db3-9e26-0b8167e53603.lovable.app"
+```
+À changer en `https://lesnoces.net` lors de la bascule DNS.
 
-## Tâche 1 — Helper centralisé `src/lib/images.ts`
-
+**`src/lib/seo.ts`** : remplacer
 ```ts
-type Preset = "cover" | "thumb" | "hero";
-// cover : fiche presta plein format (width 1200, q 80)
-// thumb : cards listing, galerie secondaire (width 400, q 75)
-// hero  : article blog / bannière (width 1600, q 80)
+const SITE_ORIGIN_DEFAULT = "https://lesnoces.net";
 
-export function getImageUrl(url: string | null | undefined, preset: Preset): string
+function resolveOrigin(): string {
+  return typeof window !== "undefined" ? window.location.origin : SITE_ORIGIN_DEFAULT;
+}
 ```
+par une lecture de `import.meta.env.VITE_SITE_URL`, avec fallback `window.location.origin` côté client puis chaîne vide pour forcer une erreur visible côté SSR/test si la variable manque. `resolveAbsoluteUrl()`, `SeoHead`, `JsonLd` et `buildSeoMeta` consomment déjà la valeur — aucun autre fichier touché.
 
-Logique :
-1. URL falsy → `""`.
-2. URL non-Supabase Storage (pas de `/storage/v1/object/public/`) → retournée telle quelle.
-3. Sinon : remplace `/object/public/` par `/render/image/public/` + `?width=…&quality=…`. Pas de `format=webp` forcé : Supabase sert WebP via content-negotiation (Accept header), ce qui évite de casser les vieux Safari.
+## Étape 2 — Edge Function `generate-sitemap`
 
-Tests `src/lib/images.test.ts` : URL Supabase → réécrite ; URL externe → inchangée ; null → "".
+**`supabase/functions/generate-sitemap/index.ts`** :
+- Remplacer `const SITE_URL = "https://lesnoces.net";` par `const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://lesnoces.net";` (le secret `PUBLIC_SITE_URL` existe déjà).
+- Réordonner la construction du tableau `urls` selon : statiques → régions → catégories mères → catégories filles → articles → prestataires. Un seul `urls.push` par bloc, dans cet ordre, pour un fichier déterministe entre deux appels.
+- Aucune autre modification (logique, filtres, cache restent identiques).
+- Redéploiement de la function après modification.
 
-## Tâche 2 — Image LCP fiche prestataire
+## Étape 3 — `public/robots.txt`
 
-`src/components/fiche/FicheGalerie.tsx` :
-- `images` mappé via `getImageUrl(img, i === 0 ? "cover" : "thumb")`.
-- `images[0]` (desktop ET mobile) : `loading="eager"` + `fetchPriority="high"` + `decoding="async"`.
-- Autres : `loading="lazy"` + `decoding="async"`.
-- Lightbox : `loading="eager"` (déclenché par interaction).
-
-`FichePrestataire.tsx` : aucun changement (galerie encapsulée).
-
-## Tâche 3 — Lazy partout ailleurs (`loading="lazy"` + `decoding="async"` + `getImageUrl(..., "thumb")`)
-
-- `src/components/search/ProviderCard.tsx`
-- `src/components/blog/ArticleTile.tsx`
-- `src/components/HistoriqueList.tsx`, `src/components/historique/HistoriqueByCategory.tsx`
-- `src/pages/Index.tsx` (catégories / vignettes home)
-- `src/pages/Blog.tsx`
-- `src/pages/BlogArticle.tsx` → `image_couverture_url` en preset `hero` + `loading="eager"` + `fetchPriority="high"` (LCP de l'article)
-- `src/pages/client/Favoris.tsx`, `src/pages/client/Dashboard.tsx`
-- `src/pages/MariageRegion.tsx`, `src/pages/PrestatairesListe.tsx`, `src/pages/Recherche.tsx` (si `<img>` directes)
-- `src/components/prestataire/WelcomeBanner.tsx`, `ProviderInfoBanner.tsx`, `PrestataireSidebar.tsx`
-
-**Exclus (hors scope) :** `src/pages/admin/*`, `src/pages/prestataire/Galerie.tsx`, `src/pages/prestataire/Profil.tsx`, `PrestatairePhotosTab.tsx`.
-
-Règle : **une seule image par page** avec `fetchPriority="high"` + `loading="eager"`. Sur les listings (Recherche, PrestatairesListe, Index, Blog index), aucune image n'est LCP → toutes en `lazy`.
-
-## Tâche 4 — Preconnect `index.html`
-
-Ajouter dans `<head>`, avant Google Fonts existant :
-
-```html
-<link rel="preconnect" href="https://egbohbwiywgyyculswvf.supabase.co" crossorigin />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="preconnect" href="https://www.googletagmanager.com" />
+Remplacer la dernière ligne
 ```
+Sitemap: https://lesnoces.net/sitemap.xml
+```
+par
+```
+Sitemap: https://egbohbwiywgyyculswvf.supabase.co/functions/v1/generate-sitemap
+# URL directe de l'Edge Function Supabase. À remplacer par https://lesnoces.net/sitemap.xml
+# après ajout d'un rewrite Vercel /sitemap.xml → Edge Function (à faire lors de la bascule DNS).
+```
+Tous les blocs `User-agent:` / `Allow:` / `Disallow:` au-dessus restent strictement inchangés.
+
+## Étape 4 — Audit `SeoHead` routes publiques
+
+Lecture (pas de refonte) pour vérifier 3 points sur chaque route :
+1. Présence d'un `<SeoHead>`.
+2. `canonicalUrl` self-référent (path exact de la route, jamais `/`).
+3. `title`/`description` spécifiques à la page, et pour les listes : pas de query-string dans le canonical.
+
+Routes auditées :
+- `/cgu`, `/mentions-legales`, `/confidentialite`, `/page/:slug` → toutes servies par `PageContenu` (déjà avec `canonicalUrl={`/${page.slug}`}` et `meta_title`/`meta_description` issus de la DB). Confirmer que chaque slug en DB a bien un meta_title/meta_description distinct ; sinon, fallback déjà en place `${titre} | LesNoces.net`.
+- `/recherche` (`src/pages/Recherche.tsx`) → vérifier que `canonicalUrl` passé à `<SeoHead>` est la chaîne littérale `"/recherche"` et **n'inclut pas** `location.search` ni `useSearchParams()`. Corriger si nécessaire (1 ligne).
+- `/prestataires/:slugMere` et `/prestataires/:slugMere/:slug2` (`PrestatairesListe.tsx`) → canonical avec les 1 ou 2 segments selon le cas.
+- Pages déjà auditées en Phase 9 initiale (Index, FichePrestataire, MariageRegion, Blog, BlogArticle, NotFound, etc.) : vérification rapide canonical self-référent uniquement.
+
+Aucun changement structurel sur les composants. Corrections uniquement si un canonical pointe vers `/` au lieu de la route, ou si un query-string pollue le canonical.
+
+## Étape 5 — Vérifications
+
+- `bunx vitest run src/lib/seoAllPages.test.tsx src/lib/seoHelper.test.tsx` (s'assurer qu'aucun test ne dépend du `SITE_ORIGIN_DEFAULT` hardcodé — adapter si besoin pour mocker `import.meta.env.VITE_SITE_URL`).
+- Curl manuel de l'Edge Function via `supabase--curl_edge_functions` après déploiement, pour confirmer que les `<loc>` portent bien le domaine attendu et que l'ordre est respecté.
 
 ## Hors scope
 
-- Pas de `srcset`/`sizes` (Phase 10.5 si nécessaire après mesure).
-- Pas de modification fonctionnelle, uniquement attributs `<img>` et URLs.
-- Pas de back-office.
+Prerendering Vercel, webhook revalidation, rewrite Vercel `/sitemap.xml`, SSR, i18n, srcset/sizes, back-office, schéma DB.
 
-## Ordre d'implémentation
+## Ordre de livraison
 
-1. `src/lib/images.ts` + tests.
-2. `FicheGalerie.tsx` (LCP fiche presta).
-3. `BlogArticle.tsx` (LCP article).
-4. Composants listing (lazy + thumb).
-5. `index.html` preconnect.
-6. Vérif `browser--performance_profile` sur `/prestataire/:slug` et `/recherche` après déploiement.
+1. `.env` + `src/lib/seo.ts`.
+2. Edge Function : `PUBLIC_SITE_URL` + tri stable, puis déploiement.
+3. `public/robots.txt`.
+4. Audit routes (`Recherche.tsx` en priorité — risque réel de pollution canonical par les query-strings de filtres).
+5. Tests Vitest + curl Edge Function.
