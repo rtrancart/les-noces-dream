@@ -70,6 +70,7 @@ const objets = [
 
 export default function FicheDevisDialog({ open, onOpenChange, prestataireId, prestataireName }: Props) {
   const { user, profile } = useAuth();
+  const { trackDemandeDevis } = useTracking();
   const isMobile = useIsMobile();
   const [submitting, setSubmitting] = useState(false);
 
