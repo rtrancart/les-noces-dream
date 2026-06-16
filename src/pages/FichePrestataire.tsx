@@ -35,6 +35,12 @@ import { trackEvent } from "@/lib/analytics";
 import { useTrackVisitePrestataire } from "@/hooks/useHistoriqueNavigation";
 import { regionNomToSlug } from "@/lib/regions";
 import SeoHead from "@/components/SeoHead";
+import JsonLd from "@/components/JsonLd";
+import {
+  buildProviderJsonLd,
+  buildBreadcrumbJsonLd,
+} from "@/lib/jsonld";
+
 
 type Prestataire = {
   id: string;
@@ -70,7 +76,9 @@ type Prestataire = {
   zones_intervention: string[] | null;
   tags: string[] | null;
   user_id: string | null;
+  updated_at: string | null;
 };
+
 
 type Categorie = { id: string; nom: string; slug: string };
 type Avis = {
@@ -215,12 +223,53 @@ export default function FichePrestataire() {
         canonicalUrl={`/prestataire/${presta.slug}`}
         imageUrl={presta.photo_principale_url ?? undefined}
       />
+      <JsonLd
+        schema={[
+          buildProviderJsonLd(
+            {
+              slug: presta.slug,
+              slugMere: catMere?.slug ?? "",
+              nom_commercial: presta.nom_commercial,
+              description_courte: presta.description_courte,
+              description: presta.description,
+              photo_principale_url: presta.photo_principale_url,
+              ville: presta.ville,
+              region: presta.region,
+              adresse: presta.adresse,
+              code_postal: presta.code_postal,
+              latitude: presta.latitude,
+              longitude: presta.longitude,
+              telephone: presta.telephone,
+              site_web: presta.site_web,
+              prix_depart: presta.prix_depart,
+              prix_max: presta.prix_max,
+              note_moyenne: presta.note_moyenne,
+              nombre_avis: presta.nombre_avis,
+              updated_at: presta.updated_at,
+              zones_intervention: presta.zones_intervention,
+            },
+            avis.map((a) => ({
+              note_globale: a.note_globale,
+              commentaire: a.commentaire,
+              titre: a.titre,
+              created_at: a.created_at,
+            })),
+          ),
+          buildBreadcrumbJsonLd([
+            { name: "Accueil", url: "/" },
+            ...(catMere
+              ? [{ name: catMere.nom, url: `/prestataires/${catMere.slug}` }]
+              : []),
+            { name: presta.nom_commercial, url: `/prestataire/${presta.slug}` },
+          ]),
+        ]}
+      />
       <nav className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-1.5 text-sm text-muted-foreground overflow-x-auto">
         <Link to="/" className="hover:text-foreground shrink-0">Accueil</Link>
         <ChevronRight size={14} />
         {catMere && (
           <>
-            <Link to={`/recherche?categorie=${catMere.id}`} className="hover:text-foreground shrink-0">
+            <Link to={`/prestataires/${catMere.slug}`} className="hover:text-foreground shrink-0">
               {catMere.nom}
             </Link>
             <ChevronRight size={14} />
@@ -228,6 +277,7 @@ export default function FichePrestataire() {
         )}
         <span className="text-foreground font-medium truncate">{presta.nom_commercial}</span>
       </nav>
+
 
       <div className="max-w-5xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

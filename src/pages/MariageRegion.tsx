@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
 import SeoHead from "@/components/SeoHead";
+import JsonLd from "@/components/JsonLd";
+import {
+  buildRegionWebPageJsonLd,
+  buildFaqPageJsonLd,
+  buildBreadcrumbJsonLd,
+} from "@/lib/jsonld";
+
 import { supabase } from "@/integrations/supabase/client";
 import { regionSlugToNom } from "@/lib/regions";
 import { REGIONS as ZONES_REGIONS } from "@/lib/zonesIntervention";
@@ -326,40 +332,24 @@ export default function MariageRegion() {
   const metaDesc =
     page.meta_description ||
     `Trouvez les meilleurs prestataires de mariage en ${page.nom_region}. ${stats.nb_prestataires} professionnels validés par LesNoces dans ${stats.nb_villes} villes.`;
-  const canonical = `https://lesnoces.net/mariage/${page.slug_region}`;
+  
 
-  const jsonLd: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: `Mariage en ${page.nom_region}`,
-    url: canonical,
-    description: page.citation_llm || metaDesc,
-    about: {
-      "@type": "Place",
-      name: page.nom_region,
-      areaServed: page.nom_region,
-    },
-  };
-  if (stats.nb_avis > 0 && stats.note_moyenne > 0) {
-    jsonLd.aggregateRating = {
-      "@type": "AggregateRating",
-      ratingValue: stats.note_moyenne.toFixed(1),
-      reviewCount: stats.nb_avis,
-      bestRating: "5",
-    };
-  }
+  const schemas: Record<string, unknown>[] = [
+    buildRegionWebPageJsonLd({
+      nomRegion: page.nom_region,
+      slugRegion: page.slug_region,
+      description: page.citation_llm || metaDesc,
+      noteMoyenne: stats.note_moyenne,
+      nbAvis: stats.nb_avis,
+    }),
+    buildBreadcrumbJsonLd([
+      { name: "Accueil", url: "/" },
+      { name: "Mariage par région", url: "/mariage" },
+      { name: page.nom_region, url: `/mariage/${page.slug_region}` },
+    ]),
+  ];
   if (page.faq && page.faq.length > 0) {
-    jsonLd.hasPart = {
-      "@type": "FAQPage",
-      mainEntity: page.faq.map((q) => ({
-        "@type": "Question",
-        name: q.question,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: q.reponse.replace(/\*\*/g, ""),
-        },
-      })),
-    };
+    schemas.push(buildFaqPageJsonLd(page.faq));
   }
 
   // ── Helpers couleur catégorie pour cards ──
@@ -376,9 +366,8 @@ export default function MariageRegion() {
         canonicalUrl={`/mariage/${page.slug_region}`}
         imageUrl={page.image_hero_url ?? undefined}
       />
-      <Helmet>
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
-      </Helmet>
+      <JsonLd schema={schemas} />
+
 
       <div className="bg-background">
         {/* Breadcrumb */}

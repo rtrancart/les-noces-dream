@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import LocationPicker, { type CitySearchData } from "@/components/LocationPicker";
 import CategoryPicker, { type CategoryOption } from "@/components/CategoryPicker";
 import SeoHead from "@/components/SeoHead";
+import JsonLd from "@/components/JsonLd";
+import { buildHomeCategoriesJsonLd } from "@/lib/jsonld";
+
 
 
 /* ─── Types ─────────────────────────────────────────────── */
@@ -683,6 +686,15 @@ export default function Index() {
         description="Trouvez les meilleurs prestataires de mariage haut de gamme en France. Lieux de réception, photographes, traiteurs, fleuristes et plus encore — sélectionnés par LesNoces.net."
         canonicalUrl="/"
       />
+      <JsonLd
+        schema={buildHomeCategoriesJsonLd(
+          (categories ?? []).slice(0, 12).map((c: { nom: string; slug: string }) => ({
+            nom: c.nom,
+            slug: c.slug,
+          })),
+        )}
+      />
+
       <HeroSection categories={categories} categoryTree={categoryTree} />
       <CategoriesSection categories={categories} />
       <FeaturedProviders providers={providers} />
