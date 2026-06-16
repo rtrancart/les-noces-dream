@@ -332,7 +332,7 @@ export default function MariageRegion() {
   const metaDesc =
     page.meta_description ||
     `Trouvez les meilleurs prestataires de mariage en ${page.nom_region}. ${stats.nb_prestataires} professionnels validés par LesNoces dans ${stats.nb_villes} villes.`;
-  const canonical = `https://lesnoces.net/mariage/${page.slug_region}`;
+  
 
   const schemas: Record<string, unknown>[] = [
     buildRegionWebPageJsonLd({
