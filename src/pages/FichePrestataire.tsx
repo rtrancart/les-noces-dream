@@ -12,6 +12,12 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -306,6 +312,24 @@ export default function FichePrestataire() {
                       </Badge>
                     )}
                   </div>
+                  {/* Badge E-E-A-T : tout prestataire publié (statut=actif)
+                      a été validé manuellement par l'équipe éditoriale. */}
+                  <TooltipProvider delayDuration={150}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-sans text-or-riche cursor-help">
+                          <Shield size={14} className="shrink-0" aria-hidden />
+                          <span>Prestataire validé par LesNoces.net</span>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-xs text-xs leading-relaxed">
+                        Ce prestataire a été sélectionné et validé manuellement
+                        par l'équipe éditoriale LesNoces. Seuls les
+                        professionnels du mariage haut de gamme sont référencés
+                        sur notre plateforme.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   </div>
                   <FavoriButton
                     prestataireId={presta.id}

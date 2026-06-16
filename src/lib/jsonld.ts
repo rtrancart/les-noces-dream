@@ -392,3 +392,207 @@ export function buildHomeCategoriesJsonLd(
     })),
   };
 }
+
+/* ───────────────────────── Category FAQ (GEO) ──────────────────────────── */
+
+/**
+ * FAQ contextualisées par catégorie mère, pour enrichir les pages
+ * /prestataires/<slug>. Le nom de la catégorie est injecté via `{cat}` /
+ * `{catLower}`. Si une catégorie n'a pas d'entrée, on n'émet PAS de FAQPage
+ * (mieux vaut pas de FAQ qu'une FAQ générique — signal GEO faible).
+ */
+const CATEGORY_FAQ_MAP: Record<
+  string,
+  { question: string; reponse: string }[]
+> = {
+  "lieux-de-reception": [
+    {
+      question: "Comment choisir son lieu de réception de mariage ?",
+      reponse:
+        "Définissez d'abord la capacité (nombre d'invités), la région et la saison souhaitée. Visitez plusieurs lieux, vérifiez l'hébergement sur place, les contraintes horaires (musique, fin de soirée) et le traiteur (imposé ou libre). Réservez 12 à 18 mois à l'avance pour un mariage en haute saison.",
+    },
+    {
+      question: "Quel budget prévoir pour un lieu de réception de mariage ?",
+      reponse:
+        "En France, la location d'un lieu de réception haut de gamme varie généralement entre 4 000 € et 15 000 € pour un mariage de 100 invités, hors traiteur. Les châteaux et domaines exclusifs en Île-de-France ou en Provence dépassent fréquemment 10 000 €.",
+    },
+    {
+      question: "Combien de temps à l'avance réserver un lieu de mariage ?",
+      reponse:
+        "Pour les samedis de mai à septembre, comptez 12 à 18 mois d'avance pour les lieux prisés. Hors saison ou en semaine, 6 à 9 mois suffisent généralement.",
+    },
+  ],
+  photographes: [
+    {
+      question: "Comment choisir son photographe de mariage ?",
+      reponse:
+        "Examinez plusieurs reportages complets (pas seulement le best-of), vérifiez la cohérence du style sur la durée d'une journée, et rencontrez le photographe pour valider le feeling. Confirmez les livrables (nombre de photos retouchées, délai, droits d'usage) avant signature.",
+    },
+    {
+      question: "Quel budget prévoir pour un photographe de mariage haut de gamme ?",
+      reponse:
+        "Un photographe de mariage professionnel en France facture généralement entre 1 800 € et 4 500 € pour une journée complète. Le haut de gamme (reportage longue durée, second photographe, album) dépasse souvent 5 000 €.",
+    },
+    {
+      question:
+        "Quelle est la différence entre un photographe et un vidéaste de mariage ?",
+      reponse:
+        "Le photographe livre des images fixes (reportage, portraits), le vidéaste un film monté (teaser, film long, son synchronisé). Les deux métiers sont complémentaires et nécessitent du matériel et un savoir-faire distincts. Privilégiez deux professionnels spécialisés plutôt qu'un seul couvrant les deux.",
+    },
+  ],
+  videastes: [
+    {
+      question: "Pourquoi faire appel à un vidéaste pour son mariage ?",
+      reponse:
+        "Le film de mariage capture le mouvement, la voix, la musique — des dimensions que la photo ne restitue pas. Un teaser court (2-3 min) se partage facilement, un film long (15-30 min) reste un souvenir intime.",
+    },
+    {
+      question: "Quel budget prévoir pour un vidéaste de mariage ?",
+      reponse:
+        "Un vidéaste de mariage professionnel facture entre 1 500 € et 4 000 € pour une couverture journée. Les prestations premium (drone, double caméra, montage long) montent à 5 000 € et plus.",
+    },
+    {
+      question: "Faut-il choisir le même prestataire pour photo et vidéo ?",
+      reponse:
+        "Pas nécessairement. Photographe et vidéaste sont deux métiers distincts. Privilégiez deux spécialistes qui savent travailler ensemble plutôt qu'un généraliste, sauf si un studio propose une équipe dédiée par métier.",
+    },
+  ],
+  traiteurs: [
+    {
+      question: "Comment choisir son traiteur de mariage ?",
+      reponse:
+        "Demandez une dégustation avant signature, vérifiez les options de menu (cocktail, dîner, brunch lendemain), le matériel inclus (vaisselle, mobilier, personnel) et la flexibilité sur les régimes spécifiques (végétarien, allergies, casher, halal).",
+    },
+    {
+      question: "Quel budget prévoir pour un traiteur de mariage ?",
+      reponse:
+        "En France, comptez entre 90 € et 180 € par invité pour une prestation traiteur complète haut de gamme (cocktail, dîner, vin, service). Le très haut de gamme (chef étoilé, produits d'exception) dépasse 250 € par invité.",
+    },
+    {
+      question: "Combien de temps à l'avance réserver un traiteur ?",
+      reponse:
+        "Réservez votre traiteur 9 à 12 mois avant le mariage, idéalement juste après le lieu de réception. Les traiteurs reconnus sont complets très tôt sur les samedis de haute saison.",
+    },
+  ],
+  fleuristes: [
+    {
+      question: "Quel budget prévoir pour un fleuriste de mariage ?",
+      reponse:
+        "Un fleuriste de mariage facture généralement entre 1 200 € et 4 000 € pour une décoration florale complète (bouquet de la mariée, boutonnières, centres de table, cérémonie). Les compositions haut de gamme (arches florales, plafonds suspendus) dépassent 6 000 €.",
+    },
+    {
+      question: "Quand contacter son fleuriste mariage ?",
+      reponse:
+        "Contactez votre fleuriste 6 à 9 mois avant le mariage, après avoir validé le lieu et la palette de couleurs. Une visite du lieu avec le fleuriste permet d'affiner les volumes et les implantations.",
+    },
+    {
+      question: "Quelles fleurs choisir selon la saison de mariage ?",
+      reponse:
+        "Privilégiez les fleurs de saison pour la fraîcheur et le budget : pivoines et lilas au printemps, dahlias et roses anglaises en été, dahlias et chrysanthèmes en automne, hellébores et anémones en hiver. Votre fleuriste vous orientera selon la palette souhaitée.",
+    },
+  ],
+  "wedding-planners": [
+    {
+      question: "À quoi sert un wedding planner ?",
+      reponse:
+        "Un wedding planner coordonne l'organisation complète du mariage : recherche et négociation des prestataires, gestion du planning, suivi budgétaire, coordination le jour J. Il représente vos intérêts et vous fait gagner un temps considérable.",
+    },
+    {
+      question: "Quel budget prévoir pour un wedding planner ?",
+      reponse:
+        "Les wedding planners facturent soit au forfait (3 000 € à 10 000 € selon le niveau de prestation), soit en pourcentage du budget mariage (10 à 15 %). La coordination jour J seule est facturée 1 500 € à 3 500 €.",
+    },
+    {
+      question: "Quand engager un wedding planner ?",
+      reponse:
+        "Engagez votre wedding planner dès le début du projet, idéalement 12 à 18 mois avant le mariage, pour bénéficier de ses recommandations sur le lieu et les prestataires clés. Pour une simple coordination jour J, 3 à 6 mois avant suffisent.",
+    },
+  ],
+  "orchestres-dj": [
+    {
+      question: "Comment choisir entre un DJ et un orchestre pour son mariage ?",
+      reponse:
+        "Un DJ offre une grande variété musicale et un budget maîtrisé. Un orchestre apporte une dimension live et théâtrale forte. De nombreux couples combinent les deux : orchestre/groupe pour le cocktail ou le dîner, DJ pour la soirée dansante.",
+    },
+    {
+      question: "Quel budget prévoir pour un DJ de mariage ?",
+      reponse:
+        "Un DJ professionnel de mariage facture entre 900 € et 2 500 € pour une soirée (matériel son et lumière inclus). Les DJ très demandés ou avec scénographie importante dépassent 3 000 €.",
+    },
+    {
+      question: "Quel budget prévoir pour un orchestre de mariage ?",
+      reponse:
+        "Un groupe live (3 à 6 musiciens) pour un mariage coûte entre 2 500 € et 6 000 €. Les orchestres haut de gamme (chanteurs, big band, scénographie) montent au-delà de 8 000 €.",
+    },
+  ],
+  decoration: [
+    {
+      question: "Quel budget prévoir pour la décoration de mariage ?",
+      reponse:
+        "Une décoratrice de mariage facture entre 1 500 € et 5 000 € pour une scénographie complète (cérémonie, cocktail, dîner, soirée). Le très haut de gamme (mobilier sur mesure, installations XXL) dépasse 10 000 €.",
+    },
+    {
+      question: "Décoratrice ou wedding planner, quelle différence ?",
+      reponse:
+        "La décoratrice conçoit et installe l'univers visuel du mariage. Le wedding planner orchestre l'ensemble de l'organisation. Les deux métiers sont complémentaires et travaillent souvent en binôme.",
+    },
+  ],
+  "faire-part-papeterie": [
+    {
+      question: "Quel budget prévoir pour les faire-part de mariage ?",
+      reponse:
+        "Comptez entre 4 € et 12 € par faire-part haut de gamme (papier texturé, impression letterpress ou dorure, enveloppe doublée). Une suite complète (save-the-date, faire-part, menus, plan de table, livret de messe) représente 800 € à 2 500 € pour 100 invités.",
+    },
+    {
+      question: "Quand envoyer ses faire-part de mariage ?",
+      reponse:
+        "Envoyez les save-the-date 8 à 12 mois avant le mariage, et les faire-part définitifs 3 à 4 mois avant la date (5 à 6 mois pour un mariage à l'étranger).",
+    },
+  ],
+  "coiffure-maquillage": [
+    {
+      question: "Quand faire son essai coiffure et maquillage mariage ?",
+      reponse:
+        "Programmez votre essai coiffure et maquillage 2 à 3 mois avant le mariage, idéalement avec la coiffe ou les accessoires finaux. Photographiez le rendu en lumière naturelle pour valider sereinement.",
+    },
+    {
+      question: "Quel budget prévoir pour la coiffure et le maquillage mariée ?",
+      reponse:
+        "Comptez entre 250 € et 600 € pour la coiffure et le maquillage de la mariée le jour J (essai inclus). Les prestataires haut de gamme avec déplacement et retouches dépassent 800 €.",
+    },
+  ],
+  "voyages-de-noces": [
+    {
+      question: "Quand réserver son voyage de noces ?",
+      reponse:
+        "Réservez votre voyage de noces 6 à 12 mois à l'avance, surtout pour les destinations lointaines en haute saison. Cela laisse le temps de comparer les agences spécialisées et d'optimiser le rapport qualité/prix.",
+    },
+    {
+      question: "Pourquoi passer par une agence pour son voyage de noces ?",
+      reponse:
+        "Une agence spécialisée voyage de noces sécurise la logistique (vols, transferts, hôtels haut de gamme), négocie les surclassements honeymoon et apporte une assistance 24/7 sur place — précieuse en cas d'imprévu.",
+    },
+  ],
+};
+
+export function buildCategoryFaqJsonLd(
+  slugMere: string | null | undefined,
+  categoryName: string,
+): Record<string, unknown> | null {
+  if (!slugMere) return null;
+  const tpl = CATEGORY_FAQ_MAP[slugMere];
+  if (!tpl || tpl.length === 0) return null;
+  const cat = categoryName || "ce métier";
+  const catLower = cat.toLowerCase();
+  return buildFaqPageJsonLd(
+    tpl.map((q) => ({
+      question: q.question
+        .replace(/\{cat\}/g, cat)
+        .replace(/\{catLower\}/g, catLower),
+      reponse: q.reponse
+        .replace(/\{cat\}/g, cat)
+        .replace(/\{catLower\}/g, catLower),
+    })),
+  );
+}
+
