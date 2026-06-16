@@ -12,6 +12,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
 
 const Inscription = () => {
+  const { trackSignUp } = useTracking();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
