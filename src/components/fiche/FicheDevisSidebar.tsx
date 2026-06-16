@@ -83,6 +83,7 @@ interface Props {
 
 export default function FicheDevisSidebar({ prestataireId, prestataireName }: Props) {
   const { user, profile } = useAuth();
+  const { trackDemandeDevis } = useTracking();
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [expanded, setExpanded] = useState(false);
