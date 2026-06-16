@@ -6,6 +6,9 @@ import { resolveZoneSlug, ZoneApiError, type ResolvedZone } from "@/lib/zoneReso
 import { useZones } from "@/contexts/ZonesContext";
 import { haversineDistanceKm } from "@/lib/haversine";
 import SeoHead from "@/components/SeoHead";
+import JsonLd from "@/components/JsonLd";
+import { buildCategoryListJsonLd, buildBreadcrumbJsonLd } from "@/lib/jsonld";
+
 
 interface CategorieRow {
   id: string;
@@ -286,13 +289,46 @@ export default function PrestatairesListe() {
   return (
     <div className="min-h-screen bg-background">
       {seo && seoMetaDesc && (
-        <SeoHead
-          title={seo.metaTitle}
-          description={seoMetaDesc}
-          canonicalUrl={seo.canonicalUrl}
-          siteName="LesNoces.net"
-        />
+        <>
+          <SeoHead
+            title={seo.metaTitle}
+            description={seoMetaDesc}
+            canonicalUrl={seo.canonicalUrl}
+            siteName="LesNoces.net"
+          />
+          {categorieMere && (
+            <JsonLd
+              schema={[
+                buildCategoryListJsonLd({
+                  name: seo.h1,
+                  description: seoMetaDesc,
+                  canonicalPath: slug2
+                    ? `/prestataires/${slugMere}/${slug2}`
+                    : `/prestataires/${slugMere}`,
+                  items: providers.slice(0, 10).map((p, i) => ({
+                    name: p.nom_commercial,
+                    slug: p.slug,
+                    position: i + 1,
+                  })),
+                }),
+                buildBreadcrumbJsonLd([
+                  { name: "Accueil", url: "/" },
+                  { name: categorieMere.nom, url: `/prestataires/${slugMere}` },
+                  ...(categorieFille
+                    ? [
+                        {
+                          name: categorieFille.nom,
+                          url: `/prestataires/${slugMere}/${categorieFille.slug}`,
+                        },
+                      ]
+                    : []),
+                ]),
+              ]}
+            />
+          )}
+        </>
       )}
+
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-12">
         <header className="mb-8">
           {seo ? (
