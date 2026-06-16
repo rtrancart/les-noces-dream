@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { trackEvent } from "@/lib/analytics";
+import { useTracking } from "@/hooks/useTracking";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +70,7 @@ const objets = [
 
 export default function FicheDevisDialog({ open, onOpenChange, prestataireId, prestataireName }: Props) {
   const { user, profile } = useAuth();
+  const { trackDemandeDevis } = useTracking();
   const isMobile = useIsMobile();
   const [submitting, setSubmitting] = useState(false);
 
@@ -102,6 +104,7 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
 
       toast.success("Votre demande de devis a été envoyée !");
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);
+      trackDemandeDevis(prestataireId, values.objet);
       form.reset();
       onOpenChange(false);
     } catch (e) {

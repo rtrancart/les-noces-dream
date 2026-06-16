@@ -38,6 +38,7 @@ import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
 import { getCondensedZoneNames } from "@/lib/zonesIntervention";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import { trackEvent } from "@/lib/analytics";
+import { useTracking } from "@/hooks/useTracking";
 import { useTrackVisitePrestataire } from "@/hooks/useHistoriqueNavigation";
 import { regionNomToSlug } from "@/lib/regions";
 import SeoHead from "@/components/SeoHead";
@@ -119,6 +120,8 @@ export default function FichePrestataire() {
   const [devisOpen, setDevisOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const { trackViewItem, trackRevealPhone } = useTracking();
+
   useTrackVisitePrestataire(presta?.id);
 
   const fetchData = async () => {
@@ -184,8 +187,10 @@ export default function FichePrestataire() {
   useEffect(() => {
     if (presta) {
       trackEvent("vue_profil", { slug: presta.slug }, presta.id);
+      trackViewItem(presta.slug, catMere?.slug);
     }
-  }, [presta?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presta?.id, catMere?.slug]);
 
   // SEO is rendered via <SeoHead> in JSX (see below) — no manual document.title.
 
@@ -193,6 +198,7 @@ export default function FichePrestataire() {
     if (!presta) return;
     setPhoneRevealed(true);
     trackEvent("affichage_telephone", { slug: presta.slug }, presta.id);
+    trackRevealPhone(presta.slug);
   };
 
   if (loading) {

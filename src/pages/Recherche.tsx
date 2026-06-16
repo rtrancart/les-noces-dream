@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { REGIONS, DOM, getZoneLabel, getCondensedZoneNames } from "@/lib/zonesIntervention";
 import { haversineDistanceKm } from "@/lib/haversine";
 import { trackEvent } from "@/lib/analytics";
+import { useTracking } from "@/hooks/useTracking";
 import SeoHead from "@/components/SeoHead";
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
@@ -109,6 +110,7 @@ export default function Recherche() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { providers: allProviders, categoryTree, loading } = useSearchData();
   const isMobile = useIsMobile();
+  const { trackSearch } = useTracking();
 
   const [locationZones, setLocationZones] = useState<string[]>(() => {
     const lieu = searchParams.get("lieu");
@@ -216,10 +218,14 @@ export default function Recherche() {
 
     // Track search event
     if (categorySlugs.length > 0 || locationZones.length > 0 || citySearch) {
+      const search_term = citySearch?.label
+        ? citySearch.label.toLowerCase().replace(/\s+/g, "-")
+        : locationZones.join(",");
       trackEvent("recherche", {
         categorie: categorySlugs.join(",") || undefined,
         lieu: citySearch?.label || locationZones.join(",") || undefined,
       });
+      trackSearch(search_term, categorySlugs[0]);
     }
   }, [categorySlugs, locationZones, citySearch]);
 

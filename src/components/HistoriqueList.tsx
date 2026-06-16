@@ -3,12 +3,15 @@ import { Clock, ImageIcon } from "lucide-react";
 import FavoriButton from "@/components/favoris/FavoriButton";
 import type { HistoriqueEntry } from "@/hooks/useHistoriqueNavigation";
 import { getImageUrl } from "@/lib/images";
+import { useTracking } from "@/hooks/useTracking";
 
 interface Props {
   entries: HistoriqueEntry[];
   emptyLabel?: string;
   onItemClick?: () => void;
   variant?: "compact" | "full";
+  /** Origine du clic, pour le tracking dataLayer. */
+  source?: "dropdown" | "page";
 }
 
 function formatRelative(date: string): string {
@@ -23,7 +26,8 @@ function formatRelative(date: string): string {
   return new Date(date).toLocaleDateString("fr-FR");
 }
 
-export default function HistoriqueList({ entries, emptyLabel = "Aucune fiche consultée pour le moment", onItemClick, variant = "compact" }: Props) {
+export default function HistoriqueList({ entries, emptyLabel = "Aucune fiche consultée pour le moment", onItemClick, variant = "compact", source = "dropdown" }: Props) {
+  const { trackClickHistoryItem } = useTracking();
   if (entries.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-6 text-center">
@@ -35,14 +39,17 @@ export default function HistoriqueList({ entries, emptyLabel = "Aucune fiche con
 
   return (
     <ul className="space-y-0">
-      {entries.map((e) => {
+      {entries.map((e, idx) => {
         if (!e.prestataire) return null;
         const p = e.prestataire;
         return (
           <li key={e.prestataire_id} className="flex items-center gap-2 -mx-2 px-2 rounded-sm hover:bg-secondary/50 transition-colors border-b border-border last:border-0">
             <Link
               to={`/prestataire/${p.slug}`}
-              onClick={onItemClick}
+              onClick={() => {
+                trackClickHistoryItem(p.slug, idx + 1, source);
+                onItemClick?.();
+              }}
               className="flex items-center gap-3 py-2.5 flex-1 min-w-0"
             >
               <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center shrink-0 overflow-hidden">

@@ -1,6 +1,7 @@
 import { Phone, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
+import { useTracking } from "@/hooks/useTracking";
 
 interface Props {
   telephone: string | null;
@@ -9,8 +10,10 @@ interface Props {
 }
 
 export default function FicheStickyMobileCTA({ telephone, prestataireId, onDevisClick }: Props) {
+  const { trackRevealPhone } = useTracking();
   const handleCall = () => {
     trackEvent("affichage_telephone", {}, prestataireId);
+    trackRevealPhone(prestataireId);
   };
 
   return (

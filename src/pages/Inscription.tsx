@@ -9,8 +9,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { Mail, Lock, User, Heart, Briefcase } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { useTracking } from "@/hooks/useTracking";
 
 const Inscription = () => {
+  const { trackSignUp } = useTracking();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,6 +46,7 @@ const Inscription = () => {
     }
 
     trackEvent("inscription", { role });
+    trackSignUp("password", role);
 
     // Si la session est créée immédiatement (auto-confirm) et que c'est un prestataire,
     // on l'envoie directement valider la Charte Qualité.

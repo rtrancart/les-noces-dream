@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import FavoriButton from "@/components/favoris/FavoriButton";
 import type { HistoriqueEntry } from "@/hooks/useHistoriqueNavigation";
 import { getImageUrl } from "@/lib/images";
+import { useTracking } from "@/hooks/useTracking";
 
 interface Props {
   entries: HistoriqueEntry[];
@@ -102,8 +103,8 @@ export default function HistoriqueByCategory({ entries, categorySlugByName = {} 
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map((e) => (
-                  <HistoriqueCard key={e.prestataire_id} entry={e} />
+                {items.map((e, idx) => (
+                  <HistoriqueCard key={e.prestataire_id} entry={e} position={idx + 1} />
                 ))}
               </div>
             </section>
@@ -146,11 +147,13 @@ function FilterPill({
   );
 }
 
-function HistoriqueCard({ entry }: { entry: HistoriqueEntry }) {
+function HistoriqueCard({ entry, position }: { entry: HistoriqueEntry; position: number }) {
   const p = entry.prestataire!;
+  const { trackClickHistoryItem } = useTracking();
   return (
     <Link
       to={`/prestataire/${p.slug}`}
+      onClick={() => trackClickHistoryItem(p.slug, position, "page")}
       className="group block rounded-xl overflow-hidden bg-card hover:shadow-elevated transition-all"
     >
       <div className="relative aspect-[4/3] bg-secondary/30 overflow-hidden">

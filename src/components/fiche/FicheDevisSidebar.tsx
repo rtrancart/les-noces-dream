@@ -27,6 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Send } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { useTracking } from "@/hooks/useTracking";
 
 const countryCodes = [
   { code: "+33", label: "🇫🇷 +33", country: "FR" },
@@ -82,6 +83,7 @@ interface Props {
 
 export default function FicheDevisSidebar({ prestataireId, prestataireName }: Props) {
   const { user, profile } = useAuth();
+  const { trackDemandeDevis } = useTracking();
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -130,6 +132,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
 
       toast.success("Votre demande de devis a été envoyée !");
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);
+      trackDemandeDevis(prestataireId, values.objet);
       setSent(true);
       form.reset();
     } catch (e) {

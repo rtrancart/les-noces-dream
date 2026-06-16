@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchHistorique, type HistoriqueEntry } from "@/hooks/useHistoriqueNavigation";
 import HistoriqueList from "@/components/HistoriqueList";
+import { useTracking } from "@/hooks/useTracking";
 
 export default function HistoriqueWidget() {
   const { user } = useAuth();
+  const { trackViewHistory } = useTracking();
   const [entries, setEntries] = useState<HistoriqueEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,7 +16,9 @@ export default function HistoriqueWidget() {
     fetchHistorique(user?.id ?? null, 3).then((res) => {
       setEntries(res);
       setLoading(false);
+      trackViewHistory(res.length);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   return (

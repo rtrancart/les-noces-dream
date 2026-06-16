@@ -8,11 +8,13 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Mail, Lock } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { useTracking } from "@/hooks/useTracking";
 
 const Connexion = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+  const { trackLogin } = useTracking();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +31,7 @@ const Connexion = () => {
         : error.message);
     } else {
       trackEvent("connexion");
+      trackLogin("password");
       toast.success("Connexion réussie !");
       navigate(from, { replace: true });
     }

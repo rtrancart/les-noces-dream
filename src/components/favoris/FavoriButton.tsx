@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTracking } from "@/hooks/useTracking";
 
 interface Props {
   prestataireId: string;
@@ -30,6 +31,7 @@ export default function FavoriButton({
   stopPropagation = true,
 }: Props) {
   const { user } = useAuth();
+  const { trackAddToWishlist } = useTracking();
   const [isFav, setIsFav] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
@@ -89,6 +91,7 @@ export default function FavoriButton({
       } else {
         setIsFav(true);
         toast.success("Ajouté aux favoris ♥");
+        trackAddToWishlist(prestataireId);
       }
     }
     setLoading(false);
