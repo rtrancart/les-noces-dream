@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { REGIONS, DOM, getZoneLabel, getCondensedZoneNames } from "@/lib/zonesIntervention";
 import { haversineDistanceKm } from "@/lib/haversine";
 import { trackEvent } from "@/lib/analytics";
+import { useTracking } from "@/hooks/useTracking";
 import SeoHead from "@/components/SeoHead";
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
