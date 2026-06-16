@@ -46,6 +46,7 @@ const Inscription = () => {
     }
 
     trackEvent("inscription", { role });
+    trackSignUp("password", role);
 
     // Si la session est créée immédiatement (auto-confirm) et que c'est un prestataire,
     // on l'envoie directement valider la Charte Qualité.
