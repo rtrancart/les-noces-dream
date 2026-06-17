@@ -1,36 +1,66 @@
 ## Problème
 
-La policy SELECT sur `public.profiles` est `USING (true)` → tout visiteur anonyme peut lire les emails, téléphones, dates de naissance et préférences de notification de tous les utilisateurs.
+La table `realtime.messages` n'a pas de RLS. Sans verrou au niveau topic, un utilisateur authentifié peut s'abonner à `messages-<n'importe quel demande_id>` et recevoir les broadcasts. La RLS de `public.messages` filtre déjà le payload via `postgres_changes`, mais l'autorisation au niveau du topic doit aussi être verrouillée.
 
 ## Approche
 
-Restreindre la SELECT à `auth.uid() = id` (+ admins), et créer une vue publique `profiles_public` exposant uniquement `id, prenom, nom` pour le seul usage public restant (nom d'auteur d'article de blog sur la page d'accueil).
+1. Activer le mode "Private channels" côté client, ce qui force Realtime à consulter la RLS de `realtime.messages` à la souscription.
+2. Activer RLS sur `realtime.messages` avec deux policies SELECT scopées par topic et `auth.uid()`.
 
 ## Migration
 
-1. `DROP POLICY "Profiles are viewable by everyone" ON public.profiles;`
-2. Créer deux nouvelles policies SELECT sur `profiles` :
-   - `"Users can view own profile"` — `USING (auth.uid() = id)`
-   - `"Admins can view all profiles"` — `USING (has_role(auth.uid(),'admin') OR has_role(auth.uid(),'super_admin'))`
-   → les écrans admin (useUsersData, EditUserDialog, admin/Dashboard, admin/Prestataires, admin/Logs) continuent d'interroger `.from("profiles")` et reçoivent toutes les colonnes (email, téléphone, etc.) grâce à cette policy dédiée.
-3. Créer la vue :
-   ```sql
-   CREATE OR REPLACE VIEW public.profiles_public AS
-     SELECT id, prenom, nom FROM public.profiles;
-   GRANT SELECT ON public.profiles_public TO anon, authenticated;
-   ```
-   security_invoker laissé implicite (OFF) : sans risque ici puisque la vue ne sélectionne que `id, prenom, nom` — aucun champ sensible n'est exposable même si elle bypass la RLS de la table sous-jacente.
+```sql
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+
+-- Participants d'une demande peuvent s'abonner à messages-<demande_id>
+CREATE POLICY "Participants can subscribe to conversation channel"
+  ON realtime.messages
+  FOR SELECT
+  TO authenticated
+  USING (
+    public.has_role(auth.uid(), 'admin'::public.app_role)
+    OR public.has_role(auth.uid(), 'super_admin'::public.app_role)
+    OR (
+      realtime.topic() LIKE 'messages-%'
+      AND EXISTS (
+        SELECT 1 FROM public.demandes_devis dd
+        WHERE dd.id::text = substring(realtime.topic() FROM 'messages-(.*)')
+          AND (
+            dd.profile_id = auth.uid()
+            OR EXISTS (
+              SELECT 1 FROM public.prestataires p
+              WHERE p.id = dd.prestataire_id AND p.user_id = auth.uid()
+            )
+          )
+      )
+    )
+  );
+
+-- Chaque utilisateur peut s'abonner uniquement à son propre topic sidebar
+CREATE POLICY "User can subscribe to own sidebar channel"
+  ON realtime.messages
+  FOR SELECT
+  TO authenticated
+  USING (
+    realtime.topic() = 'sidebar-unread-' || auth.uid()::text
+  );
+```
 
 ## Refactor code
 
-Un seul call-site public à migrer :
-- `src/pages/Index.tsx` (l. 147) — récupération des noms d'auteurs d'articles : `.from("profiles")` → `.from("profiles_public")`.
+- `src/components/messaging/ConversationThread.tsx` : ajouter `{ config: { private: true } }` à `supabase.channel(\`messages-${demandeId}\`, ...)`.
+- `src/components/prestataire/PrestataireSidebar.tsx` :
+  - ajouter `user` à la destructuration `useAuth()` (déjà importé),
+  - **guard explicite** `if (!user?.id) return;` avant le `supabase.channel(...)` dans le `useEffect`, pour éviter tout `sidebar-unread-undefined` au premier render,
+  - renommer le canal en `` `sidebar-unread-${user.id}` ``,
+  - ajouter `{ config: { private: true } }`,
+  - inclure `user?.id` dans les dépendances du `useEffect`.
 
-Les autres call-sites sont owner (AuthContext, CharteProgressive, AccepterInvitation) ou admin (useUsersData, EditUserDialog, admin/Dashboard, admin/Prestataires, admin/Logs) — inchangés, ils passent par les policies owner/admin.
+Aucun autre changement de logique ; callbacks `postgres_changes` et `fetchUnread()` inchangés.
 
 ## Vérification
 
-- Build TS OK après régénération des types.
-- Page d'accueil affiche toujours les noms d'auteurs en anonyme.
-- Mon profil et écrans admin (liste utilisateurs, édition, logs) inchangés et toujours alimentés en email/téléphone/etc.
-- Re-run scanner : `profiles_public_exposure` doit se fermer.
+- Conversation : envoi/réception instantanés pour les deux participants.
+- Un tiers ne peut plus s'abonner à `messages-<demande_id>` d'une conversation dont il n'est pas participant.
+- Badge "non lus" de la sidebar prestataire fonctionne toujours, sans souscription tant que `user` n'est pas chargé.
+- Re-run scanner : `messages_realtime_no_channel_auth` doit se fermer.
