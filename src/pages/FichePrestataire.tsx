@@ -129,7 +129,7 @@ export default function FichePrestataire() {
     setLoading(true);
 
     const { data: p, error } = await supabase
-      .from("prestataires")
+      .from("prestataires_public")
       .select("*")
       .eq("slug", slug)
       .eq("statut", "actif")
