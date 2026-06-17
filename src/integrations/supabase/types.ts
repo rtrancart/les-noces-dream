@@ -1628,6 +1628,7 @@ export type Database = {
       }
       soumettre_demande_devis: {
         Args: {
+          p_budget_indicatif?: number
           p_date_evenement?: string
           p_email: string
           p_lieu_evenement?: string

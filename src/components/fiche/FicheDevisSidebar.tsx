@@ -59,6 +59,10 @@ const devisSchema = z.object({
   date_evenement: z.string().optional(),
   lieu_evenement: z.string().max(200).optional(),
   nombre_invites_rang: z.string().optional(),
+  budget_indicatif: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^\d{1,9}$/.test(v.trim()), "Montant invalide (chiffres uniquement)"),
   message: z.string().min(10, "Minimum 10 caractères").max(2000),
 });
 
@@ -116,6 +120,11 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
         ? `${values.indicatif} ${values.telephone.trim()}`
         : null;
 
+      const budgetNum =
+        values.budget_indicatif && values.budget_indicatif.trim() !== ""
+          ? parseInt(values.budget_indicatif.trim(), 10)
+          : null;
+
       const { error } = await supabase.rpc("soumettre_demande_devis", {
         p_prestataire_id: prestataireId,
         p_nom: values.nom,
@@ -126,13 +135,14 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
         p_date_evenement: values.date_evenement || null,
         p_lieu_evenement: values.lieu_evenement || null,
         p_nombre_invites_rang: values.nombre_invites_rang || null,
+        p_budget_indicatif: budgetNum,
       });
 
       if (error) throw error;
 
       toast.success("Votre demande de devis a été envoyée !");
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);
-      trackDemandeDevis(prestataireId, values.objet, !!user);
+      trackDemandeDevis(prestataireId, values.objet, !!user, budgetNum ?? undefined);
       setSent(true);
       form.reset();
     } catch (e) {
@@ -313,6 +323,22 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
                   <FormItem>
                     <FormLabel className="text-xs">Lieu</FormLabel>
                     <FormControl><Input placeholder="Ville ou lieu" className="h-9 text-sm" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="budget_indicatif" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">Budget indicatif (€)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        placeholder="ex: 3000"
+                        className="h-9 text-sm"
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
