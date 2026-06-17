@@ -49,6 +49,10 @@ const devisSchema = z.object({
   date_evenement: z.string().optional(),
   lieu_evenement: z.string().max(200).optional(),
   nombre_invites_rang: z.string().optional(),
+  budget_indicatif: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^\d{1,9}$/.test(v.trim()), "Montant invalide (chiffres uniquement)"),
   message: z.string().min(10, "Minimum 10 caractères").max(2000),
 });
 
