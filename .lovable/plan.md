@@ -1,36 +1,36 @@
 ## Problème
 
-La policy INSERT actuelle sur `storage.objects` pour le bucket `prestataires-photos` autorise tout utilisateur authentifié à uploader dans n'importe quel dossier :
+La policy SELECT sur `public.profiles` est `USING (true)` → tout visiteur anonyme peut lire les emails, téléphones, dates de naissance et préférences de notification de tous les utilisateurs.
 
-```sql
-WITH CHECK (bucket_id = 'prestataires-photos' AND auth.uid() IS NOT NULL)
-```
+## Approche
 
-Un prestataire pourrait donc écraser/ajouter des photos dans le dossier d'un autre prestataire.
+Restreindre la SELECT à `auth.uid() = id` (+ admins), et créer une vue publique `profiles_public` exposant uniquement `id, prenom, nom` pour le seul usage public restant (nom d'auteur d'article de blog sur la page d'accueil).
 
-## Contexte code
+## Migration
 
-Les uploads suivent partout le pattern de chemin `<prestataire_id>/<filename>` :
-- `src/pages/prestataire/Galerie.tsx` (le prestataire propriétaire)
-- `src/components/admin/PrestatairePhotosTab.tsx` (admin / super_admin gérant un autre prestataire)
+1. `DROP POLICY "Profiles are viewable by everyone" ON public.profiles;`
+2. Créer deux nouvelles policies SELECT sur `profiles` :
+   - `"Users can view own profile"` — `USING (auth.uid() = id)`
+   - `"Admins can view all profiles"` — `USING (has_role(auth.uid(),'admin') OR has_role(auth.uid(),'super_admin'))`
+   → les écrans admin (useUsersData, EditUserDialog, admin/Dashboard, admin/Prestataires, admin/Logs) continuent d'interroger `.from("profiles")` et reçoivent toutes les colonnes (email, téléphone, etc.) grâce à cette policy dédiée.
+3. Créer la vue :
+   ```sql
+   CREATE OR REPLACE VIEW public.profiles_public AS
+     SELECT id, prenom, nom FROM public.profiles;
+   GRANT SELECT ON public.profiles_public TO anon, authenticated;
+   ```
+   security_invoker laissé implicite (OFF) : sans risque ici puisque la vue ne sélectionne que `id, prenom, nom` — aucun champ sensible n'est exposable même si elle bypass la RLS de la table sous-jacente.
 
-## Plan
+## Refactor code
 
-Migration unique qui remplace la policy INSERT et ajoute les policies UPDATE et DELETE manquantes (actuellement non restreintes côté écriture en dehors de l'INSERT), avec la même règle :
+Un seul call-site public à migrer :
+- `src/pages/Index.tsx` (l. 147) — récupération des noms d'auteurs d'articles : `.from("profiles")` → `.from("profiles_public")`.
 
-1. `DROP POLICY "Authenticated can upload prestataires photos"`
-2. Créer une fonction helper réutilisable `public.can_write_prestataire_photo(path text)` (SECURITY DEFINER, search_path = public), qui retourne `true` si :
-   - le premier segment du chemin (`split_part(path, '/', 1)`) correspond à l'`id` d'un `prestataires` dont `user_id = auth.uid()`, **ou**
-   - l'appelant a le rôle `admin` ou `super_admin` via `has_role()`.
-3. Recréer 3 policies sur `storage.objects` scopées au bucket `prestataires-photos`, rôle `authenticated` :
-   - INSERT `WITH CHECK (bucket_id = 'prestataires-photos' AND public.can_write_prestataire_photo(name))`
-   - UPDATE `USING (...) WITH CHECK (...)` même condition
-   - DELETE `USING (...)` même condition
-
-La policy SELECT publique existante reste inchangée (bucket public en lecture).
+Les autres call-sites sont owner (AuthContext, CharteProgressive, AccepterInvitation) ou admin (useUsersData, EditUserDialog, admin/Dashboard, admin/Prestataires, admin/Logs) — inchangés, ils passent par les policies owner/admin.
 
 ## Vérification
 
-- Tester via l'app : un prestataire connecté upload dans son dossier → OK ; tentative dans un autre dossier → refusée.
-- Onglet admin photos : admin peut toujours uploader / supprimer pour n'importe quel prestataire.
-- Re-run scanner pour fermer `prestataires_photos_unrestricted_upload`.
+- Build TS OK après régénération des types.
+- Page d'accueil affiche toujours les noms d'auteurs en anonyme.
+- Mon profil et écrans admin (liste utilisateurs, édition, logs) inchangés et toujours alimentés en email/téléphone/etc.
+- Re-run scanner : `profiles_public_exposure` doit se fermer.
