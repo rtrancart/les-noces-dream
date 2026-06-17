@@ -26,11 +26,27 @@ export function useTracking() {
 
     /**
      * Recherche prestataires.
-     * @param search_term  Slugs géographiques en kebab-case, séparés par virgule.
-     * @param category     Slug catégorie (optionnel).
+     * @param search_term            Slugs géographiques en kebab-case, séparés par virgule.
+     * @param opts.search_type       "city_radius" (ville + rayon) | "zones" (régions/départements).
+     * @param opts.search_category   Slug catégorie (optionnel).
+     * @param opts.search_radius     Rayon en km (uniquement pour search_type="city_radius").
      */
-    trackSearch: (search_term: string, category?: string) =>
-      push("search", { search_term, ...(category ? { category } : {}) }),
+    trackSearch: (
+      search_term: string,
+      opts: {
+        search_type: "city_radius" | "zones";
+        search_category?: string;
+        search_radius?: number;
+      },
+    ) =>
+      push("search", {
+        search_term,
+        search_type: opts.search_type,
+        ...(opts.search_category ? { search_category: opts.search_category } : {}),
+        ...(opts.search_type === "city_radius" && typeof opts.search_radius === "number"
+          ? { search_radius: opts.search_radius }
+          : {}),
+      }),
 
     /** Affichage fiche prestataire. */
     trackViewItem: (item_id: string, item_category?: string) =>
@@ -46,10 +62,22 @@ export function useTracking() {
 
     /**
      * Envoi d'une demande de devis.
-     * @param event_type  mariage | evenement_entreprise | cocktail | autre
+     * @param event_type    mariage | evenement_entreprise | cocktail | autre
+     * @param has_account   true si le visiteur était connecté au moment de l'envoi.
+     * @param budget        Budget indicatif renseigné (optionnel).
      */
-    trackDemandeDevis: (item_id: string, event_type: string) =>
-      push("demande_devis", { item_id, event_type }),
+    trackDemandeDevis: (
+      item_id: string,
+      event_type: string,
+      has_account: boolean,
+      budget?: string | number,
+    ) =>
+      push("demande_devis", {
+        item_id,
+        event_type,
+        has_account,
+        ...(budget !== undefined && budget !== "" ? { budget } : {}),
+      }),
 
     /** Inscription. */
     trackSignUp: (method: string, role: "client" | "prestataire") =>
