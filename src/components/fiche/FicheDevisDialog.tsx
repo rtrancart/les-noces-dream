@@ -196,6 +196,22 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
           </FormItem>
         )} />
 
+        <FormField control={form.control} name="budget_indicatif" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Budget indicatif (€)</FormLabel>
+            <FormControl>
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                placeholder="ex: 3000"
+                {...field}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+
         <FormField control={form.control} name="message" render={({ field }) => (
           <FormItem>
             <FormLabel>Votre message *</FormLabel>
