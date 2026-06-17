@@ -225,7 +225,11 @@ export default function Recherche() {
         categorie: categorySlugs.join(",") || undefined,
         lieu: citySearch?.label || locationZones.join(",") || undefined,
       });
-      trackSearch(search_term, categorySlugs[0]);
+      trackSearch(search_term, {
+        search_type: citySearch ? "city_radius" : "zones",
+        search_category: categorySlugs[0],
+        ...(citySearch ? { search_radius: citySearch.radius } : {}),
+      });
     }
   }, [categorySlugs, locationZones, citySearch]);
 
