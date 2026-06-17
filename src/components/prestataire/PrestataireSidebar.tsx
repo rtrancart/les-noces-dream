@@ -37,7 +37,7 @@ interface PrestataireSidebarProps {
 
 export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
   const location = useLocation();
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, user } = useAuth();
   const { prestataire } = useSharedPrestataire();
   const currentPath = location.pathname;
   const [unreadCount, setUnreadCount] = useState(0);
