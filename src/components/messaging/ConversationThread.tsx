@@ -84,7 +84,7 @@ export default function ConversationThread({
     if (!demandeId) return;
 
     const channel = supabase
-      .channel(`messages-${demandeId}`)
+      .channel(`messages-${demandeId}`, { config: { private: true } })
       .on(
         "postgres_changes",
         {

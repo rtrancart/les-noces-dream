@@ -37,7 +37,7 @@ interface PrestataireSidebarProps {
 
 export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
   const location = useLocation();
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, user } = useAuth();
   const { prestataire } = useSharedPrestataire();
   const currentPath = location.pathname;
   const [unreadCount, setUnreadCount] = useState(0);
@@ -82,8 +82,9 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
 
     // Refresh on realtime message inserts
     if (!prestataire?.id) return;
+    if (!user?.id) return;
     const channel = supabase
-      .channel("sidebar-unread")
+      .channel(`sidebar-unread-${user.id}`, { config: { private: true } })
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
@@ -92,7 +93,7 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [fetchUnread, prestataire?.id]);
+  }, [fetchUnread, prestataire?.id, user?.id]);
 
   const incompleteByUrl: Record<string, boolean> = {
     "/espace-pro/profil": !!prestataire && (
