@@ -161,7 +161,7 @@ export default function FichePrestataire() {
         .eq("visible_public", true)
         .order("ordre_affichage"),
       supabase
-        .from("prestataires")
+        .from("prestataires_public")
         .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, est_premium")
         .eq("categorie_mere_id", p.categorie_mere_id)
         .eq("statut", "actif")
