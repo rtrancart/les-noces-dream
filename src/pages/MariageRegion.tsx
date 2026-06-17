@@ -164,7 +164,7 @@ export default function MariageRegion() {
       // 2. Données dynamiques en parallèle
       const [prestaRes, catsRes, articlesRes] = await Promise.all([
         supabase
-          .from("prestataires")
+          .from("prestataires_public")
           .select("id, nom_commercial, slug, ville, note_moyenne, nombre_avis, photo_principale_url, categorie_mere_id, description_courte, est_premium, prix_depart, prix_max")
           .eq("region", nomRegion!)
           .eq("statut", "actif"),

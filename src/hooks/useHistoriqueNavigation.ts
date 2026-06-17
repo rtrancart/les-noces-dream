@@ -115,7 +115,7 @@ export async function fetchHistorique(userId: string | null, limit = 20): Promis
 
   const ids = session.map((e) => e.prestataire_id);
   const { data } = await supabase
-    .from("prestataires")
+    .from("prestataires_public")
     .select("id, nom_commercial, slug, ville, photo_principale_url, categorie_mere:categories!prestataires_categorie_mere_id_fkey(nom)")
     .in("id", ids);
 

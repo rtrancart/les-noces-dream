@@ -80,6 +80,13 @@ export type Database = {
             referencedRelation: "prestataires"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "abonnements_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       articles_blog: {
@@ -278,6 +285,13 @@ export type Database = {
             referencedRelation: "prestataires"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "avis_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       boosts_visibilite: {
@@ -335,6 +349,13 @@ export type Database = {
             columns: ["prestataire_id"]
             isOneToOne: false
             referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "boosts_visibilite_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
             referencedColumns: ["id"]
           },
         ]
@@ -621,6 +642,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "demandes_devis_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "demandes_devis_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -801,6 +829,13 @@ export type Database = {
             referencedRelation: "prestataires"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "evenements_prestataire_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       favoris: {
@@ -828,6 +863,13 @@ export type Database = {
             columns: ["prestataire_id"]
             isOneToOne: false
             referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favoris_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
             referencedColumns: ["id"]
           },
           {
@@ -874,6 +916,13 @@ export type Database = {
             columns: ["prestataire_id"]
             isOneToOne: false
             referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "historique_navigation_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
             referencedColumns: ["id"]
           },
           {
@@ -1551,6 +1600,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "signatures_charte_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "signatures_charte_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
@@ -1649,6 +1705,179 @@ export type Database = {
       }
     }
     Views: {
+      prestataires_public: {
+        Row: {
+          adresse: string | null
+          categorie_fille_id: string | null
+          categorie_mere_id: string | null
+          champs_specifiques: Json | null
+          charte_version_signee: string | null
+          code_postal: string | null
+          created_at: string | null
+          cree_par_admin: boolean | null
+          date_premiere_publication: string | null
+          demande_reactivation_le: string | null
+          description: string | null
+          description_courte: string | null
+          email_contact: string | null
+          est_premium: boolean | null
+          est_verifie: boolean | null
+          fin_premium: string | null
+          fin_visibilite_boost: string | null
+          id: string | null
+          latitude: number | null
+          longitude: number | null
+          metadonnees_seo: Json | null
+          nom_commercial: string | null
+          nombre_avis: number | null
+          nombre_demandes: number | null
+          note_flexibilite: number | null
+          note_moyenne: number | null
+          note_professionnalisme: number | null
+          note_qualite_prestation: number | null
+          note_rapport_qualite_prix: number | null
+          photo_principale_url: string | null
+          premier_login_le: string | null
+          prix_depart: number | null
+          prix_max: number | null
+          region: string | null
+          site_web: string | null
+          slug: string | null
+          statut: Database["public"]["Enums"]["statut_prestataire"] | null
+          tags: string[] | null
+          telephone: string | null
+          updated_at: string | null
+          urls_galerie: string[] | null
+          user_id: string | null
+          video_url: string | null
+          ville: string | null
+          zones_intervention: string[] | null
+        }
+        Insert: {
+          adresse?: string | null
+          categorie_fille_id?: string | null
+          categorie_mere_id?: string | null
+          champs_specifiques?: Json | null
+          charte_version_signee?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          cree_par_admin?: boolean | null
+          date_premiere_publication?: string | null
+          demande_reactivation_le?: string | null
+          description?: string | null
+          description_courte?: string | null
+          email_contact?: string | null
+          est_premium?: boolean | null
+          est_verifie?: boolean | null
+          fin_premium?: string | null
+          fin_visibilite_boost?: string | null
+          id?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          metadonnees_seo?: Json | null
+          nom_commercial?: string | null
+          nombre_avis?: number | null
+          nombre_demandes?: number | null
+          note_flexibilite?: number | null
+          note_moyenne?: number | null
+          note_professionnalisme?: number | null
+          note_qualite_prestation?: number | null
+          note_rapport_qualite_prix?: number | null
+          photo_principale_url?: string | null
+          premier_login_le?: string | null
+          prix_depart?: number | null
+          prix_max?: number | null
+          region?: string | null
+          site_web?: string | null
+          slug?: string | null
+          statut?: Database["public"]["Enums"]["statut_prestataire"] | null
+          tags?: string[] | null
+          telephone?: string | null
+          updated_at?: string | null
+          urls_galerie?: string[] | null
+          user_id?: string | null
+          video_url?: string | null
+          ville?: string | null
+          zones_intervention?: string[] | null
+        }
+        Update: {
+          adresse?: string | null
+          categorie_fille_id?: string | null
+          categorie_mere_id?: string | null
+          champs_specifiques?: Json | null
+          charte_version_signee?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          cree_par_admin?: boolean | null
+          date_premiere_publication?: string | null
+          demande_reactivation_le?: string | null
+          description?: string | null
+          description_courte?: string | null
+          email_contact?: string | null
+          est_premium?: boolean | null
+          est_verifie?: boolean | null
+          fin_premium?: string | null
+          fin_visibilite_boost?: string | null
+          id?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          metadonnees_seo?: Json | null
+          nom_commercial?: string | null
+          nombre_avis?: number | null
+          nombre_demandes?: number | null
+          note_flexibilite?: number | null
+          note_moyenne?: number | null
+          note_professionnalisme?: number | null
+          note_qualite_prestation?: number | null
+          note_rapport_qualite_prix?: number | null
+          photo_principale_url?: string | null
+          premier_login_le?: string | null
+          prix_depart?: number | null
+          prix_max?: number | null
+          region?: string | null
+          site_web?: string | null
+          slug?: string | null
+          statut?: Database["public"]["Enums"]["statut_prestataire"] | null
+          tags?: string[] | null
+          telephone?: string | null
+          updated_at?: string | null
+          urls_galerie?: string[] | null
+          user_id?: string | null
+          video_url?: string | null
+          ville?: string | null
+          zones_intervention?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prestataires_categorie_fille_id_fkey"
+            columns: ["categorie_fille_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prestataires_categorie_mere_id_fkey"
+            columns: ["categorie_mere_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prestataires_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prestataires_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles_public: {
         Row: {
           id: string | null

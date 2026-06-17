@@ -74,7 +74,7 @@ function useHomeData() {
           .eq("est_active", true)
           .order("ordre_affichage"),
         supabase
-          .from("prestataires")
+          .from("prestataires_public")
           .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, fin_premium, categorie_mere_id")
           .eq("statut", "actif")
           .gte("fin_premium", new Date().toISOString())
@@ -108,7 +108,7 @@ function useHomeData() {
         const catsWithCount: CategoryData[] = [];
         for (const cat of catRes.data) {
           const { count } = await supabase
-            .from("prestataires")
+            .from("prestataires_public")
             .select("id", { count: "exact", head: true })
             .eq("categorie_mere_id", cat.id)
             .eq("statut", "actif");

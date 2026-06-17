@@ -124,7 +124,7 @@ export default function PrestatairesListe() {
 
     (async () => {
       let q = supabase
-        .from("prestataires")
+        .from("prestataires_public")
         .select(
           "id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, est_premium, zones_intervention, latitude, longitude, categorie_mere_id, categorie_fille_id"
         )

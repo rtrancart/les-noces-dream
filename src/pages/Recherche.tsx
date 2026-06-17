@@ -27,7 +27,7 @@ function useSearchData() {
     async function fetch() {
       const [prestRes, catRes] = await Promise.all([
         supabase
-          .from("prestataires")
+          .from("prestataires_public")
           .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, est_premium, zones_intervention, categorie_mere_id, categorie_fille_id, latitude, longitude")
           .eq("statut", "actif")
           .order("est_premium", { ascending: false })
