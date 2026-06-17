@@ -132,7 +132,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
 
       toast.success("Votre demande de devis a été envoyée !");
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);
-      trackDemandeDevis(prestataireId, values.objet);
+      trackDemandeDevis(prestataireId, values.objet, !!user);
       setSent(true);
       form.reset();
     } catch (e) {
