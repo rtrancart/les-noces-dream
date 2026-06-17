@@ -326,6 +326,22 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
                     <FormMessage />
                   </FormItem>
                 )} />
+                <FormField control={form.control} name="budget_indicatif" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs">Budget indicatif (€)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        placeholder="ex: 3000"
+                        className="h-9 text-sm"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
               </CollapsibleContent>
             </Collapsible>
 
