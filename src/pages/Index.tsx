@@ -108,7 +108,7 @@ function useHomeData() {
         const catsWithCount: CategoryData[] = [];
         for (const cat of catRes.data) {
           const { count } = await supabase
-            .from("prestataires")
+            .from("prestataires_public")
             .select("id", { count: "exact", head: true })
             .eq("categorie_mere_id", cat.id)
             .eq("statut", "actif");
