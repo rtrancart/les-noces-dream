@@ -1569,6 +1569,10 @@ export type Database = {
         Args: { p_prestataire_id: string }
         Returns: boolean
       }
+      can_write_prestataire_photo: {
+        Args: { p_path: string }
+        Returns: boolean
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
