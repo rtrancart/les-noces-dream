@@ -120,6 +120,11 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
         ? `${values.indicatif} ${values.telephone.trim()}`
         : null;
 
+      const budgetNum =
+        values.budget_indicatif && values.budget_indicatif.trim() !== ""
+          ? parseInt(values.budget_indicatif.trim(), 10)
+          : null;
+
       const { error } = await supabase.rpc("soumettre_demande_devis", {
         p_prestataire_id: prestataireId,
         p_nom: values.nom,
@@ -130,13 +135,14 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
         p_date_evenement: values.date_evenement || null,
         p_lieu_evenement: values.lieu_evenement || null,
         p_nombre_invites_rang: values.nombre_invites_rang || null,
+        p_budget_indicatif: budgetNum,
       });
 
       if (error) throw error;
 
       toast.success("Votre demande de devis a été envoyée !");
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);
-      trackDemandeDevis(prestataireId, values.objet, !!user);
+      trackDemandeDevis(prestataireId, values.objet, !!user, budgetNum ?? undefined);
       setSent(true);
       form.reset();
     } catch (e) {
