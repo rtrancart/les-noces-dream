@@ -144,7 +144,7 @@ function useHomeData() {
         let authorMap = new Map<string, string>();
         if (authorIds.length > 0) {
           const { data: profiles } = await supabase
-            .from("profiles")
+            .from("profiles_public")
             .select("id, prenom, nom")
             .in("id", authorIds as string[]);
           if (profiles) {
