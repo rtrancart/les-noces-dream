@@ -185,23 +185,7 @@ function priceRange(prix: number | null) {
 
 /* ─── Section: Hero ─────────────────────────────────────── */
 
-function HeroSection({ categories, categoryTree }: { categories: CategoryData[]; categoryTree: CategoryOption[] }) {
-  const [locationZones, setLocationZones] = useState<string[]>([]);
-  const [categorySlugs, setCategorySlugs] = useState<string[]>([]);
-  const [citySearch, setCitySearch] = useState<CitySearchData | null>(null);
-  const navigate = useNavigate();
-
-  const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (categorySlugs.length > 0) params.set("categorie", categorySlugs.join(","));
-    if (citySearch) {
-      params.set("ville", `${citySearch.lat},${citySearch.lng},${citySearch.radius},${encodeURIComponent(citySearch.label)}`);
-    } else if (locationZones.length > 0) {
-      params.set("lieu", locationZones.join(","));
-    }
-    navigate(`/recherche?${params.toString()}`);
-  };
-
+function HeroSection() {
   return (
     <section className="relative h-[500px] md:h-[600px] overflow-hidden">
       <video
@@ -223,40 +207,12 @@ function HeroSection({ categories, categoryTree }: { categories: CategoryData[];
           Mariages, fêtes de familles, séminaires, cocktails d'entreprises
         </p>
 
-        {/* Search bar */}
-        <div className="bg-card rounded-md shadow-elevated flex flex-col sm:flex-row items-stretch gap-0 p-3 w-full max-w-[768px]">
-          {/* Category */}
-          <div className="flex items-center flex-1 border-b sm:border-b-0 sm:border-r border-border pr-0 sm:pr-3 pb-3 sm:pb-0 h-14">
-            <CategoryPicker
-              categories={categoryTree}
-              value={categorySlugs}
-              onChange={setCategorySlugs}
-              placeholder="Quelle catégorie ?"
-            />
-          </div>
-
-          {/* Location */}
-          <div className="flex items-center flex-1 h-14 px-0 sm:px-2 pt-3 sm:pt-0">
-            <LocationPicker
-              value={locationZones}
-              onChange={setLocationZones}
-              citySearch={citySearch}
-              onCitySearchChange={setCitySearch}
-              placeholder="Où ?"
-            />
-          </div>
-
-          <Button
-            onClick={handleSearch}
-            className="h-14 px-8 shrink-0 text-base font-medium mt-3 sm:mt-0"
-          >
-            Rechercher
-          </Button>
-        </div>
+        <SearchBar variant="hero" />
       </div>
     </section>
   );
 }
+
 
 /* ─── Section: Catégories ────────────────────────────────── */
 
