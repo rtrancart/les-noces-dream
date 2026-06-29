@@ -140,6 +140,46 @@ export default function Recherche() {
   const [showMobileMap, setShowMobileMap] = useState(false);
   const [hoveredProvider, setHoveredProvider] = useState<string | null>(null);
 
+  // Sync state from URL when it changes (e.g. clicking a header category while already on /recherche)
+  useEffect(() => {
+    const cat = searchParams.get("categorie");
+    const nextCats = cat ? cat.split(",") : [];
+    setCategorySlugs((prev) =>
+      prev.length === nextCats.length && prev.every((v, i) => v === nextCats[i]) ? prev : nextCats
+    );
+
+    const lieu = searchParams.get("lieu");
+    const nextZones = lieu ? lieu.split(",") : [];
+    setLocationZones((prev) =>
+      prev.length === nextZones.length && prev.every((v, i) => v === nextZones[i]) ? prev : nextZones
+    );
+
+    const ville = searchParams.get("ville");
+    if (!ville) {
+      setCitySearch((prev) => (prev === null ? prev : null));
+    } else {
+      const parts = ville.split(",");
+      if (parts.length >= 4) {
+        const next: CitySearchData = {
+          lat: parseFloat(parts[0]),
+          lng: parseFloat(parts[1]),
+          radius: parseInt(parts[2], 10),
+          label: decodeURIComponent(parts.slice(3).join(",")),
+        };
+        setCitySearch((prev) =>
+          prev &&
+          prev.lat === next.lat &&
+          prev.lng === next.lng &&
+          prev.radius === next.radius &&
+          prev.label === next.label
+            ? prev
+            : next
+        );
+      }
+    }
+  }, [searchParams]);
+
+
   // Build category ID set from slugs
   const categoryIds = useMemo(() => {
     const ids = new Set<string>();
