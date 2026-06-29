@@ -1,48 +1,62 @@
-## Objectif
+# Taux de réponse prestataire — Charte Qualité Art. 2
 
-Remplacer la recherche actuelle du header (deux champs texte libres `keyword` + `lieu`) par les mêmes sélecteurs structurés que la home — `CategoryPicker` (catégorie/sous-catégorie) + `LocationPicker` (zones d'intervention OU ville+rayon) — via un composant partagé.
+Calcul nocturne du taux de réponse sur 90 jours glissants, seuil 72h ouvrées, alerte admin si < 70 %.
 
-## Approche
+## 1. Schéma DB (migration)
 
-Créer un composant partagé `SearchBar` réutilisé par la home et le header, pour garantir un comportement strictement identique (mêmes paramètres d'URL générés : `categorie`, `lieu`, `ville`).
+**Table `prestataires`** — nouvelles colonnes :
+- `taux_reponse` : `numeric(5,2)` DEFAULT `100`, nullable
+- `taux_reponse_calcule_le` : `timestamptz`, nullable
+- `taux_reponse_nb_demandes_90j` : `integer` DEFAULT `0` (pour affichage contextuel)
+- `taux_reponse_alerte_envoyee_le` : `timestamptz`, nullable (anti-doublon notif)
 
-### 1. Nouveau composant `src/components/search/SearchBar.tsx`
+**Nouvelle fonction SQL `public.calculer_taux_reponse(p_prestataire_id uuid)`** (SECURITY DEFINER) :
+- Fenêtre = `now() - interval '90 days'`
+- Source des demandes : `demandes_devis` filtrées par `prestataire_id` et `created_at` dans la fenêtre.
+- 1re réponse = `MIN(messages.created_at)` où `demande_id = dd.id` AND `expediteur_type = 'prestataire'`.
+- Délai en heures ouvrées (lundi–vendredi 9h–18h) calculé par une fonction utilitaire `public.heures_ouvrees_entre(ts_debut, ts_fin)` (boucle sur les jours, plafonne à la fenêtre 9-18h, exclut week-ends).
+- Retourne `{ taux numeric, nb_demandes int }`. Si `nb_demandes = 0` → retourne `NULL` (signal "ne pas écraser").
 
-Encapsule la logique aujourd'hui dans `HeroSection` (Index.tsx lignes 188-203 + JSX 227-255) :
-- États internes : `categorySlugs`, `locationZones`, `citySearch`.
-- Fetch du `categoryTree` en interne (mutualisé via un hook `useCategoryTree` extrait de `useHomeData`) — la home n'a plus à le passer en prop.
-- `handleSearch` → navigue vers `/recherche?...` avec exactement la même construction d'URL qu'aujourd'hui.
-- Props : `variant: "hero" | "header-desktop" | "header-mobile"` + `onSubmit?: () => void` (pour fermer le panel du header après recherche).
+## 2. Edge Function `cron-calcul-taux-reponse`
 
-Le variant pilote uniquement le style/layout (carte blanche arrondie pour `hero`, panneau ivoire pleine largeur pour `header-desktop`, colonne compacte pour `header-mobile`) — la logique est strictement la même.
+`supabase/functions/cron-calcul-taux-reponse/index.ts` :
+- `verify_jwt = false` (dans `config.toml`)
+- Service role client
+- Sélectionne tous les `prestataires` avec `statut = 'actif'`
+- Pour chacun, appelle `calculer_taux_reponse(id)` via RPC
+- Si retour non-null :
+  - `UPDATE prestataires SET taux_reponse = X, taux_reponse_nb_demandes_90j = N, taux_reponse_calcule_le = now()`
+  - Si `taux < 70` AND (`taux_reponse_alerte_envoyee_le IS NULL` OR `< now() - 30 days`) :
+    - INSERT `notifications` pour chaque admin (`user_id` ∈ `user_roles` rôle `admin`/`super_admin`), type alerte, lien vers fiche admin du presta
+    - INSERT `logs_admin` action `revue_taux_reponse_declenchee`, entite `prestataires`, details `{ taux, nb_demandes }`
+    - `UPDATE prestataires SET taux_reponse_alerte_envoyee_le = now()`
+- Retourne `{ scanned, updated, alertes }`
 
-### 2. Refonte de `HeaderSearchPanel.tsx`
+**Cron** (via `supabase--insert`, pas migration — contient l'anon key) :
+- `pg_cron` + `pg_net` activés
+- Schedule `0 3 * * *` (3h du matin)
 
-Supprimer les deux `<Input>` texte et le `useState` keyword/lieu. Le panneau devient une coquille (wrapper ivoire + bouton close X) qui rend `<SearchBar variant="header-desktop" onSubmit={onClose} />` ou `variant="header-mobile"`.
+## 3. UI
 
-### 3. Simplification de `HeroSection` (Index.tsx)
+**Dashboard prestataire** (`src/pages/prestataire/Dashboard.tsx`) :
+- Remplacer la card "Taux de réponse" `—` par la vraie valeur
+- Sous-texte : `Seuil Charte Qualité : 70 % minimum` (rouge si < 70, ambre si < 80, vert sinon)
+- Tooltip : "Calculé sur 90 jours glissants à partir de vos demandes reçues et de votre première réponse."
 
-Remplacer les états `locationZones/categorySlugs/citySearch`, `handleSearch`, et le bloc JSX 227-255 par `<SearchBar variant="hero" />`. La prop `categoryTree` passée à `HeroSection` devient inutile (le composant le fetch lui-même).
+**Dashboard admin** (`src/pages/admin/Prestataires.tsx`) :
+- Nouvelle colonne "Taux réponse" avec badge rouge si < 70 %, ambre si < 80 %
+- Filtre "Sous seuil Charte" pour isoler les prestataires en alerte
 
-### 4. Hook partagé `src/hooks/useCategoryTree.ts`
+## 4. Détails techniques
 
-Extrait du `fetch` de catégories actuellement dans `useHomeData` (Index.tsx) — renvoie `CategoryOption[]` pour `CategoryPicker`. Mis en cache via React Query pour éviter un refetch sur chaque ouverture du panel header.
+- Heures ouvrées : fonction PL/pgSQL itère jour par jour entre `ts_debut` et `ts_fin`, additionne `LEAST(end_of_window, ts_fin) - GREATEST(start_of_window, ts_debut)` pour chaque jour ouvré, en heures.
+- Source de vérité : `demandes_devis` + `messages` (déjà existants, fiables). Pas de modification de `evenements_prestataire`.
+- Alerte admin anti-spam (max 1 / 30 jours par prestataire).
+- Aucune suspension automatique — uniquement signalement pour revue manuelle.
 
-## Détails techniques
+## 5. Fichiers touchés
 
-- Aucun changement de schéma DB, aucune nouvelle route.
-- Le `LocationPicker` gère déjà l'option « France entière » (zone) et la recherche ville+rayon ; on conserve ce comportement tel quel.
-- Le bouton « Rechercher » du header ferme le panneau (`onSubmit` callback) puis navigue.
-- Compatibilité URL : on génère exactement les mêmes params qu'aujourd'hui sur la home (`categorie`, `lieu`, `ville`), ce que `Recherche.tsx` sait déjà lire et resynchroniser.
-
-## Fichiers impactés
-
-- ➕ `src/components/search/SearchBar.tsx` (nouveau)
-- ➕ `src/hooks/useCategoryTree.ts` (nouveau)
-- ✏️ `src/components/layout/HeaderSearchPanel.tsx` (simplifié)
-- ✏️ `src/pages/Index.tsx` (HeroSection simplifié, fetch catégories délégué)
-
-## Hors scope
-
-- Pas de changement de la page `/recherche` elle-même.
-- Pas de changement des méga-menus catégories/régions du header.
+- **Migration SQL** : colonnes `prestataires`, fonctions `heures_ouvrees_entre` et `calculer_taux_reponse`
+- **Insert SQL** (post-migration, via insert tool) : `pg_cron` schedule
+- **Nouvelle Edge Function** : `supabase/functions/cron-calcul-taux-reponse/index.ts` + entrée `config.toml`
+- **Front** : `src/pages/prestataire/Dashboard.tsx`, `src/pages/admin/Prestataires.tsx` (colonne + filtre)
