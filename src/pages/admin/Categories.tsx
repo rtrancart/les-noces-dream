@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FamillesPanel from "@/components/admin/FamillesPanel";
 import { toast } from "sonner";
 import { Plus, Pencil, GripVertical, Upload, X, ImageIcon, ChevronDown, ChevronRight } from "lucide-react";
 import {
@@ -243,14 +245,19 @@ export default function Categories() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Categorie | null>(null);
   const [form, setForm] = useState({
-    nom: "", slug: "", description_seo: "", est_active: true, parent_id: "", photo_url: "", icone_url: "",
+    nom: "", slug: "", description_seo: "", est_active: true, parent_id: "", photo_url: "", icone_url: "", famille_id: "",
   });
+  const [familles, setFamilles] = useState<{ id: string; libelle: string; ordre_affichage: number }[]>([]);
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: result, error } = await supabase.from("categories").select("*").order("ordre_affichage", { ascending: true });
-    if (error) toast.error(error.message);
-    else setData(result ?? []);
+    const [catsRes, famRes] = await Promise.all([
+      supabase.from("categories").select("*").order("ordre_affichage", { ascending: true }),
+      supabase.from("categories_familles").select("id, libelle, ordre_affichage").order("ordre_affichage", { ascending: true }),
+    ]);
+    if (catsRes.error) toast.error(catsRes.error.message);
+    else setData(catsRes.data ?? []);
+    if (!famRes.error) setFamilles(famRes.data ?? []);
     setLoading(false);
   };
 
@@ -311,7 +318,7 @@ export default function Categories() {
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ nom: "", slug: "", description_seo: "", est_active: true, parent_id: "", photo_url: "", icone_url: "" });
+    setForm({ nom: "", slug: "", description_seo: "", est_active: true, parent_id: "", photo_url: "", icone_url: "", famille_id: "" });
     setDialogOpen(true);
   };
 
@@ -321,16 +328,19 @@ export default function Categories() {
       nom: cat.nom, slug: cat.slug, description_seo: cat.description_seo ?? "",
       est_active: cat.est_active ?? true, parent_id: cat.parent_id ?? "",
       photo_url: cat.photo_url ?? "", icone_url: cat.icone_url ?? "",
+      famille_id: (cat as any).famille_id ?? "",
     });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.nom || !form.slug) { toast.error("Le nom et le slug sont requis"); return; }
+    const isMere = !form.parent_id;
     const payload: any = {
       nom: form.nom, slug: form.slug, description_seo: form.description_seo || null,
       est_active: form.est_active, parent_id: form.parent_id || null,
       photo_url: form.photo_url || null, icone_url: form.icone_url || null,
+      famille_id: isMere ? (form.famille_id || null) : null,
     };
     if (editItem) {
       const { error } = await supabase.from("categories").update(payload).eq("id", editItem.id);
@@ -345,56 +355,69 @@ export default function Categories() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-serif font-semibold text-foreground">Catégories</h1>
-          <p className="mt-1 font-sans text-sm text-muted-foreground">
-            Organisez l'arborescence des services — glissez-déposez pour réordonner
-          </p>
-        </div>
-        <Button onClick={openCreate} className="gap-2 font-sans text-sm">
-          <Plus className="h-4 w-4" /> Nouvelle catégorie
-        </Button>
+      <div>
+        <h1 className="text-2xl font-serif font-semibold text-foreground">Catégories &amp; Familles</h1>
+        <p className="mt-1 font-sans text-sm text-muted-foreground">
+          Organisez l'arborescence des services et leurs regroupements éditoriaux.
+        </p>
       </div>
 
-      <Card className="shadow-card overflow-hidden">
-        <CardContent className="p-0">
-          {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30 text-xs font-sans uppercase tracking-wider text-muted-foreground">
-            <div className="w-[34px]" />
-            <div className="w-4" />
-            <div className="w-13 shrink-0">Photo</div>
-            <div className="w-7 shrink-0">Picto</div>
-            <div className="flex-1">Nom / Slug</div>
-            <div className="w-16">Statut</div>
-            <div className="w-7" />
-          </div>
+      <Tabs defaultValue="categories">
+        <TabsList>
+          <TabsTrigger value="categories" className="font-sans">Catégories</TabsTrigger>
+          <TabsTrigger value="familles" className="font-sans">Familles</TabsTrigger>
+        </TabsList>
 
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
-                <div className="h-4 w-full max-w-[200px] animate-pulse rounded bg-muted/30" />
+        <TabsContent value="categories" className="space-y-4 mt-4">
+          <div className="flex justify-end">
+            <Button onClick={openCreate} className="gap-2 font-sans text-sm">
+              <Plus className="h-4 w-4" /> Nouvelle catégorie
+            </Button>
+          </div>
+          <Card className="shadow-card overflow-hidden">
+            <CardContent className="p-0">
+              {/* Header */}
+              <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border bg-muted/30 text-xs font-sans uppercase tracking-wider text-muted-foreground">
+                <div className="w-[34px]" />
+                <div className="w-4" />
+                <div className="w-13 shrink-0">Photo</div>
+                <div className="w-7 shrink-0">Picto</div>
+                <div className="flex-1">Nom / Slug</div>
+                <div className="w-16">Statut</div>
+                <div className="w-7" />
               </div>
-            ))
-          ) : parents.length === 0 ? (
-            <div className="text-center font-sans text-sm text-muted-foreground py-12">Aucune catégorie</div>
-          ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleParentDragEnd}>
-              <SortableContext items={parents.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-                {parents.map((parent) => (
-                  <ParentCategoryGroup
-                    key={parent.id}
-                    parent={parent}
-                    children={childrenMap[parent.id] || []}
-                    onEdit={openEdit}
-                    onReorderChildren={handleReorderChildren}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
-          )}
-        </CardContent>
-      </Card>
+
+              {loading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
+                    <div className="h-4 w-full max-w-[200px] animate-pulse rounded bg-muted/30" />
+                  </div>
+                ))
+              ) : parents.length === 0 ? (
+                <div className="text-center font-sans text-sm text-muted-foreground py-12">Aucune catégorie</div>
+              ) : (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleParentDragEnd}>
+                  <SortableContext items={parents.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                    {parents.map((parent) => (
+                      <ParentCategoryGroup
+                        key={parent.id}
+                        parent={parent}
+                        children={childrenMap[parent.id] || []}
+                        onEdit={openEdit}
+                        onReorderChildren={handleReorderChildren}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="familles" className="mt-4">
+          <FamillesPanel />
+        </TabsContent>
+      </Tabs>
 
       {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -422,6 +445,22 @@ export default function Categories() {
                 ))}
               </select>
             </div>
+            {!form.parent_id && (
+              <div className="space-y-1.5">
+                <Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Famille éditoriale</Label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 font-sans text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={form.famille_id}
+                  onChange={(e) => setForm({ ...form, famille_id: e.target.value })}
+                >
+                  <option value="">Aucune (→ Autres)</option>
+                  {familles.map((f) => (
+                    <option key={f.id} value={f.id}>{f.libelle}</option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-muted-foreground/70 font-sans">Pilote le regroupement dans le méga-menu du header.</p>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label className="font-sans text-xs uppercase tracking-wider text-muted-foreground">Description SEO</Label>
               <Input value={form.description_seo} onChange={(e) => setForm({ ...form, description_seo: e.target.value })} className="font-sans" />

@@ -366,6 +366,7 @@ export type Database = {
           created_at: string
           description_seo: string | null
           est_active: boolean | null
+          famille_id: string | null
           icone_url: string | null
           id: string
           nom: string
@@ -380,6 +381,7 @@ export type Database = {
           created_at?: string
           description_seo?: string | null
           est_active?: boolean | null
+          famille_id?: string | null
           icone_url?: string | null
           id?: string
           nom: string
@@ -394,6 +396,7 @@ export type Database = {
           created_at?: string
           description_seo?: string | null
           est_active?: boolean | null
+          famille_id?: string | null
           icone_url?: string | null
           id?: string
           nom?: string
@@ -405,6 +408,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "categories_famille_id_fkey"
+            columns: ["famille_id"]
+            isOneToOne: false
+            referencedRelation: "categories_familles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "categories_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: false
@@ -412,6 +422,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      categories_familles: {
+        Row: {
+          cle: string
+          created_at: string
+          id: string
+          libelle: string
+          ordre_affichage: number
+          updated_at: string
+        }
+        Insert: {
+          cle: string
+          created_at?: string
+          id?: string
+          libelle: string
+          ordre_affichage?: number
+          updated_at?: string
+        }
+        Update: {
+          cle?: string
+          created_at?: string
+          id?: string
+          libelle?: string
+          ordre_affichage?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       champs_categories: {
         Row: {

@@ -74,10 +74,18 @@
     --gradient-abysse: linear-gradient(135deg, hsl(220 30% 7%), hsl(210 31% 26%));
     --gradient-nude: linear-gradient(180deg, hsl(0 0% 98%), hsl(25 35% 83% / 0.3));
 
+    /* Header doré (refonte) */
+    --header-or-from: 36 36% 60%;     /* #BEA174 */
+    --header-or-to:   34 28% 54%;     /* #AE9266 */
+    --header-or-fonce:32 30% 51%;     /* #A8895A */
+    --header-ivoire:  40 60% 98%;     /* #FDFBF7 */
+    --header-creme:   40 50% 96%;     /* #FBF8F3 */
+
     /* Shadows */
     --shadow-soft: 0 4px 24px -4px hsl(42 62% 40% / 0.08);
     --shadow-card: 0 2px 12px -2px hsl(220 30% 7% / 0.06);
     --shadow-elevated: 0 12px 40px -8px hsl(220 30% 7% / 0.12);
+    --shadow-header-mega: 0 20px 48px -12px hsl(34 40% 25% / 0.22);
   }
 
   .dark {
