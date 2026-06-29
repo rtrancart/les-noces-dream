@@ -782,6 +782,15 @@ export default function Prestataires() {
                 placeholder="Filtrer par région, département ou ville…"
               />
             </div>
+            <label className="flex items-center gap-2 font-sans text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={filterSousSeuil}
+                onChange={(e) => setFilterSousSeuil(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Taux de réponse &lt; 70% (Charte)
+            </label>
           </div>
           <p className="mt-3 font-sans text-xs text-muted-foreground">
             {loading ? "Chargement…" : `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`}
