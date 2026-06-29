@@ -808,6 +808,7 @@ export default function Prestataires() {
                 <TableHead className="font-sans text-xs">Inscrit le</TableHead>
                 <TableHead className="font-sans text-xs">Statut</TableHead>
                 <TableHead className="font-sans text-xs">Note</TableHead>
+                <TableHead className="font-sans text-xs">Taux réponse</TableHead>
                 <TableHead className="font-sans text-xs text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
