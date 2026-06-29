@@ -842,6 +842,24 @@ export default function Prestataires() {
                       </Select>
                     </TableCell>
                     <TableCell className="font-sans text-sm">{p.note_moyenne ? `${p.note_moyenne.toFixed(1)}/5` : "—"}</TableCell>
+                    <TableCell className="font-sans text-sm">
+                      {p.taux_reponse != null ? (
+                        <Badge
+                          className={`font-sans text-[11px] font-normal ${
+                            Number(p.taux_reponse) < 70
+                              ? "bg-destructive/10 text-destructive border-destructive/30"
+                              : Number(p.taux_reponse) < 80
+                              ? "bg-amber-100 text-amber-800 border-amber-300"
+                              : "bg-emerald-100 text-emerald-800 border-emerald-300"
+                          }`}
+                          title={`${p.taux_reponse_nb_demandes_90j ?? 0} demande(s) sur 90 j`}
+                        >
+                          {Number(p.taux_reponse).toFixed(0)}%
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Voir les emails envoyés" onClick={() => setLogsFor(p)}>
