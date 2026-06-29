@@ -178,16 +178,33 @@ export default function PrestataireDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate("/espace-pro/profil")}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="font-sans text-sm text-muted-foreground">Taux de réponse</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="font-serif text-2xl text-foreground">—</div>
-            <p className="font-sans text-xs text-muted-foreground mt-1">Bientôt disponible</p>
-          </CardContent>
-        </Card>
+        {(() => {
+          const taux = prestataire.taux_reponse != null ? Number(prestataire.taux_reponse) : null;
+          const nb = prestataire.taux_reponse_nb_demandes_90j ?? 0;
+          const color =
+            taux == null ? "text-foreground"
+            : taux < 70 ? "text-destructive"
+            : taux < 80 ? "text-amber-600"
+            : "text-emerald-600";
+          return (
+            <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate("/espace-pro/demandes")}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="font-sans text-sm text-muted-foreground">Taux de réponse</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className={`font-serif text-2xl ${color}`}>
+                  {taux != null ? `${taux.toFixed(0)}%` : "—"}
+                </div>
+                <p className="font-sans text-xs text-muted-foreground mt-1">
+                  {nb > 0
+                    ? `Sur ${nb} demande${nb > 1 ? "s" : ""} (90 j) · Seuil Charte : 70%`
+                    : "Aucune demande sur 90 j · Seuil Charte : 70%"}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })()}
       </div>
 
       {/* Weekly Chart */}

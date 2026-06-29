@@ -1370,6 +1370,10 @@ export type Database = {
           slug: string
           statut: Database["public"]["Enums"]["statut_prestataire"]
           tags: string[] | null
+          taux_reponse: number | null
+          taux_reponse_alerte_envoyee_le: string | null
+          taux_reponse_calcule_le: string | null
+          taux_reponse_nb_demandes_90j: number | null
           telephone: string | null
           updated_at: string
           urls_galerie: string[] | null
@@ -1429,6 +1433,10 @@ export type Database = {
           slug: string
           statut?: Database["public"]["Enums"]["statut_prestataire"]
           tags?: string[] | null
+          taux_reponse?: number | null
+          taux_reponse_alerte_envoyee_le?: string | null
+          taux_reponse_calcule_le?: string | null
+          taux_reponse_nb_demandes_90j?: number | null
           telephone?: string | null
           updated_at?: string
           urls_galerie?: string[] | null
@@ -1488,6 +1496,10 @@ export type Database = {
           slug?: string
           statut?: Database["public"]["Enums"]["statut_prestataire"]
           tags?: string[] | null
+          taux_reponse?: number | null
+          taux_reponse_alerte_envoyee_le?: string | null
+          taux_reponse_calcule_le?: string | null
+          taux_reponse_nb_demandes_90j?: number | null
           telephone?: string | null
           updated_at?: string
           urls_galerie?: string[] | null
@@ -1939,6 +1951,13 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      calculer_taux_reponse: {
+        Args: { p_prestataire_id: string }
+        Returns: {
+          nb_demandes: number
+          taux: number
+        }[]
+      }
       can_review_prestataire: {
         Args: { p_prestataire_id: string }
         Returns: boolean
@@ -1984,6 +2003,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      heures_ouvrees_entre: {
+        Args: { ts_debut: string; ts_fin: string }
+        Returns: number
       }
       mark_prestataire_first_login: { Args: never; Returns: undefined }
       move_to_dlq: {

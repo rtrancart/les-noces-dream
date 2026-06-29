@@ -299,6 +299,7 @@ export default function Prestataires() {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("tous");
   const [filterCategorie, setFilterCategorie] = useState<string>("toutes");
+  const [filterSousSeuil, setFilterSousSeuil] = useState<boolean>(false);
   const [locationZones, setLocationZones] = useState<string[]>([]);
   const [citySearch, setCitySearch] = useState<CitySearchData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -669,6 +670,9 @@ export default function Prestataires() {
 
   const filteredData = useMemo(() => {
     return data.filter((p: any) => {
+      if (filterSousSeuil) {
+        if (p.taux_reponse == null || Number(p.taux_reponse) >= 70) return false;
+      }
       // City search → haversine
       if (citySearch) {
         if (p.latitude == null || p.longitude == null) return false;
@@ -686,7 +690,7 @@ export default function Prestataires() {
       const zones: string[] = p.zones_intervention ?? [];
       return zones.some((z) => locationZones.includes(z));
     });
-  }, [data, locationZones, citySearch]);
+  }, [data, locationZones, citySearch, filterSousSeuil]);
 
 
 
@@ -778,6 +782,15 @@ export default function Prestataires() {
                 placeholder="Filtrer par région, département ou ville…"
               />
             </div>
+            <label className="flex items-center gap-2 font-sans text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={filterSousSeuil}
+                onChange={(e) => setFilterSousSeuil(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Taux de réponse &lt; 70% (Charte)
+            </label>
           </div>
           <p className="mt-3 font-sans text-xs text-muted-foreground">
             {loading ? "Chargement…" : `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`}
@@ -795,16 +808,17 @@ export default function Prestataires() {
                 <TableHead className="font-sans text-xs">Inscrit le</TableHead>
                 <TableHead className="font-sans text-xs">Statut</TableHead>
                 <TableHead className="font-sans text-xs">Note</TableHead>
+                <TableHead className="font-sans text-xs">Taux réponse</TableHead>
                 <TableHead className="font-sans text-xs text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                   <TableRow key={i}>{Array.from({ length: 9 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>
+                   <TableRow key={i}>{Array.from({ length: 10 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>
                 ))
               ) : filteredData.length === 0 ? (
-                <TableRow><TableCell colSpan={9} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
               ) : (
                 filteredData.map((p) => (
                   <TableRow key={p.id}>
@@ -828,6 +842,24 @@ export default function Prestataires() {
                       </Select>
                     </TableCell>
                     <TableCell className="font-sans text-sm">{p.note_moyenne ? `${p.note_moyenne.toFixed(1)}/5` : "—"}</TableCell>
+                    <TableCell className="font-sans text-sm">
+                      {p.taux_reponse != null ? (
+                        <Badge
+                          className={`font-sans text-[11px] font-normal ${
+                            Number(p.taux_reponse) < 70
+                              ? "bg-destructive/10 text-destructive border-destructive/30"
+                              : Number(p.taux_reponse) < 80
+                              ? "bg-amber-100 text-amber-800 border-amber-300"
+                              : "bg-emerald-100 text-emerald-800 border-emerald-300"
+                          }`}
+                          title={`${p.taux_reponse_nb_demandes_90j ?? 0} demande(s) sur 90 j`}
+                        >
+                          {Number(p.taux_reponse).toFixed(0)}%
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Voir les emails envoyés" onClick={() => setLogsFor(p)}>
