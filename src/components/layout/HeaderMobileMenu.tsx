@@ -229,7 +229,7 @@ function SousCategoriesPanel({
         {mere.enfants.map((s) => (
           <li key={s.id}>
             <Link
-              to={`/prestataires/${s.parent_slug}/${s.slug}`}
+              to={`/recherche?categorie=${s.slug}&lieu=france_entiere`}
               onClick={onClose}
               className="flex items-center justify-between px-5 py-3 min-h-[52px] font-sans text-[15px] text-foreground/90 hover:bg-[hsl(var(--header-or-fonce)/0.06)] active:bg-[hsl(var(--header-or-fonce)/0.1)]"
             >
