@@ -217,7 +217,7 @@ function SousCategoriesPanel({
         <div className="flex-1">
           <p className="font-serif text-base text-foreground">{mere.nom}</p>
           <Link
-            to={`/prestataires/${mere.slug}`}
+            to={`/recherche?categorie=${mere.slug}&lieu=france_entiere`}
             onClick={onClose}
             className="font-sans text-xs text-[hsl(var(--header-or-fonce))]"
           >
