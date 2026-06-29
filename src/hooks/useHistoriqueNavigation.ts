@@ -84,7 +84,7 @@ export async function fetchHistorique(userId: string | null, limit = 20): Promis
     const { data, error } = await supabase
       .from("historique_navigation")
       .select(
-        "prestataire_id, consulte_le, nb_consultations, prestataire:prestataires(id, nom_commercial, slug, ville, photo_principale_url, categorie_mere:categories!prestataires_categorie_mere_id_fkey(nom))"
+        "prestataire_id, consulte_le, nb_consultations, prestataire:prestataires_public!historique_navigation_prestataire_id_fkey(id, nom_commercial, slug, ville, photo_principale_url, categorie_mere:categories!prestataires_categorie_mere_id_fkey(nom))"
       )
       .eq("user_id", userId)
       .order("consulte_le", { ascending: false })

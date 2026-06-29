@@ -48,7 +48,7 @@ export default function ClientMessagerie() {
     if (!user?.id) return;
     const { data } = await supabase
       .from("demandes_devis")
-      .select("id, nom_contact, email_contact, message, statut, created_at, prestataire:prestataires(nom_commercial, slug)")
+      .select("id, nom_contact, email_contact, message, statut, created_at, prestataire:prestataires_public!demandes_devis_prestataire_id_fkey(nom_commercial, slug)")
       .eq("profile_id", user.id)
       .order("created_at", { ascending: false });
 
