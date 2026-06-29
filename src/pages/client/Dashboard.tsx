@@ -53,13 +53,13 @@ export default function ClientDashboard() {
       const [favRes, demRes] = await Promise.all([
         supabase
           .from("favoris")
-          .select("id, created_at, prestataire:prestataires(id, nom_commercial, slug, ville, photo_principale_url, categorie_mere:categories!prestataires_categorie_mere_id_fkey(nom))")
+          .select("id, created_at, prestataire:prestataires_public!favoris_prestataire_id_fkey(id, nom_commercial, slug, ville, photo_principale_url, categorie_mere:categories!prestataires_categorie_mere_id_fkey(nom))")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(5),
         supabase
           .from("demandes_devis")
-          .select("id, nom_contact, statut, created_at, prestataire:prestataires(nom_commercial, slug)")
+          .select("id, nom_contact, statut, created_at, prestataire:prestataires_public!demandes_devis_prestataire_id_fkey(nom_commercial, slug)")
           .eq("profile_id", user.id)
           .order("created_at", { ascending: false })
           .limit(5),
