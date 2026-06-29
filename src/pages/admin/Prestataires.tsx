@@ -670,6 +670,9 @@ export default function Prestataires() {
 
   const filteredData = useMemo(() => {
     return data.filter((p: any) => {
+      if (filterSousSeuil) {
+        if (p.taux_reponse == null || Number(p.taux_reponse) >= 70) return false;
+      }
       // City search → haversine
       if (citySearch) {
         if (p.latitude == null || p.longitude == null) return false;
@@ -687,7 +690,7 @@ export default function Prestataires() {
       const zones: string[] = p.zones_intervention ?? [];
       return zones.some((z) => locationZones.includes(z));
     });
-  }, [data, locationZones, citySearch]);
+  }, [data, locationZones, citySearch, filterSousSeuil]);
 
 
 
