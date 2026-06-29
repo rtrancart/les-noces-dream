@@ -38,7 +38,7 @@ export default function HeaderMegaMenuPrestataires({ onNavigate }: Props) {
                     {f.meres.map((m) => (
                       <li key={m.id}>
                         <Link
-                          to={`/prestataires/${m.slug}`}
+                          to={`/recherche?categorie=${m.slug}&lieu=france_entiere`}
                           onClick={onNavigate}
                           className="group flex items-center gap-3 -mx-2 px-2 py-1.5 rounded-md hover:bg-[hsl(var(--header-or-fonce)/0.06)] transition-colors"
                         >
@@ -52,7 +52,7 @@ export default function HeaderMegaMenuPrestataires({ onNavigate }: Props) {
                             {m.enfants.map((s) => (
                               <li key={s.id}>
                                 <Link
-                                  to={`/prestataires/${s.parent_slug}/${s.slug}`}
+                                  to={`/recherche?categorie=${s.slug}&lieu=france_entiere`}
                                   onClick={onNavigate}
                                   className="block py-1 font-sans text-[12.5px] text-muted-foreground hover:text-[hsl(var(--header-or-fonce))] transition-colors"
                                 >
