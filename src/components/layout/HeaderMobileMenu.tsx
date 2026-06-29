@@ -177,7 +177,7 @@ function PrestatairesPanel({
                   </button>
                 ) : (
                   <Link
-                    to={`/prestataires/${m.slug}`}
+                    to={`/recherche?categorie=${m.slug}&lieu=france_entiere`}
                     onClick={onClose}
                     className="w-full flex items-center gap-3 px-5 py-3 min-h-[52px] hover:bg-[hsl(var(--header-or-fonce)/0.06)] active:bg-[hsl(var(--header-or-fonce)/0.1)] transition-colors"
                   >
