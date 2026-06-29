@@ -3,8 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, MapPin, Star, ChevronRight, ArrowRight, Clock, Shield, Award, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import LocationPicker, { type CitySearchData } from "@/components/LocationPicker";
-import CategoryPicker, { type CategoryOption } from "@/components/CategoryPicker";
+import SearchBar from "@/components/search/SearchBar";
+import { type CategoryOption } from "@/components/CategoryPicker";
+
 import SeoHead from "@/components/SeoHead";
 import JsonLd from "@/components/JsonLd";
 import { buildHomeCategoriesJsonLd } from "@/lib/jsonld";
@@ -654,7 +655,7 @@ export default function Index() {
         )}
       />
 
-      <HeroSection categories={categories} categoryTree={categoryTree} />
+      <HeroSection />
       <CategoriesSection categories={categories} />
       <FeaturedProviders providers={providers} />
       <TrustSection />
