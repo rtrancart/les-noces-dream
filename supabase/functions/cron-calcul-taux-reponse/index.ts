@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
             await supabase.from('notifications').insert(
               adminIds.map((uid) => ({
                 user_id: uid,
-                type: 'alerte_admin',
+                type: 'systeme',
                 titre: 'Taux de réponse sous le seuil Charte Qualité',
                 corps: `Prestataire en alerte : taux de réponse ${taux}% sur ${nb} demandes (90 jours). Seuil contractuel : 70%.`,
                 lien: `/admin/prestataires/${p.id}`,
