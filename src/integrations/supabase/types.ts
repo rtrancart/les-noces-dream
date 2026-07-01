@@ -1366,6 +1366,8 @@ export type Database = {
           prix_max: number | null
           region: string
           relances_envoyees: number
+          representant_nom: string | null
+          representant_prenom: string | null
           site_web: string | null
           slug: string
           statut: Database["public"]["Enums"]["statut_prestataire"]
@@ -1429,6 +1431,8 @@ export type Database = {
           prix_max?: number | null
           region: string
           relances_envoyees?: number
+          representant_nom?: string | null
+          representant_prenom?: string | null
           site_web?: string | null
           slug: string
           statut?: Database["public"]["Enums"]["statut_prestataire"]
@@ -1492,6 +1496,8 @@ export type Database = {
           prix_max?: number | null
           region?: string
           relances_envoyees?: number
+          representant_nom?: string | null
+          representant_prenom?: string | null
           site_web?: string | null
           slug?: string
           statut?: Database["public"]["Enums"]["statut_prestataire"]
