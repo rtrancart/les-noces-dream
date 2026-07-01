@@ -268,9 +268,11 @@ export default function BlogArticle() {
                 }
                 if (b.type === "h1") {
                   return (
-                    <h1 key={i} className="font-serif text-4xl mt-12 mb-6">
-                      {b.text}
-                    </h1>
+                    <h1
+                      key={i}
+                      className="font-serif text-4xl mt-12 mb-6"
+                      dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }}
+                    />
                   );
                 }
                 // Paragraphe : drop cap sur le tout premier
