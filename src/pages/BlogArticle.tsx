@@ -225,9 +225,8 @@ export default function BlogArticle() {
                       key={i}
                       id={slugify(b.text)}
                       className="font-serif font-normal italic text-3xl md:text-[34px] leading-tight tracking-tight mt-16 mb-6 scroll-mt-24"
-                    >
-                      {b.text}
-                    </h2>
+                      dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }}
+                    />
                   );
                 }
                 if (b.type === "h3") {
@@ -235,9 +234,8 @@ export default function BlogArticle() {
                     <h3
                       key={i}
                       className="font-serif font-normal text-xl md:text-[22px] leading-tight tracking-tight mt-10 mb-4 text-bleu-abysse"
-                    >
-                      {b.text}
-                    </h3>
+                      dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }}
+                    />
                   );
                 }
                 if (b.type === "quote") {
@@ -270,9 +268,11 @@ export default function BlogArticle() {
                 }
                 if (b.type === "h1") {
                   return (
-                    <h1 key={i} className="font-serif text-4xl mt-12 mb-6">
-                      {b.text}
-                    </h1>
+                    <h1
+                      key={i}
+                      className="font-serif text-4xl mt-12 mb-6"
+                      dangerouslySetInnerHTML={{ __html: renderInlineHtml(b.text) }}
+                    />
                   );
                 }
                 // Paragraphe : drop cap sur le tout premier
