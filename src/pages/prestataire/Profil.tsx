@@ -20,6 +20,7 @@ export default function PrestataireProfil() {
   const [form, setForm] = useState({
     nom_commercial: "",
     raison_sociale: "",
+    description_courte: "",
     description: "",
     adresse: "",
     ville: "",
