@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Save, Loader2, Send, CheckCircle2, AlertCircle } from "lucide-react";
 import AddressAutocomplete from "@/components/prestataire/AddressAutocomplete";
+import RaisonSocialeField from "@/components/prestataire/RaisonSocialeField";
 
 const MAX_DESC_COURTE = 160;
 
