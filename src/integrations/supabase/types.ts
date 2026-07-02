@@ -1364,6 +1364,7 @@ export type Database = {
           premier_login_le: string | null
           prix_depart: number | null
           prix_max: number | null
+          raison_sociale: string | null
           region: string
           relances_envoyees: number
           representant_nom: string | null
@@ -1429,6 +1430,7 @@ export type Database = {
           premier_login_le?: string | null
           prix_depart?: number | null
           prix_max?: number | null
+          raison_sociale?: string | null
           region: string
           relances_envoyees?: number
           representant_nom?: string | null
@@ -1494,6 +1496,7 @@ export type Database = {
           premier_login_le?: string | null
           prix_depart?: number | null
           prix_max?: number | null
+          raison_sociale?: string | null
           region?: string
           relances_envoyees?: number
           representant_nom?: string | null

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Save, Loader2, Send, CheckCircle2, AlertCircle } from "lucide-react";
 import AddressAutocomplete from "@/components/prestataire/AddressAutocomplete";
+import RaisonSocialeField from "@/components/prestataire/RaisonSocialeField";
 
 const MAX_DESC_COURTE = 160;
 
@@ -18,6 +19,7 @@ export default function PrestataireProfil() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     nom_commercial: "",
+    raison_sociale: "",
     description_courte: "",
     description: "",
     adresse: "",
@@ -35,6 +37,7 @@ export default function PrestataireProfil() {
     if (prestataire) {
       setForm({
         nom_commercial: prestataire.nom_commercial ?? "",
+        raison_sociale: (prestataire as any).raison_sociale ?? "",
         description_courte: prestataire.description_courte ?? "",
         description: prestataire.description ?? "",
         adresse: prestataire.adresse ?? "",
@@ -77,6 +80,7 @@ export default function PrestataireProfil() {
       .from("prestataires")
       .update({
         nom_commercial: form.nom_commercial,
+        raison_sociale: form.raison_sociale || form.nom_commercial,
         description_courte: form.description_courte,
         description: form.description,
         adresse: form.adresse,
@@ -203,8 +207,18 @@ export default function PrestataireProfil() {
           <CardTitle className="font-sans text-lg">Informations générales</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {field("Nom commercial", "nom_commercial")}
+          <div className="md:col-span-2">
+            {field("Nom commercial", "nom_commercial")}
+          </div>
+          <div className="md:col-span-2">
+            <RaisonSocialeField
+              nomCommercial={form.nom_commercial}
+              raisonSociale={form.raison_sociale}
+              onChange={(value) => setForm((f) => ({ ...f, raison_sociale: value }))}
+            />
+          </div>
           <div className="md:col-span-2 space-y-2">
+
             <div className="flex items-center justify-between">
               <Label className="font-sans text-sm">Description courte</Label>
               <span className={`font-sans text-xs ${descLen > MAX_DESC_COURTE ? "text-destructive" : "text-muted-foreground"}`}>

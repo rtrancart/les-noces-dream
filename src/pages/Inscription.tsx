@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Mail, Lock, User, Heart, Briefcase } from "lucide-react";
+import { Mail, Lock, User, Heart, Briefcase, Building2 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
+import RaisonSocialeField from "@/components/prestataire/RaisonSocialeField";
 
 const Inscription = () => {
   const { trackSignUp } = useTracking();
@@ -18,6 +19,8 @@ const Inscription = () => {
   const [password, setPassword] = useState("");
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
+  const [nomCommercial, setNomCommercial] = useState("");
+  const [raisonSociale, setRaisonSociale] = useState("");
   const [role, setRole] = useState<"client" | "prestataire">("client");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -35,6 +38,10 @@ const Inscription = () => {
           prenom,
           nom,
           role_souhaite: role,
+          ...(role === "prestataire" && {
+            nom_commercial: nomCommercial.trim(),
+            raison_sociale: raisonSociale.trim() || nomCommercial.trim(),
+          }),
         },
       },
     });
@@ -160,6 +167,34 @@ const Inscription = () => {
             />
           </div>
         </div>
+
+        {role === "prestataire" && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="nom-commercial" className="font-sans text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Nom commercial
+              </Label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="nom-commercial"
+                  placeholder="Studio Fleuriste Éphémère"
+                  value={nomCommercial}
+                  onChange={(e) => setNomCommercial(e.target.value)}
+                  required
+                  className="pl-10 font-sans"
+                />
+              </div>
+            </div>
+
+            <RaisonSocialeField
+              nomCommercial={nomCommercial}
+              raisonSociale={raisonSociale}
+              onChange={setRaisonSociale}
+            />
+          </>
+        )}
+
 
         <div className="space-y-2">
           <Label htmlFor="signup-email" className="font-sans text-xs font-medium uppercase tracking-wider text-muted-foreground">

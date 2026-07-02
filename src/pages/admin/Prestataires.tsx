@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo, ReactNode } from "react";
 import LocationPicker, { type CitySearchData } from "@/components/LocationPicker";
+import RaisonSocialeField from "@/components/prestataire/RaisonSocialeField";
 import { haversineDistanceKm } from "@/lib/haversine";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -72,6 +73,7 @@ const SELECTABLE_STATUTS: StatutPrestataire[] = [
 
 const emptyForm = {
   nom_commercial: "",
+  raison_sociale: "",
   slug: "",
   description_courte: "",
   description: "",
@@ -482,6 +484,7 @@ export default function Prestataires() {
     }
     setForm({
       nom_commercial: p.nom_commercial,
+      raison_sociale: (p as any).raison_sociale ?? "",
       slug: p.slug,
       description_courte: p.description_courte ?? "",
       description: p.description ?? "",
@@ -533,6 +536,7 @@ export default function Prestataires() {
 
     const payload = {
       nom_commercial: form.nom_commercial,
+      raison_sociale: form.raison_sociale || form.nom_commercial,
       slug: form.slug,
       description_courte: form.description_courte || null,
       description: form.description || null,
@@ -929,6 +933,12 @@ export default function Prestataires() {
                   </div>
                 </Field>
               </div>
+              <RaisonSocialeField
+                nomCommercial={form.nom_commercial}
+                raisonSociale={form.raison_sociale}
+                onChange={(value) => setForm((f) => ({ ...f, raison_sociale: value }))}
+              />
+
               <Field label="Description courte">
                 <Input value={form.description_courte} onChange={(e) => setForm({ ...form, description_courte: e.target.value })} />
               </Field>
