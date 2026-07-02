@@ -80,6 +80,7 @@ export default function PrestataireProfil() {
       .from("prestataires")
       .update({
         nom_commercial: form.nom_commercial,
+        raison_sociale: form.raison_sociale || form.nom_commercial,
         description_courte: form.description_courte,
         description: form.description,
         adresse: form.adresse,
