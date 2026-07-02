@@ -59,7 +59,9 @@ export default function AdminChartes() {
   const [contenuHash, setContenuHash] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // Live SHA-256 (informational only — server recomputes the authoritative hash)
+  // Live SHA-256 (affichage temps réel uniquement — la valeur probatoire est recalculée
+  // côté serveur par le trigger `chartes_versions_enforce_hash` qui écrase toute valeur
+  // fournie par le client à l'INSERT/UPDATE de chartes_versions).
   useEffect(() => {
     let cancelled = false;
     if (!contenu) {
@@ -268,7 +270,7 @@ export default function AdminChartes() {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    La version actuellement active sera automatiquement archivée. Le hash affiché est calculé côté client à titre indicatif ; le hash probatoire est recalculé côté serveur à l'enregistrement.
+                    La version actuellement active sera automatiquement archivée. Le hash affiché est calculé côté client à titre indicatif ; le hash probatoire est recalculé côté serveur (trigger PostgreSQL sur <code>chartes_versions</code>) à partir du contenu HTML réel, et toute valeur envoyée par le client est écrasée.
                   </p>
                 </div>
                 <DialogFooter>
