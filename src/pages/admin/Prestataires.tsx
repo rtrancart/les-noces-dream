@@ -483,6 +483,7 @@ export default function Prestataires() {
     }
     setForm({
       nom_commercial: p.nom_commercial,
+      raison_sociale: (p as any).raison_sociale ?? "",
       slug: p.slug,
       description_courte: p.description_courte ?? "",
       description: p.description ?? "",
