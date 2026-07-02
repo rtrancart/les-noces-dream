@@ -72,6 +72,7 @@ const SELECTABLE_STATUTS: StatutPrestataire[] = [
 
 const emptyForm = {
   nom_commercial: "",
+  raison_sociale: "",
   slug: "",
   description_courte: "",
   description: "",
