@@ -37,6 +37,7 @@ export default function PrestataireProfil() {
     if (prestataire) {
       setForm({
         nom_commercial: prestataire.nom_commercial ?? "",
+        raison_sociale: (prestataire as any).raison_sociale ?? "",
         description_courte: prestataire.description_courte ?? "",
         description: prestataire.description ?? "",
         adresse: prestataire.adresse ?? "",
