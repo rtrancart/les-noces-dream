@@ -932,6 +932,12 @@ export default function Prestataires() {
                   </div>
                 </Field>
               </div>
+              <RaisonSocialeField
+                nomCommercial={form.nom_commercial}
+                raisonSociale={form.raison_sociale}
+                onChange={(value) => setForm((f) => ({ ...f, raison_sociale: value }))}
+              />
+
               <Field label="Description courte">
                 <Input value={form.description_courte} onChange={(e) => setForm({ ...form, description_courte: e.target.value })} />
               </Field>
