@@ -535,6 +535,7 @@ export default function Prestataires() {
 
     const payload = {
       nom_commercial: form.nom_commercial,
+      raison_sociale: form.raison_sociale || form.nom_commercial,
       slug: form.slug,
       description_courte: form.description_courte || null,
       description: form.description || null,
