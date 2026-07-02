@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo, ReactNode } from "react";
 import LocationPicker, { type CitySearchData } from "@/components/LocationPicker";
+import RaisonSocialeField from "@/components/prestataire/RaisonSocialeField";
 import { haversineDistanceKm } from "@/lib/haversine";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
