@@ -207,8 +207,18 @@ export default function PrestataireProfil() {
           <CardTitle className="font-sans text-lg">Informations générales</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {field("Nom commercial", "nom_commercial")}
+          <div className="md:col-span-2">
+            {field("Nom commercial", "nom_commercial")}
+          </div>
+          <div className="md:col-span-2">
+            <RaisonSocialeField
+              nomCommercial={form.nom_commercial}
+              raisonSociale={form.raison_sociale}
+              onChange={(value) => setForm((f) => ({ ...f, raison_sociale: value }))}
+            />
+          </div>
           <div className="md:col-span-2 space-y-2">
+
             <div className="flex items-center justify-between">
               <Label className="font-sans text-sm">Description courte</Label>
               <span className={`font-sans text-xs ${descLen > MAX_DESC_COURTE ? "text-destructive" : "text-muted-foreground"}`}>
