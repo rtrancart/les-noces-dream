@@ -19,7 +19,7 @@ export default function PrestataireProfil() {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     nom_commercial: "",
-    description_courte: "",
+    raison_sociale: "",
     description: "",
     adresse: "",
     ville: "",
