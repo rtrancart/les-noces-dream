@@ -38,6 +38,10 @@ const Inscription = () => {
           prenom,
           nom,
           role_souhaite: role,
+          ...(role === "prestataire" && {
+            nom_commercial: nomCommercial.trim(),
+            raison_sociale: raisonSociale.trim() || nomCommercial.trim(),
+          }),
         },
       },
     });
