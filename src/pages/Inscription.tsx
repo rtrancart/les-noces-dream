@@ -168,6 +168,34 @@ const Inscription = () => {
           </div>
         </div>
 
+        {role === "prestataire" && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="nom-commercial" className="font-sans text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Nom commercial
+              </Label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="nom-commercial"
+                  placeholder="Studio Fleuriste Éphémère"
+                  value={nomCommercial}
+                  onChange={(e) => setNomCommercial(e.target.value)}
+                  required
+                  className="pl-10 font-sans"
+                />
+              </div>
+            </div>
+
+            <RaisonSocialeField
+              nomCommercial={nomCommercial}
+              raisonSociale={raisonSociale}
+              onChange={setRaisonSociale}
+            />
+          </>
+        )}
+
+
         <div className="space-y-2">
           <Label htmlFor="signup-email" className="font-sans text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Adresse email
