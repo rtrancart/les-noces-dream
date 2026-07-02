@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Mail, Lock, User, Heart, Briefcase } from "lucide-react";
+import { Mail, Lock, User, Heart, Briefcase, Building2 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
+import RaisonSocialeField from "@/components/prestataire/RaisonSocialeField";
 
 const Inscription = () => {
   const { trackSignUp } = useTracking();
@@ -18,6 +19,8 @@ const Inscription = () => {
   const [password, setPassword] = useState("");
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
+  const [nomCommercial, setNomCommercial] = useState("");
+  const [raisonSociale, setRaisonSociale] = useState("");
   const [role, setRole] = useState<"client" | "prestataire">("client");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
