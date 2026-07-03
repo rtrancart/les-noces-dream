@@ -1,17 +1,15 @@
 // sign-charte — Authenticated prestataire signs the active Charte Qualité.
 //
-// PATTERN ASYNCHRONE (cf. trigger prevent_signature_modification, art. 11 Charte) :
-//   1. INSERT signatures_charte avec les seules colonnes probatoires (immuables).
-//      `pdf_preuve_url` et `email_confirmation_envoye_le` restent NULL.
-//   2. Réponse 200 immédiate au prestataire (~50-100 ms).
-//   3. Invocation fire-and-forget de `generate-charte-pdf-preuve` qui fera
-//      ensuite : UPDATE signatures_charte SET pdf_preuve_url = ?
-//               WHERE id = ? AND pdf_preuve_url IS NULL.
-//      La clause `IS NULL` est une ceinture en plus du trigger write-once.
-//   4. L'envoi email Scaleway fera de même pour `email_confirmation_envoye_le`.
+// La preuve juridique réside dans les données immuables en base :
+//   - signatures_charte (colonnes probatoires figées par le trigger
+//     prevent_signature_modification, art. 11 Charte)
+//   - chartes_versions (contenu HTML + SHA-256 figés à la publication)
+// Aucun PDF n'est généré ni stocké ici : la matérialisation lisible est produite
+// à la demande depuis le back-office admin par la fonction
+// generate-charte-pdf-preuve (téléchargement direct, sans écriture bucket).
 //
-// Le trigger DB garantit que ces deux colonnes ne peuvent être renseignées
-// qu'une seule fois, et que toutes les autres colonnes sont strictement immuables.
+// email_confirmation_envoye_le est renseigné plus tard par le pipeline email
+// et protégé write-once par le trigger d'immuabilité.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
