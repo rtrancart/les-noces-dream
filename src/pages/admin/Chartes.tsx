@@ -34,7 +34,6 @@ interface Signature {
   signe_le: string;
   ip_signataire: string | null;
   methode_auth: string;
-  pdf_preuve_url: string | null;
   prestataires?: { nom_commercial: string } | null;
 }
 
