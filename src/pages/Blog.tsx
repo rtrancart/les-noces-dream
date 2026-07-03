@@ -261,7 +261,7 @@ export default function Blog() {
                   <span className="text-[11px] tracking-[0.3em] uppercase">Chroniques</span>
                   <span className="w-10 h-px bg-border" />
                 </div>
-                <h2 className="font-serif font-normal italic text-4xl md:text-5xl tracking-tight m-0">
+                <h2 ref={tailHeadingRef} className="font-serif font-normal italic text-4xl md:text-5xl tracking-tight m-0 scroll-mt-24">
                   Récits &amp; réflexions
                 </h2>
               </div>
