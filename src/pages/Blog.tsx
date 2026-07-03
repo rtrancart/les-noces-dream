@@ -129,7 +129,7 @@ export default function Blog() {
       {/* Catégories */}
       {categories.length > 0 && (
         <nav className="bg-[#FBF8F3] border-b border-border px-6 md:px-20">
-          <div className="max-w-[1200px] mx-auto flex items-center gap-10 h-16 overflow-x-auto text-[11px] tracking-[0.2em] uppercase font-medium">
+          <div className="max-w-[1200px] mx-auto flex flex-wrap justify-center gap-x-10 gap-y-3 py-5 text-[11px] tracking-[0.2em] uppercase font-medium">
             {[{ slug: "all", nom: "Toutes les rubriques" }, ...categories].map((c) => {
               const active = activeCat === c.slug;
               return (
@@ -139,10 +139,10 @@ export default function Blog() {
                     setActiveCat(c.slug);
                     setPage(1);
                   }}
-                  className={`whitespace-nowrap py-[22px] -mb-px transition-colors ${
+                  className={`whitespace-nowrap py-2 border-b transition-colors ${
                     active
-                      ? "text-bleu-abysse border-b border-bleu-abysse"
-                      : "text-gris-cachemire border-b border-transparent hover:text-bleu-abysse"
+                      ? "text-bleu-abysse border-bleu-abysse"
+                      : "text-gris-cachemire border-transparent hover:text-bleu-abysse"
                   }`}
                 >
                   {c.nom}
