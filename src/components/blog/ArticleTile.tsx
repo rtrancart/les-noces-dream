@@ -30,17 +30,16 @@ function hashTone(seed: string) {
 }
 
 export function ArticleTile({ article, size = "default" }: ArticleTileProps) {
-  const h = size === "compact" ? "h-80" : size === "large" ? "h-[420px]" : "h-[420px]";
   const titleSize = size === "compact" ? "text-2xl" : "text-3xl md:text-[2rem]";
   const [a, b] = hashTone(article.slug);
 
   return (
     <article className="group">
       <Link to={`/blog/${article.slug}`} className="block">
-        <div className={`w-full ${h} relative overflow-hidden`}>
+        <div className="w-full aspect-[4/5] relative overflow-hidden">
           {article.image_couverture_url ? (
             <img
-              src={getImageUrl(article.image_couverture_url, "thumb")}
+              src={getImageUrl(article.image_couverture_url, "cover")}
               alt={article.titre}
               loading="lazy"
               decoding="async"
