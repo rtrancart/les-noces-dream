@@ -524,6 +524,31 @@ export default function Prestataires() {
     }
   };
 
+  // Vérifie qu'aucune autre fiche n'utilise cet email de contact (insensible à la casse).
+  // Retourne true si OK, false sinon (et affiche un toast bloquant avec le nom de la fiche en conflit).
+  const checkEmailContactUniqueness = async (email: string | null | undefined, excludeId?: string): Promise<boolean> => {
+    const clean = (email ?? "").trim().toLowerCase();
+    if (!clean) return true;
+    const { data, error } = await supabase
+      .from("prestataires")
+      .select("id, nom_commercial")
+      .ilike("email_contact", clean)
+      .limit(2);
+    if (error) {
+      toast.error("Impossible de vérifier l'unicité de l'email : " + error.message);
+      return false;
+    }
+    const conflict = (data ?? []).find((p) => p.id !== excludeId);
+    if (conflict) {
+      toast.error(
+        `Une fiche existe déjà avec cet email de contact : « ${conflict.nom_commercial} ». Retrouvez-la dans la liste plutôt que d'en créer une nouvelle.`,
+        { duration: 8000 }
+      );
+      return false;
+    }
+    return true;
+  };
+
   const handleSave = async () => {
     // Brouillon save : minimum nom_commercial + categorie_mere + ville + region
     if (!form.nom_commercial || !form.slug || !form.ville || !form.region || !form.categorie_mere_id) {
@@ -533,6 +558,9 @@ export default function Prestataires() {
     setSaving(true);
     const isUnique = await checkSlugUniqueness();
     if (!isUnique) { setSaving(false); return; }
+    const emailOk = await checkEmailContactUniqueness(form.email_contact, editItem?.id);
+    if (!emailOk) { setSaving(false); return; }
+
 
     const payload = {
       nom_commercial: form.nom_commercial,
