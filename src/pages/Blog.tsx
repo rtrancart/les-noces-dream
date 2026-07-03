@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArticleTile } from "@/components/blog/ArticleTile";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,8 +61,24 @@ export default function Blog() {
 
   const featured = filtered[0];
   const secondary = filtered.slice(1, 3);
-  const tail = filtered.slice(3, 3 + PAGE_SIZE);
   const totalPages = Math.max(1, Math.ceil(Math.max(0, filtered.length - 3) / PAGE_SIZE));
+  const tailStart = 3 + (page - 1) * PAGE_SIZE;
+  const tail = filtered.slice(tailStart, tailStart + PAGE_SIZE);
+
+  const tailHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const firstPageRender = useRef(true);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [page, totalPages]);
+
+  useEffect(() => {
+    if (firstPageRender.current) {
+      firstPageRender.current = false;
+      return;
+    }
+    tailHeadingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [page]);
 
   const formatDate = (iso?: string | null) => {
     if (!iso) return "";
@@ -245,7 +261,7 @@ export default function Blog() {
                   <span className="text-[11px] tracking-[0.3em] uppercase">Chroniques</span>
                   <span className="w-10 h-px bg-border" />
                 </div>
-                <h2 className="font-serif font-normal italic text-4xl md:text-5xl tracking-tight m-0">
+                <h2 ref={tailHeadingRef} className="font-serif font-normal italic text-4xl md:text-5xl tracking-tight m-0 scroll-mt-24">
                   Récits &amp; réflexions
                 </h2>
               </div>
