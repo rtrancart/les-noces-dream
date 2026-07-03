@@ -25,7 +25,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-charte-pdf-preuve]
-verify_jwt = false
+verify_jwt = true
 
 [functions.request-reactivation-archive]
 verify_jwt = false
