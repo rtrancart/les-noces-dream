@@ -1,33 +1,20 @@
 ## Objectif
+Rendre la pagination fonctionnelle sur `/blog` — cliquer sur un numéro ou « Suivante » doit réellement changer les articles affichés dans la grille « Récits & réflexions ».
 
-Aligner le rendu des visuels d'articles entre la page hub `/blog` et la page article, en supprimant l'impression de zoom/pixelisation constatée sur les tuiles.
+## Changement (fichier : `src/pages/Blog.tsx`)
 
-## Changements
+1. **Brancher `page` sur le slice** :
+   `tail = filtered.slice(3 + (page - 1) * PAGE_SIZE, 3 + page * PAGE_SIZE)`
+   (au lieu de l'offset codé en dur à `3`).
 
-### 1. `src/components/blog/ArticleTile.tsx` — preset + ratio
+2. **Remonter automatiquement** vers la section « Récits & réflexions » quand `page` change, pour éviter que l'utilisateur reste en bas et ne voie pas que le contenu a changé. Ajout d'une `ref` sur le titre de section + `useEffect([page])` avec `scrollIntoView({ behavior: "smooth", block: "start" })`. Skip au premier render.
 
-- Remplacer `getImageUrl(url, "thumb")` par `getImageUrl(url, "cover")` (1200 px de large au lieu de 400 px). Les tuiles font 500-1000 px à l'écran : `cover` est le bon calibre, `thumb` est réservé aux miniatures type avatar/carte.
-- Remplacer les hauteurs fixes `h-80` / `h-[420px]` par un **aspect-ratio** cohérent avec la page article :
-  - `size="compact"` → `aspect-[4/5]` (portrait doux, adapté à la grille 3 col)
-  - `size="default"` / `"large"` → `aspect-[4/5]` également, pour un cadrage vertical élégant proche du hero de l'article, plutôt qu'un paysage écrasé
-- Conserver `object-cover` et l'effet `group-hover:scale-105` (ils ne sont pas en cause).
+3. **Reset `page = 1`** quand le nombre total d'articles filtrés devient inférieur à l'offset courant (déjà fait au changement de catégorie ; à sécuriser aussi si `filtered.length` diminue pour une autre raison — via un `useEffect` qui remet `page` à 1 si `page > totalPages`).
 
-### 2. `src/pages/Blog.tsx` — cohérence de la featured (optionnel mais recommandé)
-
-- Actuellement la featured utilise `h-[620px] object-cover` avec preset `hero` : nette mais cadrage paysage forcé. Basculer sur `aspect-[4/5] max-h-[620px]` pour rester dans la même famille de cadrage que le reste, sans perte de qualité.
-- Laisser preset `hero` inchangé.
-
-### 3. Rien à toucher côté page article
-
-`BlogArticle.tsx` charge déjà en preset `hero` avec un cadrage cohérent — c'est la référence.
-
-## Points techniques
-
-- Le helper `getImageUrl` supporte déjà `cover` (1200 w / q80) — aucun ajout dans `src/lib/images.ts`.
-- `aspect-[4/5]` est une classe Tailwind arbitraire déjà utilisée ailleurs (ex. `FicheGalerie`) — pas de config à modifier.
-- Aucun impact backend, aucun impact sur les autres pages qui consomment `ArticleTile` (uniquement `Blog.tsx` et `BlogArticle.tsx` section « À lire ensuite »).
+4. **Masquer la pagination** quand `totalPages <= 1` (déjà le cas via la condition `totalPages > 1`, on garde).
 
 ## Vérification
-
-- Recharger `/blog` : les visuels des tuiles doivent être nets (plus d'upscale depuis 400 px) et présenter un cadrage vertical régulier.
-- Ouvrir un article, comparer la couverture avec la vignette du même article dans « À lire ensuite » : même famille de cadrage, pas de zoom apparent.
+- Avec > 12 articles publiés : cliquer sur 2 doit afficher les articles 12-20, sur 3 les articles 21-29, etc.
+- Le bouton « Suivante » ne doit plus apparaître sur la dernière page (déjà géré par `page < totalPages`).
+- Le scroll doit revenir vers le titre « Récits & réflexions » au changement de page.
+- Aucun impact sur l'article vedette ni les deux tuiles secondaires (positions 0-2), qui restent fixes.
