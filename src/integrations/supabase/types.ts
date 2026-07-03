@@ -1606,7 +1606,6 @@ export type Database = {
           id: string
           ip_signataire: unknown
           methode_auth: string
-          pdf_preuve_url: string | null
           prestataire_id: string
           profile_id: string
           signe_le: string
@@ -1621,7 +1620,6 @@ export type Database = {
           id?: string
           ip_signataire?: unknown
           methode_auth: string
-          pdf_preuve_url?: string | null
           prestataire_id: string
           profile_id: string
           signe_le?: string
@@ -1636,7 +1634,6 @@ export type Database = {
           id?: string
           ip_signataire?: unknown
           methode_auth?: string
-          pdf_preuve_url?: string | null
           prestataire_id?: string
           profile_id?: string
           signe_le?: string
