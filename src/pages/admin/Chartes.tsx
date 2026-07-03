@@ -84,7 +84,7 @@ export default function AdminChartes() {
         .order("entree_en_vigueur_le", { ascending: false }),
       supabase
         .from("signatures_charte")
-        .select("id, prestataire_id, charte_numero_version, signe_le, ip_signataire, methode_auth, pdf_preuve_url, prestataires(nom_commercial)")
+        .select("id, prestataire_id, charte_numero_version, signe_le, ip_signataire, methode_auth, prestataires(nom_commercial)")
         .order("signe_le", { ascending: false })
         .limit(500),
     ]);
