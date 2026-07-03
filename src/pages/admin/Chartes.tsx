@@ -34,7 +34,6 @@ interface Signature {
   signe_le: string;
   ip_signataire: string | null;
   methode_auth: string;
-  pdf_preuve_url: string | null;
   prestataires?: { nom_commercial: string } | null;
 }
 
@@ -85,7 +84,7 @@ export default function AdminChartes() {
         .order("entree_en_vigueur_le", { ascending: false }),
       supabase
         .from("signatures_charte")
-        .select("id, prestataire_id, charte_numero_version, signe_le, ip_signataire, methode_auth, pdf_preuve_url, prestataires(nom_commercial)")
+        .select("id, prestataire_id, charte_numero_version, signe_le, ip_signataire, methode_auth, prestataires(nom_commercial)")
         .order("signe_le", { ascending: false })
         .limit(500),
     ]);
@@ -166,14 +165,39 @@ export default function AdminChartes() {
 
   const handleDownloadPdf = async (sig: Signature) => {
     try {
-      const path = sig.pdf_preuve_url ?? `${sig.prestataire_id}/${sig.id}.pdf`;
-      const { data, error } = await supabase.storage
-        .from("signatures-preuve")
-        .createSignedUrl(path, 60 * 5);
-      if (error) throw error;
-      window.open(data.signedUrl, "_blank");
+      // Génération à la demande : la fonction renvoie un flux PDF direct,
+      // sans stockage bucket et sans URL persistante.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Session expirée");
+      const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectRef}.supabase.co/functions/v1/generate-charte-pdf-preuve`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ signature_id: sig.id }),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(err.error ?? "Erreur de génération");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const cd = res.headers.get("content-disposition") ?? "";
+      const match = cd.match(/filename="([^"]+)"/);
+      a.download = match?.[1] ?? `preuve-${sig.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (e: any) {
-      toast.error("PDF preuve indisponible (peut-être en cours de génération).");
+      toast.error(e.message ?? "PDF preuve indisponible.");
     }
   };
 
