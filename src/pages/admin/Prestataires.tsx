@@ -635,7 +635,10 @@ export default function Prestataires() {
     }
     setSaving(true);
     try {
+      const emailOk = await checkEmailContactUniqueness(form.email_contact, editItem?.id);
+      if (!emailOk) { setSaving(false); return; }
       const { data, error } = await supabase.functions.invoke("invite-prestataire", {
+
         body: {
           prestataire_id: editItem?.id,
           email: form.email_contact,
