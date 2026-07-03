@@ -167,11 +167,11 @@ export default function Blog() {
                     alt={featured.titre}
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-[420px] md:h-[620px] object-cover"
+                    className="w-full aspect-[4/5] max-h-[620px] object-cover"
                   />
                 ) : (
                   <div
-                    className="w-full h-[420px] md:h-[620px]"
+                    className="w-full aspect-[4/5] max-h-[620px]"
                     style={{
                       background: "linear-gradient(140deg, #B3BBA6 0%, #7F8A74 100%)",
                     }}

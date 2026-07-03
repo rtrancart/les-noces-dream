@@ -1,68 +1,33 @@
 ## Objectif
 
-Ajouter une **raison sociale** (nom légal) aux prestataires, distincte du **nom commercial**, avec un comportement de saisie « miroir + case à cocher » identique partout, y compris dans le formulaire d'inscription publique.
+Aligner le rendu des visuels d'articles entre la page hub `/blog` et la page article, en supprimant l'impression de zoom/pixelisation constatée sur les tuiles.
 
-## 1. Base de données
+## Changements
 
-Nouveau champ sur `public.prestataires` :
+### 1. `src/components/blog/ArticleTile.tsx` — preset + ratio
 
-- **Nom technique** : `raison_sociale`
-- **Type** : `text`
-- **Nullable** : oui (optionnel)
+- Remplacer `getImageUrl(url, "thumb")` par `getImageUrl(url, "cover")` (1200 px de large au lieu de 400 px). Les tuiles font 500-1000 px à l'écran : `cover` est le bon calibre, `thumb` est réservé aux miniatures type avatar/carte.
+- Remplacer les hauteurs fixes `h-80` / `h-[420px]` par un **aspect-ratio** cohérent avec la page article :
+  - `size="compact"` → `aspect-[4/5]` (portrait doux, adapté à la grille 3 col)
+  - `size="default"` / `"large"` → `aspect-[4/5]` également, pour un cadrage vertical élégant proche du hero de l'article, plutôt qu'un paysage écrasé
+- Conserver `object-cover` et l'effet `group-hover:scale-105` (ils ne sont pas en cause).
 
-Migration :
+### 2. `src/pages/Blog.tsx` — cohérence de la featured (optionnel mais recommandé)
 
-```sql
-ALTER TABLE public.prestataires
-  ADD COLUMN raison_sociale text;
+- Actuellement la featured utilise `h-[620px] object-cover` avec preset `hero` : nette mais cadrage paysage forcé. Basculer sur `aspect-[4/5] max-h-[620px]` pour rester dans la même famille de cadrage que le reste, sans perte de qualité.
+- Laisser preset `hero` inchangé.
 
-COMMENT ON COLUMN public.prestataires.raison_sociale IS
-  'Nom légal de l''entreprise (facturation, comptabilité, Charte Qualité). Souvent identique au nom_commercial.';
-```
+### 3. Rien à toucher côté page article
 
-Pas de RLS à modifier. Pas de backfill : les consommateurs futurs feront `COALESCE(raison_sociale, nom_commercial)`.
+`BlogArticle.tsx` charge déjà en preset `hero` avec un cadrage cohérent — c'est la référence.
 
-## 2. Comportement UI (même règles partout)
+## Points techniques
 
-Pattern « adresse de facturation différente » :
+- Le helper `getImageUrl` supporte déjà `cover` (1200 w / q80) — aucun ajout dans `src/lib/images.ts`.
+- `aspect-[4/5]` est une classe Tailwind arbitraire déjà utilisée ailleurs (ex. `FicheGalerie`) — pas de config à modifier.
+- Aucun impact backend, aucun impact sur les autres pages qui consomment `ArticleTile` (uniquement `Blog.tsx` et `BlogArticle.tsx` section « À lire ensuite »).
 
-- Case à cocher : **« Utiliser un nom différent pour la raison sociale »**
-- **Décochée (défaut)** : pas de champ visible ; `raison_sociale` suit `nom_commercial` en temps réel.
-- **Cochée** : champ texte « Raison sociale » apparaît, pré-rempli avec le nom commercial courant, puis éditable indépendamment.
-- **Re-décochée** : la raison sociale reprend la valeur du nom commercial (valeur saisie perdue).
+## Vérification
 
-À la sauvegarde, `raison_sociale` contient toujours la valeur finale. L'état de la case n'est **pas** persisté : au chargement, la case est considérée cochée si `raison_sociale IS NOT NULL AND raison_sociale <> nom_commercial`.
-
-→ **Composant réutilisable** : `src/components/prestataire/RaisonSocialeField.tsx` (props : `nomCommercial`, `raisonSociale`, `onChange(value)`) pour un comportement identique partout.
-
-## 3. Points d'intégration
-
-### a. Formulaire d'inscription publique — `src/pages/Inscription.tsx`
-Quand le rôle « Prestataire » est sélectionné, afficher **deux champs supplémentaires** :
-
-1. **Nom commercial** (obligatoire) — nouveau champ contrôlé.
-2. Le composant `RaisonSocialeField` (checkbox + champ conditionnel).
-
-Ces champs ne sont **pas** affichés pour le rôle « client ».
-
-Transmission :
-- Ajouter `nom_commercial` et `raison_sociale` dans `options.data` du `supabase.auth.signUp` (metadata utilisateur).
-- Mettre à jour `handle_new_user` (migration) pour lire ces deux clés du `raw_user_meta_data` et les utiliser à la création de la fiche prestataire, avec fallback sur la valeur actuelle (« Prestataire à compléter ») si absentes — le fallback préserve la compat des inscriptions déjà passées et de tout autre chemin d'appel.
-
-### b. Espace pro — `src/pages/prestataire/Profil.tsx`
-Sous « Nom commercial » dans la carte « Informations générales », insérer `RaisonSocialeField`. Étendre `form` avec `raison_sociale`, l'inclure dans `handleSave`.
-
-### c. Back-office admin
-Localiser l'écran d'édition d'une fiche prestataire (probablement dans `src/pages/admin/Prestataires.tsx` ou un dialog associé) et y insérer le même `RaisonSocialeField` sous le nom commercial.
-
-### d. Création par admin — `supabase/functions/admin-create-user/index.ts`
-Aucun changement : la fonction ne saisit pas de nom commercial aujourd'hui. La raison sociale sera renseignée via l'écran admin (point c) après création.
-
-## 4. Hors scope
-
-- Facturation, comptabilité, PDF Charte : consommeront `COALESCE(raison_sociale, nom_commercial)` le jour venu.
-- Champs représentant légal (`representant_prenom` / `representant_nom`) : sujet séparé.
-
-## Confirmation
-
-Nom technique confirmé : **`raison_sociale`** (snake_case, cohérent avec `nom_commercial`).
+- Recharger `/blog` : les visuels des tuiles doivent être nets (plus d'upscale depuis 400 px) et présenter un cadrage vertical régulier.
+- Ouvrir un article, comparer la couverture avec la vignette du même article dans « À lire ensuite » : même famille de cadrage, pas de zoom apparent.
