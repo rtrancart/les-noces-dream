@@ -103,10 +103,11 @@ Deno.serve(async (req) => {
       })
       .eq("id", presta.id);
 
-    // Async: generate proof PDF (fire and forget)
-    adminClient.functions.invoke("generate-charte-pdf-preuve", {
-      body: { signature_id: signature.id },
-    }).catch(() => {});
+    // Aucun PDF n'est généré ici. La preuve juridique est constituée des lignes
+    // immuables signatures_charte + chartes_versions. Le PDF est produit à la
+    // demande par l'admin depuis le back-office (generate-charte-pdf-preuve).
+
+
 
     return new Response(JSON.stringify({ success: true, signature_id: signature.id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
