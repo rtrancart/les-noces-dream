@@ -51,6 +51,21 @@ Deno.serve(async (req) => {
     }
     const cleanEmail = String(email).trim().toLowerCase();
 
+    // Unicité de l'email de contact (insensible à la casse) — cohérent avec l'index UNIQUE en base.
+    {
+      const { data: conflicts, error: conflictErr } = await adminClient
+        .from("prestataires")
+        .select("id, nom_commercial")
+        .ilike("email_contact", cleanEmail)
+        .limit(2);
+      if (conflictErr) throw conflictErr;
+      const conflict = (conflicts ?? []).find((p: any) => p.id !== prestataire_id);
+      if (conflict) {
+        throw new Error(`Une fiche existe déjà avec cet email de contact : « ${conflict.nom_commercial} ». Retrouvez-la dans la liste plutôt que d'en créer une nouvelle.`);
+      }
+    }
+
+
     // 1. Auth user (create or reuse) — paginate listUsers since there's no email filter
     let userId: string | undefined;
     const perPage = 1000;
