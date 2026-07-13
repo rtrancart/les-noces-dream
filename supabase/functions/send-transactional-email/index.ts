@@ -282,20 +282,81 @@ Deno.serve(async (req) => {
     )
   }
 
-  // 4. Render React Email template to HTML and plain text
-  const html = await renderAsync(
-    React.createElement(template.component, templateData)
-  )
-  const plainText = await renderAsync(
-    React.createElement(template.component, templateData),
-    { plainText: true }
-  )
+  // 4. Resolve content — DB (email_textes) is source of truth if active,
+  // otherwise fall back to the React Email component (safety net).
+  const { data: dbTexte, error: dbTexteError } = await supabase
+    .from('email_textes')
+    .select('sujet, corps_html, est_actif')
+    .eq('template_name', templateName)
+    .maybeSingle()
 
-  // Resolve subject — supports static string or dynamic function
-  const resolvedSubject =
-    typeof template.subject === 'function'
-      ? template.subject(templateData)
-      : template.subject
+  if (dbTexteError) {
+    console.warn('email_textes lookup failed, falling back to code default', {
+      templateName,
+      error: dbTexteError.message,
+    })
+  }
+
+  const substitute = (tpl: string): { out: string; unresolved: string[] } => {
+    const unresolved = new Set<string>()
+    const out = tpl.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_m, key: string) => {
+      const val = templateData?.[key]
+      if (val === undefined || val === null || val === '') {
+        unresolved.add(key)
+        return `{{${key}}}`
+      }
+      return String(val)
+    })
+    return { out, unresolved: [...unresolved] }
+  }
+
+  let html: string
+  let plainText: string
+  let resolvedSubject: string
+  let contentSource: 'db' | 'code' = 'code'
+  const unresolvedVars = new Set<string>()
+
+  if (
+    dbTexte?.est_actif &&
+    typeof dbTexte.sujet === 'string' && dbTexte.sujet.trim().length > 0 &&
+    typeof dbTexte.corps_html === 'string' && dbTexte.corps_html.trim().length > 0
+  ) {
+    contentSource = 'db'
+    const subjectSub = substitute(dbTexte.sujet)
+    const bodySub = substitute(dbTexte.corps_html)
+    resolvedSubject = subjectSub.out
+    html = bodySub.out
+    plainText = bodySub.out.replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    subjectSub.unresolved.forEach((v) => unresolvedVars.add(v))
+    bodySub.unresolved.forEach((v) => unresolvedVars.add(v))
+  } else {
+    html = await renderAsync(
+      React.createElement(template.component, templateData)
+    )
+    plainText = await renderAsync(
+      React.createElement(template.component, templateData),
+      { plainText: true }
+    )
+    resolvedSubject =
+      typeof template.subject === 'function'
+        ? template.subject(templateData)
+        : template.subject
+  }
+
+  if (unresolvedVars.size > 0) {
+    // Incident: an email is going out with unfilled placeholders.
+    // Logged loudly but the send is NOT blocked.
+    console.error('email_var_incident', {
+      templateName,
+      recipient: effectiveRecipient,
+      messageId,
+      unresolved: [...unresolvedVars],
+      source: contentSource,
+    })
+  }
 
   // 5. Enqueue the pre-rendered email for async processing by the dispatcher.
   // The dispatcher (process-email-queue) handles sending, retries, and rate-limit backoff.
