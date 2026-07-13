@@ -145,6 +145,21 @@ export default function Emails() {
           Chaque template dispose d'un contenu par défaut dans le code : si vous désactivez la personnalisation
           ou la réinitialisez, ce contenu prend le relais automatiquement.
         </p>
+        <div className="mt-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              if (!confirm("Charger le design LesNoces sur tous les templates ? Le contenu personnalisé actuel sera écrasé.")) return;
+              const { data, error } = await supabase.functions.invoke("admin-email-textes", { body: { action: "seed_designed" } });
+              if (error) { toast.error("Erreur : " + error.message); return; }
+              toast.success(`Design chargé sur ${data?.updated?.length ?? 0} templates.`);
+              void load();
+            }}
+          >
+            Charger le design LesNoces sur tous les templates
+          </Button>
+        </div>
       </div>
 
       {loading ? (

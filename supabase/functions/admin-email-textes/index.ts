@@ -5,6 +5,7 @@ import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
+import { DESIGNED_TEMPLATES } from './build-designed-html.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -140,7 +141,34 @@ Deno.serve(async (req) => {
       })
     }
 
-    throw new Error("action inconnue (list | reset | seed_missing)")
+    if (action === 'seed_designed') {
+      const updated: string[] = []
+      const skipped: string[] = []
+      for (const name of Object.keys(TEMPLATES)) {
+        const designed = DESIGNED_TEMPLATES[name]
+        if (!designed) { skipped.push(name); continue }
+        const entry = TEMPLATES[name]
+        const variables = Object.keys(entry.previewData ?? {})
+        const { error } = await admin.from('email_textes').upsert(
+          {
+            template_name: name,
+            display_name: entry.displayName ?? name,
+            sujet: designed.subject,
+            corps_html: designed.html,
+            est_actif: true,
+            variables_disponibles: variables,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'template_name' }
+        )
+        if (!error) updated.push(name)
+      }
+      return new Response(JSON.stringify({ ok: true, updated, skipped }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    throw new Error("action inconnue (list | reset | seed_missing | seed_designed)")
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), {
       status: 400,
