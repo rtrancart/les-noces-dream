@@ -767,6 +767,7 @@ export type Database = {
       email_textes: {
         Row: {
           corps: string | null
+          corps_html: string | null
           created_at: string
           cta_label: string | null
           description: string | null
@@ -783,6 +784,7 @@ export type Database = {
         }
         Insert: {
           corps?: string | null
+          corps_html?: string | null
           created_at?: string
           cta_label?: string | null
           description?: string | null
@@ -799,6 +801,7 @@ export type Database = {
         }
         Update: {
           corps?: string | null
+          corps_html?: string | null
           created_at?: string
           cta_label?: string | null
           description?: string | null
