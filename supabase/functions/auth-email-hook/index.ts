@@ -17,12 +17,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'Confirmez votre adresse email',
+  invite: 'Vous êtes invité·e sur LesNoces.net',
+  magiclink: 'Votre lien de connexion',
+  recovery: 'Réinitialisation de votre mot de passe',
+  email_change: 'Confirmez votre nouvelle adresse email',
+  reauthentication: 'Votre code de vérification',
 }
 
 // Template mapping
@@ -36,7 +36,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "les-noces"
+const SITE_NAME = "LesNoces.net"
 const SENDER_DOMAIN = "notify.lesnoces.net"
 const ROOT_DOMAIN = "lesnoces.net"
 const FROM_DOMAIN = "lesnoces.net" // Domain shown in From address (may be root or sender subdomain)
