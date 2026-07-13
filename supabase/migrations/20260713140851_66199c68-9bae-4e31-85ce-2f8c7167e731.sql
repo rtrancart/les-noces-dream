@@ -1,0 +1,1 @@
+DELETE FROM public.email_textes WHERE template_name = 'demande_reactivation_admin';

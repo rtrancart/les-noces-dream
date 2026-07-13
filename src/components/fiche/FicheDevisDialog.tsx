@@ -97,7 +97,7 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
           ? parseInt(values.budget_indicatif.trim(), 10)
           : null;
 
-      const { error } = await supabase.rpc("soumettre_demande_devis", {
+      const { data: demandeId, error } = await supabase.rpc("soumettre_demande_devis", {
         p_prestataire_id: prestataireId,
         p_nom: values.nom,
         p_email: values.email.toLowerCase().trim(),
@@ -111,6 +111,13 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
       });
 
       if (error) throw error;
+
+      // Notification email au prestataire (variante selon compte / sans compte)
+      if (demandeId) {
+        void supabase.functions
+          .invoke("notify-nouveau-contact-presta", { body: { demande_id: demandeId } })
+          .catch((e) => console.error("notify-nouveau-contact-presta failed", e));
+      }
 
       toast.success("Votre demande de devis a été envoyée !");
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);

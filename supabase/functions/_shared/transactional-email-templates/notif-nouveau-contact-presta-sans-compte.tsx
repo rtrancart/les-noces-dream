@@ -41,8 +41,13 @@ const Email = ({
         </Section>
 
         <Heading style={h1}>Un couple souhaite vous contacter</Heading>
+
+        <Section style={badge}>
+          <Text style={badgeText}>Contact sans compte</Text>
+        </Section>
+
         <Text style={text}>
-          Bonjour{prestataireNom ? ` ${prestataireNom}` : ''}, un couple inscrit sur {SITE_NAME} vient de vous adresser une demande{categorie ? ` pour votre prestation ${categorie.toLowerCase()}` : ''}.
+          Bonjour{prestataireNom ? ` ${prestataireNom}` : ''}, un couple non inscrit sur {SITE_NAME} vient de vous adresser une demande{categorie ? ` pour votre prestation ${categorie.toLowerCase()}` : ''}. Il pourra suivre votre réponse via un lien sécurisé qui lui sera envoyé.
         </Text>
 
         <Section style={card}>
@@ -99,7 +104,7 @@ const Email = ({
         )}
 
         <Text style={footer}>
-          Pour préserver la confidentialité du couple, ses coordonnées ne sont pas transmises. Répondez-lui via la messagerie de votre espace pro.
+          Pour préserver la confidentialité du couple, ses coordonnées ne sont pas transmises. Répondez-lui via la messagerie de votre espace pro : il recevra votre réponse par email.
         </Text>
       </Container>
     </Body>
@@ -110,7 +115,7 @@ export const template = {
   component: Email,
   subject: (d: Record<string, any>) =>
     `Nouvelle demande de contact${d?.clientPrenom ? ` de ${d.clientPrenom}` : ''}`,
-  displayName: 'Nouveau contact (client inscrit)',
+  displayName: 'Nouveau contact (client sans compte)',
   previewData: {
     prestataireNom: 'Atelier Marie',
     clientPrenom: 'Sophie',
@@ -127,7 +132,9 @@ const main = { backgroundColor: '#ffffff', fontFamily: 'Montserrat, Arial, sans-
 const container = { padding: '0 0 32px', maxWidth: '560px', margin: '0 auto' }
 const header = { backgroundColor: '#F5EFE3', padding: '28px 28px', textAlign: 'center' as const, marginBottom: '32px' }
 const logoImg = { display: 'block', margin: '0 auto', height: '48px', width: 'auto' }
-const h1 = { fontFamily: 'Playfair Display, Georgia, "Times New Roman", serif', fontSize: '26px', fontWeight: 'normal', color: '#2C3E50', margin: '0 28px 16px', lineHeight: '1.3' }
+const h1 = { fontFamily: 'Playfair Display, Georgia, "Times New Roman", serif', fontSize: '26px', fontWeight: 'normal', color: '#2C3E50', margin: '0 28px 8px', lineHeight: '1.3' }
+const badge = { margin: '0 28px 16px' }
+const badgeText = { display: 'inline-block', fontSize: '11px', textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: '#A57D27', fontWeight: 'bold', backgroundColor: '#FAF3E1', padding: '4px 10px', borderRadius: '2px', margin: 0, fontFamily: 'Montserrat, Arial, sans-serif' }
 const text = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '0 28px 24px', fontFamily: 'Montserrat, Arial, sans-serif' }
 const card = { backgroundColor: '#FAF7F1', padding: '24px', borderRadius: '4px', border: '1px solid #E8E0D0', margin: '0 28px' }
 const cardLabel = { fontSize: '11px', textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: '#A57D27', margin: '12px 0 4px', fontWeight: 'bold', fontFamily: 'Montserrat, Arial, sans-serif' }
