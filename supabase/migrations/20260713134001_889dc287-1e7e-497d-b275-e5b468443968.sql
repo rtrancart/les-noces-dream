@@ -1,0 +1,1 @@
+ALTER TABLE public.email_textes ADD COLUMN IF NOT EXISTS corps_html TEXT;
