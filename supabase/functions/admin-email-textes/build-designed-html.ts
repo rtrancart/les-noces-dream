@@ -102,16 +102,16 @@ function renderBlock(b: Block): string {
 
 // -------------------- Header, footer, signatures --------------------
 function header() {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.champagne}"><tr><td align="center" style="padding:32px 30px 8px">
-  <img src="${BRAND_ASSETS.ringAbysse}" width="80" alt="LesNoces.net" style="display:block;margin:0 auto 14px;height:auto;border:0" />
-  <div style="font-family:${SANS};font-size:9.5px;letter-spacing:.32em;text-transform:uppercase;color:${C.champagneLight};font-weight:600;margin:0 0 20px">Mariage &amp; événementiel d'exception</div>
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.abysse}"><tr><td align="center" style="padding:36px 30px 24px">
+  <img src="${BRAND_ASSETS.wordmarkWhite}" width="180" alt="LesNoces.net" style="display:block;margin:0 auto 12px;height:auto;border:0" />
+  <div style="font-family:${SANS};font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:${C.champagne};font-weight:600">Mariage &amp; événementiel d'exception</div>
 </td></tr>
-<tr><td align="center" style="padding:14px 20px 16px;border-top:1px solid rgba(255,255,255,.28);font-family:${SANS}">
-  <a href="https://lesnoces.net/" style="color:${C.champagneLight};text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Accueil</a>
-  <span style="color:rgba(255,255,255,.45);font-size:8px">◆</span>
-  <a href="https://lesnoces.net/prestataires" style="color:${C.champagneLight};text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Trouver un prestataire</a>
-  <span style="color:rgba(255,255,255,.45);font-size:8px">◆</span>
-  <a href="https://lesnoces.net/connexion" style="color:${C.champagneLight};text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Mon espace</a>
+<tr><td align="center" style="padding:14px 20px 16px;border-top:1px solid rgba(255,255,255,.14);font-family:${SANS}">
+  <a href="https://lesnoces.net/" style="color:#e8e0cf;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Accueil</a>
+  <span style="color:rgba(255,255,255,.35);font-size:8px">◆</span>
+  <a href="https://lesnoces.net/prestataires" style="color:#e8e0cf;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Trouver un prestataire</a>
+  <span style="color:rgba(255,255,255,.35);font-size:8px">◆</span>
+  <a href="https://lesnoces.net/connexion" style="color:#e8e0cf;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Mon espace</a>
 </td></tr></table>`
 }
 
