@@ -50,6 +50,25 @@ function planToFormule(plan: string | null | undefined): Formule | null {
   return null;
 }
 
+function isFormule(value: string | null): value is Formule {
+  return !!value && value in FORMULES;
+}
+
+function isEmbeddedFrame(): boolean {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
+function buildTopLevelCheckoutUrl(formule: Formule): string {
+  const url = new URL(window.location.href);
+  url.searchParams.set("checkout", formule);
+  url.searchParams.delete("statut");
+  return url.toString();
+}
+
 function formatDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
@@ -147,22 +166,43 @@ export default function PrestataireAbonnement() {
   const [abo, setAbo] = useState<Abonnement | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<Formule | null>(null);
+  const [manualRedirect, setManualRedirect] = useState<{ url: string; formule: Formule } | null>(null);
   const [showChange, setShowChange] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    let hasChanged = false;
     const statut = searchParams.get("statut");
     if (statut === "succes") {
       toast({
         title: "Abonnement enregistré",
         description: "Votre carte a été enregistrée. La facturation démarrera à la fin de votre période d'essai.",
       });
-      searchParams.delete("statut");
-      setSearchParams(searchParams, { replace: true });
+      nextParams.delete("statut");
+      hasChanged = true;
     } else if (statut === "annule") {
       toast({ title: "Souscription annulée", description: "Aucun paiement n'a été enregistré.", variant: "destructive" });
-      searchParams.delete("statut");
-      setSearchParams(searchParams, { replace: true });
+      nextParams.delete("statut");
+      hasChanged = true;
+    }
+
+    const checkoutFormule = searchParams.get("checkout");
+    if (isFormule(checkoutFormule)) {
+      nextParams.delete("checkout");
+      hasChanged = true;
+      if (isEmbeddedFrame()) {
+        setManualRedirect({ url: buildTopLevelCheckoutUrl(checkoutFormule), formule: checkoutFormule });
+      } else {
+        void createCheckoutSession(checkoutFormule);
+      }
+    } else if (checkoutFormule) {
+      nextParams.delete("checkout");
+      hasChanged = true;
+    }
+
+    if (hasChanged) {
+      setSearchParams(nextParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
@@ -179,17 +219,21 @@ export default function PrestataireAbonnement() {
     })();
   }, [prestataire?.id]);
 
-  async function subscribe(formule: Formule) {
+  async function createCheckoutSession(formule: Formule) {
     setSubmitting(formule);
+    setManualRedirect(null);
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-checkout", { body: { formule } });
       if (error) throw error;
       if (data?.url) {
-        try {
-          if (window.top && window.top !== window.self) window.top.location.href = data.url;
-          else window.location.href = data.url;
-        } catch {
-          window.location.href = data.url;
+        if (isEmbeddedFrame()) {
+          setManualRedirect({ url: data.url, formule });
+          toast({
+            title: "Redirection Stripe prête",
+            description: "Cliquez sur Continuer vers Stripe pour finaliser dans ce même onglet.",
+          });
+        } else {
+          window.location.assign(data.url);
         }
       } else {
         throw new Error("URL de paiement introuvable");
@@ -200,6 +244,29 @@ export default function PrestataireAbonnement() {
     } finally {
       setSubmitting(null);
     }
+  }
+
+  function subscribe(formule: Formule) {
+    if (isEmbeddedFrame()) {
+      const topLevelUrl = buildTopLevelCheckoutUrl(formule);
+      setSubmitting(formule);
+      setManualRedirect(null);
+
+      try {
+        if (!window.top) throw new Error("Fenêtre parente introuvable");
+        window.top.location.href = topLevelUrl;
+        window.setTimeout(() => {
+          setSubmitting((current) => (current === formule ? null : current));
+          setManualRedirect((current) => current ?? { url: topLevelUrl, formule });
+        }, 1200);
+      } catch {
+        setSubmitting(null);
+        setManualRedirect({ url: topLevelUrl, formule });
+      }
+      return;
+    }
+
+    void createCheckoutSession(formule);
   }
 
   function portailStripeBientot() {
@@ -217,17 +284,49 @@ export default function PrestataireAbonnement() {
   }
 
   if (hasSubscription && abo) {
-    return <GestionAbonnement
-      abo={abo}
-      showChange={showChange}
-      setShowChange={setShowChange}
-      subscribe={subscribe}
-      submitting={submitting}
-      portailStripeBientot={portailStripeBientot}
-    />;
+    return (
+      <>
+        {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} formule={manualRedirect.formule} />}
+        <GestionAbonnement
+          abo={abo}
+          showChange={showChange}
+          setShowChange={setShowChange}
+          subscribe={subscribe}
+          submitting={submitting}
+          portailStripeBientot={portailStripeBientot}
+        />
+      </>
+    );
   }
 
-  return <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} />;
+  return (
+    <>
+      {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} formule={manualRedirect.formule} />}
+      <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} />
+    </>
+  );
+}
+
+function StripeRedirectNotice({ url, formule }: { url: string; formule: Formule }) {
+  return (
+    <div className="mb-5 rounded-lg border border-primary/30 bg-primary/5 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-sans text-sm font-semibold text-foreground">Redirection Stripe prête</p>
+          <p className="font-sans text-xs text-muted-foreground">
+            Continuez vers Stripe pour passer à la formule {FORMULES[formule].label}.
+          </p>
+        </div>
+        <a
+          href={url}
+          target="_top"
+          className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 font-sans text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          Continuer vers Stripe
+        </a>
+      </div>
+    </div>
+  );
 }
 
 /* ============================================================
