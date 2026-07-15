@@ -62,12 +62,6 @@ function isEmbeddedFrame(): boolean {
   }
 }
 
-function buildTopLevelCheckoutUrl(formule: Formule): string {
-  const url = new URL(window.location.href);
-  url.searchParams.set("checkout", formule);
-  url.searchParams.delete("statut");
-  return url.toString();
-}
 
 function formatDate(iso: string | null): string {
   if (!iso) return "";
