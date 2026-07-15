@@ -127,9 +127,28 @@ Deno.serve(async (req) => {
         cancel_at_period_end: false,
       }).eq("prestataire_id", prestataire_id);
     }
+  } else if (event_type === "debug.backdate_premier_echec") {
+    const days = Number(body.days ?? 8);
+    await admin.from("abonnements").update({
+      premier_echec_le: new Date(Date.now() - days * 86400 * 1000).toISOString(),
+    }).eq("prestataire_id", prestataire_id);
+  } else if (event_type === "debug.reset_cycle") {
+    await admin.from("abonnements").update({
+      statut: "actif",
+      nb_echecs_paiement: 0,
+      premier_echec_le: null,
+      rappel_impaye_envoye_le: null,
+      suspendu_pour_impaye_le: null,
+      resilie_le: null,
+    }).eq("prestataire_id", prestataire_id);
+    await admin.from("prestataires").update({
+      statut: "actif",
+      motif_suspension: null,
+    }).eq("id", prestataire_id);
   } else {
     return json({ error: `event_type non supporté: ${event_type}` }, 400);
   }
+
 
 
   const { data: abo } = await admin.from("abonnements")
