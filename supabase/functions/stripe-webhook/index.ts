@@ -164,6 +164,19 @@ Deno.serve(async (req) => {
         const prestataireId = await resolvePrestataireId(sub);
         if (!prestataireId) break;
 
+        // Ignorer la suppression d'une sub qui n'est pas la sub courante :
+        // c'est un doublon annulé lors d'un changement de plan, il ne doit
+        // pas écraser l'état de la sub active.
+        const { data: curAbo } = await supabase
+          .from("abonnements")
+          .select("stripe_subscription_id")
+          .eq("prestataire_id", prestataireId)
+          .maybeSingle();
+        if (curAbo?.stripe_subscription_id && curAbo.stripe_subscription_id !== sub.id) {
+          break;
+        }
+
+
         const failedForPayment =
           sub.cancellation_details?.reason === "payment_failed" ||
           sub.status === "unpaid" ||
