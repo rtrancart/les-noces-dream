@@ -156,7 +156,7 @@ export default function PrestataireAbonnement() {
     (async () => {
       const { data } = await supabase
         .from("abonnements")
-        .select("id, plan, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_payment_method_id")
+        .select("id, plan, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_payment_method_id, carte_brand, carte_last4")
         .eq("prestataire_id", prestataire.id)
         .maybeSingle();
       setAbo(data as Abonnement | null);
