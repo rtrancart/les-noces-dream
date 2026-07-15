@@ -198,55 +198,42 @@ export default function PrestataireAbonnement() {
     })();
   }, [prestataire?.id]);
 
-  async function createCheckoutSession(formule: Formule) {
+  async function subscribe(formule: Formule) {
     setSubmitting(formule);
     setManualRedirect(null);
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-checkout", { body: { formule } });
       if (error) throw error;
-      if (data?.url) {
-        if (isEmbeddedFrame()) {
-          setManualRedirect({ url: data.url, formule });
-          toast({
-            title: "Redirection Stripe prête",
-            description: "Cliquez sur Continuer vers Stripe pour finaliser dans ce même onglet.",
-          });
+      const stripeUrl = data?.url as string | undefined;
+      if (!stripeUrl) throw new Error("URL de paiement introuvable");
+
+      // Toujours afficher le filet de sécurité (lien target="_top") avec l'URL Stripe réelle.
+      setManualRedirect({ url: stripeUrl, formule });
+
+      // Tenter la navigation programmatique : top window si accessible, sinon l'iframe elle-même.
+      try {
+        if (window.top && window.top !== window.self) {
+          window.top.location.href = stripeUrl;
         } else {
-          window.location.assign(data.url);
+          window.location.href = stripeUrl;
         }
-      } else {
-        throw new Error("URL de paiement introuvable");
+      } catch {
+        // Bloqué par la politique d'iframe : le lien "Continuer vers Stripe" prend le relais.
+        try {
+          window.location.href = stripeUrl;
+        } catch {
+          /* on garde manualRedirect visible */
+        }
       }
     } catch (e) {
       const message = e instanceof Error ? e.message : "Erreur lors de la création du paiement";
       toast({ title: "Erreur", description: message, variant: "destructive" });
+      setManualRedirect(null);
     } finally {
       setSubmitting(null);
     }
   }
 
-  function subscribe(formule: Formule) {
-    if (isEmbeddedFrame()) {
-      const topLevelUrl = buildTopLevelCheckoutUrl(formule);
-      setSubmitting(formule);
-      setManualRedirect(null);
-
-      try {
-        if (!window.top) throw new Error("Fenêtre parente introuvable");
-        window.top.location.href = topLevelUrl;
-        window.setTimeout(() => {
-          setSubmitting((current) => (current === formule ? null : current));
-          setManualRedirect((current) => current ?? { url: topLevelUrl, formule });
-        }, 1200);
-      } catch {
-        setSubmitting(null);
-        setManualRedirect({ url: topLevelUrl, formule });
-      }
-      return;
-    }
-
-    void createCheckoutSession(formule);
-  }
 
   function portailStripeBientot() {
     toast({
