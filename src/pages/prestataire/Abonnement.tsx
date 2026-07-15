@@ -37,6 +37,19 @@ const FORMULES: Record<Formule, { label: string; prix: string; periode: string; 
   annuel: { label: "Annuel", prix: "948€", periode: "par an (soit 79€/mois)" },
 };
 
+/** Traduit le `plan` stocké en base (ex: "standard_mensuel") vers la clé UI (ex: "standard"). */
+const PLAN_TO_FORMULE: Record<string, Formule> = {
+  standard_mensuel: "standard",
+  premium_mensuel: "premium",
+  annuel: "annuel",
+};
+function planToFormule(plan: string | null | undefined): Formule | null {
+  if (!plan) return null;
+  if (plan in PLAN_TO_FORMULE) return PLAN_TO_FORMULE[plan];
+  if (plan in FORMULES) return plan as Formule;
+  return null;
+}
+
 function formatDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
@@ -47,8 +60,10 @@ function formatMontant(cents: number | null, plan: string): string {
     const eur = cents / 100;
     return eur % 1 === 0 ? `${eur}€` : `${eur.toFixed(2)}€`;
   }
-  return FORMULES[plan as Formule]?.prix ?? "";
+  const key = planToFormule(plan);
+  return key ? FORMULES[key].prix : "";
 }
+
 
 /** Dérive l'état visuel du bloc abonnement */
 function deriveEtat(abo: Abonnement): {
@@ -229,9 +244,11 @@ function GestionAbonnement({
   portailStripeBientot: () => void;
 }) {
   const etat = deriveEtat(abo);
-  const formule = FORMULES[abo.plan as Formule];
-  const isPremium = abo.plan === "premium";
+  const formuleKey = planToFormule(abo.plan);
+  const formule = formuleKey ? FORMULES[formuleKey] : null;
+  const isPremium = formuleKey === "premium";
   const isEchec = etat.key === "echec";
+
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -368,7 +385,7 @@ function GestionAbonnement({
               <MiniPlanCard
                 key={f}
                 formule={f}
-                isCurrent={abo.plan === f}
+                isCurrent={formuleKey === f}
                 loading={submitting === f}
                 disabled={submitting !== null}
                 onClick={() => subscribe(f)}
