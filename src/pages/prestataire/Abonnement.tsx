@@ -683,25 +683,28 @@ function InfoTile({ label, value, icon }: { label: string; value: string; icon?:
   );
 }
 
-function ActionButton({ onClick, icon, label, highlight }: { onClick: () => void; icon: React.ReactNode; label: string; highlight?: boolean }) {
+function ActionButton({ onClick, icon, label, highlight, disabled, loading }: { onClick: () => void; icon: React.ReactNode; label: string; highlight?: boolean; disabled?: boolean; loading?: boolean }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        "w-full flex items-center gap-3 rounded-lg border px-4 py-3.5 text-left transition-all font-sans text-sm font-medium",
+        "w-full flex items-center gap-3 rounded-lg border px-4 py-3.5 text-left transition-all font-sans text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed",
         highlight
           ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-sm"
           : "bg-card text-foreground border-border hover:border-primary hover:bg-primary/5",
       )}
     >
-      <span className={cn(highlight ? "text-primary-foreground" : "text-primary")}>{icon}</span>
+      <span className={cn(highlight ? "text-primary-foreground" : "text-primary")}>
+        {loading ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : icon}
+      </span>
       <span className="flex-1">{label}</span>
     </button>
   );
 }
 
-function MiniPlanCard({ formule, isCurrent, loading, disabled, onClick }: {
-  formule: Formule; isCurrent: boolean; loading: boolean; disabled: boolean; onClick: () => void;
+function MiniPlanCard({ formule, isCurrent, isPending, loading, disabled, onClick }: {
+  formule: Formule; isCurrent: boolean; isPending?: boolean; loading: boolean; disabled: boolean; onClick: () => void;
 }) {
   const f = FORMULES[formule];
   const isPremium = formule === "premium";
@@ -710,6 +713,7 @@ function MiniPlanCard({ formule, isCurrent, loading, disabled, onClick }: {
       "rounded-xl border p-5 flex flex-col",
       isCurrent ? "border-primary bg-primary/5" : "border-border bg-card",
       isPremium && !isCurrent && "border-primary/30",
+      isPending && "border-primary/60 bg-primary/5",
     )}>
       <div className="flex items-start justify-between mb-3">
         <h4 className={cn(
@@ -721,6 +725,11 @@ function MiniPlanCard({ formule, isCurrent, loading, disabled, onClick }: {
             Actuelle
           </span>
         )}
+        {isPending && !isCurrent && (
+          <span className="font-sans text-[10px] uppercase tracking-wider font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            Programmée
+          </span>
+        )}
       </div>
       <div className="mb-4">
         <span className="font-serif text-2xl text-foreground">{f.prix}</span>
@@ -728,16 +737,16 @@ function MiniPlanCard({ formule, isCurrent, loading, disabled, onClick }: {
       </div>
       <button
         onClick={onClick}
-        disabled={disabled || isCurrent}
+        disabled={disabled || isCurrent || isPending}
         className={cn(
           "mt-auto w-full py-2 rounded-lg font-sans text-xs font-semibold transition-all inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed",
-          isCurrent
+          isCurrent || isPending
             ? "bg-muted text-muted-foreground"
             : "border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground",
         )}
       >
         {loading && <Loader2 className="h-3 w-3 animate-spin" />}
-        {isCurrent ? "Formule actuelle" : "Passer à cette formule"}
+        {isCurrent ? "Formule actuelle" : isPending ? "Programmée" : "Passer à cette formule"}
       </button>
     </div>
   );
