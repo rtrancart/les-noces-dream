@@ -342,3 +342,68 @@ async function syncSubscription(sub: Stripe.Subscription) {
     });
   }
 }
+
+// -- Emails d'impayé --------------------------------------------------------
+
+const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://les-noces.lovable.app";
+
+/**
+ * Enqueue un email transactionnel d'impayé pour le prestataire.
+ * `templateName` doit exister dans le registre côté send-transactional-email.
+ * `idempotencyKey` doit être stable pour un même jalon afin d'éviter tout doublon
+ * si Stripe rejoue un webhook.
+ */
+async function enqueueImpayeEmail(
+  prestataireId: string,
+  templateName: "impaye_premier_echec" | "impaye_rappel_intermediaire" | "impaye_suspension",
+  opts: { idempotencyKey: string },
+) {
+  try {
+    const { data: presta } = await supabase
+      .from("prestataires")
+      .select("email_contact, nom_commercial, user_id")
+      .eq("id", prestataireId)
+      .maybeSingle();
+
+    if (!presta?.email_contact) {
+      console.warn("enqueueImpayeEmail: no email_contact for prestataire", prestataireId);
+      return;
+    }
+
+    let prenom: string | undefined;
+    if (presta.user_id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("prenom")
+        .eq("id", presta.user_id)
+        .maybeSingle();
+      prenom = profile?.prenom ?? undefined;
+    }
+
+    const portailUrl = `${SITE_URL}/espace-pro/abonnement`;
+
+    const templateData: Record<string, unknown> = {
+      prenom,
+      nom_commercial: presta.nom_commercial ?? undefined,
+    };
+    if (templateName === "impaye_suspension") {
+      templateData.reactivation_url = portailUrl;
+    } else {
+      templateData.portail_url = portailUrl;
+    }
+
+    const { error } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName,
+        recipientEmail: presta.email_contact,
+        idempotencyKey: opts.idempotencyKey,
+        templateData,
+      },
+    });
+    if (error) {
+      console.error("enqueueImpayeEmail invoke error", templateName, error);
+    }
+  } catch (e) {
+    console.error("enqueueImpayeEmail failed", templateName, e);
+  }
+}
