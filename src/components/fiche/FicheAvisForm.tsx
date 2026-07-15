@@ -23,8 +23,6 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Form,
   FormField,
@@ -97,15 +95,8 @@ const criteres = [
 ];
 
 export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuccess }: Props) {
-  const { user, hasRole } = useAuth();
-  const isSuperAdmin = hasRole("super_admin");
+  const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [step, setStep] = useState<"email" | "form">(isSuperAdmin ? "form" : "email");
-  const [email, setEmail] = useState("");
-  const [contactId, setContactId] = useState<string | null>(null);
-  const [demandeId, setDemandeId] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [emailError, setEmailError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<AvisFormValues>({
@@ -120,69 +111,12 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
   });
 
   const resetAll = () => {
-    setStep(isSuperAdmin ? "form" : "email");
-    setEmail("");
-    setContactId(null);
-    setDemandeId(null);
-    setEmailError("");
     form.reset();
   };
 
   const handleOpenChange = (v: boolean) => {
     if (!v) resetAll();
     onOpenChange(v);
-  };
-
-  const checkEmail = async () => {
-    if (!user) {
-      toast.error("Vous devez être connecté pour laisser un avis.");
-      return;
-    }
-
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed || !trimmed.includes("@")) {
-      setEmailError("Veuillez saisir un email valide");
-      return;
-    }
-
-    setChecking(true);
-    setEmailError("");
-
-    try {
-      // Use the SECURITY DEFINER function
-      const { data: canReview, error: fnError } = await supabase.rpc(
-        "can_review_prestataire",
-        { p_prestataire_id: prestataireId }
-      );
-
-      if (fnError) throw fnError;
-
-      if (!canReview) {
-        setEmailError(
-          "Vous devez avoir contacté ce prestataire via une demande de devis pour pouvoir laisser un avis."
-        );
-        return;
-      }
-
-      // Find contact_id and demande_id for linking
-      const { data: demandes } = await supabase
-        .from("demandes_devis")
-        .select("id, contact_id")
-        .eq("prestataire_id", prestataireId)
-        .eq("email_contact", trimmed)
-        .limit(1);
-
-      if (demandes && demandes.length > 0) {
-        setContactId(demandes[0].contact_id);
-        setDemandeId(demandes[0].id);
-      }
-
-      setStep("form");
-    } catch {
-      toast.error("Erreur lors de la vérification.");
-    } finally {
-      setChecking(false);
-    }
   };
 
   const onSubmit = async (values: AvisFormValues) => {
@@ -201,8 +135,6 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
       const { error } = await supabase.from("avis").insert({
         prestataire_id: prestataireId,
         client_id: user.id,
-        contact_id: contactId,
-        demande_id: demandeId,
         note_qualite_presta: values.note_qualite_presta,
         note_professionnalisme: values.note_professionnalisme,
         note_rapport_qualite_prix: values.note_rapport_qualite_prix,
@@ -225,80 +157,51 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
 
   const content = (
     <div className="space-y-6">
-      {step === "email" ? (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Pour déposer un avis, nous vérifions que vous avez bien contacté ce prestataire
-            via une demande de devis.
-          </p>
-          <div className="space-y-2">
-            <Label htmlFor="avis-email">Votre adresse email</Label>
-            <Input
-              id="avis-email"
-              type="email"
-              placeholder="votre@email.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setEmailError("");
-              }}
-              onKeyDown={(e) => e.key === "Enter" && checkEmail()}
-            />
-            {emailError && (
-              <p className="text-sm text-destructive">{emailError}</p>
-            )}
-          </div>
-          <Button onClick={checkEmail} disabled={checking} className="w-full">
-            {checking ? "Vérification…" : "Continuer"}
-          </Button>
-        </div>
-      ) : (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            {criteres.map((c) => (
-              <FormField
-                key={c.name}
-                control={form.control}
-                name={c.name}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{c.label}</FormLabel>
-                    <FormControl>
-                      <StarRating
-                        value={field.value}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ))}
-
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          {criteres.map((c) => (
             <FormField
+              key={c.name}
               control={form.control}
-              name="commentaire"
+              name={c.name}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Votre avis</FormLabel>
+                  <FormLabel>{c.label}</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Décrivez votre expérience (min. 100 caractères)…"
-                      rows={5}
-                      {...field}
+                    <StarRating
+                      value={field.value}
+                      onChange={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          ))}
 
-            <Button type="submit" disabled={submitting} className="w-full">
-              {submitting ? "Envoi…" : "Envoyer mon avis"}
-            </Button>
-          </form>
-        </Form>
-      )}
+          <FormField
+            control={form.control}
+            name="commentaire"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Votre avis</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Décrivez votre expérience (min. 100 caractères)…"
+                    rows={5}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit" disabled={submitting} className="w-full">
+            {submitting ? "Envoi…" : "Envoyer mon avis"}
+          </Button>
+        </form>
+      </Form>
     </div>
   );
 
@@ -309,9 +212,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
           <SheetHeader>
             <SheetTitle>Laisser un avis</SheetTitle>
             <SheetDescription>
-              {step === "email"
-                ? "Vérification de votre éligibilité"
-                : "Notez votre expérience"}
+              Notez votre expérience
             </SheetDescription>
           </SheetHeader>
           {content}
@@ -326,9 +227,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
         <DialogHeader>
           <DialogTitle>Laisser un avis</DialogTitle>
           <DialogDescription>
-            {step === "email"
-              ? "Vérification de votre éligibilité"
-              : "Notez votre expérience"}
+            Notez votre expérience
           </DialogDescription>
         </DialogHeader>
         {content}
