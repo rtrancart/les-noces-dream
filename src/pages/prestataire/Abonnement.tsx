@@ -193,13 +193,25 @@ export default function PrestataireAbonnement() {
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-checkout", { body: { formule } });
       if (error) throw error;
+
+      // Cas 1 : changement de plan sur un abonnement existant → pas de redirection Stripe.
+      if (data?.changed === true) {
+        toast({ title: "Formule mise à jour", description: "Votre abonnement a été modifié avec proration immédiate." });
+        // Refresh de l'abonnement local (le webhook Stripe met la DB à jour de manière asynchrone).
+        setTimeout(() => window.location.reload(), 1500);
+        return;
+      }
+      if (data?.changed === false) {
+        toast({ title: "Aucun changement", description: data?.message ?? "Vous êtes déjà sur cette formule." });
+        return;
+      }
+
+      // Cas 2 : nouvelle souscription → redirection vers Checkout Stripe.
       const stripeUrl = data?.url as string | undefined;
       if (!stripeUrl) throw new Error("URL de paiement introuvable");
 
-      // Toujours afficher le filet de sécurité (lien target="_top") avec l'URL Stripe réelle.
       setManualRedirect({ url: stripeUrl, formule });
 
-      // Tenter la navigation programmatique : top window si accessible, sinon l'iframe elle-même.
       try {
         if (window.top && window.top !== window.self) {
           window.top.location.href = stripeUrl;
@@ -207,7 +219,6 @@ export default function PrestataireAbonnement() {
           window.location.href = stripeUrl;
         }
       } catch {
-        // Bloqué par la politique d'iframe : le lien "Continuer vers Stripe" prend le relais.
         try {
           window.location.href = stripeUrl;
         } catch {
