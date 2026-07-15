@@ -17,6 +17,7 @@ export type Database = {
       abonnements: {
         Row: {
           adresse_facturation: Json | null
+          cancel_at_period_end: boolean
           created_at: string
           debut_le: string
           derniere_facture_id: string | null
@@ -32,10 +33,12 @@ export type Database = {
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
           stripe_subscription_id: string | null
+          suspendu_pour_impaye_le: string | null
           updated_at: string
         }
         Insert: {
           adresse_facturation?: Json | null
+          cancel_at_period_end?: boolean
           created_at?: string
           debut_le?: string
           derniere_facture_id?: string | null
@@ -51,10 +54,12 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           stripe_subscription_id?: string | null
+          suspendu_pour_impaye_le?: string | null
           updated_at?: string
         }
         Update: {
           adresse_facturation?: Json | null
+          cancel_at_period_end?: boolean
           created_at?: string
           debut_le?: string
           derniere_facture_id?: string | null
@@ -70,6 +75,7 @@ export type Database = {
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
           stripe_subscription_id?: string | null
+          suspendu_pour_impaye_le?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2029,6 +2035,10 @@ export type Database = {
         Returns: number
       }
       purger_historique_navigation: { Args: never; Returns: number }
+      reactiver_prestataire_paiement: {
+        Args: { p_prestataire_id: string }
+        Returns: undefined
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -2082,7 +2092,12 @@ export type Database = {
         | "charte_obsolete"
       objet_demande: "mariage" | "evenement_entreprise" | "cocktail" | "autre"
       pack_boost: "5j_5eur" | "15j_12eur" | "30j_20eur"
-      plan_abonnement: "essai" | "mensuel" | "annuel"
+      plan_abonnement:
+        | "essai"
+        | "mensuel"
+        | "annuel"
+        | "standard_mensuel"
+        | "premium_mensuel"
       source_boost: "prestataire" | "admin"
       statut_abonnement:
         | "actif"
@@ -2263,7 +2278,13 @@ export const Constants = {
       ],
       objet_demande: ["mariage", "evenement_entreprise", "cocktail", "autre"],
       pack_boost: ["5j_5eur", "15j_12eur", "30j_20eur"],
-      plan_abonnement: ["essai", "mensuel", "annuel"],
+      plan_abonnement: [
+        "essai",
+        "mensuel",
+        "annuel",
+        "standard_mensuel",
+        "premium_mensuel",
+      ],
       source_boost: ["prestataire", "admin"],
       statut_abonnement: [
         "actif",
