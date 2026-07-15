@@ -1,28 +1,56 @@
-## Objectif
 
-Ajouter un champ **Titre de l'avis** dans le formulaire de dépôt d'avis et le propager jusqu'à la colonne `avis.titre` (déjà existante en base, aujourd'hui non alimentée).
+## Contexte / diagnostic
 
-## 1. Formulaire `src/components/fiche/FicheAvisForm.tsx`
+Aujourd'hui `abo.plan` stocké en base vaut `standard_mensuel`, `premium_mensuel` ou `annuel` (mappé côté webhook Stripe). Or dans la page `Abonnement.tsx`, on cherche ces valeurs dans un dictionnaire `FORMULES` dont les clés sont `standard` / `premium` / `annuel`. Résultat :
+- Le nom affiché tombe sur le fallback `abo.plan` brut → l'utilisateur voit `standard_mensuel`.
+- La comparaison "formule actuelle" (`abo.plan === f`) est toujours fausse → le CTA n'est jamais grisé et on peut re-souscrire à la formule déjà en cours.
 
-- Ajouter `titre: z.string().trim().min(3, "Titre requis").max(120, "Maximum 120 caractères")` dans le schéma zod.
-- Ajouter le champ `titre` dans `defaultValues` (`""`).
-- Insérer un `<FormField name="titre">` en tête du formulaire (avant les 4 notes), avec un `<Input placeholder="Résumez votre expérience en quelques mots" />`.
-- Passer `p_titre: values.titre` dans l'appel `supabase.rpc("soumettre_avis", …)`.
+Les deux problèmes viennent de la même cause : mismatch entre `plan` (DB) et `formule` (clé UI).
 
-## 2. Fonction SQL `public.soumettre_avis`
+---
 
-Ajouter un paramètre `p_titre text` (positionné après `p_commentaire`, avant `p_nom`/`p_email` pour garder les paramètres optionnels à la fin, ou à la fin selon la signature — à valider) :
+## Option retenue pour récupérer un nom lisible
 
-- Trim + validation : `length(trim(p_titre)) BETWEEN 3 AND 120`, sinon `RAISE EXCEPTION 'Titre requis (3 à 120 caractères)'`.
-- Insérer la valeur dans `avis.titre` lors du `INSERT`.
+Trois pistes possibles, de la plus simple à la plus riche :
 
-Migration SQL : `CREATE OR REPLACE FUNCTION public.soumettre_avis(...)` avec la nouvelle signature, `GRANT EXECUTE ... TO anon, authenticated` re-donné pour la nouvelle signature. L'ancienne signature (sans `p_titre`) sera droppée dans la même migration pour éviter la coexistence.
+1. **Mapping frontend (retenu)** — Ajouter côté page une table `PLAN_TO_FORMULE: Record<string, Formule>` qui traduit `standard_mensuel → standard`, `premium_mensuel → premium`, `annuel → annuel`. On réutilise ensuite le libellé humain déjà défini dans `FORMULES[formule].label` ("Standard", "Premium", "Annuel"). Zéro impact backend, zéro migration, cohérent avec le mapping inverse `PLAN_BY_FORMULE` déjà présent dans le webhook.
+2. Ajouter une colonne `nom_formule` (text) dans `abonnements`, hydratée par le webhook depuis `price.nickname` ou `product.name` Stripe. Plus riche mais nécessite migration + réémission d'événements pour peupler l'existant.
+3. Récupérer le nom depuis Stripe à la volée côté edge function. Coûteux (appel réseau à chaque affichage), non retenu.
 
-## 3. Affichage
+Je propose **l'option 1**. Elle est immédiate, réversible, et si un jour on veut des libellés dynamiques on migrera vers l'option 2 sans casser l'UI.
 
-`FicheAvis.tsx` et `pages/prestataire/Avis.tsx` affichent déjà `a.titre` quand il est présent — aucun changement.
+## Changements à apporter dans `src/pages/prestataire/Abonnement.tsx`
 
-## Fichiers touchés
+1. Ajouter en haut du fichier :
+   ```ts
+   const PLAN_TO_FORMULE: Record<string, Formule> = {
+     standard_mensuel: "standard",
+     premium_mensuel: "premium",
+     annuel: "annuel",
+   };
+   function planToFormule(plan: string): Formule | null {
+     return PLAN_TO_FORMULE[plan] ?? (plan in FORMULES ? (plan as Formule) : null);
+   }
+   ```
+   Le fallback `plan in FORMULES` couvre le cas où la valeur serait déjà normalisée (ex : ancien enregistrement, tests).
 
-- `src/components/fiche/FicheAvisForm.tsx` — schéma + champ + appel RPC.
-- Migration SQL : `DROP FUNCTION public.soumettre_avis(uuid, smallint, smallint, smallint, smallint, text, text, text)` + `CREATE OR REPLACE FUNCTION public.soumettre_avis(..., p_titre text, ...)` + `GRANT EXECUTE`.
+2. Dans `GestionAbonnement` : remplacer `const formule = FORMULES[abo.plan as Formule]` par
+   ```ts
+   const formuleKey = planToFormule(abo.plan);
+   const formule = formuleKey ? FORMULES[formuleKey] : null;
+   const isPremium = formuleKey === "premium";
+   ```
+   Les affichages `formule?.label ?? abo.plan` restent, mais tombent désormais sur "Standard" / "Premium" / "Annuel". `formatMontant` gagne aussi le passage par `planToFormule` pour son fallback prix.
+
+3. Dans la section "Changer de formule" : `MiniPlanCard` reçoit désormais `isCurrent={formuleKey === f}` au lieu de `abo.plan === f`. Le composant gère déjà :
+   - `disabled={disabled || isCurrent}` sur le `<button>` (empêche le clic),
+   - libellé "Formule actuelle" + badge "Actuelle",
+   - style grisé via `bg-muted text-muted-foreground` et `disabled:cursor-not-allowed`.
+   Rien à ajouter côté composant : la comparaison corrigée suffit à activer le comportement souhaité.
+
+Aucun changement backend, aucune migration.
+
+## Vérification
+
+- Recharger `/espace-pro/abonnement` avec un abonnement `standard_mensuel` → le titre affiche "Standard", le badge "Formule Standard", et dans "Changer de formule" la carte Standard est grisée, CTA non cliquable ; Premium et Annuel restent actifs.
+- Répéter avec `premium_mensuel` et `annuel` pour valider les trois cas.
