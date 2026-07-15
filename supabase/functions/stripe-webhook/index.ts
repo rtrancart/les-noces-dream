@@ -1,0 +1,228 @@
+// Webhook Stripe : met à jour public.abonnements et public.prestataires.
+// Vérifie la signature Stripe (STRIPE_WEBHOOK_SECRET). verify_jwt = false.
+import { createClient } from "npm:@supabase/supabase-js@2";
+import Stripe from "npm:stripe@17";
+
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
+  apiVersion: "2024-11-20.acacia",
+});
+const WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
+
+type Formule = "standard" | "premium" | "annuel";
+const PLAN_BY_FORMULE: Record<Formule, string> = {
+  standard: "standard_mensuel",
+  premium: "premium_mensuel",
+  annuel: "annuel",
+};
+
+Deno.serve(async (req) => {
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+
+  const sig = req.headers.get("stripe-signature");
+  if (!sig || !WEBHOOK_SECRET) {
+    return new Response("Missing signature or secret", { status: 400 });
+  }
+
+  const rawBody = await req.text();
+  let event: Stripe.Event;
+  try {
+    event = await stripe.webhooks.constructEventAsync(rawBody, sig, WEBHOOK_SECRET);
+  } catch (err) {
+    console.error("Invalid Stripe signature", err);
+    return new Response("Invalid signature", { status: 400 });
+  }
+
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode !== "subscription" || !session.subscription) break;
+        const subId = typeof session.subscription === "string"
+          ? session.subscription
+          : session.subscription.id;
+        const sub = await stripe.subscriptions.retrieve(subId);
+        await syncSubscription(sub);
+        break;
+      }
+
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
+        const sub = event.data.object as Stripe.Subscription;
+        await syncSubscription(sub);
+        break;
+      }
+
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subId = typeof invoice.subscription === "string" ? invoice.subscription : null;
+        if (!subId) break;
+        const sub = await stripe.subscriptions.retrieve(subId);
+        const prestataireId = await resolvePrestataireId(sub);
+        if (!prestataireId) break;
+
+        await supabase
+          .from("abonnements")
+          .update({
+            statut: "actif",
+            fin_periode_le: new Date(sub.current_period_end * 1000).toISOString(),
+            derniere_facture_id: invoice.id,
+            nb_echecs_paiement: 0,
+          })
+          .eq("prestataire_id", prestataireId);
+
+        // Réactivation auto si suspendu pour impayé
+        await supabase.rpc("reactiver_prestataire_paiement", {
+          p_prestataire_id: prestataireId,
+        });
+        await supabase
+          .from("abonnements")
+          .update({ suspendu_pour_impaye_le: null })
+          .eq("prestataire_id", prestataireId);
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subId = typeof invoice.subscription === "string" ? invoice.subscription : null;
+        if (!subId) break;
+        const sub = await stripe.subscriptions.retrieve(subId);
+        const prestataireId = await resolvePrestataireId(sub);
+        if (!prestataireId) break;
+
+        const { data: cur } = await supabase
+          .from("abonnements")
+          .select("nb_echecs_paiement")
+          .eq("prestataire_id", prestataireId)
+          .maybeSingle();
+        const nb = (cur?.nb_echecs_paiement ?? 0) + 1;
+
+        await supabase
+          .from("abonnements")
+          .update({ statut: "en_retard", nb_echecs_paiement: nb })
+          .eq("prestataire_id", prestataireId);
+        // PAS de suspension à ce stade : Stripe relance pendant ~2 semaines.
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        const prestataireId = await resolvePrestataireId(sub);
+        if (!prestataireId) break;
+
+        const failedForPayment =
+          sub.cancellation_details?.reason === "payment_failed" ||
+          sub.status === "unpaid" ||
+          sub.status === "past_due";
+
+        if (failedForPayment) {
+          // Abandon définitif après épuisement des relances → suspension fiche
+          await supabase
+            .from("abonnements")
+            .update({
+              statut: "annule",
+              suspendu_pour_impaye_le: new Date().toISOString(),
+              resilie_le: new Date().toISOString(),
+            })
+            .eq("prestataire_id", prestataireId);
+
+          await supabase
+            .from("prestataires")
+            .update({
+              statut: "suspendu",
+              motif_suspension: "Abonnement définitivement abandonné pour impayé",
+            })
+            .eq("id", prestataireId);
+        } else {
+          // Résiliation propre arrivée à échéance
+          await supabase
+            .from("abonnements")
+            .update({
+              statut: "expire",
+              cancel_at_period_end: false,
+            })
+            .eq("prestataire_id", prestataireId);
+        }
+        break;
+      }
+    }
+
+    return new Response(JSON.stringify({ received: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    console.error("stripe-webhook handler error", e);
+    return new Response("Handler error", { status: 500 });
+  }
+});
+
+// -- Helpers ----------------------------------------------------------------
+
+async function resolvePrestataireId(sub: Stripe.Subscription): Promise<string | null> {
+  const fromMeta = sub.metadata?.prestataire_id;
+  if (fromMeta) return fromMeta;
+
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  const { data } = await supabase
+    .from("abonnements")
+    .select("prestataire_id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  return data?.prestataire_id ?? null;
+}
+
+async function syncSubscription(sub: Stripe.Subscription) {
+  const prestataireId = await resolvePrestataireId(sub);
+  if (!prestataireId) return;
+
+  const formule = (sub.metadata?.formule as Formule | undefined);
+  const plan = formule ? PLAN_BY_FORMULE[formule] : null;
+  const item = sub.items.data[0];
+  const montantCents = item?.price?.unit_amount ?? null;
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+
+  // Statut interne à partir du statut Stripe + cancel_at_period_end
+  let statut: string = "actif";
+  if (sub.cancel_at_period_end) statut = "resilie";
+  else if (sub.status === "trialing" || sub.status === "active") statut = "actif";
+  else if (sub.status === "past_due") statut = "en_retard";
+  else if (sub.status === "unpaid") statut = "en_retard";
+  else if (sub.status === "canceled") statut = "expire";
+  else if (sub.status === "paused") statut = "en_pause";
+
+  const patch: Record<string, unknown> = {
+    stripe_customer_id: customerId,
+    stripe_subscription_id: sub.id,
+    statut,
+    cancel_at_period_end: sub.cancel_at_period_end,
+    fin_periode_le: new Date(sub.current_period_end * 1000).toISOString(),
+    debut_le: new Date(sub.start_date * 1000).toISOString(),
+  };
+  if (plan) patch.plan = plan;
+  if (montantCents != null) patch.montant_cents = montantCents;
+  if (sub.cancel_at_period_end && !("resilie_le" in patch)) {
+    patch.resilie_le = new Date().toISOString();
+  }
+
+  // Upsert par prestataire_id
+  const { data: existing } = await supabase
+    .from("abonnements")
+    .select("id")
+    .eq("prestataire_id", prestataireId)
+    .maybeSingle();
+
+  if (existing?.id) {
+    await supabase.from("abonnements").update(patch).eq("id", existing.id);
+  } else {
+    await supabase.from("abonnements").insert({
+      prestataire_id: prestataireId,
+      plan: plan ?? "mensuel",
+      ...patch,
+    });
+  }
+}
