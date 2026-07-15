@@ -97,6 +97,7 @@ const App = () => (
               <Route path="/mentions-legales" element={<PageContenu />} />
               <Route path="/confidentialite" element={<PageContenu />} />
               <Route path="/page/:slug" element={<PageContenu />} />
+              <Route path="/connect" element={<Connect />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}
