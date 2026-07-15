@@ -1,68 +1,56 @@
-## Contexte
+## Objectif
 
-Faille confirmée : la policy RLS INSERT sur `avis` accepte n'importe quel utilisateur connecté (`auth.uid() IS NOT NULL`), sans lien avec le prestataire. Un attaquant peut donc, en tapant directement l'API :
-- poster un avis au nom de quelqu'un d'autre (`client_id` arbitraire),
-- publier plusieurs avis pour le même prestataire,
-- forcer `statut = 'valide'` et court-circuiter la modération admin.
+Assouplir le dépôt d'avis : plus de minimum 100 caractères, et plus besoin d'être connecté (le prestataire peut avoir tout géré par téléphone avec un client qui n'a pas de compte). La modération admin reste le seul filtre anti-faux avis.
 
-Le contrôle par email dans `FicheAvisForm.tsx` reste utile côté UX mais ne protège rien côté base.
+## 1. Formulaire d'avis (`src/components/fiche/FicheAvisForm.tsx`)
 
-## Décision produit
+- **Retirer la contrainte 100 caractères** dans le schéma zod : `commentaire: z.string().trim().min(1, "Obligatoire").max(2000)`.
+- Adapter le placeholder du textarea ("Décrivez votre expérience…" sans mention "min. 100").
+- **Rendre le formulaire accessible aux visiteurs non connectés** :
+  - Ajouter en tête du formulaire deux champs obligatoires si `!user` :
+    - `nom` (2–80 caractères)
+    - `email` (format email, max 255)
+    - Ces champs alimenteront `contacts_anonymes` (mécanisme déjà utilisé pour les demandes de devis) via une nouvelle fonction SQL `soumettre_avis` (voir §3), pour associer l'avis à un `contact_id` plutôt qu'à un `client_id`.
+  - Si `user` connecté : champs masqués, on garde le lien via `client_id = auth.uid()`.
+- Bouton "Laisser un avis" sur la fiche (`FicheAvis.tsx`) : retirer la condition qui exige d'être connecté (rendre visible pour tous). Aucun autre changement UI nécessaire.
 
-Vu que beaucoup de prestations se règlent hors plateforme (téléphone), on n'exige PAS de `demande_devis` préalable. On garde une porte ouverte pour tout client connecté, mais on referme les vraies portes dérobées :
+## 2. RLS de la table `public.avis`
 
-- L'avis est forcément posté au nom du user connecté.
-- L'avis part obligatoirement en `en_attente` (la modération admin existante reste le vrai filtre anti-faux avis).
-- Un seul avis par couple (client, prestataire) — plus de spam.
-- Un client ne peut pas poster d'avis sur son propre prestataire.
+Remplacer la policy `Clients can submit reviews (pending moderation)` par un dispositif qui autorise deux cas :
 
-## Plan
+- **Utilisateur connecté** : `client_id = auth.uid()`, `contact_id IS NULL`, pas d'auto-avis, un seul avis par couple (client, prestataire).
+- **Visiteur anonyme** : insertion refusée par RLS directe. Le dépôt anonyme passera obligatoirement par la fonction `soumettre_avis` en `SECURITY DEFINER` (§3), qui contrôle elle-même les règles métier. Aucune policy INSERT pour `anon` sur `avis` (surface d'attaque minimisée).
 
-### 1. Migration RLS sur `public.avis`
+Dans tous les cas la policy force `statut = 'en_attente'`.
 
-- Supprimer la policy `Authenticated can insert avis`.
-- Créer une nouvelle policy INSERT durcie (voir SQL en "Détails techniques").
-- Policy admin `Admins can manage avis` (FOR ALL) : inchangée → super_admin/admin gardent les pleins pouvoirs (modération, réponses, corrections).
-- Policy SELECT publique : inchangée → affichage des avis validés inchangé.
+## 3. Nouvelle fonction SQL `soumettre_avis`
 
-### 2. Nettoyage côté UI (`src/components/fiche/FicheAvisForm.tsx`)
+`SECURITY DEFINER`, `search_path = public`, appelée depuis le formulaire quel que soit l'état de connexion. Elle :
 
-- Retirer l'appel `can_review_prestataire` et l'étape "email" du flux client normal, puisque la règle métier ne l'exige plus. On garde le formulaire direct : notes + commentaire ≥ 100 caractères, `client_id = user.id`, `statut = 'en_attente'`.
-- Le cas super_admin (`isSuperAdmin` → step form direct) reste inchangé.
-- Optionnel mais recommandé : supprimer la fonction SQL `can_review_prestataire` devenue inutile (peut être fait dans la même migration ou plus tard).
+- valide les 4 notes (1..5) et le commentaire non vide,
+- si `auth.uid()` existe → `client_id = auth.uid()`, ignore `p_nom`/`p_email`,
+- sinon → crée/retrouve un `contacts_anonymes` (email normalisé) et attache `contact_id`,
+- interdit l'auto-avis (prestataire appartenant à l'utilisateur connecté),
+- anti-doublon : une seule ligne `avis` par couple (`client_id`|`contact_id`, `prestataire_id`),
+- calcule `note_globale` pondérée `(Q*2 + P + R + F)/5`,
+- insère `statut = 'en_attente'`.
 
-### 3. Vérifications
+`GRANT EXECUTE ON FUNCTION public.soumettre_avis(...) TO anon, authenticated;`
 
-- Test manuel : un client connecté peut poster un avis → OK, arrive en `en_attente`.
-- Deuxième tentative sur le même prestataire → refusée par la policy.
-- Tentative de forcer `statut = 'valide'` ou un `client_id` étranger via l'API → refusée.
-- Relancer le scanner Supabase pour clore le finding.
+## 4. Modération admin
 
-## Détails techniques
+Aucun changement : `/admin/avis` continue de valider/rejeter. Le trigger `sync_note_prestataire` publie l'avis (`statut = 'valide'`) et recalcule la note.
 
-```sql
-DROP POLICY "Authenticated can insert avis" ON public.avis;
+## 5. Points de vigilance sécurité
 
-CREATE POLICY "Clients can submit reviews (pending moderation)"
-ON public.avis
-FOR INSERT
-TO authenticated
-WITH CHECK (
-  client_id = auth.uid()
-  AND statut = 'en_attente'
-  -- pas d'auto-avis
-  AND NOT EXISTS (
-    SELECT 1 FROM public.prestataires p
-    WHERE p.id = avis.prestataire_id
-      AND p.user_id = auth.uid()
-  )
-  -- un seul avis par couple client/prestataire
-  AND NOT EXISTS (
-    SELECT 1 FROM public.avis a
-    WHERE a.client_id = auth.uid()
-      AND a.prestataire_id = avis.prestataire_id
-  )
-);
-```
+- Anti-spam : l'anonymat rouvre la porte aux faux avis. Mitigations en place :
+  - **Modération admin obligatoire** (statut `en_attente` forcé).
+  - **Anti-doublon** par email/prestataire dans `soumettre_avis`.
+  - Validation côté client + côté SQL des notes et de la longueur du commentaire (max 2000).
+- Optionnel (non inclus, à confirmer si vous voulez plus tard) : rate-limit par IP, captcha, ou email de confirmation avant modération.
 
-La modération admin (statut `valide` / `rejete`) reste couverte par la policy `Admins can manage avis` déjà en place. Le trigger `sync_note_prestataire` ne recalcule les notes que pour les avis `statut = 'valide'` → un avis en attente n'impacte pas la note publique tant qu'il n'est pas modéré.
+## Fichiers touchés
+
+- `src/components/fiche/FicheAvisForm.tsx` — schéma zod, champs nom/email conditionnels, appel `supabase.rpc('soumettre_avis', …)` au lieu de `insert`.
+- `src/components/fiche/FicheAvis.tsx` — bouton "Laisser un avis" toujours visible.
+- Migration SQL : nouvelle policy RLS sur `avis` + fonction `soumettre_avis` + GRANT.

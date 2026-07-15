@@ -2037,6 +2037,19 @@ export type Database = {
           read_ct: number
         }[]
       }
+      soumettre_avis: {
+        Args: {
+          p_commentaire: string
+          p_email?: string
+          p_nom?: string
+          p_note_flexibilite: number
+          p_note_professionnalisme: number
+          p_note_qualite_presta: number
+          p_note_rapport_qualite_prix: number
+          p_prestataire_id: string
+        }
+        Returns: string
+      }
       soumettre_demande_devis: {
         Args: {
           p_budget_indicatif?: number
