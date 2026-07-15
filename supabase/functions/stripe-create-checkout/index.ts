@@ -65,8 +65,17 @@ Deno.serve(async (req) => {
       .eq("prestataire_id", prestataire.id)
       .maybeSingle();
 
-    // 1. Customer Stripe
+    // 1. Customer Stripe — vérifier que l'ID stocké existe encore côté Stripe
     let customerId = abo?.stripe_customer_id ?? null;
+    if (customerId) {
+      try {
+        const existing = await stripe.customers.retrieve(customerId);
+        if ((existing as Stripe.DeletedCustomer).deleted) customerId = null;
+      } catch (_e) {
+        // Customer inconnu de Stripe (ex : ID de test/simulé) → on recrée
+        customerId = null;
+      }
+    }
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: prestataire.email_contact ?? userEmail,
