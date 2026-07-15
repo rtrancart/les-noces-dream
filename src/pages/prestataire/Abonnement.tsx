@@ -157,15 +157,16 @@ export default function PrestataireAbonnement() {
       if (error) throw error;
       if (data?.url) {
         const url = data.url as string;
-        // Ouvrir au top-level : Stripe Checkout refuse d'être affiché dans un iframe
-        // (le preview Lovable est un iframe), ce qui donne une page blanche.
-        const win = window.open(url, "_blank", "noopener,noreferrer");
-        if (!win) {
-          try {
-            (window.top ?? window).location.href = url;
-          } catch {
+        // Naviguer au top-level : dans le preview Lovable la page est en iframe,
+        // et Stripe Checkout refuse d'être affiché en iframe (page blanche sinon).
+        try {
+          if (window.top && window.top !== window.self) {
+            window.top.location.href = url;
+          } else {
             window.location.href = url;
           }
+        } catch {
+          window.location.href = url;
         }
       } else {
         throw new Error("URL de paiement introuvable");
