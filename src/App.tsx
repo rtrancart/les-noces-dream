@@ -29,6 +29,7 @@ import Reactivation from "./pages/Reactivation";
 import CharteProgressive from "./pages/CharteProgressive";
 import PageContenu from "./pages/PageContenu";
 import OAuthConsent from "./pages/OAuthConsent";
+import Connect from "./pages/Connect";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
