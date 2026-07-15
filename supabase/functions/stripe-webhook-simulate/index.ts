@@ -186,3 +186,46 @@ function json(data: unknown, status = 200) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
+const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://les-noces.lovable.app";
+
+async function enqueueImpayeEmail(
+  prestataireId: string,
+  templateName: "impaye_premier_echec" | "impaye_rappel_intermediaire" | "impaye_suspension",
+  idempotencyKey: string,
+) {
+  const { data: presta } = await admin
+    .from("prestataires")
+    .select("email_contact, nom_commercial, user_id")
+    .eq("id", prestataireId)
+    .maybeSingle();
+  if (!presta?.email_contact) return;
+
+  let prenom: string | undefined;
+  if (presta.user_id) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("prenom")
+      .eq("id", presta.user_id)
+      .maybeSingle();
+    prenom = profile?.prenom ?? undefined;
+  }
+
+  const portailUrl = `${SITE_URL}/espace-pro/abonnement`;
+  const templateData: Record<string, unknown> = {
+    prenom,
+    nom_commercial: presta.nom_commercial ?? undefined,
+  };
+  if (templateName === "impaye_suspension") templateData.reactivation_url = portailUrl;
+  else templateData.portail_url = portailUrl;
+
+  await admin.functions.invoke("send-transactional-email", {
+    body: {
+      templateName,
+      recipientEmail: presta.email_contact,
+      idempotencyKey,
+      templateData,
+    },
+  });
+}
+
