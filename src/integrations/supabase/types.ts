@@ -2047,6 +2047,7 @@ export type Database = {
           p_note_qualite_presta: number
           p_note_rapport_qualite_prix: number
           p_prestataire_id: string
+          p_titre: string
         }
         Returns: string
       }
