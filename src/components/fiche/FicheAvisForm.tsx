@@ -214,9 +214,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
           <SheetHeader>
             <SheetTitle>Laisser un avis</SheetTitle>
             <SheetDescription>
-              {step === "email"
-                ? "Vérification de votre éligibilité"
-                : "Notez votre expérience"}
+              Notez votre expérience
             </SheetDescription>
           </SheetHeader>
           {content}
