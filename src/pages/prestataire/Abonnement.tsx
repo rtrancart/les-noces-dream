@@ -50,17 +50,6 @@ function planToFormule(plan: string | null | undefined): Formule | null {
   return null;
 }
 
-function isFormule(value: string | null): value is Formule {
-  return !!value && value in FORMULES;
-}
-
-function isEmbeddedFrame(): boolean {
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
-}
 
 
 function formatDate(iso: string | null): string {
