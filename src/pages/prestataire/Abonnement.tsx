@@ -19,6 +19,16 @@ interface Abonnement {
   suspendu_pour_impaye_le: string | null;
   stripe_subscription_id: string | null;
   stripe_payment_method_id: string | null;
+  carte_brand: string | null;
+  carte_last4: string | null;
+}
+
+function formatCarte(brand: string | null, last4: string | null): string | null {
+  if (!last4) return null;
+  const label = brand
+    ? brand.charAt(0).toUpperCase() + brand.slice(1)
+    : "Carte";
+  return `${label} •••• ${last4}`;
 }
 
 const FORMULES: Record<Formule, { label: string; prix: string; periode: string; premium?: boolean }> = {
