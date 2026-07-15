@@ -360,8 +360,10 @@ export default function PrestataireAbonnement() {
     setOpeningPortal(true);
     setManualRedirect(null);
 
-    // 1. Pré-ouverture SYNCHRONE de l'onglet (évite le popup blocker)
-    const newTab = window.open("", "_blank", "noopener,noreferrer");
+    // 1. Pré-ouverture SYNCHRONE de l'onglet (évite le popup blocker).
+    // NB: ne pas passer "noopener" ici — sinon window.open renvoie null et on perd la référence.
+    // On neutralise `opener` manuellement après avoir posé l'URL pour garder l'isolation.
+    const newTab = window.open("about:blank", "_blank");
 
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-portal-session");
