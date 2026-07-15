@@ -41,6 +41,7 @@ const buildSchema = (isAnonymous: boolean) =>
     email: isAnonymous
       ? z.string().trim().email("Email invalide").max(255)
       : z.string().optional(),
+    titre: z.string().trim().min(3, "Titre requis (3 caractères min.)").max(120, "Maximum 120 caractères"),
     note_qualite_presta: z.number().min(1, "Obligatoire").max(5),
     note_professionnalisme: z.number().min(1, "Obligatoire").max(5),
     note_rapport_qualite_prix: z.number().min(1, "Obligatoire").max(5),
