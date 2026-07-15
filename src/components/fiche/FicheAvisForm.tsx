@@ -99,6 +99,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
     defaultValues: {
       nom: "",
       email: "",
+      titre: "",
       note_qualite_presta: 0,
       note_professionnalisme: 0,
       note_rapport_qualite_prix: 0,
@@ -121,6 +122,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
         p_note_professionnalisme: values.note_professionnalisme,
         p_note_rapport_qualite_prix: values.note_rapport_qualite_prix,
         p_note_flexibilite: values.note_flexibilite,
+        p_titre: values.titre,
         p_commentaire: values.commentaire,
         p_nom: isAnonymous ? values.nom : null,
         p_email: isAnonymous ? values.email : null,
