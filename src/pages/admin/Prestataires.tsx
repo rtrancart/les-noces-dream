@@ -43,6 +43,7 @@ const statutLabels: Record<StatutPrestataire, string> = {
   validee: "Validée",
   actif: "Actif",
   suspendu: "Suspendu",
+  resilie_expire: "Résilié — expiré",
   archive: "Archivé",
 };
 
@@ -55,11 +56,13 @@ const statutColors: Record<StatutPrestataire, string> = {
   validee: "bg-champagne/40 text-foreground",
   actif: "bg-sauge/20 text-sauge",
   suspendu: "bg-destructive/10 text-destructive",
+  resilie_expire: "bg-muted/60 text-muted-foreground",
   archive: "bg-muted/40 text-muted-foreground",
 };
 
 // Statuts sélectionnables manuellement par l'admin.
 // 'actif' est exclu : il ne peut être obtenu qu'en signant validee + charte (trigger DB).
+// 'resilie_expire' est exclu : il est écrit uniquement par le webhook Stripe à la fin d'une résiliation volontaire.
 const SELECTABLE_STATUTS: StatutPrestataire[] = [
   "brouillon",
   "pre_inscrit",
@@ -70,6 +73,7 @@ const SELECTABLE_STATUTS: StatutPrestataire[] = [
   "suspendu",
   "archive",
 ];
+
 
 const emptyForm = {
   nom_commercial: "",
@@ -746,6 +750,7 @@ export default function Prestataires() {
     { key: "a_corriger", label: "À corriger", tone: statutColors.a_corriger },
     { key: "actif", label: "Actifs", tone: statutColors.actif },
     { key: "suspendu", label: "Suspendus", tone: statutColors.suspendu },
+    { key: "resilie_expire", label: "Résiliés expirés", tone: statutColors.resilie_expire },
     { key: "archive", label: "Archivés", tone: statutColors.archive },
   ];
 
