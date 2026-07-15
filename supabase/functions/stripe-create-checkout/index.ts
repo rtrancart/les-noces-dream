@@ -119,8 +119,8 @@ Deno.serve(async (req) => {
           formule,
         },
       },
-      success_url: `${origin}/espace-pro?statut=succes`,
-      cancel_url: `${origin}/espace-pro?statut=annule`,
+      success_url: `${origin}/espace-pro/abonnement?statut=succes`,
+      cancel_url: `${origin}/espace-pro/abonnement?statut=annule`,
       metadata: {
         prestataire_id: prestataire.id,
         formule,
