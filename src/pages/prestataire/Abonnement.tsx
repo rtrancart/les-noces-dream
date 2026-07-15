@@ -244,9 +244,11 @@ function GestionAbonnement({
   portailStripeBientot: () => void;
 }) {
   const etat = deriveEtat(abo);
-  const formule = FORMULES[abo.plan as Formule];
-  const isPremium = abo.plan === "premium";
+  const formuleKey = planToFormule(abo.plan);
+  const formule = formuleKey ? FORMULES[formuleKey] : null;
+  const isPremium = formuleKey === "premium";
   const isEchec = etat.key === "echec";
+
 
   return (
     <div className="space-y-6 md:space-y-8">
