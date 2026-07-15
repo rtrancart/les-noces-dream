@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "sdk_version": "0.22.1",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://egbohbwiywgyyculswvf.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "lesnoces-mcp",
+      "version": "0.1.0",
+      "title": "LesNoces"
+    },
+    "tools": [
+      {
+        "name": "search_prestataires",
+        "title": "Rechercher des prestataires",
+        "description": "Recherche des prestataires mariage LesNoces actifs. Filtres optionnels : mot-clé (nom, description), ville, région, catégorie (slug).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Mot-clé libre (nom commercial, description)"
+            },
+            "ville": {
+              "type": "string",
+              "description": "Ville (match exact insensible à la casse)"
+            },
+            "region": {
+              "type": "string",
+              "description": "Région (match exact insensible à la casse)"
+            },
+            "categorie_slug": {
+              "type": "string",
+              "description": "Slug d'une catégorie (mère ou fille)"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_prestataire",
+        "title": "Fiche prestataire",
+        "description": "Renvoie la fiche publique complète d'un prestataire LesNoces par son slug.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "slug": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Slug de la fiche (ex: studio-fleuriste-ephemere)"
+            }
+          },
+          "required": [
+            "slug"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_categories",
+        "title": "Lister les catégories",
+        "description": "Retourne l'ensemble des catégories de prestataires LesNoces (mères + filles) avec leur slug.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_me",
+        "title": "Mon profil",
+        "description": "Retourne le profil de l'utilisateur connecté (identité, rôles LesNoces).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_my_demandes_devis",
+        "title": "Mes demandes de devis",
+        "description": "Liste les demandes de devis de l'utilisateur connecté (côté client : ses envois ; côté prestataire : celles reçues). RLS appliquée.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

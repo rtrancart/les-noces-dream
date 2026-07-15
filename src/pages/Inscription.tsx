@@ -12,9 +12,14 @@ import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
 import RaisonSocialeField from "@/components/prestataire/RaisonSocialeField";
 
+const isSafeRelativePath = (p: string | null): p is string =>
+  !!p && p.startsWith("/") && !p.startsWith("//");
+
 const Inscription = () => {
   const { trackSignUp } = useTracking();
   const navigate = useNavigate();
+  const nextParam = new URLSearchParams(window.location.search).get("next");
+  const nextTarget = isSafeRelativePath(nextParam) ? nextParam : null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [prenom, setPrenom] = useState("");
@@ -29,11 +34,14 @@ const Inscription = () => {
     e.preventDefault();
     setLoading(true);
 
+    const defaultRedirect = role === "prestataire" ? "/pro/charte" : "/";
+    const redirectPath = nextTarget ?? defaultRedirect;
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}${role === "prestataire" ? "/pro/charte" : "/"}`,
+        emailRedirectTo: `${window.location.origin}${redirectPath}`,
         data: {
           prenom,
           nom,
@@ -55,11 +63,16 @@ const Inscription = () => {
     trackEvent("inscription", { role });
     trackSignUp("password", role);
 
-    // Si la session est créée immédiatement (auto-confirm) et que c'est un prestataire,
-    // on l'envoie directement valider la Charte Qualité.
-    if (role === "prestataire" && data.session) {
-      navigate("/pro/charte", { replace: true });
-      return;
+    // Session immédiate (auto-confirm)
+    if (data.session) {
+      if (nextTarget) {
+        window.location.href = nextTarget;
+        return;
+      }
+      if (role === "prestataire") {
+        navigate("/pro/charte", { replace: true });
+        return;
+      }
     }
 
     setSuccess(true);

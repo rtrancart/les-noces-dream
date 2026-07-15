@@ -10,10 +10,16 @@ import { Mail, Lock } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
 
+const isSafeRelativePath = (p: string | null): p is string =>
+  !!p && p.startsWith("/") && !p.startsWith("//");
+
 const Connexion = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+  const searchParams = new URLSearchParams(location.search);
+  const nextParam = searchParams.get("next");
+  const nextTarget = isSafeRelativePath(nextParam) ? nextParam : null;
+  const from = nextTarget ?? (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/";
   const { trackLogin } = useTracking();
 
   const [email, setEmail] = useState("");
@@ -33,7 +39,11 @@ const Connexion = () => {
       trackEvent("connexion");
       trackLogin("password");
       toast.success("Connexion réussie !");
-      navigate(from, { replace: true });
+      if (nextTarget) {
+        window.location.href = nextTarget;
+      } else {
+        navigate(from, { replace: true });
+      }
     }
   };
 
