@@ -294,18 +294,26 @@ function GestionAbonnement({
             {isEchec && <AlertTriangle className="text-terracotta shrink-0" size={20} />}
           </div>
 
-          {/* Grille infos : échéance + moyen de paiement */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <InfoTile
-              label="Prochaine échéance"
-              value={abo.fin_periode_le ? formatDate(abo.fin_periode_le) : "—"}
-            />
-            <InfoTile
-              label="Moyen de paiement"
-              value={abo.stripe_payment_method_id ? "Carte bancaire enregistrée" : "Aucun moyen de paiement"}
-              icon={<CreditCard size={16} className="text-muted-foreground" />}
-            />
-          </div>
+          {/* Grille infos : échéance + moyen de paiement (masqué tant que la carte n'est pas hydratée) */}
+          {(() => {
+            const carte = formatCarte(abo.carte_brand, abo.carte_last4);
+            const showCarte = carte !== null;
+            return (
+              <div className={cn("grid gap-3", showCarte ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
+                <InfoTile
+                  label="Prochaine échéance"
+                  value={abo.fin_periode_le ? formatDate(abo.fin_periode_le) : "—"}
+                />
+                {showCarte && (
+                  <InfoTile
+                    label="Moyen de paiement"
+                    value={carte!}
+                    icon={<CreditCard size={16} className="text-muted-foreground" />}
+                  />
+                )}
+              </div>
+            );
+          })()}
         </div>
       </section>
 
