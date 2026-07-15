@@ -29,7 +29,9 @@ export type Database = {
           montant_cents: number | null
           nb_echecs_paiement: number | null
           plan: Database["public"]["Enums"]["plan_abonnement"]
+          premier_echec_le: string | null
           prestataire_id: string
+          rappel_impaye_envoye_le: string | null
           resilie_le: string | null
           statut: Database["public"]["Enums"]["statut_abonnement"]
           stripe_customer_id: string | null
@@ -52,7 +54,9 @@ export type Database = {
           montant_cents?: number | null
           nb_echecs_paiement?: number | null
           plan?: Database["public"]["Enums"]["plan_abonnement"]
+          premier_echec_le?: string | null
           prestataire_id: string
+          rappel_impaye_envoye_le?: string | null
           resilie_le?: string | null
           statut?: Database["public"]["Enums"]["statut_abonnement"]
           stripe_customer_id?: string | null
@@ -75,7 +79,9 @@ export type Database = {
           montant_cents?: number | null
           nb_echecs_paiement?: number | null
           plan?: Database["public"]["Enums"]["plan_abonnement"]
+          premier_echec_le?: string | null
           prestataire_id?: string
+          rappel_impaye_envoye_le?: string | null
           resilie_le?: string | null
           statut?: Database["public"]["Enums"]["statut_abonnement"]
           stripe_customer_id?: string | null
