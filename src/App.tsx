@@ -28,6 +28,7 @@ import CharteQualite from "./pages/CharteQualite";
 import Reactivation from "./pages/Reactivation";
 import CharteProgressive from "./pages/CharteProgressive";
 import PageContenu from "./pages/PageContenu";
+import OAuthConsent from "./pages/OAuthConsent";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
@@ -107,6 +108,7 @@ const App = () => (
             <Route path="/signer-la-charte" element={<ProtectedRoute><SignerLaCharte /></ProtectedRoute>} />
             <Route path="/pro/charte" element={<ProtectedRoute><CharteProgressive /></ProtectedRoute>} />
             <Route path="/reactivation" element={<Reactivation />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
             {/* Espace client */}
             <Route
