@@ -3,11 +3,11 @@
 // supabase function: mcp
 // Bundled from src/lib/mcp/index.ts by @lovable.dev/mcp-js.
 // src/lib/mcp/index.ts
-import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.22.1";
+import { auth, defineMcp } from "npm:@lovable.dev/mcp-js@0.22.2";
 
 // src/lib/mcp/tools/search-prestataires.ts
 import { createClient } from "npm:@supabase/supabase-js@^2.99.1";
-import { defineTool } from "npm:@lovable.dev/mcp-js@0.22.1";
+import { defineTool } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z } from "npm:zod@^3.25.76";
 var PUBLIC_FIELDS = "id, slug, nom_commercial, description_courte, ville, region, prix_depart, prix_max, note_moyenne, nombre_avis, est_premium, est_verifie, photo_principale_url";
 function client(ctx) {
@@ -57,7 +57,7 @@ var search_prestataires_default = defineTool({
 
 // src/lib/mcp/tools/get-prestataire.ts
 import { createClient as createClient2 } from "npm:@supabase/supabase-js@^2.99.1";
-import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.22.1";
+import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z2 } from "npm:zod@^3.25.76";
 var PUBLIC_FIELDS2 = "id, slug, nom_commercial, description, description_courte, ville, region, code_postal, prix_depart, prix_max, note_moyenne, nombre_avis, site_web, urls_galerie, photo_principale_url, video_url, tags, champs_specifiques, est_premium, est_verifie, zones_intervention";
 var get_prestataire_default = defineTool2({
@@ -86,7 +86,7 @@ var get_prestataire_default = defineTool2({
 
 // src/lib/mcp/tools/list-categories.ts
 import { createClient as createClient3 } from "npm:@supabase/supabase-js@^2.99.1";
-import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.22.1";
+import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.22.2";
 var list_categories_default = defineTool3({
   name: "list_categories",
   title: "Lister les cat\xE9gories",
@@ -110,7 +110,7 @@ var list_categories_default = defineTool3({
 
 // src/lib/mcp/tools/get-me.ts
 import { createClient as createClient4 } from "npm:@supabase/supabase-js@^2.99.1";
-import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.22.1";
+import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.22.2";
 var get_me_default = defineTool4({
   name: "get_me",
   title: "Mon profil",
@@ -145,7 +145,7 @@ var get_me_default = defineTool4({
 
 // src/lib/mcp/tools/list-my-demandes.ts
 import { createClient as createClient5 } from "npm:@supabase/supabase-js@^2.99.1";
-import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.22.1";
+import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.22.2";
 import { z as z3 } from "npm:zod@^3.25.76";
 var list_my_demandes_default = defineTool5({
   name: "list_my_demandes_devis",
@@ -187,5 +187,5 @@ var mcp_default = defineMcp({
 });
 
 // lovable-mcp-supabase-entry.ts
-import { createSupabaseHandler } from "npm:@lovable.dev/mcp-js@0.22.1/stacks/supabase";
+import { createSupabaseHandler } from "npm:@lovable.dev/mcp-js@0.22.2/stacks/supabase";
 Deno.serve(createSupabaseHandler(mcp_default, { functionName: "mcp" }));
