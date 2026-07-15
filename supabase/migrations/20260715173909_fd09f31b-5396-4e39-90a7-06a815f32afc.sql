@@ -1,0 +1,1 @@
+DELETE FROM public.abonnements WHERE stripe_customer_id LIKE 'cus_sim_%' OR stripe_subscription_id LIKE 'sub_sim_%';
