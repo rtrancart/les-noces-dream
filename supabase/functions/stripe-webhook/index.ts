@@ -68,6 +68,36 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "payment_method.detached": {
+        // Stripe ne renseigne pas customer sur detached, mais on peut effacer par pm id.
+        const pm = event.data.object as Stripe.PaymentMethod;
+        await supabase
+          .from("abonnements")
+          .update({
+            stripe_payment_method_id: null,
+            carte_brand: null,
+            carte_last4: null,
+          })
+          .eq("stripe_payment_method_id", pm.id);
+        break;
+      }
+
+      case "customer.updated": {
+        // Détecte un changement de default_payment_method (via portail) et
+        // synchronise la carte affichée côté fiche.
+        const customer = event.data.object as Stripe.Customer;
+        const dpm = customer.invoice_settings?.default_payment_method;
+        if (!dpm) break;
+        const pmId = typeof dpm === "string" ? dpm : dpm.id;
+        try {
+          const pm = await stripe.paymentMethods.retrieve(pmId);
+          await updateCardByCustomer(customer.id, pm);
+        } catch (e) {
+          console.warn("customer.updated: retrieve pm failed", e);
+        }
+        break;
+      }
+
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
         const subId = typeof invoice.subscription === "string" ? invoice.subscription : null;
@@ -107,38 +137,32 @@ Deno.serve(async (req) => {
         const prestataireId = await resolvePrestataireId(sub);
         if (!prestataireId) break;
 
-        // Lire l'état courant pour piloter la déduplication des emails (jalons).
+        // Garde D7 : ignorer si la sub est déjà morte / suspendue pour impayé /
+        // résiliée-expirée. Les jalons ne doivent pas être rejoués sur un cycle clos.
         const { data: cur } = await supabase
           .from("abonnements")
-          .select("nb_echecs_paiement, premier_echec_le, rappel_impaye_envoye_le")
+          .select("nb_echecs_paiement, premier_echec_le, suspendu_pour_impaye_le, statut")
           .eq("prestataire_id", prestataireId)
           .maybeSingle();
 
+        if (cur?.suspendu_pour_impaye_le) break;
+        if (cur?.statut && ["annule", "expire"].includes(cur.statut)) break;
+
         const nbAvant = cur?.nb_echecs_paiement ?? 0;
         const nbApres = nbAvant + 1;
-        const premierEchecLe = cur?.premier_echec_le ?? null;
-        const rappelDejaEnvoye = !!cur?.rappel_impaye_envoye_le;
 
         const patch: Record<string, unknown> = {
           statut: "en_retard",
           nb_echecs_paiement: nbApres,
         };
 
-        // Jalon 1 : tout premier échec du cycle d'impayé
+        // Jalon 1 : tout premier échec du cycle d'impayé.
+        // Jalon 2 : géré par le cron cron-relance-impaye-j7 (déterministe à J+7),
+        // le webhook ne l'envoie plus.
         let sendJalon1 = false;
-        // Jalon 2 : rappel intermédiaire une seule fois, après ~7 jours
-        let sendJalon2 = false;
-
         if (nbAvant === 0) {
           patch.premier_echec_le = new Date().toISOString();
           sendJalon1 = true;
-        } else if (
-          !rappelDejaEnvoye &&
-          premierEchecLe &&
-          Date.now() - new Date(premierEchecLe).getTime() >= 7 * 24 * 3600 * 1000
-        ) {
-          patch.rappel_impaye_envoye_le = new Date().toISOString();
-          sendJalon2 = true;
         }
 
         await supabase
@@ -149,10 +173,6 @@ Deno.serve(async (req) => {
         if (sendJalon1) {
           await enqueueImpayeEmail(prestataireId, "impaye_premier_echec", {
             idempotencyKey: `impaye-premier-${prestataireId}-${invoice.id}`,
-          });
-        } else if (sendJalon2) {
-          await enqueueImpayeEmail(prestataireId, "impaye_rappel_intermediaire", {
-            idempotencyKey: `impaye-rappel-${prestataireId}-${sub.id}-${premierEchecLe}`,
           });
         }
         // Tentatives intermédiaires entre les jalons : silencieuses.
@@ -176,7 +196,6 @@ Deno.serve(async (req) => {
           break;
         }
 
-
         const failedForPayment =
           sub.cancellation_details?.reason === "payment_failed" ||
           sub.status === "unpaid" ||
@@ -189,6 +208,9 @@ Deno.serve(async (req) => {
               statut: "annule",
               suspendu_pour_impaye_le: new Date().toISOString(),
               resilie_le: new Date().toISOString(),
+              plan_pending: null,
+              plan_pending_le: null,
+              stripe_schedule_id: null,
             })
             .eq("prestataire_id", prestataireId);
 
@@ -205,13 +227,51 @@ Deno.serve(async (req) => {
             idempotencyKey: `impaye-suspension-${prestataireId}-${sub.id}`,
           });
         } else {
+          // Résiliation volontaire arrivée à terme
           await supabase
             .from("abonnements")
             .update({
               statut: "expire",
               cancel_at_period_end: false,
+              plan_pending: null,
+              plan_pending_le: null,
+              stripe_schedule_id: null,
             })
             .eq("prestataire_id", prestataireId);
+
+          await supabase
+            .from("prestataires")
+            .update({
+              statut: "resilie_expire",
+              motif_suspension: "Abonnement résilié — fin de période atteinte",
+            })
+            .eq("id", prestataireId);
+        }
+        break;
+      }
+
+      case "subscription_schedule.updated":
+      case "subscription_schedule.released":
+      case "subscription_schedule.canceled": {
+        const schedule = event.data.object as Stripe.SubscriptionSchedule;
+        // Retrouver l'abonnement lié à ce schedule
+        const { data: abo } = await supabase
+          .from("abonnements")
+          .select("id")
+          .eq("stripe_schedule_id", schedule.id)
+          .maybeSingle();
+        if (!abo) break;
+
+        if (event.type !== "subscription_schedule.updated") {
+          // released / canceled → la bascule a eu lieu ou a été annulée, on nettoie
+          await supabase
+            .from("abonnements")
+            .update({
+              plan_pending: null,
+              plan_pending_le: null,
+              stripe_schedule_id: null,
+            })
+            .eq("id", abo.id);
         }
         break;
       }
@@ -242,19 +302,9 @@ async function resolvePrestataireId(sub: Stripe.Subscription): Promise<string | 
   return data?.prestataire_id ?? null;
 }
 
-/**
- * Détermine si un event de subscription doit s'appliquer à la ligne abonnements
- * du prestataire, ou s'il concerne une sub obsolète (doublon annulé).
- * Règles :
- *  - Pas encore de sub rattachée en DB → on accepte (première souscription).
- *  - Même id que la sub en DB → on accepte.
- *  - Id différent : on accepte SEULEMENT si la sub incoming est active/trialing
- *    ET la sub actuellement en DB ne l'est plus (elle a été annulée / remplacée).
- *    Sinon on ignore l'event pour ne pas écraser l'état de la sub courante.
- */
 async function isCurrentOrClaimableSubscription(sub: Stripe.Subscription): Promise<boolean> {
   const prestataireId = await resolvePrestataireId(sub);
-  if (!prestataireId) return true; // nouveau prestataire, laisser syncSubscription créer la ligne
+  if (!prestataireId) return true;
 
   const { data: cur } = await supabase
     .from("abonnements")
@@ -270,21 +320,12 @@ async function isCurrentOrClaimableSubscription(sub: Stripe.Subscription): Promi
   try {
     const existing = await stripe.subscriptions.retrieve(currentId);
     const existingLive = ["active", "trialing", "past_due"].includes(existing.status);
-    // On ne remplace la sub courante que si elle n'est plus vivante côté Stripe.
     return !existingLive;
   } catch (_e) {
-    // Sub inconnue de Stripe → on accepte le remplacement.
     return true;
   }
 }
 
-/**
- * Résout la carte (brand/last4) associée à un abonnement en tentant, dans l'ordre :
- * 1. sub.default_payment_method
- * 2. sub.latest_invoice.payment_intent.payment_method
- * 3. customer.invoice_settings.default_payment_method
- * Retourne un patch partiel — vide si rien de fiable trouvé (on ne veut jamais écraser une carte déjà connue avec null).
- */
 async function resolveCardPatchFromSubscription(
   sub: Stripe.Subscription,
 ): Promise<Record<string, string>> {
@@ -307,7 +348,6 @@ async function resolvePaymentMethodIdFromSubscription(
       ? sub.default_payment_method
       : sub.default_payment_method.id;
   }
-  // Tenter via customer
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
   try {
     const customer = await stripe.customers.retrieve(customerId);
@@ -344,12 +384,16 @@ async function syncSubscription(sub: Stripe.Subscription) {
   if (!prestataireId) return;
 
   const formule = (sub.metadata?.formule as Formule | undefined);
-  const plan = formule ? PLAN_BY_FORMULE[formule] : null;
+  const planFromMeta = formule ? PLAN_BY_FORMULE[formule] : null;
   const item = sub.items.data[0];
   const montantCents = item?.price?.unit_amount ?? null;
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
-  // Statut interne à partir du statut Stripe + cancel_at_period_end
+  // Plan actuel dérivé du price si les metadata ne l'indiquent pas
+  const currentPriceId = item?.price?.id ?? null;
+  const planFromPrice = planFromPriceId(currentPriceId);
+  const plan = planFromMeta ?? planFromPrice;
+
   let statut: string = "actif";
   if (sub.cancel_at_period_end) statut = "resilie";
   else if (sub.status === "trialing") statut = "trialing";
@@ -370,19 +414,28 @@ async function syncSubscription(sub: Stripe.Subscription) {
   };
   if (plan) patch.plan = plan;
   if (montantCents != null) patch.montant_cents = montantCents;
-  if (sub.cancel_at_period_end && !("resilie_le" in patch)) {
+  if (sub.cancel_at_period_end) {
     patch.resilie_le = new Date().toISOString();
+  } else {
+    // Fix : réactivation → nettoyage explicite du champ resilie_le
+    patch.resilie_le = null;
   }
 
-  // Enrichissement carte — on n'ajoute que si trouvé, jamais d'écrasement par null
   const cardPatch = await resolveCardPatchFromSubscription(sub);
   Object.assign(patch, cardPatch);
 
   const { data: existing } = await supabase
     .from("abonnements")
-    .select("id")
+    .select("id, plan_pending")
     .eq("prestataire_id", prestataireId)
     .maybeSingle();
+
+  // Nettoyage de plan_pending si la bascule vient d'avoir lieu
+  if (existing?.plan_pending && plan && existing.plan_pending === plan) {
+    patch.plan_pending = null;
+    patch.plan_pending_le = null;
+    patch.stripe_schedule_id = null;
+  }
 
   if (existing?.id) {
     await supabase.from("abonnements").update(patch).eq("id", existing.id);
@@ -395,16 +448,18 @@ async function syncSubscription(sub: Stripe.Subscription) {
   }
 }
 
+function planFromPriceId(priceId: string | null): string | null {
+  if (!priceId) return null;
+  if (priceId === Deno.env.get("STRIPE_PRICE_STANDARD")) return "standard_mensuel";
+  if (priceId === Deno.env.get("STRIPE_PRICE_PREMIUM")) return "premium_mensuel";
+  if (priceId === Deno.env.get("STRIPE_PRICE_ANNUEL")) return "annuel";
+  return null;
+}
+
 // -- Emails d'impayé --------------------------------------------------------
 
 const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://les-noces.lovable.app";
 
-/**
- * Enqueue un email transactionnel d'impayé pour le prestataire.
- * `templateName` doit exister dans le registre côté send-transactional-email.
- * `idempotencyKey` doit être stable pour un même jalon afin d'éviter tout doublon
- * si Stripe rejoue un webhook.
- */
 async function enqueueImpayeEmail(
   prestataireId: string,
   templateName: "impaye_premier_echec" | "impaye_rappel_intermediaire" | "impaye_suspension",
