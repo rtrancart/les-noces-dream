@@ -82,6 +82,9 @@ Deno.serve(async (req) => {
             fin_periode_le: new Date(sub.current_period_end * 1000).toISOString(),
             derniere_facture_id: invoice.id,
             nb_echecs_paiement: 0,
+            premier_echec_le: null,
+            rappel_impaye_envoye_le: null,
+            suspendu_pour_impaye_le: null,
             ...cardPatch,
           })
           .eq("prestataire_id", prestataireId);
@@ -90,10 +93,6 @@ Deno.serve(async (req) => {
         await supabase.rpc("reactiver_prestataire_paiement", {
           p_prestataire_id: prestataireId,
         });
-        await supabase
-          .from("abonnements")
-          .update({ suspendu_pour_impaye_le: null })
-          .eq("prestataire_id", prestataireId);
         break;
       }
 
@@ -105,18 +104,55 @@ Deno.serve(async (req) => {
         const prestataireId = await resolvePrestataireId(sub);
         if (!prestataireId) break;
 
+        // Lire l'état courant pour piloter la déduplication des emails (jalons).
         const { data: cur } = await supabase
           .from("abonnements")
-          .select("nb_echecs_paiement")
+          .select("nb_echecs_paiement, premier_echec_le, rappel_impaye_envoye_le")
           .eq("prestataire_id", prestataireId)
           .maybeSingle();
-        const nb = (cur?.nb_echecs_paiement ?? 0) + 1;
+
+        const nbAvant = cur?.nb_echecs_paiement ?? 0;
+        const nbApres = nbAvant + 1;
+        const premierEchecLe = cur?.premier_echec_le ?? null;
+        const rappelDejaEnvoye = !!cur?.rappel_impaye_envoye_le;
+
+        const patch: Record<string, unknown> = {
+          statut: "en_retard",
+          nb_echecs_paiement: nbApres,
+        };
+
+        // Jalon 1 : tout premier échec du cycle d'impayé
+        let sendJalon1 = false;
+        // Jalon 2 : rappel intermédiaire une seule fois, après ~7 jours
+        let sendJalon2 = false;
+
+        if (nbAvant === 0) {
+          patch.premier_echec_le = new Date().toISOString();
+          sendJalon1 = true;
+        } else if (
+          !rappelDejaEnvoye &&
+          premierEchecLe &&
+          Date.now() - new Date(premierEchecLe).getTime() >= 7 * 24 * 3600 * 1000
+        ) {
+          patch.rappel_impaye_envoye_le = new Date().toISOString();
+          sendJalon2 = true;
+        }
 
         await supabase
           .from("abonnements")
-          .update({ statut: "en_retard", nb_echecs_paiement: nb })
+          .update(patch)
           .eq("prestataire_id", prestataireId);
-        // PAS de suspension à ce stade : Stripe relance pendant ~2 semaines.
+
+        if (sendJalon1) {
+          await enqueueImpayeEmail(prestataireId, "impaye_premier_echec", {
+            idempotencyKey: `impaye-premier-${prestataireId}-${invoice.id}`,
+          });
+        } else if (sendJalon2) {
+          await enqueueImpayeEmail(prestataireId, "impaye_rappel_intermediaire", {
+            idempotencyKey: `impaye-rappel-${prestataireId}-${sub.id}-${premierEchecLe}`,
+          });
+        }
+        // Tentatives intermédiaires entre les jalons : silencieuses.
         break;
       }
 
@@ -147,6 +183,11 @@ Deno.serve(async (req) => {
               motif_suspension: "Abonnement définitivement abandonné pour impayé",
             })
             .eq("id", prestataireId);
+
+          // Jalon 3 : email de suspension définitive
+          await enqueueImpayeEmail(prestataireId, "impaye_suspension", {
+            idempotencyKey: `impaye-suspension-${prestataireId}-${sub.id}`,
+          });
         } else {
           await supabase
             .from("abonnements")
@@ -299,5 +340,70 @@ async function syncSubscription(sub: Stripe.Subscription) {
       plan: plan ?? "mensuel",
       ...patch,
     });
+  }
+}
+
+// -- Emails d'impayé --------------------------------------------------------
+
+const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://les-noces.lovable.app";
+
+/**
+ * Enqueue un email transactionnel d'impayé pour le prestataire.
+ * `templateName` doit exister dans le registre côté send-transactional-email.
+ * `idempotencyKey` doit être stable pour un même jalon afin d'éviter tout doublon
+ * si Stripe rejoue un webhook.
+ */
+async function enqueueImpayeEmail(
+  prestataireId: string,
+  templateName: "impaye_premier_echec" | "impaye_rappel_intermediaire" | "impaye_suspension",
+  opts: { idempotencyKey: string },
+) {
+  try {
+    const { data: presta } = await supabase
+      .from("prestataires")
+      .select("email_contact, nom_commercial, user_id")
+      .eq("id", prestataireId)
+      .maybeSingle();
+
+    if (!presta?.email_contact) {
+      console.warn("enqueueImpayeEmail: no email_contact for prestataire", prestataireId);
+      return;
+    }
+
+    let prenom: string | undefined;
+    if (presta.user_id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("prenom")
+        .eq("id", presta.user_id)
+        .maybeSingle();
+      prenom = profile?.prenom ?? undefined;
+    }
+
+    const portailUrl = `${SITE_URL}/espace-pro/abonnement`;
+
+    const templateData: Record<string, unknown> = {
+      prenom,
+      nom_commercial: presta.nom_commercial ?? undefined,
+    };
+    if (templateName === "impaye_suspension") {
+      templateData.reactivation_url = portailUrl;
+    } else {
+      templateData.portail_url = portailUrl;
+    }
+
+    const { error } = await supabase.functions.invoke("send-transactional-email", {
+      body: {
+        templateName,
+        recipientEmail: presta.email_contact,
+        idempotencyKey: opts.idempotencyKey,
+        templateData,
+      },
+    });
+    if (error) {
+      console.error("enqueueImpayeEmail invoke error", templateName, error);
+    }
+  } catch (e) {
+    console.error("enqueueImpayeEmail failed", templateName, e);
   }
 }

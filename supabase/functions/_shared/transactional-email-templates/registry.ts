@@ -20,6 +20,9 @@ import { template as notifNouvelleVersionCharte } from './notif-nouvelle-version
 import { template as demandeReactivation } from './demande-reactivation.tsx'
 import { template as notifNouvelleSoumissionFiche } from './notif-nouvelle-soumission-fiche.tsx'
 import { template as validationPublicationFiche } from './validation-publication-fiche.tsx'
+import { template as impayePremierEchec } from './impaye-premier-echec.tsx'
+import { template as impayeRappelIntermediaire } from './impaye-rappel-intermediaire.tsx'
+import { template as impayeSuspension } from './impaye-suspension.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'notif_nouveau_contact_presta': notifNouveauContactPresta,
@@ -33,4 +36,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'demande_reactivation': demandeReactivation,
   'notif_nouvelle_soumission_fiche': notifNouvelleSoumissionFiche,
   'validation_publication_fiche': validationPublicationFiche,
+  'impaye_premier_echec': impayePremierEchec,
+  'impaye_rappel_intermediaire': impayeRappelIntermediaire,
+  'impaye_suspension': impayeSuspension,
 }
