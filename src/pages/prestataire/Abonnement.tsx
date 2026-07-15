@@ -385,7 +385,7 @@ function GestionAbonnement({
               <MiniPlanCard
                 key={f}
                 formule={f}
-                isCurrent={abo.plan === f}
+                isCurrent={formuleKey === f}
                 loading={submitting === f}
                 disabled={submitting !== null}
                 onClick={() => subscribe(f)}
