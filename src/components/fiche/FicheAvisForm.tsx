@@ -22,6 +22,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
@@ -32,20 +33,22 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-const avisSchema = z.object({
-  note_qualite_presta: z.number().min(1, "Obligatoire").max(5),
-  note_professionnalisme: z.number().min(1, "Obligatoire").max(5),
-  note_rapport_qualite_prix: z.number().min(1, "Obligatoire").max(5),
-  note_flexibilite: z.number().min(1, "Obligatoire").max(5),
-  commentaire: z
-    .string()
-    .min(
-      100,
-      "Votre avis doit contenir au moins 100 caractères pour être publié. Les avis détaillés aident les autres couples à choisir.",
-    ),
-});
+const buildSchema = (isAnonymous: boolean) =>
+  z.object({
+    nom: isAnonymous
+      ? z.string().trim().min(2, "Nom requis").max(80)
+      : z.string().optional(),
+    email: isAnonymous
+      ? z.string().trim().email("Email invalide").max(255)
+      : z.string().optional(),
+    note_qualite_presta: z.number().min(1, "Obligatoire").max(5),
+    note_professionnalisme: z.number().min(1, "Obligatoire").max(5),
+    note_rapport_qualite_prix: z.number().min(1, "Obligatoire").max(5),
+    note_flexibilite: z.number().min(1, "Obligatoire").max(5),
+    commentaire: z.string().trim().min(1, "Commentaire requis").max(2000, "Maximum 2000 caractères"),
+  });
 
-type AvisFormValues = z.infer<typeof avisSchema>;
+type AvisFormValues = z.infer<ReturnType<typeof buildSchema>>;
 
 interface Props {
   open: boolean;
@@ -54,13 +57,7 @@ interface Props {
   onSuccess: () => void;
 }
 
-function StarRating({
-  value,
-  onChange,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-}) {
+function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hover, setHover] = useState(0);
   return (
     <div className="flex items-center gap-1">
@@ -75,11 +72,7 @@ function StarRating({
         >
           <Star
             size={24}
-            className={
-              i <= (hover || value)
-                ? "text-primary fill-primary"
-                : "text-border"
-            }
+            className={i <= (hover || value) ? "text-primary fill-primary" : "text-border"}
           />
         </button>
       ))}
@@ -97,11 +90,14 @@ const criteres = [
 export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuccess }: Props) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const isAnonymous = !user;
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<AvisFormValues>({
-    resolver: zodResolver(avisSchema),
+    resolver: zodResolver(buildSchema(isAnonymous)),
     defaultValues: {
+      nom: "",
+      email: "",
       note_qualite_presta: 0,
       note_professionnalisme: 0,
       note_rapport_qualite_prix: 0,
@@ -110,46 +106,32 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
     },
   });
 
-  const resetAll = () => {
-    form.reset();
-  };
-
   const handleOpenChange = (v: boolean) => {
-    if (!v) resetAll();
+    if (!v) form.reset();
     onOpenChange(v);
   };
 
   const onSubmit = async (values: AvisFormValues) => {
-    if (!user) return;
-
     setSubmitting(true);
     try {
-      // Pondération : (Q*2 + P + R + F) / 5
-      const noteGlobale =
-        (values.note_qualite_presta * 2 +
-          values.note_professionnalisme +
-          values.note_rapport_qualite_prix +
-          values.note_flexibilite) /
-        5;
-
-      const { error } = await supabase.from("avis").insert({
-        prestataire_id: prestataireId,
-        client_id: user.id,
-        note_qualite_presta: values.note_qualite_presta,
-        note_professionnalisme: values.note_professionnalisme,
-        note_rapport_qualite_prix: values.note_rapport_qualite_prix,
-        note_flexibilite: values.note_flexibilite,
-        note_globale: parseFloat(noteGlobale.toFixed(2)),
-        commentaire: values.commentaire,
-        statut: "en_attente",
+      const { error } = await supabase.rpc("soumettre_avis", {
+        p_prestataire_id: prestataireId,
+        p_note_qualite_presta: values.note_qualite_presta,
+        p_note_professionnalisme: values.note_professionnalisme,
+        p_note_rapport_qualite_prix: values.note_rapport_qualite_prix,
+        p_note_flexibilite: values.note_flexibilite,
+        p_commentaire: values.commentaire,
+        p_nom: isAnonymous ? values.nom : null,
+        p_email: isAnonymous ? values.email : null,
       });
 
       if (error) throw error;
 
       toast.success("Merci ! Votre avis sera publié après validation.");
+      form.reset();
       onSuccess();
-    } catch {
-      toast.error("Erreur lors de l'envoi de l'avis.");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur lors de l'envoi de l'avis.");
     } finally {
       setSubmitting(false);
     }
@@ -159,6 +141,37 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          {isAnonymous && (
+            <>
+              <FormField
+                control={form.control}
+                name="nom"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Votre nom</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Prénom Nom" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Votre email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="vous@exemple.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+
           {criteres.map((c) => (
             <FormField
               key={c.name}
@@ -168,10 +181,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
                 <FormItem>
                   <FormLabel>{c.label}</FormLabel>
                   <FormControl>
-                    <StarRating
-                      value={field.value}
-                      onChange={field.onChange}
-                    />
+                    <StarRating value={field.value as number} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -187,7 +197,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
                 <FormLabel>Votre avis</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Décrivez votre expérience (min. 100 caractères)…"
+                    placeholder="Décrivez votre expérience…"
                     rows={5}
                     {...field}
                   />
@@ -211,9 +221,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
         <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Laisser un avis</SheetTitle>
-            <SheetDescription>
-              Notez votre expérience
-            </SheetDescription>
+            <SheetDescription>Notez votre expérience</SheetDescription>
           </SheetHeader>
           {content}
         </SheetContent>
@@ -223,12 +231,10 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Laisser un avis</DialogTitle>
-          <DialogDescription>
-            Notez votre expérience
-          </DialogDescription>
+          <DialogDescription>Notez votre expérience</DialogDescription>
         </DialogHeader>
         {content}
       </DialogContent>
