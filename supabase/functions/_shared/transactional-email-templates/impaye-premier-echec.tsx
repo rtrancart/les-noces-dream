@@ -14,7 +14,7 @@ interface Props {
 const Email = ({ prenom, nom_commercial, portail_url }: Props) => (
   <Html lang="fr" dir="ltr">
     <Head />
-    <Preview>Votre paiement n'a pas pu être prélevé — mettez à jour votre moyen de paiement</Preview>
+    <Preview>Votre paiement n'a pas abouti — mettez à jour votre carte</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
@@ -22,23 +22,33 @@ const Email = ({ prenom, nom_commercial, portail_url }: Props) => (
         </Section>
         <Heading style={h1}>Bonjour{prenom ? ` ${prenom}` : ''},</Heading>
         <Text style={text}>
-          Le prélèvement de votre abonnement {SITE_NAME}
-          {nom_commercial ? ` pour la fiche ${nom_commercial}` : ''} n'a pas pu aboutir.
+          Le prélèvement correspondant à votre abonnement {SITE_NAME} n'a pas pu être effectué.
         </Text>
         <Text style={text}>
-          Cela arrive parfois : carte expirée, plafond atteint, ou simple refus temporaire de votre banque.
-          Aucune action urgente n'est requise — Stripe réessaiera automatiquement dans les prochains jours.
+          Dans la plupart des cas, cela s'explique par une raison simple : carte bancaire expirée, fonds
+          temporairement insuffisants, carte récemment remplacée, ou refus ponctuel de l'organisme bancaire.
         </Text>
         <Text style={text}>
-          Pour éviter toute interruption, vous pouvez dès maintenant vérifier ou mettre à jour votre moyen
-          de paiement depuis votre espace de gestion.
+          À ce stade, aucune action urgente n'est requise, et rien n'est interrompu :
+        </Text>
+        <Text style={textList}>✅ Votre fiche{nom_commercial ? ` ${nom_commercial}` : ''} reste visible sur {SITE_NAME}</Text>
+        <Text style={textList}>✅ Vous continuez à recevoir des demandes de futurs mariés et d'entreprises</Text>
+        <Text style={textList}>✅ Votre abonnement reste actif</Text>
+        <Text style={text}>
+          Notre système représentera automatiquement le paiement dans les prochains jours. Pour éviter toute
+          difficulté, nous vous invitons simplement à vérifier ou mettre à jour votre moyen de paiement depuis
+          notre portail sécurisé.
         </Text>
         {portail_url && (
           <Section style={{ textAlign: 'center', margin: '32px 0' }}>
-            <Button href={portail_url} style={button}>Mettre à jour mon moyen de paiement</Button>
+            <Button href={portail_url} style={button}>Mettre à jour ma carte bancaire</Button>
           </Section>
         )}
-        <Text style={footer}>Votre fiche reste visible normalement pendant cette période.</Text>
+        <Text style={text}>
+          L'opération ne prend qu'une minute. Si vous pensez qu'il s'agit d'une erreur ou rencontrez la moindre
+          difficulté, notre équipe reste à votre disposition.
+        </Text>
+        <Text style={signature}>Bien cordialement,<br />L'équipe {SITE_NAME}</Text>
       </Container>
     </Body>
   </Html>
@@ -46,7 +56,7 @@ const Email = ({ prenom, nom_commercial, portail_url }: Props) => (
 
 export const template = {
   component: Email,
-  subject: `Votre paiement n'a pas pu être prélevé`,
+  subject: `Votre paiement n'a pas abouti — mettez à jour votre carte`,
   displayName: 'Impayé — 1er échec',
   previewData: {
     prenom: 'Marie',
@@ -61,5 +71,6 @@ const header = { backgroundColor: '#F5EFE3', padding: '28px', textAlign: 'center
 const logoImg = { display: 'block', margin: '0 auto', height: '48px', width: 'auto' }
 const h1 = { fontFamily: 'Playfair Display, Georgia, serif', fontSize: '24px', fontWeight: 'normal', color: '#2C3E50', margin: '0 28px 16px' }
 const text = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '0 28px 16px' }
+const textList = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '0 28px 8px' }
 const button = { backgroundColor: '#A57D27', color: '#ffffff', padding: '14px 32px', borderRadius: '2px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' as const }
-const footer = { fontSize: '12px', color: '#999', margin: '32px 28px 0', textAlign: 'center' as const }
+const signature = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '24px 28px 0' }

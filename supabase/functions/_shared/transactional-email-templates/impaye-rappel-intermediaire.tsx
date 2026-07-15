@@ -14,7 +14,7 @@ interface Props {
 const Email = ({ prenom, nom_commercial, portail_url }: Props) => (
   <Html lang="fr" dir="ltr">
     <Head />
-    <Preview>Rappel : votre abonnement {SITE_NAME} est toujours impayé</Preview>
+    <Preview>Votre paiement est toujours en attente — évitez la suspension de votre fiche</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
@@ -22,23 +22,35 @@ const Email = ({ prenom, nom_commercial, portail_url }: Props) => (
         </Section>
         <Heading style={h1}>Bonjour{prenom ? ` ${prenom}` : ''},</Heading>
         <Text style={text}>
-          Malgré plusieurs tentatives, le prélèvement de votre abonnement {SITE_NAME}
-          {nom_commercial ? ` pour la fiche ${nom_commercial}` : ''} n'a toujours pas pu aboutir.
+          Malgré nos tentatives, le règlement de votre abonnement {SITE_NAME} n'a toujours pas pu être effectué.
         </Text>
         <Text style={textHighlight}>
-          Sans mise à jour rapide de votre moyen de paiement, votre fiche sera prochainement suspendue et
-          cessera d'être visible sur {SITE_NAME}.
+          Nous attirons votre attention sur ce point : sans régularisation, votre fiche
+          {nom_commercial ? ` ${nom_commercial}` : ''} sera prochainement suspendue, une fois nos tentatives
+          de prélèvement épuisées.
         </Text>
+        <Text style={text}>Aujourd'hui, votre fiche est encore pleinement active :</Text>
+        <Text style={textList}>✅ Visible auprès des futurs mariés et des entreprises</Text>
+        <Text style={textList}>✅ Référencée dans les résultats de recherche</Text>
+        <Text style={textList}>✅ En mesure de recevoir de nouvelles demandes</Text>
+        <Text style={text}>En cas de suspension, en revanche :</Text>
+        <Text style={textList}>❌ Votre fiche ne sera plus visible sur {SITE_NAME}</Text>
+        <Text style={textList}>❌ Vous ne recevrez plus de nouvelles demandes</Text>
+        <Text style={textList}>❌ Les opportunités en cours pourront être impactées</Text>
         <Text style={text}>
-          Vous pouvez régulariser en quelques secondes depuis votre espace de gestion en enregistrant une
-          nouvelle carte bancaire.
+          Il suffit le plus souvent de mettre à jour une carte expirée ou remplacée pour tout régulariser.
         </Text>
         {portail_url && (
           <Section style={{ textAlign: 'center', margin: '32px 0' }}>
             <Button href={portail_url} style={button}>Régulariser mon paiement</Button>
           </Section>
         )}
-        <Text style={footer}>Si votre banque a déjà accepté un nouveau prélèvement, ignorez cet e-mail.</Text>
+        <Text style={text}>
+          Si vous avez déjà effectué cette mise à jour récemment, vous pouvez ignorer cet email : le prochain
+          prélèvement se fera automatiquement.
+        </Text>
+        <Text style={text}>Pour toute question, notre équipe est là pour vous aider.</Text>
+        <Text style={signature}>Bien cordialement,<br />L'équipe {SITE_NAME}</Text>
       </Container>
     </Body>
   </Html>
@@ -46,7 +58,7 @@ const Email = ({ prenom, nom_commercial, portail_url }: Props) => (
 
 export const template = {
   component: Email,
-  subject: `Rappel : votre abonnement est toujours impayé`,
+  subject: `Votre paiement est toujours en attente — évitez la suspension de votre fiche`,
   displayName: 'Impayé — rappel intermédiaire',
   previewData: {
     prenom: 'Marie',
@@ -61,6 +73,7 @@ const header = { backgroundColor: '#F5EFE3', padding: '28px', textAlign: 'center
 const logoImg = { display: 'block', margin: '0 auto', height: '48px', width: 'auto' }
 const h1 = { fontFamily: 'Playfair Display, Georgia, serif', fontSize: '24px', fontWeight: 'normal', color: '#2C3E50', margin: '0 28px 16px' }
 const text = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '0 28px 16px' }
+const textList = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '0 28px 8px' }
 const textHighlight = { fontSize: '15px', color: '#A57D27', lineHeight: '1.6', margin: '0 28px 16px', fontWeight: 'bold' as const }
 const button = { backgroundColor: '#A57D27', color: '#ffffff', padding: '14px 32px', borderRadius: '2px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' as const }
-const footer = { fontSize: '12px', color: '#999', margin: '32px 28px 0', textAlign: 'center' as const }
+const signature = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '24px 28px 0' }
