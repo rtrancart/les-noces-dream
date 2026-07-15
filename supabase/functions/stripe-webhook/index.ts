@@ -189,7 +189,8 @@ async function syncSubscription(sub: Stripe.Subscription) {
   // Statut interne à partir du statut Stripe + cancel_at_period_end
   let statut: string = "actif";
   if (sub.cancel_at_period_end) statut = "resilie";
-  else if (sub.status === "trialing" || sub.status === "active") statut = "actif";
+  else if (sub.status === "trialing") statut = "trialing";
+  else if (sub.status === "active") statut = "actif";
   else if (sub.status === "past_due") statut = "en_retard";
   else if (sub.status === "unpaid") statut = "en_retard";
   else if (sub.status === "canceled") statut = "expire";
@@ -202,6 +203,7 @@ async function syncSubscription(sub: Stripe.Subscription) {
     cancel_at_period_end: sub.cancel_at_period_end,
     fin_periode_le: new Date(sub.current_period_end * 1000).toISOString(),
     debut_le: new Date(sub.start_date * 1000).toISOString(),
+    fin_essai_le: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
   };
   if (plan) patch.plan = plan;
   if (montantCents != null) patch.montant_cents = montantCents;

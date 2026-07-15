@@ -1,0 +1,1 @@
+ALTER TYPE public.statut_abonnement ADD VALUE IF NOT EXISTS 'trialing' BEFORE 'actif';

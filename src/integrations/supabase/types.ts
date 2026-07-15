@@ -2100,6 +2100,7 @@ export type Database = {
         | "premium_mensuel"
       source_boost: "prestataire" | "admin"
       statut_abonnement:
+        | "trialing"
         | "actif"
         | "en_retard"
         | "en_pause"
@@ -2287,6 +2288,7 @@ export const Constants = {
       ],
       source_boost: ["prestataire", "admin"],
       statut_abonnement: [
+        "trialing",
         "actif",
         "en_retard",
         "en_pause",
