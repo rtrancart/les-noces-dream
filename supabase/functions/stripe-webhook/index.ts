@@ -243,6 +243,42 @@ async function resolvePrestataireId(sub: Stripe.Subscription): Promise<string | 
 }
 
 /**
+ * Détermine si un event de subscription doit s'appliquer à la ligne abonnements
+ * du prestataire, ou s'il concerne une sub obsolète (doublon annulé).
+ * Règles :
+ *  - Pas encore de sub rattachée en DB → on accepte (première souscription).
+ *  - Même id que la sub en DB → on accepte.
+ *  - Id différent : on accepte SEULEMENT si la sub incoming est active/trialing
+ *    ET la sub actuellement en DB ne l'est plus (elle a été annulée / remplacée).
+ *    Sinon on ignore l'event pour ne pas écraser l'état de la sub courante.
+ */
+async function isCurrentOrClaimableSubscription(sub: Stripe.Subscription): Promise<boolean> {
+  const prestataireId = await resolvePrestataireId(sub);
+  if (!prestataireId) return true; // nouveau prestataire, laisser syncSubscription créer la ligne
+
+  const { data: cur } = await supabase
+    .from("abonnements")
+    .select("stripe_subscription_id")
+    .eq("prestataire_id", prestataireId)
+    .maybeSingle();
+  const currentId = cur?.stripe_subscription_id ?? null;
+  if (!currentId || currentId === sub.id) return true;
+
+  const incomingLive = ["active", "trialing", "past_due"].includes(sub.status);
+  if (!incomingLive) return false;
+
+  try {
+    const existing = await stripe.subscriptions.retrieve(currentId);
+    const existingLive = ["active", "trialing", "past_due"].includes(existing.status);
+    // On ne remplace la sub courante que si elle n'est plus vivante côté Stripe.
+    return !existingLive;
+  } catch (_e) {
+    // Sub inconnue de Stripe → on accepte le remplacement.
+    return true;
+  }
+}
+
+/**
  * Résout la carte (brand/last4) associée à un abonnement en tentant, dans l'ordre :
  * 1. sub.default_payment_method
  * 2. sub.latest_invoice.payment_intent.payment_method
