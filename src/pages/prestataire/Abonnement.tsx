@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CreditCard, Check, X, Loader2, ChevronDown, ChevronUp, FileText, AlertTriangle } from "lucide-react";
+import { CreditCard, Check, X, Loader2, ChevronDown, ChevronUp, FileText, AlertTriangle, Clock, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { toast } from "@/hooks/use-toast";
@@ -18,9 +18,13 @@ interface Abonnement {
   cancel_at_period_end: boolean;
   suspendu_pour_impaye_le: string | null;
   stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
   stripe_payment_method_id: string | null;
   carte_brand: string | null;
   carte_last4: string | null;
+  plan_pending: string | null;
+  plan_pending_le: string | null;
+  stripe_schedule_id: string | null;
 }
 
 function formatCarte(brand: string | null, last4: string | null): string | null {
@@ -49,6 +53,7 @@ function planToFormule(plan: string | null | undefined): Formule | null {
   if (plan in FORMULES) return plan as Formule;
   return null;
 }
+
 
 
 
@@ -149,9 +154,22 @@ export default function PrestataireAbonnement() {
   const [abo, setAbo] = useState<Abonnement | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<Formule | null>(null);
-  const [manualRedirect, setManualRedirect] = useState<{ url: string; formule: Formule } | null>(null);
+  const [manualRedirect, setManualRedirect] = useState<{ url: string; mode: "checkout" | "portal"; formule?: Formule } | null>(null);
   const [showChange, setShowChange] = useState(false);
+  const [cancellingSchedule, setCancellingSchedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const fetchAbo = useCallback(async () => {
+    if (!prestataire?.id) return null;
+    const { data } = await supabase
+      .from("abonnements")
+      .select("id, plan, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_customer_id, stripe_payment_method_id, carte_brand, carte_last4, plan_pending, plan_pending_le, stripe_schedule_id")
+      .eq("prestataire_id", prestataire.id)
+      .maybeSingle();
+    const next = (data as Abonnement | null) ?? null;
+    setAbo(next);
+    return next;
+  }, [prestataire?.id]);
 
   useEffect(() => {
     const nextParams = new URLSearchParams(searchParams);
@@ -177,28 +195,52 @@ export default function PrestataireAbonnement() {
   useEffect(() => {
     if (!prestataire?.id) return;
     (async () => {
-      const { data } = await supabase
-        .from("abonnements")
-        .select("id, plan, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_payment_method_id, carte_brand, carte_last4")
-        .eq("prestataire_id", prestataire.id)
-        .maybeSingle();
-      setAbo(data as Abonnement | null);
+      await fetchAbo();
       setLoading(false);
     })();
-  }, [prestataire?.id]);
+  }, [prestataire?.id, fetchAbo]);
 
   async function subscribe(formule: Formule) {
+    // Blocage impayé côté UI (le back renforce)
+    if (abo?.statut === "en_retard") {
+      toast({
+        title: "Régularisez d'abord votre paiement",
+        description: "Utilisez « Modifier mon moyen de paiement » pour rétablir la facturation avant de changer de formule.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(formule);
     setManualRedirect(null);
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-checkout", { body: { formule } });
       if (error) throw error;
 
-      // Cas 1 : changement de plan sur un abonnement existant → pas de redirection Stripe.
+      if (data?.error === "unpaid_subscription") {
+        toast({
+          title: "Paiement en attente",
+          description: data?.message ?? "Régularisez votre paiement avant de changer de formule.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (data?.changed === true) {
-        toast({ title: "Formule mise à jour", description: "Votre abonnement a été modifié avec proration immédiate." });
-        // Refresh de l'abonnement local (le webhook Stripe met la DB à jour de manière asynchrone).
-        setTimeout(() => window.location.reload(), 1500);
+        if (data.mode === "downgrade") {
+          const dateStr = data.plan_pending_le
+            ? new Date(data.plan_pending_le).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })
+            : "la fin de la période en cours";
+          toast({
+            title: "Changement programmé",
+            description: `La bascule vers ${FORMULES[formule].label} s'effectuera le ${dateStr}, sans avoir.`,
+          });
+        } else if (data.mode === "schedule_cancelled") {
+          toast({ title: "Changement annulé", description: "Le changement de formule programmé a été annulé." });
+        } else {
+          toast({ title: "Formule mise à jour", description: "Votre abonnement a été modifié avec proration immédiate." });
+        }
+        await fetchAbo();
         return;
       }
       if (data?.changed === false) {
@@ -210,7 +252,7 @@ export default function PrestataireAbonnement() {
       const stripeUrl = data?.url as string | undefined;
       if (!stripeUrl) throw new Error("URL de paiement introuvable");
 
-      setManualRedirect({ url: stripeUrl, formule });
+      setManualRedirect({ url: stripeUrl, mode: "checkout", formule });
 
       try {
         if (window.top && window.top !== window.self) {
@@ -234,46 +276,139 @@ export default function PrestataireAbonnement() {
     }
   }
 
-
   const [openingPortal, setOpeningPortal] = useState(false);
+  const portalWatchRef = useRef<{ cleanup: () => void } | null>(null);
+
+  // Rafraîchit l'abo au retour d'onglet, en 3 tentatives échelonnées, jusqu'à
+  // détecter un changement sur les champs qui bougent après une action portail.
+  const armPortalWatch = useCallback(() => {
+    if (!abo) return;
+    // Nettoyer un éventuel watcher précédent
+    portalWatchRef.current?.cleanup();
+
+    const snapshot = {
+      stripe_payment_method_id: abo.stripe_payment_method_id,
+      cancel_at_period_end: abo.cancel_at_period_end,
+      plan: abo.plan,
+      montant_cents: abo.montant_cents,
+      carte_last4: abo.carte_last4,
+      plan_pending: abo.plan_pending,
+      statut: abo.statut,
+    };
+    let attempts = 0;
+    let disposed = false;
+    let scheduled: ReturnType<typeof setTimeout> | null = null;
+
+    const disarm = () => {
+      if (disposed) return;
+      disposed = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      if (scheduled) clearTimeout(scheduled);
+      portalWatchRef.current = null;
+    };
+
+    const diffed = (a: Abonnement | null): boolean => {
+      if (!a) return false;
+      return (
+        a.stripe_payment_method_id !== snapshot.stripe_payment_method_id ||
+        a.cancel_at_period_end !== snapshot.cancel_at_period_end ||
+        a.plan !== snapshot.plan ||
+        a.montant_cents !== snapshot.montant_cents ||
+        a.carte_last4 !== snapshot.carte_last4 ||
+        a.plan_pending !== snapshot.plan_pending ||
+        a.statut !== snapshot.statut
+      );
+    };
+
+    const tick = async () => {
+      const next = await fetchAbo();
+      if (diffed(next)) {
+        toast({ title: "Abonnement mis à jour", description: "Vos changements Stripe sont pris en compte." });
+        disarm();
+        return;
+      }
+      attempts++;
+      if (attempts >= 3) {
+        disarm();
+        return;
+      }
+      // Fenêtre webhook : 4s puis 10s après le 1er tick
+      const delay = attempts === 1 ? 4000 : 10000;
+      scheduled = setTimeout(tick, delay);
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState !== "visible" && !document.hasFocus()) return;
+      if (attempts > 0) return; // déjà déclenché
+      // Premier retour → premier tick immédiat
+      tick();
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    portalWatchRef.current = { cleanup: disarm };
+
+    // Sécurité : auto-cleanup au bout de 60s si l'utilisateur ne revient jamais
+    setTimeout(() => disarm(), 60000);
+  }, [abo, fetchAbo]);
+
+  useEffect(() => () => portalWatchRef.current?.cleanup(), []);
 
   async function openStripePortal() {
     if (openingPortal) return;
     setOpeningPortal(true);
     setManualRedirect(null);
+
+    // 1. Pré-ouverture SYNCHRONE de l'onglet (évite le popup blocker)
+    const newTab = window.open("", "_blank", "noopener,noreferrer");
+
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-portal-session");
       if (error) throw error;
       const portalUrl = data?.url as string | undefined;
       if (!portalUrl) throw new Error("URL du portail introuvable");
 
-      // Filet de sécurité anti-iframe : bannière avec lien target="_top".
-      setManualRedirect({ url: portalUrl, formule: "standard" });
-
-      try {
-        if (window.top && window.top !== window.self) {
-          window.top.location.href = portalUrl;
-        } else {
-          window.location.href = portalUrl;
-        }
-      } catch {
-        try {
-          window.location.href = portalUrl;
-        } catch {
-          /* la bannière prend le relais */
-        }
+      if (newTab && !newTab.closed) {
+        newTab.location.href = portalUrl;
+        toast({
+          title: "Portail Stripe ouvert",
+          description: "Terminez vos modifications dans le nouvel onglet. Cette page se mettra à jour automatiquement à votre retour.",
+        });
+        armPortalWatch();
+      } else {
+        // Popup bloquée → bannière de secours
+        setManualRedirect({ url: portalUrl, mode: "portal" });
       }
     } catch (e) {
+      if (newTab && !newTab.closed) {
+        try { newTab.close(); } catch { /* noop */ }
+      }
       const message = e instanceof Error ? e.message : "Impossible d'ouvrir le portail de gestion";
       toast({ title: "Erreur", description: message, variant: "destructive" });
-      setManualRedirect(null);
     } finally {
       setOpeningPortal(false);
     }
   }
 
-  // Un abonnement existe et est géré par Stripe (souscription active côté Stripe)
+  async function cancelScheduledChange() {
+    if (cancellingSchedule) return;
+    setCancellingSchedule(true);
+    try {
+      const { error } = await supabase.functions.invoke("stripe-cancel-scheduled-change");
+      if (error) throw error;
+      toast({ title: "Changement annulé", description: "Votre formule actuelle est conservée." });
+      await fetchAbo();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Impossible d'annuler le changement programmé";
+      toast({ title: "Erreur", description: message, variant: "destructive" });
+    } finally {
+      setCancellingSchedule(false);
+    }
+  }
+
   const hasSubscription = !!(abo && abo.stripe_subscription_id);
+  const portalDisabled = !abo?.stripe_customer_id;
 
   if (loading) {
     return <div className="bg-muted rounded-lg p-5 h-40 animate-pulse" />;
@@ -282,7 +417,7 @@ export default function PrestataireAbonnement() {
   if (hasSubscription && abo) {
     return (
       <>
-        {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} formule={manualRedirect.formule} />}
+        {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} mode={manualRedirect.mode} formule={manualRedirect.formule} />}
         <GestionAbonnement
           abo={abo}
           showChange={showChange}
@@ -290,6 +425,10 @@ export default function PrestataireAbonnement() {
           subscribe={subscribe}
           submitting={submitting}
           openStripePortal={openStripePortal}
+          portalDisabled={portalDisabled}
+          openingPortal={openingPortal}
+          cancelScheduledChange={cancelScheduledChange}
+          cancellingSchedule={cancellingSchedule}
         />
       </>
     );
@@ -297,39 +436,47 @@ export default function PrestataireAbonnement() {
 
   return (
     <>
-      {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} formule={manualRedirect.formule} />}
+      {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} mode={manualRedirect.mode} formule={manualRedirect.formule} />}
       <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} />
     </>
   );
 }
 
-function StripeRedirectNotice({ url, formule }: { url: string; formule: Formule }) {
+
+function StripeRedirectNotice({ url, mode, formule }: { url: string; mode: "checkout" | "portal"; formule?: Formule }) {
+  const isPortal = mode === "portal";
+  const title = isPortal ? "Portail Stripe prêt" : "Redirection Stripe prête";
+  const desc = isPortal
+    ? "Votre navigateur a bloqué l'ouverture automatique. Cliquez ci-contre pour ouvrir le portail."
+    : `Continuez vers Stripe pour passer à la formule ${formule ? FORMULES[formule].label : ""}.`;
   return (
     <div className="mb-5 rounded-lg border border-primary/30 bg-primary/5 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="font-sans text-sm font-semibold text-foreground">Redirection Stripe prête</p>
-          <p className="font-sans text-xs text-muted-foreground">
-            Continuez vers Stripe pour passer à la formule {FORMULES[formule].label}.
-          </p>
+          <p className="font-sans text-sm font-semibold text-foreground">{title}</p>
+          <p className="font-sans text-xs text-muted-foreground">{desc}</p>
         </div>
         <a
           href={url}
-          target="_top"
-          className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 font-sans text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          target={isPortal ? "_blank" : "_top"}
+          rel={isPortal ? "noopener noreferrer" : undefined}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 font-sans text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          Continuer vers Stripe
+          {isPortal ? "Ouvrir le portail" : "Continuer vers Stripe"}
+          {isPortal && <ExternalLink size={14} />}
         </a>
       </div>
     </div>
   );
 }
 
+
 /* ============================================================
    MODE GESTION — un abonnement existe
    ============================================================ */
 function GestionAbonnement({
   abo, showChange, setShowChange, subscribe, submitting, openStripePortal,
+  portalDisabled, openingPortal, cancelScheduledChange, cancellingSchedule,
 }: {
   abo: Abonnement;
   showChange: boolean;
@@ -337,13 +484,22 @@ function GestionAbonnement({
   subscribe: (f: Formule) => void;
   submitting: Formule | null;
   openStripePortal: () => void;
+  portalDisabled: boolean;
+  openingPortal: boolean;
+  cancelScheduledChange: () => void;
+  cancellingSchedule: boolean;
 }) {
   const etat = deriveEtat(abo);
   const formuleKey = planToFormule(abo.plan);
   const formule = formuleKey ? FORMULES[formuleKey] : null;
-  const isPremium = formuleKey === "premium";
   const isEchec = etat.key === "echec";
 
+  // Downgrade programmé ?
+  const pendingFormule = planToFormule(abo.plan_pending);
+  const hasPendingChange = !!pendingFormule && !!abo.plan_pending_le;
+
+  // Blocage du changement de formule pendant un impayé
+  const changeBlocked = abo.statut === "en_retard";
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -357,7 +513,6 @@ function GestionAbonnement({
         )}
       >
         <div className="flex flex-col gap-6">
-          {/* En-tête : titre + badge formule */}
           <div>
             <p className="font-sans text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
               Votre abonnement
@@ -367,7 +522,6 @@ function GestionAbonnement({
             </h2>
           </div>
 
-          {/* Prix */}
           <div className="flex items-baseline gap-2">
             <span className="font-serif text-4xl md:text-5xl text-foreground">
               {formatMontant(abo.montant_cents, abo.plan)}
@@ -378,7 +532,6 @@ function GestionAbonnement({
             <span className="font-sans text-xs text-muted-foreground ml-1">TTC</span>
           </div>
 
-          {/* État */}
           <div className={cn(
             "flex items-start gap-3 rounded-lg p-4 bg-background/70 border",
             isEchec ? "border-terracotta/40" : "border-border/60",
@@ -393,7 +546,28 @@ function GestionAbonnement({
             {isEchec && <AlertTriangle className="text-terracotta shrink-0" size={20} />}
           </div>
 
-          {/* Grille infos : échéance + moyen de paiement (masqué tant que la carte n'est pas hydratée) */}
+          {hasPendingChange && (
+            <div className="flex items-start gap-3 rounded-lg p-4 bg-background/70 border border-primary/40">
+              <Clock className="text-primary shrink-0 mt-0.5" size={18} />
+              <div className="flex-1">
+                <p className="font-sans font-semibold text-sm text-foreground mb-0.5">
+                  Changement de formule programmé
+                </p>
+                <p className="font-sans text-sm text-muted-foreground">
+                  Passage à la formule <strong>{FORMULES[pendingFormule!].label}</strong> le {formatDate(abo.plan_pending_le)}.
+                </p>
+                <button
+                  onClick={cancelScheduledChange}
+                  disabled={cancellingSchedule}
+                  className="mt-2 inline-flex items-center gap-1.5 font-sans text-xs text-muted-foreground hover:text-destructive underline underline-offset-4 decoration-dotted transition-colors disabled:opacity-50"
+                >
+                  {cancellingSchedule && <Loader2 className="h-3 w-3 animate-spin" />}
+                  Annuler ce changement
+                </button>
+              </div>
+            </div>
+          )}
+
           {(() => {
             const carte = formatCarte(abo.carte_brand, abo.carte_last4);
             const showCarte = carte !== null;
@@ -424,19 +598,23 @@ function GestionAbonnement({
             icon={<CreditCard size={18} />}
             label="Modifier mon moyen de paiement"
             highlight={isEchec}
+            disabled={portalDisabled || openingPortal}
+            loading={openingPortal}
           />
           <ActionButton
             onClick={openStripePortal}
             icon={<FileText size={18} />}
             label="Consulter mes factures"
+            disabled={portalDisabled || openingPortal}
+            loading={openingPortal}
           />
         </div>
 
-        {/* Résiliation — traitée avec retenue */}
         <div className="pt-2">
           <button
             onClick={openStripePortal}
-            className="w-full sm:w-auto font-sans text-xs text-muted-foreground hover:text-destructive underline underline-offset-4 decoration-dotted transition-colors py-2"
+            disabled={portalDisabled || openingPortal}
+            className="w-full sm:w-auto font-sans text-xs text-muted-foreground hover:text-destructive underline underline-offset-4 decoration-dotted transition-colors py-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {abo.cancel_at_period_end ? "Réactiver mon abonnement" : "Résilier mon abonnement"}
           </button>
@@ -462,18 +640,31 @@ function GestionAbonnement({
         </button>
 
         {showChange && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
-            {(Object.keys(FORMULES) as Formule[]).map((f) => (
-              <MiniPlanCard
-                key={f}
-                formule={f}
-                isCurrent={formuleKey === f}
-                loading={submitting === f}
-                disabled={submitting !== null}
-                onClick={() => subscribe(f)}
-              />
-            ))}
-          </div>
+          <>
+            {changeBlocked && (
+              <div className="mt-4 rounded-lg border border-terracotta/40 bg-terracotta/5 p-4">
+                <p className="font-sans text-sm font-semibold text-foreground mb-1">
+                  Régularisez votre paiement avant de changer de formule
+                </p>
+                <p className="font-sans text-xs text-muted-foreground">
+                  Utilisez « Modifier mon moyen de paiement » pour rétablir la facturation. Le changement de formule sera de nouveau disponible ensuite.
+                </p>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+              {(Object.keys(FORMULES) as Formule[]).map((f) => (
+                <MiniPlanCard
+                  key={f}
+                  formule={f}
+                  isCurrent={formuleKey === f}
+                  isPending={pendingFormule === f}
+                  loading={submitting === f}
+                  disabled={submitting !== null || changeBlocked}
+                  onClick={() => subscribe(f)}
+                />
+              ))}
+            </div>
+          </>
         )}
       </section>
     </div>
@@ -492,25 +683,28 @@ function InfoTile({ label, value, icon }: { label: string; value: string; icon?:
   );
 }
 
-function ActionButton({ onClick, icon, label, highlight }: { onClick: () => void; icon: React.ReactNode; label: string; highlight?: boolean }) {
+function ActionButton({ onClick, icon, label, highlight, disabled, loading }: { onClick: () => void; icon: React.ReactNode; label: string; highlight?: boolean; disabled?: boolean; loading?: boolean }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={cn(
-        "w-full flex items-center gap-3 rounded-lg border px-4 py-3.5 text-left transition-all font-sans text-sm font-medium",
+        "w-full flex items-center gap-3 rounded-lg border px-4 py-3.5 text-left transition-all font-sans text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed",
         highlight
           ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 shadow-sm"
           : "bg-card text-foreground border-border hover:border-primary hover:bg-primary/5",
       )}
     >
-      <span className={cn(highlight ? "text-primary-foreground" : "text-primary")}>{icon}</span>
+      <span className={cn(highlight ? "text-primary-foreground" : "text-primary")}>
+        {loading ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : icon}
+      </span>
       <span className="flex-1">{label}</span>
     </button>
   );
 }
 
-function MiniPlanCard({ formule, isCurrent, loading, disabled, onClick }: {
-  formule: Formule; isCurrent: boolean; loading: boolean; disabled: boolean; onClick: () => void;
+function MiniPlanCard({ formule, isCurrent, isPending, loading, disabled, onClick }: {
+  formule: Formule; isCurrent: boolean; isPending?: boolean; loading: boolean; disabled: boolean; onClick: () => void;
 }) {
   const f = FORMULES[formule];
   const isPremium = formule === "premium";
@@ -519,6 +713,7 @@ function MiniPlanCard({ formule, isCurrent, loading, disabled, onClick }: {
       "rounded-xl border p-5 flex flex-col",
       isCurrent ? "border-primary bg-primary/5" : "border-border bg-card",
       isPremium && !isCurrent && "border-primary/30",
+      isPending && "border-primary/60 bg-primary/5",
     )}>
       <div className="flex items-start justify-between mb-3">
         <h4 className={cn(
@@ -530,6 +725,11 @@ function MiniPlanCard({ formule, isCurrent, loading, disabled, onClick }: {
             Actuelle
           </span>
         )}
+        {isPending && !isCurrent && (
+          <span className="font-sans text-[10px] uppercase tracking-wider font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            Programmée
+          </span>
+        )}
       </div>
       <div className="mb-4">
         <span className="font-serif text-2xl text-foreground">{f.prix}</span>
@@ -537,16 +737,16 @@ function MiniPlanCard({ formule, isCurrent, loading, disabled, onClick }: {
       </div>
       <button
         onClick={onClick}
-        disabled={disabled || isCurrent}
+        disabled={disabled || isCurrent || isPending}
         className={cn(
           "mt-auto w-full py-2 rounded-lg font-sans text-xs font-semibold transition-all inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed",
-          isCurrent
+          isCurrent || isPending
             ? "bg-muted text-muted-foreground"
             : "border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground",
         )}
       >
         {loading && <Loader2 className="h-3 w-3 animate-spin" />}
-        {isCurrent ? "Formule actuelle" : "Passer à cette formule"}
+        {isCurrent ? "Formule actuelle" : isPending ? "Programmée" : "Passer à cette formule"}
       </button>
     </div>
   );

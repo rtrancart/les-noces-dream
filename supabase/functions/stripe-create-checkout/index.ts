@@ -1,7 +1,8 @@
-// Crée une session Stripe Checkout pour un prestataire.
-// - Crée le Customer Stripe si nécessaire.
-// - Configure trial_end = fin_essai_le (si futur) pour différer le 1er débit à la fin d'essai.
-// - Retourne { url } vers Checkout.
+// Crée une session Stripe Checkout, ou modifie l'abonnement existant.
+// - Upgrade (plan de rang supérieur) : mise à jour immédiate avec proration (always_invoice).
+// - Downgrade (plan de rang inférieur) : Subscription Schedule → bascule en fin de période, sans avoir.
+// - Aucune sub → Checkout classique (1re souscription).
+// Retourne { url } (checkout), { changed: true, mode: 'upgrade' | 'downgrade' | 'noop' }, ou { error }.
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@17";
@@ -13,6 +14,24 @@ const PRICE_BY_FORMULE: Record<Formule, string | undefined> = {
   premium: Deno.env.get("STRIPE_PRICE_PREMIUM"),
   annuel: Deno.env.get("STRIPE_PRICE_ANNUEL"),
 };
+
+const PLAN_BY_FORMULE: Record<Formule, string> = {
+  standard: "standard_mensuel",
+  premium: "premium_mensuel",
+  annuel: "annuel",
+};
+
+// Rangs de formule : sert à déterminer upgrade vs downgrade.
+// standard (89€) < premium (149€) < annuel (79€/mois avec engagement 12 mois → rang supérieur).
+const RANG: Record<Formule, number> = { standard: 1, premium: 2, annuel: 3 };
+
+function formuleFromPriceId(priceId: string | null | undefined): Formule | null {
+  if (!priceId) return null;
+  for (const f of ["standard", "premium", "annuel"] as Formule[]) {
+    if (PRICE_BY_FORMULE[f] === priceId) return f;
+  }
+  return null;
+}
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2024-11-20.acacia",
@@ -46,7 +65,6 @@ Deno.serve(async (req) => {
     const priceId = PRICE_BY_FORMULE[formule];
     if (!priceId) return json({ error: `Price ID manquant pour ${formule}` }, 500);
 
-    // Service role pour lire/écrire abonnements et prestataires
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -61,18 +79,17 @@ Deno.serve(async (req) => {
 
     const { data: abo } = await supabaseAdmin
       .from("abonnements")
-      .select("id, stripe_customer_id, fin_essai_le")
+      .select("id, stripe_customer_id, fin_essai_le, stripe_schedule_id")
       .eq("prestataire_id", prestataire.id)
       .maybeSingle();
 
-    // 1. Customer Stripe — vérifier que l'ID stocké existe encore côté Stripe
+    // 1. Customer Stripe
     let customerId = abo?.stripe_customer_id ?? null;
     if (customerId) {
       try {
         const existing = await stripe.customers.retrieve(customerId);
         if ((existing as Stripe.DeletedCustomer).deleted) customerId = null;
       } catch (_e) {
-        // Customer inconnu de Stripe (ex : ID de test/simulé) → on recrée
         customerId = null;
       }
     }
@@ -93,13 +110,9 @@ Deno.serve(async (req) => {
           .update({ stripe_customer_id: customerId })
           .eq("id", abo.id);
       }
-      // Si aucune ligne abonnement n'existe encore, le webhook la créera à l'issue du checkout.
     }
 
-    // 2. Si le customer a déjà une (ou plusieurs) subscription active/trialing/past_due,
-    //    on fait un CHANGEMENT DE PLAN sur la principale et on annule les doublons.
-    //    Cela évite qu'un prestataire se retrouve avec 2 abonnements facturés en parallèle
-    //    quand il change de formule via notre UI.
+    // 2. Sub existante ?
     const existingSubs = await stripe.subscriptions.list({
       customer: customerId,
       status: "all",
@@ -110,11 +123,19 @@ Deno.serve(async (req) => {
     );
 
     if (activeSubs.length > 0) {
-      // La plus ancienne devient la "principale" ; les autres sont des doublons à annuler.
       activeSubs.sort((a, b) => a.created - b.created);
       const primary = activeSubs[0];
       const duplicates = activeSubs.slice(1);
 
+      // Garde : refuser le changement de formule pendant un impayé
+      if (primary.status === "past_due" || primary.status === "unpaid") {
+        return json({
+          error: "unpaid_subscription",
+          message: "Régularisez votre paiement avant de changer de formule.",
+        }, 409);
+      }
+
+      // Annule les doublons éventuels
       for (const dup of duplicates) {
         try {
           await stripe.subscriptions.cancel(dup.id, { prorate: true });
@@ -124,12 +145,53 @@ Deno.serve(async (req) => {
       }
 
       const currentItem = primary.items.data[0];
-      const alreadyOnTargetPrice = currentItem?.price?.id === priceId;
+      const currentPriceId = currentItem?.price?.id ?? null;
+      const alreadyOnTargetPrice = currentPriceId === priceId;
 
-      if (!alreadyOnTargetPrice) {
+      if (alreadyOnTargetPrice) {
+        // Si l'utilisateur reclique sur sa formule courante alors qu'un downgrade
+        // est programmé, on considère qu'il annule le downgrade.
+        if (abo?.stripe_schedule_id) {
+          try {
+            await stripe.subscriptionSchedules.release(abo.stripe_schedule_id);
+          } catch (e) {
+            const code = (e as { code?: string })?.code;
+            if (code !== "resource_missing") console.warn("release existing schedule failed", e);
+          }
+          await supabaseAdmin
+            .from("abonnements")
+            .update({ plan_pending: null, plan_pending_le: null, stripe_schedule_id: null })
+            .eq("id", abo.id);
+          return json({ changed: true, mode: "schedule_cancelled" });
+        }
+        return json({ changed: false, mode: "noop", message: "Vous êtes déjà sur cette formule." });
+      }
+
+      // Déterminer upgrade vs downgrade
+      const currentFormule = formuleFromPriceId(currentPriceId);
+      const isUpgrade = currentFormule ? RANG[formule] > RANG[currentFormule] : true;
+
+      // Si un schedule existe déjà et que l'utilisateur reclique sur un plan différent,
+      // on libère l'ancien schedule avant d'appliquer la nouvelle logique.
+      if (abo?.stripe_schedule_id) {
+        try {
+          await stripe.subscriptionSchedules.release(abo.stripe_schedule_id);
+        } catch (e) {
+          const code = (e as { code?: string })?.code;
+          if (code !== "resource_missing") console.warn("release existing schedule failed", e);
+        }
+        await supabaseAdmin
+          .from("abonnements")
+          .update({ plan_pending: null, plan_pending_le: null, stripe_schedule_id: null })
+          .eq("id", abo.id);
+      }
+
+      if (isUpgrade) {
+        // Upgrade immédiat, facturation de la proration
         await stripe.subscriptions.update(primary.id, {
           items: [{ id: currentItem.id, price: priceId }],
-          proration_behavior: "create_prorations",
+          proration_behavior: "always_invoice",
+          billing_cycle_anchor: "unchanged",
           cancel_at_period_end: false,
           metadata: {
             prestataire_id: prestataire.id,
@@ -137,11 +199,59 @@ Deno.serve(async (req) => {
             formule,
           },
         });
-      } else if (duplicates.length === 0) {
-        return json({ changed: false, message: "Vous êtes déjà sur cette formule." });
-      }
+        return json({ changed: true, mode: "upgrade" });
+      } else {
+        // Downgrade programmé : Subscription Schedule
+        const schedule = await stripe.subscriptionSchedules.create({
+          from_subscription: primary.id,
+        });
+        const phaseCurrent = schedule.phases[0];
+        await stripe.subscriptionSchedules.update(schedule.id, {
+          end_behavior: "release",
+          phases: [
+            {
+              items: [{ price: currentPriceId!, quantity: 1 }],
+              start_date: phaseCurrent.start_date,
+              end_date: phaseCurrent.end_date,
+              proration_behavior: "none",
+            },
+            {
+              items: [{ price: priceId, quantity: 1 }],
+              iterations: 1,
+              proration_behavior: "none",
+              metadata: {
+                prestataire_id: prestataire.id,
+                user_id: userId,
+                formule,
+              },
+            },
+          ],
+          metadata: {
+            prestataire_id: prestataire.id,
+            user_id: userId,
+            formule_cible: formule,
+          },
+        });
 
-      return json({ changed: true });
+        // Reflet côté DB pour l'UI
+        if (abo?.id) {
+          await supabaseAdmin
+            .from("abonnements")
+            .update({
+              plan_pending: PLAN_BY_FORMULE[formule],
+              plan_pending_le: new Date(primary.current_period_end * 1000).toISOString(),
+              stripe_schedule_id: schedule.id,
+            })
+            .eq("id", abo.id);
+        }
+
+        return json({
+          changed: true,
+          mode: "downgrade",
+          plan_pending: PLAN_BY_FORMULE[formule],
+          plan_pending_le: new Date(primary.current_period_end * 1000).toISOString(),
+        });
+      }
     }
 
     // 3. Aucun abonnement actif → nouveau Checkout (1re souscription)

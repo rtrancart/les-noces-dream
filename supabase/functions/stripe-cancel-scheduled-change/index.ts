@@ -1,6 +1,5 @@
-// Crée une session Stripe Customer Portal pour un prestataire.
-// Permet à l'utilisateur de mettre à jour son moyen de paiement, consulter ses factures
-// et résilier son abonnement (en fin de période, configuré côté dashboard Stripe).
+// Annule un changement de formule programmé (subscription schedule Stripe) et
+// nettoie les colonnes plan_pending* de l'abonnement.
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@17";
@@ -14,9 +13,7 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return json({ error: "Unauthorized" }, 401);
-    }
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
     const supabaseAuth = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -33,42 +30,46 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: prestataire, error: pErr } = await supabaseAdmin
+    const { data: prestataire } = await supabaseAdmin
       .from("prestataires")
       .select("id")
       .eq("user_id", userId)
       .maybeSingle();
-    if (pErr || !prestataire) return json({ error: "Prestataire introuvable" }, 404);
+    if (!prestataire) return json({ error: "Prestataire introuvable" }, 404);
 
     const { data: abo } = await supabaseAdmin
       .from("abonnements")
-      .select("stripe_customer_id")
+      .select("id, stripe_schedule_id")
       .eq("prestataire_id", prestataire.id)
       .maybeSingle();
 
-    if (!abo?.stripe_customer_id) {
-      return json({ error: "Aucun compte Stripe rattaché à cet abonnement" }, 404);
+    if (!abo?.stripe_schedule_id) {
+      return json({ error: "Aucun changement programmé à annuler" }, 404);
     }
-
-    const origin = req.headers.get("origin") ?? Deno.env.get("PUBLIC_SITE_URL") ?? "";
-    const returnUrl = `${origin}/espace-pro/abonnement`;
 
     try {
-      const session = await stripe.billingPortal.sessions.create({
-        customer: abo.stripe_customer_id,
-        return_url: returnUrl,
-      });
-      return json({ url: session.url });
+      // release = détache le schedule sans reprogrammer, la sub continue telle quelle
+      await stripe.subscriptionSchedules.release(abo.stripe_schedule_id);
     } catch (e) {
-      // Customer supprimé côté Stripe → 404 propre (l'UI proposera une nouvelle souscription)
       const code = (e as { code?: string })?.code;
-      if (code === "resource_missing") {
-        return json({ error: "Le compte Stripe rattaché est introuvable. Veuillez souscrire à nouveau." }, 404);
+      // Schedule inconnu / déjà libéré → on nettoie localement quand même
+      if (code !== "resource_missing") {
+        console.warn("release schedule failed", e);
       }
-      throw e;
     }
+
+    await supabaseAdmin
+      .from("abonnements")
+      .update({
+        plan_pending: null,
+        plan_pending_le: null,
+        stripe_schedule_id: null,
+      })
+      .eq("id", abo.id);
+
+    return json({ ok: true });
   } catch (e) {
-    console.error("stripe-create-portal-session error", e);
+    console.error("stripe-cancel-scheduled-change error", e);
     const message = e instanceof Error ? e.message : "Erreur interne";
     return json({ error: message }, 500);
   }
