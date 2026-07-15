@@ -159,80 +159,51 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
 
   const content = (
     <div className="space-y-6">
-      {step === "email" ? (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Pour déposer un avis, nous vérifions que vous avez bien contacté ce prestataire
-            via une demande de devis.
-          </p>
-          <div className="space-y-2">
-            <Label htmlFor="avis-email">Votre adresse email</Label>
-            <Input
-              id="avis-email"
-              type="email"
-              placeholder="votre@email.com"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setEmailError("");
-              }}
-              onKeyDown={(e) => e.key === "Enter" && checkEmail()}
-            />
-            {emailError && (
-              <p className="text-sm text-destructive">{emailError}</p>
-            )}
-          </div>
-          <Button onClick={checkEmail} disabled={checking} className="w-full">
-            {checking ? "Vérification…" : "Continuer"}
-          </Button>
-        </div>
-      ) : (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-            {criteres.map((c) => (
-              <FormField
-                key={c.name}
-                control={form.control}
-                name={c.name}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{c.label}</FormLabel>
-                    <FormControl>
-                      <StarRating
-                        value={field.value}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ))}
-
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          {criteres.map((c) => (
             <FormField
+              key={c.name}
               control={form.control}
-              name="commentaire"
+              name={c.name}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Votre avis</FormLabel>
+                  <FormLabel>{c.label}</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Décrivez votre expérience (min. 100 caractères)…"
-                      rows={5}
-                      {...field}
+                    <StarRating
+                      value={field.value}
+                      onChange={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+          ))}
 
-            <Button type="submit" disabled={submitting} className="w-full">
-              {submitting ? "Envoi…" : "Envoyer mon avis"}
-            </Button>
-          </form>
-        </Form>
-      )}
+          <FormField
+            control={form.control}
+            name="commentaire"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Votre avis</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Décrivez votre expérience (min. 100 caractères)…"
+                    rows={5}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit" disabled={submitting} className="w-full">
+            {submitting ? "Envoi…" : "Envoyer mon avis"}
+          </Button>
+        </form>
+      </Form>
     </div>
   );
 
