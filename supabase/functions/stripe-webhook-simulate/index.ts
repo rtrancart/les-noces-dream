@@ -21,20 +21,8 @@ const PLAN_BY_FORMULE: Record<Formule, string> = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  // Outil de test temporaire — pas d'auth. À SUPPRIMER après validation.
 
-  // Auth: caller must be admin/super_admin
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) return json({ error: "unauth" }, 401);
-  const authed = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: authHeader } } },
-  );
-  const { data: u } = await authed.auth.getUser();
-  if (!u?.user) return json({ error: "unauth" }, 401);
-  const { data: isAdmin } = await admin.rpc("has_role", { _user_id: u.user.id, _role: "admin" });
-  const { data: isSuper } = await admin.rpc("has_role", { _user_id: u.user.id, _role: "super_admin" });
-  if (!isAdmin && !isSuper) return json({ error: "forbidden" }, 403);
 
   const body = await req.json().catch(() => ({}));
   const {
