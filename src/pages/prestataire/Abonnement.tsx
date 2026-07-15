@@ -180,21 +180,6 @@ export default function PrestataireAbonnement() {
       nextParams.delete("statut");
       hasChanged = true;
     }
-
-    const checkoutFormule = searchParams.get("checkout");
-    if (isFormule(checkoutFormule)) {
-      nextParams.delete("checkout");
-      hasChanged = true;
-      if (isEmbeddedFrame()) {
-        setManualRedirect({ url: buildTopLevelCheckoutUrl(checkoutFormule), formule: checkoutFormule });
-      } else {
-        void createCheckoutSession(checkoutFormule);
-      }
-    } else if (checkoutFormule) {
-      nextParams.delete("checkout");
-      hasChanged = true;
-    }
-
     if (hasChanged) {
       setSearchParams(nextParams, { replace: true });
     }
