@@ -41,6 +41,7 @@ const buildSchema = (isAnonymous: boolean) =>
     email: isAnonymous
       ? z.string().trim().email("Email invalide").max(255)
       : z.string().optional(),
+    titre: z.string().trim().min(3, "Titre requis (3 caractères min.)").max(120, "Maximum 120 caractères"),
     note_qualite_presta: z.number().min(1, "Obligatoire").max(5),
     note_professionnalisme: z.number().min(1, "Obligatoire").max(5),
     note_rapport_qualite_prix: z.number().min(1, "Obligatoire").max(5),
@@ -98,6 +99,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
     defaultValues: {
       nom: "",
       email: "",
+      titre: "",
       note_qualite_presta: 0,
       note_professionnalisme: 0,
       note_rapport_qualite_prix: 0,
@@ -120,6 +122,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
         p_note_professionnalisme: values.note_professionnalisme,
         p_note_rapport_qualite_prix: values.note_rapport_qualite_prix,
         p_note_flexibilite: values.note_flexibilite,
+        p_titre: values.titre,
         p_commentaire: values.commentaire,
         p_nom: isAnonymous ? values.nom : null,
         p_email: isAnonymous ? values.email : null,
@@ -171,6 +174,20 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
               />
             </>
           )}
+
+          <FormField
+            control={form.control}
+            name="titre"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Titre de votre avis</FormLabel>
+                <FormControl>
+                  <Input placeholder="Résumez votre expérience en quelques mots" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           {criteres.map((c) => (
             <FormField
