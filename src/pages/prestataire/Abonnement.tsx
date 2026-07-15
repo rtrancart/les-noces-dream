@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CreditCard, Check, X, Loader2, ChevronDown, ChevronUp, FileText, AlertTriangle } from "lucide-react";
+import { CreditCard, Check, X, Loader2, ChevronDown, ChevronUp, FileText, AlertTriangle, Clock, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { toast } from "@/hooks/use-toast";
@@ -18,9 +18,13 @@ interface Abonnement {
   cancel_at_period_end: boolean;
   suspendu_pour_impaye_le: string | null;
   stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
   stripe_payment_method_id: string | null;
   carte_brand: string | null;
   carte_last4: string | null;
+  plan_pending: string | null;
+  plan_pending_le: string | null;
+  stripe_schedule_id: string | null;
 }
 
 function formatCarte(brand: string | null, last4: string | null): string | null {
@@ -49,6 +53,7 @@ function planToFormule(plan: string | null | undefined): Formule | null {
   if (plan in FORMULES) return plan as Formule;
   return null;
 }
+
 
 
 
