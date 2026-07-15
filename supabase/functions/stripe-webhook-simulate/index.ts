@@ -68,18 +68,88 @@ Deno.serve(async (req) => {
       fin_periode_le: new Date(currentPeriodEnd * 1000).toISOString(),
       derniere_facture_id: `in_sim_${Date.now()}`,
       nb_echecs_paiement: 0,
+      premier_echec_le: null,
+      rappel_impaye_envoye_le: null,
       suspendu_pour_impaye_le: null,
     }).eq("prestataire_id", prestataire_id);
     await admin.rpc("reactiver_prestataire_paiement", { p_prestataire_id: prestataire_id });
   } else if (event_type === "invoice.payment_failed") {
+    // Mirror stripe-webhook: jalon 1 au premier échec du cycle, silencieux ensuite,
+    // et garde D7 sur suspendu_pour_impaye_le / statuts terminaux.
     const { data: cur } = await admin.from("abonnements")
-      .select("nb_echecs_paiement").eq("prestataire_id", prestataire_id).maybeSingle();
-    const nb = (cur?.nb_echecs_paiement ?? 0) + 1;
-    await admin.from("abonnements").update({ statut: "en_retard", nb_echecs_paiement: nb })
-      .eq("prestataire_id", prestataire_id);
+      .select("nb_echecs_paiement, premier_echec_le, suspendu_pour_impaye_le, statut")
+      .eq("prestataire_id", prestataire_id).maybeSingle();
+
+    const suspended = !!cur?.suspendu_pour_impaye_le;
+    const terminal = cur?.statut && ["annule", "expire"].includes(cur.statut as string);
+    if (!suspended && !terminal) {
+      const nbAvant = cur?.nb_echecs_paiement ?? 0;
+      const nbApres = nbAvant + 1;
+      const patch: Record<string, unknown> = { statut: "en_retard", nb_echecs_paiement: nbApres };
+      let sendJalon1 = false;
+      if (nbAvant === 0) {
+        patch.premier_echec_le = new Date().toISOString();
+        sendJalon1 = true;
+      }
+      await admin.from("abonnements").update(patch).eq("prestataire_id", prestataire_id);
+      if (sendJalon1) {
+        await enqueueImpayeEmail(
+          prestataire_id,
+          "impaye_premier_echec",
+          `impaye-premier-${prestataire_id}-sim-${Date.now()}`,
+        );
+      }
+    }
+  } else if (event_type === "customer.subscription.deleted") {
+    // Mirror stripe-webhook: si cancellation_details.reason = payment_failed → jalon 3.
+    const failedForPayment = body.cancellation_reason === "payment_failed";
+    if (failedForPayment) {
+      await admin.from("abonnements").update({
+        statut: "annule",
+        suspendu_pour_impaye_le: new Date().toISOString(),
+        resilie_le: new Date().toISOString(),
+        plan_pending: null,
+        plan_pending_le: null,
+        stripe_schedule_id: null,
+      }).eq("prestataire_id", prestataire_id);
+      await admin.from("prestataires").update({
+        statut: "suspendu",
+        motif_suspension: "Abonnement définitivement abandonné pour impayé",
+      }).eq("id", prestataire_id);
+      await enqueueImpayeEmail(
+        prestataire_id,
+        "impaye_suspension",
+        `impaye-suspension-${prestataire_id}-sim-${Date.now()}`,
+      );
+    } else {
+      await admin.from("abonnements").update({
+        statut: "expire",
+        cancel_at_period_end: false,
+      }).eq("prestataire_id", prestataire_id);
+    }
+  } else if (event_type === "debug.backdate_premier_echec") {
+    const days = Number(body.days ?? 8);
+    await admin.from("abonnements").update({
+      premier_echec_le: new Date(Date.now() - days * 86400 * 1000).toISOString(),
+    }).eq("prestataire_id", prestataire_id);
+  } else if (event_type === "debug.reset_cycle") {
+    await admin.from("abonnements").update({
+      statut: "actif",
+      nb_echecs_paiement: 0,
+      premier_echec_le: null,
+      rappel_impaye_envoye_le: null,
+      suspendu_pour_impaye_le: null,
+      resilie_le: null,
+    }).eq("prestataire_id", prestataire_id);
+    // Réactivation prestataire via la RPC qui gère le garde-fou du trigger
+    await admin.rpc("reactiver_prestataire_paiement", { p_prestataire_id: prestataire_id });
+    await admin.from("prestataires").update({ motif_suspension: null }).eq("id", prestataire_id);
   } else {
+
     return json({ error: `event_type non supporté: ${event_type}` }, 400);
   }
+
+
 
   const { data: abo } = await admin.from("abonnements")
     .select("*").eq("prestataire_id", prestataire_id).maybeSingle();
@@ -135,3 +205,46 @@ function json(data: unknown, status = 200) {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
+const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://les-noces.lovable.app";
+
+async function enqueueImpayeEmail(
+  prestataireId: string,
+  templateName: "impaye_premier_echec" | "impaye_rappel_intermediaire" | "impaye_suspension",
+  idempotencyKey: string,
+) {
+  const { data: presta } = await admin
+    .from("prestataires")
+    .select("email_contact, nom_commercial, user_id")
+    .eq("id", prestataireId)
+    .maybeSingle();
+  if (!presta?.email_contact) return;
+
+  let prenom: string | undefined;
+  if (presta.user_id) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("prenom")
+      .eq("id", presta.user_id)
+      .maybeSingle();
+    prenom = profile?.prenom ?? undefined;
+  }
+
+  const portailUrl = `${SITE_URL}/espace-pro/abonnement`;
+  const templateData: Record<string, unknown> = {
+    prenom,
+    nom_commercial: presta.nom_commercial ?? undefined,
+  };
+  if (templateName === "impaye_suspension") templateData.reactivation_url = portailUrl;
+  else templateData.portail_url = portailUrl;
+
+  await admin.functions.invoke("send-transactional-email", {
+    body: {
+      templateName,
+      recipientEmail: presta.email_contact,
+      idempotencyKey,
+      templateData,
+    },
+  });
+}
+
