@@ -443,33 +443,40 @@ export default function PrestataireAbonnement() {
 }
 
 
-function StripeRedirectNotice({ url, formule }: { url: string; formule: Formule }) {
+function StripeRedirectNotice({ url, mode, formule }: { url: string; mode: "checkout" | "portal"; formule?: Formule }) {
+  const isPortal = mode === "portal";
+  const title = isPortal ? "Portail Stripe prêt" : "Redirection Stripe prête";
+  const desc = isPortal
+    ? "Votre navigateur a bloqué l'ouverture automatique. Cliquez ci-contre pour ouvrir le portail."
+    : `Continuez vers Stripe pour passer à la formule ${formule ? FORMULES[formule].label : ""}.`;
   return (
     <div className="mb-5 rounded-lg border border-primary/30 bg-primary/5 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="font-sans text-sm font-semibold text-foreground">Redirection Stripe prête</p>
-          <p className="font-sans text-xs text-muted-foreground">
-            Continuez vers Stripe pour passer à la formule {FORMULES[formule].label}.
-          </p>
+          <p className="font-sans text-sm font-semibold text-foreground">{title}</p>
+          <p className="font-sans text-xs text-muted-foreground">{desc}</p>
         </div>
         <a
           href={url}
-          target="_top"
-          className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 font-sans text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          target={isPortal ? "_blank" : "_top"}
+          rel={isPortal ? "noopener noreferrer" : undefined}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 font-sans text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          Continuer vers Stripe
+          {isPortal ? "Ouvrir le portail" : "Continuer vers Stripe"}
+          {isPortal && <ExternalLink size={14} />}
         </a>
       </div>
     </div>
   );
 }
 
+
 /* ============================================================
    MODE GESTION — un abonnement existe
    ============================================================ */
 function GestionAbonnement({
   abo, showChange, setShowChange, subscribe, submitting, openStripePortal,
+  portalDisabled, openingPortal, cancelScheduledChange, cancellingSchedule,
 }: {
   abo: Abonnement;
   showChange: boolean;
@@ -477,13 +484,22 @@ function GestionAbonnement({
   subscribe: (f: Formule) => void;
   submitting: Formule | null;
   openStripePortal: () => void;
+  portalDisabled: boolean;
+  openingPortal: boolean;
+  cancelScheduledChange: () => void;
+  cancellingSchedule: boolean;
 }) {
   const etat = deriveEtat(abo);
   const formuleKey = planToFormule(abo.plan);
   const formule = formuleKey ? FORMULES[formuleKey] : null;
-  const isPremium = formuleKey === "premium";
   const isEchec = etat.key === "echec";
 
+  // Downgrade programmé ?
+  const pendingFormule = planToFormule(abo.plan_pending);
+  const hasPendingChange = !!pendingFormule && !!abo.plan_pending_le;
+
+  // Blocage du changement de formule pendant un impayé
+  const changeBlocked = abo.statut === "en_retard";
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -497,7 +513,6 @@ function GestionAbonnement({
         )}
       >
         <div className="flex flex-col gap-6">
-          {/* En-tête : titre + badge formule */}
           <div>
             <p className="font-sans text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
               Votre abonnement
@@ -507,7 +522,6 @@ function GestionAbonnement({
             </h2>
           </div>
 
-          {/* Prix */}
           <div className="flex items-baseline gap-2">
             <span className="font-serif text-4xl md:text-5xl text-foreground">
               {formatMontant(abo.montant_cents, abo.plan)}
@@ -518,7 +532,6 @@ function GestionAbonnement({
             <span className="font-sans text-xs text-muted-foreground ml-1">TTC</span>
           </div>
 
-          {/* État */}
           <div className={cn(
             "flex items-start gap-3 rounded-lg p-4 bg-background/70 border",
             isEchec ? "border-terracotta/40" : "border-border/60",
@@ -533,7 +546,28 @@ function GestionAbonnement({
             {isEchec && <AlertTriangle className="text-terracotta shrink-0" size={20} />}
           </div>
 
-          {/* Grille infos : échéance + moyen de paiement (masqué tant que la carte n'est pas hydratée) */}
+          {hasPendingChange && (
+            <div className="flex items-start gap-3 rounded-lg p-4 bg-background/70 border border-primary/40">
+              <Clock className="text-primary shrink-0 mt-0.5" size={18} />
+              <div className="flex-1">
+                <p className="font-sans font-semibold text-sm text-foreground mb-0.5">
+                  Changement de formule programmé
+                </p>
+                <p className="font-sans text-sm text-muted-foreground">
+                  Passage à la formule <strong>{FORMULES[pendingFormule!].label}</strong> le {formatDate(abo.plan_pending_le)}.
+                </p>
+                <button
+                  onClick={cancelScheduledChange}
+                  disabled={cancellingSchedule}
+                  className="mt-2 inline-flex items-center gap-1.5 font-sans text-xs text-muted-foreground hover:text-destructive underline underline-offset-4 decoration-dotted transition-colors disabled:opacity-50"
+                >
+                  {cancellingSchedule && <Loader2 className="h-3 w-3 animate-spin" />}
+                  Annuler ce changement
+                </button>
+              </div>
+            </div>
+          )}
+
           {(() => {
             const carte = formatCarte(abo.carte_brand, abo.carte_last4);
             const showCarte = carte !== null;
@@ -564,19 +598,23 @@ function GestionAbonnement({
             icon={<CreditCard size={18} />}
             label="Modifier mon moyen de paiement"
             highlight={isEchec}
+            disabled={portalDisabled || openingPortal}
+            loading={openingPortal}
           />
           <ActionButton
             onClick={openStripePortal}
             icon={<FileText size={18} />}
             label="Consulter mes factures"
+            disabled={portalDisabled || openingPortal}
+            loading={openingPortal}
           />
         </div>
 
-        {/* Résiliation — traitée avec retenue */}
         <div className="pt-2">
           <button
             onClick={openStripePortal}
-            className="w-full sm:w-auto font-sans text-xs text-muted-foreground hover:text-destructive underline underline-offset-4 decoration-dotted transition-colors py-2"
+            disabled={portalDisabled || openingPortal}
+            className="w-full sm:w-auto font-sans text-xs text-muted-foreground hover:text-destructive underline underline-offset-4 decoration-dotted transition-colors py-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {abo.cancel_at_period_end ? "Réactiver mon abonnement" : "Résilier mon abonnement"}
           </button>
@@ -602,18 +640,31 @@ function GestionAbonnement({
         </button>
 
         {showChange && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
-            {(Object.keys(FORMULES) as Formule[]).map((f) => (
-              <MiniPlanCard
-                key={f}
-                formule={f}
-                isCurrent={formuleKey === f}
-                loading={submitting === f}
-                disabled={submitting !== null}
-                onClick={() => subscribe(f)}
-              />
-            ))}
-          </div>
+          <>
+            {changeBlocked && (
+              <div className="mt-4 rounded-lg border border-terracotta/40 bg-terracotta/5 p-4">
+                <p className="font-sans text-sm font-semibold text-foreground mb-1">
+                  Régularisez votre paiement avant de changer de formule
+                </p>
+                <p className="font-sans text-xs text-muted-foreground">
+                  Utilisez « Modifier mon moyen de paiement » pour rétablir la facturation. Le changement de formule sera de nouveau disponible ensuite.
+                </p>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+              {(Object.keys(FORMULES) as Formule[]).map((f) => (
+                <MiniPlanCard
+                  key={f}
+                  formule={f}
+                  isCurrent={formuleKey === f}
+                  isPending={pendingFormule === f}
+                  loading={submitting === f}
+                  disabled={submitting !== null || changeBlocked}
+                  onClick={() => subscribe(f)}
+                />
+              ))}
+            </div>
+          </>
         )}
       </section>
     </div>
