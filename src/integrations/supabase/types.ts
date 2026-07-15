@@ -18,6 +18,8 @@ export type Database = {
         Row: {
           adresse_facturation: Json | null
           cancel_at_period_end: boolean
+          carte_brand: string | null
+          carte_last4: string | null
           created_at: string
           debut_le: string
           derniere_facture_id: string | null
@@ -39,6 +41,8 @@ export type Database = {
         Insert: {
           adresse_facturation?: Json | null
           cancel_at_period_end?: boolean
+          carte_brand?: string | null
+          carte_last4?: string | null
           created_at?: string
           debut_le?: string
           derniere_facture_id?: string | null
@@ -60,6 +64,8 @@ export type Database = {
         Update: {
           adresse_facturation?: Json | null
           cancel_at_period_end?: boolean
+          carte_brand?: string | null
+          carte_last4?: string | null
           created_at?: string
           debut_le?: string
           derniere_facture_id?: string | null

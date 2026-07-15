@@ -19,6 +19,16 @@ interface Abonnement {
   suspendu_pour_impaye_le: string | null;
   stripe_subscription_id: string | null;
   stripe_payment_method_id: string | null;
+  carte_brand: string | null;
+  carte_last4: string | null;
+}
+
+function formatCarte(brand: string | null, last4: string | null): string | null {
+  if (!last4) return null;
+  const label = brand
+    ? brand.charAt(0).toUpperCase() + brand.slice(1)
+    : "Carte";
+  return `${label} •••• ${last4}`;
 }
 
 const FORMULES: Record<Formule, { label: string; prix: string; periode: string; premium?: boolean }> = {
@@ -146,7 +156,7 @@ export default function PrestataireAbonnement() {
     (async () => {
       const { data } = await supabase
         .from("abonnements")
-        .select("id, plan, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_payment_method_id")
+        .select("id, plan, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_payment_method_id, carte_brand, carte_last4")
         .eq("prestataire_id", prestataire.id)
         .maybeSingle();
       setAbo(data as Abonnement | null);
@@ -284,18 +294,26 @@ function GestionAbonnement({
             {isEchec && <AlertTriangle className="text-terracotta shrink-0" size={20} />}
           </div>
 
-          {/* Grille infos : échéance + moyen de paiement */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <InfoTile
-              label="Prochaine échéance"
-              value={abo.fin_periode_le ? formatDate(abo.fin_periode_le) : "—"}
-            />
-            <InfoTile
-              label="Moyen de paiement"
-              value={abo.stripe_payment_method_id ? "Carte bancaire enregistrée" : "Aucun moyen de paiement"}
-              icon={<CreditCard size={16} className="text-muted-foreground" />}
-            />
-          </div>
+          {/* Grille infos : échéance + moyen de paiement (masqué tant que la carte n'est pas hydratée) */}
+          {(() => {
+            const carte = formatCarte(abo.carte_brand, abo.carte_last4);
+            const showCarte = carte !== null;
+            return (
+              <div className={cn("grid gap-3", showCarte ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
+                <InfoTile
+                  label="Prochaine échéance"
+                  value={abo.fin_periode_le ? formatDate(abo.fin_periode_le) : "—"}
+                />
+                {showCarte && (
+                  <InfoTile
+                    label="Moyen de paiement"
+                    value={carte!}
+                    icon={<CreditCard size={16} className="text-muted-foreground" />}
+                  />
+                )}
+              </div>
+            );
+          })()}
         </div>
       </section>
 

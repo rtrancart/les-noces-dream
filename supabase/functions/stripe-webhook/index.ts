@@ -57,6 +57,14 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "payment_method.attached": {
+        const pm = event.data.object as Stripe.PaymentMethod;
+        const customerId = typeof pm.customer === "string" ? pm.customer : pm.customer?.id;
+        if (!customerId) break;
+        await updateCardByCustomer(customerId, pm);
+        break;
+      }
+
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
         const subId = typeof invoice.subscription === "string" ? invoice.subscription : null;
@@ -65,6 +73,8 @@ Deno.serve(async (req) => {
         const prestataireId = await resolvePrestataireId(sub);
         if (!prestataireId) break;
 
+        const cardPatch = await resolveCardPatchFromSubscription(sub);
+
         await supabase
           .from("abonnements")
           .update({
@@ -72,6 +82,7 @@ Deno.serve(async (req) => {
             fin_periode_le: new Date(sub.current_period_end * 1000).toISOString(),
             derniere_facture_id: invoice.id,
             nb_echecs_paiement: 0,
+            ...cardPatch,
           })
           .eq("prestataire_id", prestataireId);
 
@@ -120,7 +131,6 @@ Deno.serve(async (req) => {
           sub.status === "past_due";
 
         if (failedForPayment) {
-          // Abandon définitif après épuisement des relances → suspension fiche
           await supabase
             .from("abonnements")
             .update({
@@ -138,7 +148,6 @@ Deno.serve(async (req) => {
             })
             .eq("id", prestataireId);
         } else {
-          // Résiliation propre arrivée à échéance
           await supabase
             .from("abonnements")
             .update({
@@ -176,6 +185,67 @@ async function resolvePrestataireId(sub: Stripe.Subscription): Promise<string | 
   return data?.prestataire_id ?? null;
 }
 
+/**
+ * Résout la carte (brand/last4) associée à un abonnement en tentant, dans l'ordre :
+ * 1. sub.default_payment_method
+ * 2. sub.latest_invoice.payment_intent.payment_method
+ * 3. customer.invoice_settings.default_payment_method
+ * Retourne un patch partiel — vide si rien de fiable trouvé (on ne veut jamais écraser une carte déjà connue avec null).
+ */
+async function resolveCardPatchFromSubscription(
+  sub: Stripe.Subscription,
+): Promise<Record<string, string>> {
+  const pmId = await resolvePaymentMethodIdFromSubscription(sub);
+  if (!pmId) return {};
+  try {
+    const pm = await stripe.paymentMethods.retrieve(pmId);
+    return cardPatchFromPaymentMethod(pm);
+  } catch (e) {
+    console.warn("resolveCardPatchFromSubscription: retrieve pm failed", e);
+    return {};
+  }
+}
+
+async function resolvePaymentMethodIdFromSubscription(
+  sub: Stripe.Subscription,
+): Promise<string | null> {
+  if (sub.default_payment_method) {
+    return typeof sub.default_payment_method === "string"
+      ? sub.default_payment_method
+      : sub.default_payment_method.id;
+  }
+  // Tenter via customer
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  try {
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customer && !("deleted" in customer)) {
+      const dpm = customer.invoice_settings?.default_payment_method;
+      if (dpm) return typeof dpm === "string" ? dpm : dpm.id;
+    }
+  } catch (e) {
+    console.warn("resolvePaymentMethodIdFromSubscription: retrieve customer failed", e);
+  }
+  return null;
+}
+
+function cardPatchFromPaymentMethod(pm: Stripe.PaymentMethod): Record<string, string> {
+  const patch: Record<string, string> = { stripe_payment_method_id: pm.id };
+  if (pm.card) {
+    if (pm.card.brand) patch.carte_brand = pm.card.brand;
+    if (pm.card.last4) patch.carte_last4 = pm.card.last4;
+  }
+  return patch;
+}
+
+async function updateCardByCustomer(customerId: string, pm: Stripe.PaymentMethod) {
+  const patch = cardPatchFromPaymentMethod(pm);
+  if (Object.keys(patch).length === 0) return;
+  await supabase
+    .from("abonnements")
+    .update(patch)
+    .eq("stripe_customer_id", customerId);
+}
+
 async function syncSubscription(sub: Stripe.Subscription) {
   const prestataireId = await resolvePrestataireId(sub);
   if (!prestataireId) return;
@@ -211,7 +281,10 @@ async function syncSubscription(sub: Stripe.Subscription) {
     patch.resilie_le = new Date().toISOString();
   }
 
-  // Upsert par prestataire_id
+  // Enrichissement carte — on n'ajoute que si trouvé, jamais d'écrasement par null
+  const cardPatch = await resolveCardPatchFromSubscription(sub);
+  Object.assign(patch, cardPatch);
+
   const { data: existing } = await supabase
     .from("abonnements")
     .select("id")
