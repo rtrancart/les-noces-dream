@@ -224,11 +224,41 @@ export default function PrestataireAbonnement() {
   }
 
 
-  function portailStripeBientot() {
-    toast({
-      title: "Bientôt disponible",
-      description: "Le portail de gestion Stripe sera branché prochainement.",
-    });
+  const [openingPortal, setOpeningPortal] = useState(false);
+
+  async function openStripePortal() {
+    if (openingPortal) return;
+    setOpeningPortal(true);
+    setManualRedirect(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("stripe-create-portal-session");
+      if (error) throw error;
+      const portalUrl = data?.url as string | undefined;
+      if (!portalUrl) throw new Error("URL du portail introuvable");
+
+      // Filet de sécurité anti-iframe : bannière avec lien target="_top".
+      setManualRedirect({ url: portalUrl, formule: "standard" });
+
+      try {
+        if (window.top && window.top !== window.self) {
+          window.top.location.href = portalUrl;
+        } else {
+          window.location.href = portalUrl;
+        }
+      } catch {
+        try {
+          window.location.href = portalUrl;
+        } catch {
+          /* la bannière prend le relais */
+        }
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Impossible d'ouvrir le portail de gestion";
+      toast({ title: "Erreur", description: message, variant: "destructive" });
+      setManualRedirect(null);
+    } finally {
+      setOpeningPortal(false);
+    }
   }
 
   // Un abonnement existe et est géré par Stripe (souscription active côté Stripe)
