@@ -137,8 +137,6 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
       const { error } = await supabase.from("avis").insert({
         prestataire_id: prestataireId,
         client_id: user.id,
-        contact_id: contactId,
-        demande_id: demandeId,
         note_qualite_presta: values.note_qualite_presta,
         note_professionnalisme: values.note_professionnalisme,
         note_rapport_qualite_prix: values.note_rapport_qualite_prix,
