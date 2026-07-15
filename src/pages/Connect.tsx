@@ -41,6 +41,7 @@ export default function Connect() {
       <SeoHead
         title="Connecter un assistant IA à LesNoces"
         description="Instructions pour connecter ChatGPT ou Claude au serveur MCP LesNoces via OAuth."
+        canonicalUrl="/connect"
       />
       <main className="max-w-3xl mx-auto px-6 py-16 space-y-10">
         <header className="space-y-3">
