@@ -29,6 +29,8 @@ export type Database = {
           montant_cents: number | null
           nb_echecs_paiement: number | null
           plan: Database["public"]["Enums"]["plan_abonnement"]
+          plan_pending: Database["public"]["Enums"]["plan_abonnement"] | null
+          plan_pending_le: string | null
           premier_echec_le: string | null
           prestataire_id: string
           rappel_impaye_envoye_le: string | null
@@ -36,6 +38,7 @@ export type Database = {
           statut: Database["public"]["Enums"]["statut_abonnement"]
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
+          stripe_schedule_id: string | null
           stripe_subscription_id: string | null
           suspendu_pour_impaye_le: string | null
           updated_at: string
@@ -54,6 +57,8 @@ export type Database = {
           montant_cents?: number | null
           nb_echecs_paiement?: number | null
           plan?: Database["public"]["Enums"]["plan_abonnement"]
+          plan_pending?: Database["public"]["Enums"]["plan_abonnement"] | null
+          plan_pending_le?: string | null
           premier_echec_le?: string | null
           prestataire_id: string
           rappel_impaye_envoye_le?: string | null
@@ -61,6 +66,7 @@ export type Database = {
           statut?: Database["public"]["Enums"]["statut_abonnement"]
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
+          stripe_schedule_id?: string | null
           stripe_subscription_id?: string | null
           suspendu_pour_impaye_le?: string | null
           updated_at?: string
@@ -79,6 +85,8 @@ export type Database = {
           montant_cents?: number | null
           nb_echecs_paiement?: number | null
           plan?: Database["public"]["Enums"]["plan_abonnement"]
+          plan_pending?: Database["public"]["Enums"]["plan_abonnement"] | null
+          plan_pending_le?: string | null
           premier_echec_le?: string | null
           prestataire_id?: string
           rappel_impaye_envoye_le?: string | null
@@ -86,6 +94,7 @@ export type Database = {
           statut?: Database["public"]["Enums"]["statut_abonnement"]
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
+          stripe_schedule_id?: string | null
           stripe_subscription_id?: string | null
           suspendu_pour_impaye_le?: string | null
           updated_at?: string
@@ -2139,6 +2148,7 @@ export type Database = {
         | "pre_inscrit"
         | "a_completer"
         | "validee"
+        | "resilie_expire"
       type_champ: "texte" | "nombre" | "booleen" | "liste" | "date"
       type_notification:
         | "nouvelle_demande"
@@ -2329,6 +2339,7 @@ export const Constants = {
         "pre_inscrit",
         "a_completer",
         "validee",
+        "resilie_expire",
       ],
       type_champ: ["texte", "nombre", "booleen", "liste", "date"],
       type_notification: [
