@@ -141,11 +141,11 @@ Deno.serve(async (req) => {
       suspendu_pour_impaye_le: null,
       resilie_le: null,
     }).eq("prestataire_id", prestataire_id);
-    await admin.from("prestataires").update({
-      statut: "actif",
-      motif_suspension: null,
-    }).eq("id", prestataire_id);
+    // Réactivation prestataire via la RPC qui gère le garde-fou du trigger
+    await admin.rpc("reactiver_prestataire_paiement", { p_prestataire_id: prestataire_id });
+    await admin.from("prestataires").update({ motif_suspension: null }).eq("id", prestataire_id);
   } else {
+
     return json({ error: `event_type non supporté: ${event_type}` }, 400);
   }
 
