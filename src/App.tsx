@@ -29,6 +29,7 @@ import Reactivation from "./pages/Reactivation";
 import CharteProgressive from "./pages/CharteProgressive";
 import PageContenu from "./pages/PageContenu";
 import OAuthConsent from "./pages/OAuthConsent";
+import Connect from "./pages/Connect";
 
 // Client
 import ClientLayout from "./components/client/ClientLayout";
@@ -96,6 +97,7 @@ const App = () => (
               <Route path="/mentions-legales" element={<PageContenu />} />
               <Route path="/confidentialite" element={<PageContenu />} />
               <Route path="/page/:slug" element={<PageContenu />} />
+              <Route path="/connect" element={<Connect />} />
             </Route>
 
             {/* Auth pages (no Header/Footer) */}

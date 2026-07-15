@@ -7,6 +7,7 @@ const INFO_LINKS = [
   { label: "À propos", href: "/a-propos" },
   { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
+  { label: "Connecter un assistant IA", href: "/connect" },
   { label: "CGU / CGV", href: "/cgu" },
   { label: "Mentions légales", href: "/mentions-legales" },
   { label: "Confidentialité", href: "/confidentialite" },
