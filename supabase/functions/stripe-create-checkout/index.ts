@@ -96,7 +96,55 @@ Deno.serve(async (req) => {
       // Si aucune ligne abonnement n'existe encore, le webhook la créera à l'issue du checkout.
     }
 
-    // 2. trial_end : différer le 1er débit à la fin d'essai si elle est dans le futur
+    // 2. Si le customer a déjà une (ou plusieurs) subscription active/trialing/past_due,
+    //    on fait un CHANGEMENT DE PLAN sur la principale et on annule les doublons.
+    //    Cela évite qu'un prestataire se retrouve avec 2 abonnements facturés en parallèle
+    //    quand il change de formule via notre UI.
+    const existingSubs = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "all",
+      limit: 20,
+    });
+    const activeSubs = existingSubs.data.filter((s) =>
+      ["active", "trialing", "past_due", "unpaid"].includes(s.status)
+    );
+
+    if (activeSubs.length > 0) {
+      // La plus ancienne devient la "principale" ; les autres sont des doublons à annuler.
+      activeSubs.sort((a, b) => a.created - b.created);
+      const primary = activeSubs[0];
+      const duplicates = activeSubs.slice(1);
+
+      for (const dup of duplicates) {
+        try {
+          await stripe.subscriptions.cancel(dup.id, { prorate: true });
+        } catch (e) {
+          console.error("Failed to cancel duplicate subscription", dup.id, e);
+        }
+      }
+
+      const currentItem = primary.items.data[0];
+      const alreadyOnTargetPrice = currentItem?.price?.id === priceId;
+
+      if (!alreadyOnTargetPrice) {
+        await stripe.subscriptions.update(primary.id, {
+          items: [{ id: currentItem.id, price: priceId }],
+          proration_behavior: "create_prorations",
+          cancel_at_period_end: false,
+          metadata: {
+            prestataire_id: prestataire.id,
+            user_id: userId,
+            formule,
+          },
+        });
+      } else if (duplicates.length === 0) {
+        return json({ changed: false, message: "Vous êtes déjà sur cette formule." });
+      }
+
+      return json({ changed: true });
+    }
+
+    // 3. Aucun abonnement actif → nouveau Checkout (1re souscription)
     const finEssai = abo?.fin_essai_le ? new Date(abo.fin_essai_le) : null;
     const nowSec = Math.floor(Date.now() / 1000);
     const trialEndSec = finEssai && finEssai.getTime() > Date.now()
@@ -111,7 +159,6 @@ Deno.serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       payment_method_collection: "always",
       subscription_data: {
-        // Si trial_end est null (essai déjà terminé), Stripe facture immédiatement.
         ...(trialEndSec && trialEndSec > nowSec ? { trial_end: trialEndSec } : {}),
         metadata: {
           prestataire_id: prestataire.id,
