@@ -229,9 +229,7 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
         <DialogHeader>
           <DialogTitle>Laisser un avis</DialogTitle>
           <DialogDescription>
-            {step === "email"
-              ? "Vérification de votre éligibilité"
-              : "Notez votre expérience"}
+            Notez votre expérience
           </DialogDescription>
         </DialogHeader>
         {content}
