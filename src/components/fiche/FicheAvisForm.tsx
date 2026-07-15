@@ -97,15 +97,8 @@ const criteres = [
 ];
 
 export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuccess }: Props) {
-  const { user, hasRole } = useAuth();
-  const isSuperAdmin = hasRole("super_admin");
+  const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [step, setStep] = useState<"email" | "form">(isSuperAdmin ? "form" : "email");
-  const [email, setEmail] = useState("");
-  const [contactId, setContactId] = useState<string | null>(null);
-  const [demandeId, setDemandeId] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [emailError, setEmailError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<AvisFormValues>({
@@ -120,69 +113,12 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
   });
 
   const resetAll = () => {
-    setStep(isSuperAdmin ? "form" : "email");
-    setEmail("");
-    setContactId(null);
-    setDemandeId(null);
-    setEmailError("");
     form.reset();
   };
 
   const handleOpenChange = (v: boolean) => {
     if (!v) resetAll();
     onOpenChange(v);
-  };
-
-  const checkEmail = async () => {
-    if (!user) {
-      toast.error("Vous devez être connecté pour laisser un avis.");
-      return;
-    }
-
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed || !trimmed.includes("@")) {
-      setEmailError("Veuillez saisir un email valide");
-      return;
-    }
-
-    setChecking(true);
-    setEmailError("");
-
-    try {
-      // Use the SECURITY DEFINER function
-      const { data: canReview, error: fnError } = await supabase.rpc(
-        "can_review_prestataire",
-        { p_prestataire_id: prestataireId }
-      );
-
-      if (fnError) throw fnError;
-
-      if (!canReview) {
-        setEmailError(
-          "Vous devez avoir contacté ce prestataire via une demande de devis pour pouvoir laisser un avis."
-        );
-        return;
-      }
-
-      // Find contact_id and demande_id for linking
-      const { data: demandes } = await supabase
-        .from("demandes_devis")
-        .select("id, contact_id")
-        .eq("prestataire_id", prestataireId)
-        .eq("email_contact", trimmed)
-        .limit(1);
-
-      if (demandes && demandes.length > 0) {
-        setContactId(demandes[0].contact_id);
-        setDemandeId(demandes[0].id);
-      }
-
-      setStep("form");
-    } catch {
-      toast.error("Erreur lors de la vérification.");
-    } finally {
-      setChecking(false);
-    }
   };
 
   const onSubmit = async (values: AvisFormValues) => {
