@@ -278,7 +278,7 @@ export default function PrestataireAbonnement() {
           setShowChange={setShowChange}
           subscribe={subscribe}
           submitting={submitting}
-          portailStripeBientot={portailStripeBientot}
+          openStripePortal={openStripePortal}
         />
       </>
     );
@@ -318,14 +318,14 @@ function StripeRedirectNotice({ url, formule }: { url: string; formule: Formule 
    MODE GESTION — un abonnement existe
    ============================================================ */
 function GestionAbonnement({
-  abo, showChange, setShowChange, subscribe, submitting, portailStripeBientot,
+  abo, showChange, setShowChange, subscribe, submitting, openStripePortal,
 }: {
   abo: Abonnement;
   showChange: boolean;
   setShowChange: (v: boolean) => void;
   subscribe: (f: Formule) => void;
   submitting: Formule | null;
-  portailStripeBientot: () => void;
+  openStripePortal: () => void;
 }) {
   const etat = deriveEtat(abo);
   const formuleKey = planToFormule(abo.plan);
@@ -409,13 +409,13 @@ function GestionAbonnement({
       <section aria-label="Gestion de l'abonnement" className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <ActionButton
-            onClick={portailStripeBientot}
+            onClick={openStripePortal}
             icon={<CreditCard size={18} />}
             label="Modifier mon moyen de paiement"
             highlight={isEchec}
           />
           <ActionButton
-            onClick={portailStripeBientot}
+            onClick={openStripePortal}
             icon={<FileText size={18} />}
             label="Consulter mes factures"
           />
@@ -424,7 +424,7 @@ function GestionAbonnement({
         {/* Résiliation — traitée avec retenue */}
         <div className="pt-2">
           <button
-            onClick={portailStripeBientot}
+            onClick={openStripePortal}
             className="w-full sm:w-auto font-sans text-xs text-muted-foreground hover:text-destructive underline underline-offset-4 decoration-dotted transition-colors py-2"
           >
             {abo.cancel_at_period_end ? "Réactiver mon abonnement" : "Résilier mon abonnement"}
