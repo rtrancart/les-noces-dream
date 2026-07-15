@@ -317,26 +317,13 @@ function GestionAbonnement({
       >
         <div className="flex flex-col gap-6">
           {/* En-tête : titre + badge formule */}
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="font-sans text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
-                Votre abonnement
-              </p>
-              <h2 className="font-serif text-3xl md:text-4xl text-foreground leading-tight">
-                {formule?.label ?? abo.plan}
-              </h2>
-            </div>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-sans text-xs font-semibold uppercase tracking-wider",
-                isPremium
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-background text-foreground border border-border",
-              )}
-            >
-              {isPremium && <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
-              Formule {formule?.label ?? abo.plan}
-            </span>
+          <div>
+            <p className="font-sans text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
+              Votre abonnement
+            </p>
+            <h2 className="font-serif text-3xl md:text-4xl text-foreground leading-tight">
+              {formule?.label ?? abo.plan}
+            </h2>
           </div>
 
           {/* Prix */}
