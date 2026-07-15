@@ -1,56 +1,38 @@
+## Diagnostic
 
-## Contexte / diagnostic
+Le flux actuel de `subscribe()` en iframe fait un **aller-retour en 2 étapes** :
 
-Aujourd'hui `abo.plan` stocké en base vaut `standard_mensuel`, `premium_mensuel` ou `annuel` (mappé côté webhook Stripe). Or dans la page `Abonnement.tsx`, on cherche ces valeurs dans un dictionnaire `FORMULES` dont les clés sont `standard` / `premium` / `annuel`. Résultat :
-- Le nom affiché tombe sur le fallback `abo.plan` brut → l'utilisateur voit `standard_mensuel`.
-- La comparaison "formule actuelle" (`abo.plan === f`) est toujours fausse → le CTA n'est jamais grisé et on peut re-souscrire à la formule déjà en cours.
+1. Clic sur « Passer à cette formule » → on met `window.top.location.href = /espace-pro/abonnement?checkout=premium` (juste l'URL de l'app, pas Stripe).
+2. Au rechargement top-level, le `useEffect` lit `?checkout=premium` et appelle enfin l'edge function `stripe-create-checkout` pour obtenir l'URL Stripe, puis redirige.
 
-Les deux problèmes viennent de la même cause : mismatch entre `plan` (DB) et `formule` (clé UI).
+En prévisualisation Lovable, `window.top` correspond à l'éditeur Lovable (cross-origin). L'écriture `window.top.location.href` est souvent bloquée silencieusement par la politique de l'iframe (pas de `allow-top-navigation`), donc rien ne se passe visiblement, et le fallback `StripeRedirectNotice` s'affiche avec un lien `target="_top"` qui pointe… vers l'app avec `?checkout=premium`, pas vers Stripe. Cliquer ce lien retombe dans la même impasse.
 
----
+## Correctif proposé
 
-## Option retenue pour récupérer un nom lisible
+Supprimer complètement l'aller-retour en 2 étapes et fabriquer directement l'URL Stripe avant toute tentative de navigation. Un seul chemin, robuste, quelle que soit la politique d'iframe.
 
-Trois pistes possibles, de la plus simple à la plus riche :
+### Nouveau comportement de `subscribe(formule)`
 
-1. **Mapping frontend (retenu)** — Ajouter côté page une table `PLAN_TO_FORMULE: Record<string, Formule>` qui traduit `standard_mensuel → standard`, `premium_mensuel → premium`, `annuel → annuel`. On réutilise ensuite le libellé humain déjà défini dans `FORMULES[formule].label` ("Standard", "Premium", "Annuel"). Zéro impact backend, zéro migration, cohérent avec le mapping inverse `PLAN_BY_FORMULE` déjà présent dans le webhook.
-2. Ajouter une colonne `nom_formule` (text) dans `abonnements`, hydratée par le webhook depuis `price.nickname` ou `product.name` Stripe. Plus riche mais nécessite migration + réémission d'événements pour peupler l'existant.
-3. Récupérer le nom depuis Stripe à la volée côté edge function. Coûteux (appel réseau à chaque affichage), non retenu.
+1. Marquer `submitting = formule`.
+2. Appeler `supabase.functions.invoke("stripe-create-checkout")` **tout de suite** (même en iframe) → on récupère `data.url` (URL Stripe réelle).
+3. Tenter la navigation dans l'ordre suivant :
+   - `window.top.location.href = data.url` (si `window.top` accessible).
+   - Sinon `window.location.href = data.url` (navigue l'iframe elle-même vers Stripe).
+4. Toujours afficher `StripeRedirectNotice` avec l'**URL Stripe** (`data.url`) et `target="_top"`, comme filet de sécurité si la navigation programmatique est bloquée. Le clic utilisateur, lui, dispose de l'activation nécessaire pour `target="_top"` et fonctionne dans quasi tous les cas.
+5. En cas d'erreur de l'edge function, toast d'erreur, `submitting = null`, pas de notice.
 
-Je propose **l'option 1**. Elle est immédiate, réversible, et si un jour on veut des libellés dynamiques on migrera vers l'option 2 sans casser l'UI.
+### Nettoyage
 
-## Changements à apporter dans `src/pages/prestataire/Abonnement.tsx`
+- Supprimer `buildTopLevelCheckoutUrl`, la branche `checkout=` dans le `useEffect` de synchronisation des searchParams, et l'`success_url`/`cancel_url` restent inchangés (déjà côté edge function).
+- Garder la lecture de `?statut=succes|annule` inchangée.
+- `createCheckoutSession` et `subscribe` fusionnent en une seule fonction claire.
 
-1. Ajouter en haut du fichier :
-   ```ts
-   const PLAN_TO_FORMULE: Record<string, Formule> = {
-     standard_mensuel: "standard",
-     premium_mensuel: "premium",
-     annuel: "annuel",
-   };
-   function planToFormule(plan: string): Formule | null {
-     return PLAN_TO_FORMULE[plan] ?? (plan in FORMULES ? (plan as Formule) : null);
-   }
-   ```
-   Le fallback `plan in FORMULES` couvre le cas où la valeur serait déjà normalisée (ex : ancien enregistrement, tests).
+### Fichier modifié
 
-2. Dans `GestionAbonnement` : remplacer `const formule = FORMULES[abo.plan as Formule]` par
-   ```ts
-   const formuleKey = planToFormule(abo.plan);
-   const formule = formuleKey ? FORMULES[formuleKey] : null;
-   const isPremium = formuleKey === "premium";
-   ```
-   Les affichages `formule?.label ?? abo.plan` restent, mais tombent désormais sur "Standard" / "Premium" / "Annuel". `formatMontant` gagne aussi le passage par `planToFormule` pour son fallback prix.
+- `src/pages/prestataire/Abonnement.tsx` uniquement. Aucune modification côté edge function ni base.
 
-3. Dans la section "Changer de formule" : `MiniPlanCard` reçoit désormais `isCurrent={formuleKey === f}` au lieu de `abo.plan === f`. Le composant gère déjà :
-   - `disabled={disabled || isCurrent}` sur le `<button>` (empêche le clic),
-   - libellé "Formule actuelle" + badge "Actuelle",
-   - style grisé via `bg-muted text-muted-foreground` et `disabled:cursor-not-allowed`.
-   Rien à ajouter côté composant : la comparaison corrigée suffit à activer le comportement souhaité.
+### Vérification
 
-Aucun changement backend, aucune migration.
-
-## Vérification
-
-- Recharger `/espace-pro/abonnement` avec un abonnement `standard_mensuel` → le titre affiche "Standard", le badge "Formule Standard", et dans "Changer de formule" la carte Standard est grisée, CTA non cliquable ; Premium et Annuel restent actifs.
-- Répéter avec `premium_mensuel` et `annuel` pour valider les trois cas.
+- Depuis la preview mobile (390px), cliquer « Passer à cette formule » sur Premium → soit la page part directement sur `checkout.stripe.com`, soit la bannière « Continuer vers Stripe » apparaît avec un lien qui, au clic, ouvre Stripe dans le même onglet (top).
+- Vérifier que la carte de la formule actuelle reste grisée et non cliquable.
+- Vérifier que le retour `?statut=succes` ou `?statut=annule` affiche toujours le toast.
