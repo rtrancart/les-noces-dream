@@ -53,6 +53,9 @@ Deno.serve(async (req) => {
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
+        // Ne pas laisser une sub obsolète écraser l'état de la sub courante
+        // (cas d'un changement de plan qui a annulé un doublon).
+        if (!(await isCurrentOrClaimableSubscription(sub))) break;
         await syncSubscription(sub);
         break;
       }
