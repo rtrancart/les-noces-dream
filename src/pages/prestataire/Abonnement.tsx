@@ -372,6 +372,7 @@ export default function PrestataireAbonnement() {
       if (!portalUrl) throw new Error("URL du portail introuvable");
 
       if (newTab && !newTab.closed) {
+        try { newTab.opener = null; } catch { /* noop */ }
         newTab.location.href = portalUrl;
         toast({
           title: "Portail Stripe ouvert",
