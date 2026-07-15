@@ -154,9 +154,22 @@ export default function PrestataireAbonnement() {
   const [abo, setAbo] = useState<Abonnement | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<Formule | null>(null);
-  const [manualRedirect, setManualRedirect] = useState<{ url: string; formule: Formule } | null>(null);
+  const [manualRedirect, setManualRedirect] = useState<{ url: string; mode: "checkout" | "portal"; formule?: Formule } | null>(null);
   const [showChange, setShowChange] = useState(false);
+  const [cancellingSchedule, setCancellingSchedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const fetchAbo = useCallback(async () => {
+    if (!prestataire?.id) return null;
+    const { data } = await supabase
+      .from("abonnements")
+      .select("id, plan, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_customer_id, stripe_payment_method_id, carte_brand, carte_last4, plan_pending, plan_pending_le, stripe_schedule_id")
+      .eq("prestataire_id", prestataire.id)
+      .maybeSingle();
+    const next = (data as Abonnement | null) ?? null;
+    setAbo(next);
+    return next;
+  }, [prestataire?.id]);
 
   useEffect(() => {
     const nextParams = new URLSearchParams(searchParams);
@@ -182,28 +195,52 @@ export default function PrestataireAbonnement() {
   useEffect(() => {
     if (!prestataire?.id) return;
     (async () => {
-      const { data } = await supabase
-        .from("abonnements")
-        .select("id, plan, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_payment_method_id, carte_brand, carte_last4")
-        .eq("prestataire_id", prestataire.id)
-        .maybeSingle();
-      setAbo(data as Abonnement | null);
+      await fetchAbo();
       setLoading(false);
     })();
-  }, [prestataire?.id]);
+  }, [prestataire?.id, fetchAbo]);
 
   async function subscribe(formule: Formule) {
+    // Blocage impayé côté UI (le back renforce)
+    if (abo?.statut === "en_retard") {
+      toast({
+        title: "Régularisez d'abord votre paiement",
+        description: "Utilisez « Modifier mon moyen de paiement » pour rétablir la facturation avant de changer de formule.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(formule);
     setManualRedirect(null);
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-checkout", { body: { formule } });
       if (error) throw error;
 
-      // Cas 1 : changement de plan sur un abonnement existant → pas de redirection Stripe.
+      if (data?.error === "unpaid_subscription") {
+        toast({
+          title: "Paiement en attente",
+          description: data?.message ?? "Régularisez votre paiement avant de changer de formule.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (data?.changed === true) {
-        toast({ title: "Formule mise à jour", description: "Votre abonnement a été modifié avec proration immédiate." });
-        // Refresh de l'abonnement local (le webhook Stripe met la DB à jour de manière asynchrone).
-        setTimeout(() => window.location.reload(), 1500);
+        if (data.mode === "downgrade") {
+          const dateStr = data.plan_pending_le
+            ? new Date(data.plan_pending_le).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })
+            : "la fin de la période en cours";
+          toast({
+            title: "Changement programmé",
+            description: `La bascule vers ${FORMULES[formule].label} s'effectuera le ${dateStr}, sans avoir.`,
+          });
+        } else if (data.mode === "schedule_cancelled") {
+          toast({ title: "Changement annulé", description: "Le changement de formule programmé a été annulé." });
+        } else {
+          toast({ title: "Formule mise à jour", description: "Votre abonnement a été modifié avec proration immédiate." });
+        }
+        await fetchAbo();
         return;
       }
       if (data?.changed === false) {
@@ -215,7 +252,7 @@ export default function PrestataireAbonnement() {
       const stripeUrl = data?.url as string | undefined;
       if (!stripeUrl) throw new Error("URL de paiement introuvable");
 
-      setManualRedirect({ url: stripeUrl, formule });
+      setManualRedirect({ url: stripeUrl, mode: "checkout", formule });
 
       try {
         if (window.top && window.top !== window.self) {
@@ -239,46 +276,139 @@ export default function PrestataireAbonnement() {
     }
   }
 
-
   const [openingPortal, setOpeningPortal] = useState(false);
+  const portalWatchRef = useRef<{ cleanup: () => void } | null>(null);
+
+  // Rafraîchit l'abo au retour d'onglet, en 3 tentatives échelonnées, jusqu'à
+  // détecter un changement sur les champs qui bougent après une action portail.
+  const armPortalWatch = useCallback(() => {
+    if (!abo) return;
+    // Nettoyer un éventuel watcher précédent
+    portalWatchRef.current?.cleanup();
+
+    const snapshot = {
+      stripe_payment_method_id: abo.stripe_payment_method_id,
+      cancel_at_period_end: abo.cancel_at_period_end,
+      plan: abo.plan,
+      montant_cents: abo.montant_cents,
+      carte_last4: abo.carte_last4,
+      plan_pending: abo.plan_pending,
+      statut: abo.statut,
+    };
+    let attempts = 0;
+    let disposed = false;
+    let scheduled: ReturnType<typeof setTimeout> | null = null;
+
+    const disarm = () => {
+      if (disposed) return;
+      disposed = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      if (scheduled) clearTimeout(scheduled);
+      portalWatchRef.current = null;
+    };
+
+    const diffed = (a: Abonnement | null): boolean => {
+      if (!a) return false;
+      return (
+        a.stripe_payment_method_id !== snapshot.stripe_payment_method_id ||
+        a.cancel_at_period_end !== snapshot.cancel_at_period_end ||
+        a.plan !== snapshot.plan ||
+        a.montant_cents !== snapshot.montant_cents ||
+        a.carte_last4 !== snapshot.carte_last4 ||
+        a.plan_pending !== snapshot.plan_pending ||
+        a.statut !== snapshot.statut
+      );
+    };
+
+    const tick = async () => {
+      const next = await fetchAbo();
+      if (diffed(next)) {
+        toast({ title: "Abonnement mis à jour", description: "Vos changements Stripe sont pris en compte." });
+        disarm();
+        return;
+      }
+      attempts++;
+      if (attempts >= 3) {
+        disarm();
+        return;
+      }
+      // Fenêtre webhook : 4s puis 10s après le 1er tick
+      const delay = attempts === 1 ? 4000 : 10000;
+      scheduled = setTimeout(tick, delay);
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState !== "visible" && !document.hasFocus()) return;
+      if (attempts > 0) return; // déjà déclenché
+      // Premier retour → premier tick immédiat
+      tick();
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    portalWatchRef.current = { cleanup: disarm };
+
+    // Sécurité : auto-cleanup au bout de 60s si l'utilisateur ne revient jamais
+    setTimeout(() => disarm(), 60000);
+  }, [abo, fetchAbo]);
+
+  useEffect(() => () => portalWatchRef.current?.cleanup(), []);
 
   async function openStripePortal() {
     if (openingPortal) return;
     setOpeningPortal(true);
     setManualRedirect(null);
+
+    // 1. Pré-ouverture SYNCHRONE de l'onglet (évite le popup blocker)
+    const newTab = window.open("", "_blank", "noopener,noreferrer");
+
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-portal-session");
       if (error) throw error;
       const portalUrl = data?.url as string | undefined;
       if (!portalUrl) throw new Error("URL du portail introuvable");
 
-      // Filet de sécurité anti-iframe : bannière avec lien target="_top".
-      setManualRedirect({ url: portalUrl, formule: "standard" });
-
-      try {
-        if (window.top && window.top !== window.self) {
-          window.top.location.href = portalUrl;
-        } else {
-          window.location.href = portalUrl;
-        }
-      } catch {
-        try {
-          window.location.href = portalUrl;
-        } catch {
-          /* la bannière prend le relais */
-        }
+      if (newTab && !newTab.closed) {
+        newTab.location.href = portalUrl;
+        toast({
+          title: "Portail Stripe ouvert",
+          description: "Terminez vos modifications dans le nouvel onglet. Cette page se mettra à jour automatiquement à votre retour.",
+        });
+        armPortalWatch();
+      } else {
+        // Popup bloquée → bannière de secours
+        setManualRedirect({ url: portalUrl, mode: "portal" });
       }
     } catch (e) {
+      if (newTab && !newTab.closed) {
+        try { newTab.close(); } catch { /* noop */ }
+      }
       const message = e instanceof Error ? e.message : "Impossible d'ouvrir le portail de gestion";
       toast({ title: "Erreur", description: message, variant: "destructive" });
-      setManualRedirect(null);
     } finally {
       setOpeningPortal(false);
     }
   }
 
-  // Un abonnement existe et est géré par Stripe (souscription active côté Stripe)
+  async function cancelScheduledChange() {
+    if (cancellingSchedule) return;
+    setCancellingSchedule(true);
+    try {
+      const { error } = await supabase.functions.invoke("stripe-cancel-scheduled-change");
+      if (error) throw error;
+      toast({ title: "Changement annulé", description: "Votre formule actuelle est conservée." });
+      await fetchAbo();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Impossible d'annuler le changement programmé";
+      toast({ title: "Erreur", description: message, variant: "destructive" });
+    } finally {
+      setCancellingSchedule(false);
+    }
+  }
+
   const hasSubscription = !!(abo && abo.stripe_subscription_id);
+  const portalDisabled = !abo?.stripe_customer_id;
 
   if (loading) {
     return <div className="bg-muted rounded-lg p-5 h-40 animate-pulse" />;
@@ -287,7 +417,7 @@ export default function PrestataireAbonnement() {
   if (hasSubscription && abo) {
     return (
       <>
-        {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} formule={manualRedirect.formule} />}
+        {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} mode={manualRedirect.mode} formule={manualRedirect.formule} />}
         <GestionAbonnement
           abo={abo}
           showChange={showChange}
@@ -295,6 +425,10 @@ export default function PrestataireAbonnement() {
           subscribe={subscribe}
           submitting={submitting}
           openStripePortal={openStripePortal}
+          portalDisabled={portalDisabled}
+          openingPortal={openingPortal}
+          cancelScheduledChange={cancelScheduledChange}
+          cancellingSchedule={cancellingSchedule}
         />
       </>
     );
@@ -302,11 +436,12 @@ export default function PrestataireAbonnement() {
 
   return (
     <>
-      {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} formule={manualRedirect.formule} />}
+      {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} mode={manualRedirect.mode} formule={manualRedirect.formule} />}
       <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} />
     </>
   );
 }
+
 
 function StripeRedirectNotice({ url, formule }: { url: string; formule: Formule }) {
   return (
