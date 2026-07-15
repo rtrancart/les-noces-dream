@@ -175,6 +175,20 @@ export default function FicheAvisForm({ open, onOpenChange, prestataireId, onSuc
             </>
           )}
 
+          <FormField
+            control={form.control}
+            name="titre"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Titre de votre avis</FormLabel>
+                <FormControl>
+                  <Input placeholder="Résumez votre expérience en quelques mots" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {criteres.map((c) => (
             <FormField
               key={c.name}
