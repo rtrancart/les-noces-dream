@@ -53,6 +53,9 @@ Deno.serve(async (req) => {
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
+        // Ne pas laisser une sub obsolète écraser l'état de la sub courante
+        // (cas d'un changement de plan qui a annulé un doublon).
+        if (!(await isCurrentOrClaimableSubscription(sub))) break;
         await syncSubscription(sub);
         break;
       }
@@ -161,6 +164,19 @@ Deno.serve(async (req) => {
         const prestataireId = await resolvePrestataireId(sub);
         if (!prestataireId) break;
 
+        // Ignorer la suppression d'une sub qui n'est pas la sub courante :
+        // c'est un doublon annulé lors d'un changement de plan, il ne doit
+        // pas écraser l'état de la sub active.
+        const { data: curAbo } = await supabase
+          .from("abonnements")
+          .select("stripe_subscription_id")
+          .eq("prestataire_id", prestataireId)
+          .maybeSingle();
+        if (curAbo?.stripe_subscription_id && curAbo.stripe_subscription_id !== sub.id) {
+          break;
+        }
+
+
         const failedForPayment =
           sub.cancellation_details?.reason === "payment_failed" ||
           sub.status === "unpaid" ||
@@ -224,6 +240,42 @@ async function resolvePrestataireId(sub: Stripe.Subscription): Promise<string | 
     .eq("stripe_customer_id", customerId)
     .maybeSingle();
   return data?.prestataire_id ?? null;
+}
+
+/**
+ * Détermine si un event de subscription doit s'appliquer à la ligne abonnements
+ * du prestataire, ou s'il concerne une sub obsolète (doublon annulé).
+ * Règles :
+ *  - Pas encore de sub rattachée en DB → on accepte (première souscription).
+ *  - Même id que la sub en DB → on accepte.
+ *  - Id différent : on accepte SEULEMENT si la sub incoming est active/trialing
+ *    ET la sub actuellement en DB ne l'est plus (elle a été annulée / remplacée).
+ *    Sinon on ignore l'event pour ne pas écraser l'état de la sub courante.
+ */
+async function isCurrentOrClaimableSubscription(sub: Stripe.Subscription): Promise<boolean> {
+  const prestataireId = await resolvePrestataireId(sub);
+  if (!prestataireId) return true; // nouveau prestataire, laisser syncSubscription créer la ligne
+
+  const { data: cur } = await supabase
+    .from("abonnements")
+    .select("stripe_subscription_id")
+    .eq("prestataire_id", prestataireId)
+    .maybeSingle();
+  const currentId = cur?.stripe_subscription_id ?? null;
+  if (!currentId || currentId === sub.id) return true;
+
+  const incomingLive = ["active", "trialing", "past_due"].includes(sub.status);
+  if (!incomingLive) return false;
+
+  try {
+    const existing = await stripe.subscriptions.retrieve(currentId);
+    const existingLive = ["active", "trialing", "past_due"].includes(existing.status);
+    // On ne remplace la sub courante que si elle n'est plus vivante côté Stripe.
+    return !existingLive;
+  } catch (_e) {
+    // Sub inconnue de Stripe → on accepte le remplacement.
+    return true;
+  }
 }
 
 /**
