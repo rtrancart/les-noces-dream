@@ -621,7 +621,8 @@ export default function Prestataires() {
     setSaving(false);
   };
 
-  const handleSendInvitation = async () => {
+  const handleSendInvitation = async (opts?: { longTtl?: boolean }) => {
+    const longTtl = opts?.longTtl === true;
     if (!form.email_contact) {
       toast.error("L'email du prestataire est obligatoire pour envoyer l'invitation.");
       return;
@@ -634,7 +635,8 @@ export default function Prestataires() {
       toast.error("Prénom et nom du contact sont obligatoires pour l'invitation.");
       return;
     }
-    if (!window.confirm(`Envoyer l'invitation à ${form.email_contact} ? Le prestataire recevra un email pour activer son espace et signer la Charte Qualité.`)) {
+    const dureeLabel = longTtl ? "60 jours (campagne migration)" : "7 jours";
+    if (!window.confirm(`Envoyer l'invitation à ${form.email_contact} ? Lien valide ${dureeLabel}. Le prestataire recevra un email pour activer son espace et signer la Charte Qualité.`)) {
       return;
     }
     setSaving(true);
@@ -658,11 +660,12 @@ export default function Prestataires() {
           description: form.description || null,
           description_courte: form.description_courte || null,
           notes_pre_inscription: form.notes_pre_inscription || null,
+          long_ttl: longTtl,
         },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(`Invitation envoyée à ${form.email_contact}`);
+      toast.success(`Invitation envoyée à ${form.email_contact} (lien valide ${dureeLabel})`);
       setDialogOpen(false);
       fetchData(); fetchGlobalCounts();
     } catch (e: any) {
