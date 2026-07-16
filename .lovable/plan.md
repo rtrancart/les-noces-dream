@@ -1,75 +1,101 @@
+# Plan — Exemption de charte : publication + fin d'exemption
+
 ## Objectif
 
-Préparer le modèle de données de `public.prestataires` pour la reprise du parc (~3 293 fiches) en ajoutant deux informations **indépendantes** :
+1. Rendre l'exemption `charte_exemptee_jusqua` effective comme condition d'entrée alternative à la signature dans le mécanisme de publication existant.
+2. Ajouter un mécanisme quotidien qui suspend les fiches dont l'exemption expire sans charte signée.
+3. Garantir la republication automatique à la signature pour un prestataire suspendu `charte_non_signee`.
 
-1. **Origine de la fiche** (provenance immuable)
-2. **Date d'exemption à la charte** (optionnelle, ponctuelle)
-
-Aucun comportement de publication n'est modifié à cette étape — uniquement le schéma.
-
----
-
-## 1. Origine de la fiche
-
-Type ENUM `public.origine_prestataire` avec 3 valeurs :
-
-- `inscription_admin` — fiche créée par l'équipe depuis le back-office (**valeur par défaut**, cas nominal)
-- `auto_inscription` — le prestataire s'inscrit lui-même via le formulaire public
-- `migration` — fiche reprise de l'ancien site
-
-Colonne : `prestataires.origine origine_prestataire NOT NULL DEFAULT 'inscription_admin'`.
-
-- Aucun backfill : fiches existantes → défaut. Les ~3293 fiches migrées seront marquées `migration` au moment de l'import. Les auto-inscriptions futures seront marquées `auto_inscription` par le code applicatif (étape suivante).
-- **Immuabilité** : trigger `BEFORE UPDATE` rejetant toute modification de `origine`.
-- **Coexistence** : `cree_par_admin` conservé tel quel, aucune synchronisation, pas de suppression.
+Le garde-fou `prevent_direct_actif_write` reste **strictement inchangé**. Aucun nouveau chemin d'écriture directe de `statut='actif'` n'est introduit.
 
 ---
 
-## 2. Date d'exemption à la charte
+## 1. Assouplissement de la publication (dans le mécanisme existant)
 
-Colonne : `prestataires.charte_exemptee_jusqua timestamptz NULL`.
-
-- Cohérent avec les autres `timestamptz` (`charte_signee_le`, `fin_premium`).
-- Nullable : absence = régime normal, présence = exemption jusqu'à cette date.
-- Indépendante de `origine` — aucun couplage DB.
-- Pas de contrainte de valeur, pas d'immuabilité (l'admin doit pouvoir poser/retirer/prolonger).
-
----
-
-## Ce qui N'EST PAS fait à cette étape
-
-- Aucune modification de `prestataires_public`, `on_prestataire_validation`, `prevent_direct_actif_write`, `handle_new_user`.
-- Aucune règle de publication ni de bascule vers `statut = 'actif'` liée à l'exemption.
-- Aucun backfill, aucun changement RLS, `cree_par_admin` inchangé.
-
----
-
-## Migration SQL prévue
+Helper SQL immuable :
 
 ```sql
-CREATE TYPE public.origine_prestataire AS ENUM (
-  'inscription_admin',
-  'auto_inscription',
-  'migration'
-);
-
-ALTER TABLE public.prestataires
-  ADD COLUMN origine public.origine_prestataire
-    NOT NULL DEFAULT 'inscription_admin',
-  ADD COLUMN charte_exemptee_jusqua timestamptz NULL;
-
-CREATE OR REPLACE FUNCTION public.prevent_origine_prestataire_modification()
-RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
-BEGIN
-  IF NEW.origine IS DISTINCT FROM OLD.origine THEN
-    RAISE EXCEPTION 'La colonne origine d''un prestataire est immuable après création.';
-  END IF;
-  RETURN NEW;
-END; $$;
-
-CREATE TRIGGER trg_prestataires_origine_immutable
-  BEFORE UPDATE ON public.prestataires
-  FOR EACH ROW EXECUTE FUNCTION public.prevent_origine_prestataire_modification();
+CREATE OR REPLACE FUNCTION public.charte_ok_pour_publication(
+  p_charte_signee_le timestamptz,
+  p_charte_exemptee_jusqua timestamptz
+) RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
+  SELECT p_charte_signee_le IS NOT NULL
+      OR (p_charte_exemptee_jusqua IS NOT NULL AND p_charte_exemptee_jusqua > now());
+$$;
 ```
 
-Après approbation, régénération auto de `src/integrations/supabase/types.ts`. Aucun code applicatif modifié à cette étape.
+Modification **uniquement à l'intérieur** des deux fonctions déclencheuses existantes (elles restent seules à `set_config('app.allow_actif_write','on')`) :
+
+- `on_prestataire_validation()` (BEFORE UPDATE sur `prestataires`) : condition d'entrée devient
+  `NEW.statut = 'validee' AND public.charte_ok_pour_publication(NEW.charte_signee_le, NEW.charte_exemptee_jusqua)` → bascule `NEW.statut := 'actif'`.
+- `on_signature_charte_created()` (AFTER INSERT sur `signatures_charte`) : inchangée dans son cœur — une signature entraîne toujours le passage à `actif` si `statut='validee'`. **Ajout** : couvrir aussi le cas `statut='suspendu' AND motif_suspension='charte_non_signee'` (fiche restée validée éditorialement, suspendue pour exemption expirée) → repasser en `actif` et effacer `motif_suspension`, via le même chemin protégé `allow_actif_write`.
+
+`prevent_direct_actif_write` : aucune modification. Toute autre écriture de `actif` reste rejetée.
+
+---
+
+## 2. Cron quotidien — fin d'exemption
+
+Nouvelle Edge Function `cron-fin-exemption-charte` (calquée sur `cron-suspend-charte-obsolete`, `verify_jwt = false`) :
+
+- Sélectionne `prestataires` où `statut='actif'`, `charte_signee_le IS NULL`, `charte_exemptee_jusqua IS NOT NULL AND charte_exemptee_jusqua <= now()`.
+- Pour chaque fiche : `UPDATE ... SET statut='suspendu', motif_suspension='charte_non_signee'`. Valeurs réutilisées telles quelles depuis les enums existants. Le passage `actif → suspendu` ne heurte pas `prevent_direct_actif_write` (qui ne bloque que l'écriture *vers* `actif`).
+- Envoie un email au prestataire via le circuit transactionnel existant : `supabase.functions.invoke('send-transactional-email', { templateName: 'suspension_charte_exemption_expiree', recipientEmail, idempotencyKey: 'fin-exemption-<prestataire_id>-<YYYY-MM-DD>', templateData: { nom_commercial, lien_signature } })`.
+
+Nouveau template React Email `suspension-charte-exemption-expiree.tsx` sous `supabase/functions/_shared/transactional-email-templates/`, enregistré dans `registry.ts`. Contenu : information de la suspension + CTA vers `/signer-la-charte`. Aucun nouveau système d'envoi, aucun changement du dispatcher.
+
+Planification via **pg_cron + pg_net** (même pattern que `email_queue_dispatch`, exécuté une fois par jour à 03:15 Europe/Paris ≈ 02:15 UTC) :
+
+```sql
+SELECT cron.schedule(
+  'cron-fin-exemption-charte',
+  '15 2 * * *',
+  $$ SELECT net.http_post(
+       url := 'https://<project>.supabase.co/functions/v1/cron-fin-exemption-charte',
+       headers := jsonb_build_object('Content-Type','application/json',
+                                     'Authorization','Bearer ' || <service_role via vault>),
+       body := '{}'::jsonb
+     ); $$
+);
+```
+
+Idempotence : la requête est un no-op quand aucune fiche n'est éligible ; l'`idempotencyKey` datée bloque tout doublon d'email si la fonction est rejouée le même jour.
+
+---
+
+## 3. Réversibilité — republication à la signature
+
+Cas ciblé : prestataire actuellement `suspendu` avec `motif_suspension='charte_non_signee'`, dont `statut_editorial`/preuve de validation reste acquise (la fiche a été `validee` avant d'être publiée puis suspendue).
+
+Traité **exclusivement** dans `on_signature_charte_created()` (chemin protégé unique déjà existant) : lorsqu'une nouvelle signature arrive, si la fiche est dans cet état précis, on la repasse `actif` et on efface `motif_suspension`. Aucun autre code — ni RLS, ni UI, ni edge function — n'écrit `actif`.
+
+---
+
+## Détails techniques
+
+### Migration SQL
+
+1. `CREATE OR REPLACE FUNCTION public.charte_ok_pour_publication(...)`.
+2. `CREATE OR REPLACE FUNCTION public.on_prestataire_validation()` — condition d'entrée élargie via le helper.
+3. `CREATE OR REPLACE FUNCTION public.on_signature_charte_created()` — ajoute la branche « suspendu + charte_non_signee → actif ».
+4. `cron.schedule('cron-fin-exemption-charte', ...)` via `supabase--insert` (contient l'URL projet + secret Vault, hors migration).
+
+### Edge function
+
+`supabase/functions/cron-fin-exemption-charte/index.ts` + entrée `verify_jwt = false` dans `supabase/config.toml`.
+
+### Emails
+
+- Template `suspension-charte-exemption-expiree.tsx` (React Email, charte visuelle existante).
+- Enregistrement dans `registry.ts` sous la clé `suspension_charte_exemption_expiree`.
+- Envoi via `send-transactional-email` uniquement (aucun nouveau path).
+
+---
+
+## Ce qui n'est PAS fait
+
+- Aucune modification de `prevent_direct_actif_write`.
+- Aucune modification abonnement / paiement / inscription / import.
+- Aucun backfill.
+- Aucun changement de RLS ou de UI admin (l'admin peut déjà poser/retirer l'exemption depuis l'étape précédente ; visualisation UI hors périmètre ici).
+- Aucun changement de `cron-suspend-charte-obsolete` (couvre un cas distinct : nouvelle version de charte non re-signée).

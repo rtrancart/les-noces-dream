@@ -23,6 +23,7 @@ import { template as validationPublicationFiche } from './validation-publication
 import { template as impayePremierEchec } from './impaye-premier-echec.tsx'
 import { template as impayeRappelIntermediaire } from './impaye-rappel-intermediaire.tsx'
 import { template as impayeSuspension } from './impaye-suspension.tsx'
+import { template as suspensionCharteExemptionExpiree } from './suspension-charte-exemption-expiree.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'notif_nouveau_contact_presta': notifNouveauContactPresta,
@@ -39,4 +40,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'impaye_premier_echec': impayePremierEchec,
   'impaye_rappel_intermediaire': impayeRappelIntermediaire,
   'impaye_suspension': impayeSuspension,
+  'suspension_charte_exemption_expiree': suspensionCharteExemptionExpiree,
 }

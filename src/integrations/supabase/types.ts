@@ -2008,6 +2008,10 @@ export type Database = {
         Args: { p_path: string }
         Returns: boolean
       }
+      charte_ok_pour_publication: {
+        Args: { p_charte_exemptee_jusqua: string; p_charte_signee_le: string }
+        Returns: boolean
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean

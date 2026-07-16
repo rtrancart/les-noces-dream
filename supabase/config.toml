@@ -9,6 +9,8 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = false
   [functions.cron-suspend-charte-obsolete]
     verify_jwt = false
+  [functions.cron-fin-exemption-charte]
+    verify_jwt = false
   [functions.generate-charte-pdf-preuve]
     verify_jwt = true
   [functions.generate-sitemap]
