@@ -1407,6 +1407,79 @@ export default function Prestataires() {
         recipientEmail={logsFor?.email_contact ?? null}
         nomCommercial={logsFor?.nom_commercial ?? ""}
       />
+
+      {/* Bulk confirm dialog */}
+      <AlertDialog open={bulkConfirmOpen} onOpenChange={setBulkConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Valider & inviter {selectedCount} fiche{selectedCount > 1 ? "s" : ""} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Pour chaque fiche sélectionnée : passage au statut <strong>validée</strong> (chemin identique à la validation manuelle) puis envoi d'une invitation d'activation via le lien longue durée (60 jours, réservé aux fiches issues de la migration). Le traitement continue même si certaines fiches échouent ; un rapport détaillé s'affichera à la fin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={runBulkAction}>Lancer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk report dialog */}
+      <Dialog open={!!bulkReport} onOpenChange={(o) => { if (!o) setBulkReport(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-lg">Rapport — Valider & inviter</DialogTitle>
+          </DialogHeader>
+          {bulkReport && (
+            <div className="space-y-3">
+              <div className="rounded border bg-muted/20 p-3 font-sans text-sm">
+                <div>Total traité : <strong>{bulkReport.totals.total}</strong></div>
+                <div className="text-emerald-700">✓ Succès complets : {bulkReport.totals.fullSuccess}</div>
+                <div className="text-amber-700">⚠ Validée mais invitation échouée : {bulkReport.totals.partialSuccess}</div>
+                <div className="text-destructive">✗ Échecs de validation : {bulkReport.totals.failed}</div>
+                <div className="text-muted-foreground">⊘ Ignorées (non éligibles) : {bulkReport.totals.skipped}</div>
+              </div>
+              <ScrollArea className="max-h-[45vh]">
+                <ul className="space-y-1.5 font-sans text-sm">
+                  {bulkReport.results.map((r: BulkItemResult) => {
+                    const icon = r.validation === "ok" && r.invitation === "ok" ? "✓"
+                      : r.validation === "ok" && r.invitation === "error" ? "⚠"
+                      : "✗";
+                    const tone = icon === "✓" ? "text-emerald-700" : icon === "⚠" ? "text-amber-700" : "text-destructive";
+                    return (
+                      <li key={r.id} className={tone}>
+                        <span className="font-semibold">{icon} {r.nomCommercial}</span>
+                        {r.finalStatut && <span className="ml-2 text-xs text-muted-foreground">(→ {r.finalStatut})</span>}
+                        {r.errors.length > 0 && <div className="ml-5 text-xs">{r.errors.join(" — ")}</div>}
+                      </li>
+                    );
+                  })}
+                  {bulkReport.skipped.map((s) => (
+                    <li key={s.id} className="text-muted-foreground">
+                      <span className="font-semibold">⊘ {s.nomCommercial}</span>
+                      <span className="ml-2 text-xs">({ineligibilityLabel(s.reason)})</span>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (bulkReport) {
+                  navigator.clipboard.writeText(formatReportAsText(bulkReport));
+                  toast.success("Rapport copié dans le presse-papiers");
+                }
+              }}
+            >
+              Copier le rapport
+            </Button>
+            <Button onClick={() => setBulkReport(null)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
