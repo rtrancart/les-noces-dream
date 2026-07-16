@@ -29,6 +29,14 @@ import type { Database } from "@/integrations/supabase/types";
 import { logAdmin } from "@/lib/logAdmin";
 import { REGIONS, DOM, PAYS_LIMITROPHES, getZoneLabel, getDepartementsByRegion, regionFieldToZoneValue } from "@/lib/zonesIntervention";
 import { REGIONS as REGIONS_FR } from "@/lib/regions";
+import {
+  getIneligibilityReason,
+  ineligibilityLabel,
+  runBulkValidateInvite,
+  formatReportAsText,
+  type BulkReport,
+  type BulkItemResult,
+} from "@/lib/admin/bulkValidateInvite";
 
 type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
 type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
