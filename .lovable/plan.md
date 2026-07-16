@@ -1,101 +1,61 @@
-# Plan — Exemption de charte : publication + fin d'exemption
 
-## Objectif
+## État actuel
 
-1. Rendre l'exemption `charte_exemptee_jusqua` effective comme condition d'entrée alternative à la signature dans le mécanisme de publication existant.
-2. Ajouter un mécanisme quotidien qui suspend les fiches dont l'exemption expire sans charte signée.
-3. Garantir la republication automatique à la signature pour un prestataire suspendu `charte_non_signee`.
+Migrations DB **déjà exécutées et approuvées** :
+- Vue `public.prestataires_public_all` (miroir de `prestataires_public` sans filtre statut) — accès direct **verrouillé** (`REVOKE ALL` pour anon/authenticated, `security_invoker = true`).
+- RPC `get_prestataire_preview(slug text)` et `get_prestataire_preview_by_id(id uuid)` en SECURITY DEFINER, `GRANT EXECUTE` uniquement à `authenticated`, contrôle d'accès `admin | super_admin | user_id = auth.uid()`.
 
-Le garde-fou `prevent_direct_actif_write` reste **strictement inchangé**. Aucun nouveau chemin d'écriture directe de `statut='actif'` n'est introduit.
+## Reste à implémenter (frontend, build mode)
 
----
+### 1. Extraction du rendu (aucune régression visuelle attendue)
 
-## 1. Assouplissement de la publication (dans le mécanisme existant)
+`src/components/fiche/FichePrestataireView.tsx` — nouveau composant présentationnel qui reçoit toutes les données en props (`presta`, `catMere`, `catFille`, `avis`, `champsCategorie`, `similaires`, `previewMode?`, `onAvisRefetch?`). Contient l'intégralité du JSX actuellement dans `FichePrestataire.tsx`. En `previewMode` :
+- Bandeau ambre en tête : « Prévisualisation — cette fiche n'est pas visible du public (statut : …) ».
+- `SeoHead noindex`, aucun `<JsonLd>`.
+- `FavoriButton`, `FicheDevisSidebar`, `FicheStickyMobileCTA`, `FicheDevisDialog`, section « Prestataires similaires » masqués.
+- `trackEvent`/`trackRevealPhone` désactivés sur la révélation du téléphone.
 
-Helper SQL immuable :
+### 2. Slim-down de la page publique
 
-```sql
-CREATE OR REPLACE FUNCTION public.charte_ok_pour_publication(
-  p_charte_signee_le timestamptz,
-  p_charte_exemptee_jusqua timestamptz
-) RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
-  SELECT p_charte_signee_le IS NOT NULL
-      OR (p_charte_exemptee_jusqua IS NOT NULL AND p_charte_exemptee_jusqua > now());
-$$;
+`src/pages/FichePrestataire.tsx` — devient un conteneur de fetch (via `prestataires_public`, `statut='actif'`) + tracking (`useTrackVisitePrestataire`, `vue_profil`) + rendu `<FichePrestataireView />`. Aucun changement fonctionnel côté public.
+
+### 3. Nouvelle page de preview
+
+`src/pages/FichePrestatairePreview.tsx` — appelle `supabase.rpc('get_prestataire_preview'|_by_id')` selon les params de route, gère `loading / forbidden / not_found / ok`, puis rend `<FichePrestataireView previewMode />`. Aucun tracking. Similaires omis.
+
+### 4. Routes
+
+Dans `src/App.tsx`, ajouter deux routes SPA protégées, hors `PublicLayout` :
+
+```tsx
+<Route path="/prestataire/:slug/preview" element={<ProtectedRoute><FichePrestatairePreview /></ProtectedRoute>} />
+<Route path="/prestataire/id/:id/preview" element={<ProtectedRoute><FichePrestatairePreview /></ProtectedRoute>} />
 ```
 
-Modification **uniquement à l'intérieur** des deux fonctions déclencheuses existantes (elles restent seules à `set_config('app.allow_actif_write','on')`) :
+### 5. Points d'accès UI
 
-- `on_prestataire_validation()` (BEFORE UPDATE sur `prestataires`) : condition d'entrée devient
-  `NEW.statut = 'validee' AND public.charte_ok_pour_publication(NEW.charte_signee_le, NEW.charte_exemptee_jusqua)` → bascule `NEW.statut := 'actif'`.
-- `on_signature_charte_created()` (AFTER INSERT sur `signatures_charte`) : inchangée dans son cœur — une signature entraîne toujours le passage à `actif` si `statut='validee'`. **Ajout** : couvrir aussi le cas `statut='suspendu' AND motif_suspension='charte_non_signee'` (fiche restée validée éditorialement, suspendue pour exemption expirée) → repasser en `actif` et effacer `motif_suspension`, via le même chemin protégé `allow_actif_write`.
+- **Espace prestataire** : bouton « Prévisualiser ma fiche » (icône `Eye`) ajouté dans `PrestataireSidebar` (juste au-dessus du bloc déconnexion) — ouvre `/prestataire/{slug}/preview` dans un nouvel onglet. Actif quel que soit le statut, désactivé uniquement si le slug est manquant (fallback vers `/prestataire/id/{id}/preview`).
+- **Back-office admin** : dans `src/pages/admin/Prestataires.tsx`, ajouter à chaque ligne un bouton icône `Eye` (title="Prévisualiser") avant le crayon d'édition, pointant vers `/prestataire/{slug}/preview` (nouvel onglet).
 
-`prevent_direct_actif_write` : aucune modification. Toute autre écriture de `actif` reste rejetée.
+### 6. Non-indexation
 
----
+`public/robots.txt` — ajouter `Disallow: /*/preview` dans les blocs pertinents (à minima sous `User-agent: *`, `Googlebot`, `Bingbot` et les crawlers IA). La route n'est de toute façon jamais dans le sitemap.
 
-## 2. Cron quotidien — fin d'exemption
+## Ce qui NE change PAS
 
-Nouvelle Edge Function `cron-fin-exemption-charte` (calquée sur `cron-suspend-charte-obsolete`, `verify_jwt = false`) :
+- Aucune modification des règles de publication, des triggers, du statut, de `charte_ok_pour_publication`, de l'abonnement, du parcours d'inscription ou d'import.
+- Aucune modification de RLS existante.
+- Aucun changement visuel de la fiche publique (le refactor est un pur déplacement de JSX).
 
-- Sélectionne `prestataires` où `statut='actif'`, `charte_signee_le IS NULL`, `charte_exemptee_jusqua IS NOT NULL AND charte_exemptee_jusqua <= now()`.
-- Pour chaque fiche : `UPDATE ... SET statut='suspendu', motif_suspension='charte_non_signee'`. Valeurs réutilisées telles quelles depuis les enums existants. Le passage `actif → suspendu` ne heurte pas `prevent_direct_actif_write` (qui ne bloque que l'écriture *vers* `actif`).
-- Envoie un email au prestataire via le circuit transactionnel existant : `supabase.functions.invoke('send-transactional-email', { templateName: 'suspension_charte_exemption_expiree', recipientEmail, idempotencyKey: 'fin-exemption-<prestataire_id>-<YYYY-MM-DD>', templateData: { nom_commercial, lien_signature } })`.
+## Fichiers touchés
 
-Nouveau template React Email `suspension-charte-exemption-expiree.tsx` sous `supabase/functions/_shared/transactional-email-templates/`, enregistré dans `registry.ts`. Contenu : information de la suspension + CTA vers `/signer-la-charte`. Aucun nouveau système d'envoi, aucun changement du dispatcher.
-
-Planification via **pg_cron + pg_net** (même pattern que `email_queue_dispatch`, exécuté une fois par jour à 03:15 Europe/Paris ≈ 02:15 UTC) :
-
-```sql
-SELECT cron.schedule(
-  'cron-fin-exemption-charte',
-  '15 2 * * *',
-  $$ SELECT net.http_post(
-       url := 'https://<project>.supabase.co/functions/v1/cron-fin-exemption-charte',
-       headers := jsonb_build_object('Content-Type','application/json',
-                                     'Authorization','Bearer ' || <service_role via vault>),
-       body := '{}'::jsonb
-     ); $$
-);
+```text
+src/components/fiche/FichePrestataireView.tsx   (nouveau)
+src/pages/FichePrestataire.tsx                  (allégé)
+src/pages/FichePrestatairePreview.tsx           (nouveau)
+src/App.tsx                                     (2 routes)
+src/components/prestataire/PrestataireSidebar.tsx  (bouton preview)
+src/pages/admin/Prestataires.tsx                (bouton preview par ligne)
+public/robots.txt                               (Disallow /*/preview)
+.lovable/plan.md                                (mise à jour)
 ```
-
-Idempotence : la requête est un no-op quand aucune fiche n'est éligible ; l'`idempotencyKey` datée bloque tout doublon d'email si la fonction est rejouée le même jour.
-
----
-
-## 3. Réversibilité — republication à la signature
-
-Cas ciblé : prestataire actuellement `suspendu` avec `motif_suspension='charte_non_signee'`, dont `statut_editorial`/preuve de validation reste acquise (la fiche a été `validee` avant d'être publiée puis suspendue).
-
-Traité **exclusivement** dans `on_signature_charte_created()` (chemin protégé unique déjà existant) : lorsqu'une nouvelle signature arrive, si la fiche est dans cet état précis, on la repasse `actif` et on efface `motif_suspension`. Aucun autre code — ni RLS, ni UI, ni edge function — n'écrit `actif`.
-
----
-
-## Détails techniques
-
-### Migration SQL
-
-1. `CREATE OR REPLACE FUNCTION public.charte_ok_pour_publication(...)`.
-2. `CREATE OR REPLACE FUNCTION public.on_prestataire_validation()` — condition d'entrée élargie via le helper.
-3. `CREATE OR REPLACE FUNCTION public.on_signature_charte_created()` — ajoute la branche « suspendu + charte_non_signee → actif ».
-4. `cron.schedule('cron-fin-exemption-charte', ...)` via `supabase--insert` (contient l'URL projet + secret Vault, hors migration).
-
-### Edge function
-
-`supabase/functions/cron-fin-exemption-charte/index.ts` + entrée `verify_jwt = false` dans `supabase/config.toml`.
-
-### Emails
-
-- Template `suspension-charte-exemption-expiree.tsx` (React Email, charte visuelle existante).
-- Enregistrement dans `registry.ts` sous la clé `suspension_charte_exemption_expiree`.
-- Envoi via `send-transactional-email` uniquement (aucun nouveau path).
-
----
-
-## Ce qui n'est PAS fait
-
-- Aucune modification de `prevent_direct_actif_write`.
-- Aucune modification abonnement / paiement / inscription / import.
-- Aucun backfill.
-- Aucun changement de RLS ou de UI admin (l'admin peut déjà poser/retirer l'exemption depuis l'étape précédente ; visualisation UI hors périmètre ici).
-- Aucun changement de `cron-suspend-charte-obsolete` (couvre un cas distinct : nouvelle version de charte non re-signée).
