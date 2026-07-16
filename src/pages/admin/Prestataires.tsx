@@ -29,6 +29,14 @@ import type { Database } from "@/integrations/supabase/types";
 import { logAdmin } from "@/lib/logAdmin";
 import { REGIONS, DOM, PAYS_LIMITROPHES, getZoneLabel, getDepartementsByRegion, regionFieldToZoneValue } from "@/lib/zonesIntervention";
 import { REGIONS as REGIONS_FR } from "@/lib/regions";
+import {
+  getIneligibilityReason,
+  ineligibilityLabel,
+  runBulkValidateInvite,
+  formatReportAsText,
+  type BulkReport,
+  type BulkItemResult,
+} from "@/lib/admin/bulkValidateInvite";
 
 type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
 type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
@@ -320,6 +328,13 @@ export default function Prestataires() {
   const [showPassword, setShowPassword] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
+  // Sélection multiple pour l'action groupée "Valider & inviter".
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [bulkReport, setBulkReport] = useState<BulkReport | null>(null);
+
   const handleChangePassword = async () => {
     if (!editItem?.user_id) return;
     if (!newPassword || newPassword.length < 6) {
@@ -402,6 +417,8 @@ export default function Prestataires() {
   };
 
   useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
+  // Reset selection whenever filters/search change (evite d'agir sur des fiches invisibles)
+  useEffect(() => { setSelectedIds(new Set()); }, [filterStatut, filterCategorie, search, filterSousSeuil, locationZones, citySearch]);
 
   // Compteurs globaux par statut (indépendants des filtres)
   const [globalCounts, setGlobalCounts] = useState<Record<string, number>>({});
@@ -757,6 +774,57 @@ export default function Prestataires() {
     { key: "archive", label: "Archivés", tone: statutColors.archive },
   ];
 
+  // Éligibilité + sélection groupée
+  const eligibleInFiltered = useMemo(() => filteredData.filter((p) => !getIneligibilityReason(p)), [filteredData]);
+  const eligibleIds = useMemo(() => new Set(eligibleInFiltered.map((p) => p.id)), [eligibleInFiltered]);
+  const selectedCount = selectedIds.size;
+  const allEligibleSelected = eligibleInFiltered.length > 0 && eligibleInFiltered.every((p) => selectedIds.has(p.id));
+  const someEligibleSelected = selectedCount > 0 && !allEligibleSelected;
+
+  const toggleOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleAllOnPage = () => {
+    setSelectedIds((prev) => {
+      if (eligibleInFiltered.every((p) => prev.has(p.id))) {
+        // désélectionner celles de la page
+        const next = new Set(prev);
+        eligibleInFiltered.forEach((p) => next.delete(p.id));
+        return next;
+      }
+      const next = new Set(prev);
+      eligibleInFiltered.forEach((p) => next.add(p.id));
+      return next;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const runBulkAction = async () => {
+    const targets = data.filter((p) => selectedIds.has(p.id));
+    setBulkConfirmOpen(false);
+    setBulkRunning(true);
+    setBulkProgress({ done: 0, total: targets.filter((p) => !getIneligibilityReason(p)).length });
+    try {
+      const report = await runBulkValidateInvite({
+        prestataires: targets,
+        onProgress: (done, total) => setBulkProgress({ done, total }),
+      });
+      setBulkReport(report);
+      clearSelection();
+      fetchData();
+      fetchGlobalCounts();
+    } catch (e: any) {
+      toast.error("Erreur pendant l'action groupée : " + (e?.message ?? String(e)));
+    } finally {
+      setBulkRunning(false);
+      setBulkProgress(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -839,10 +907,46 @@ export default function Prestataires() {
             {loading ? "Chargement…" : `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`}
           </p>
         </CardHeader>
+        {selectedCount > 0 && (
+          <div className="sticky top-0 z-10 mx-4 mb-3 flex flex-wrap items-center justify-between gap-3 rounded border border-or/40 bg-or/10 px-4 py-2.5">
+            <span className="font-sans text-sm text-foreground">
+              {selectedCount} fiche{selectedCount > 1 ? "s" : ""} sélectionnée{selectedCount > 1 ? "s" : ""}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="font-sans text-xs"
+                onClick={clearSelection}
+                disabled={bulkRunning}
+              >
+                Tout désélectionner
+              </Button>
+              <Button
+                size="sm"
+                className="font-sans text-xs"
+                onClick={() => setBulkConfirmOpen(true)}
+                disabled={bulkRunning}
+              >
+                {bulkRunning
+                  ? `Traitement… ${bulkProgress?.done ?? 0} / ${bulkProgress?.total ?? 0}`
+                  : "Valider & inviter"}
+              </Button>
+            </div>
+          </div>
+        )}
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allEligibleSelected ? true : someEligibleSelected ? "indeterminate" : false}
+                    onCheckedChange={toggleAllOnPage}
+                    disabled={eligibleInFiltered.length === 0}
+                    aria-label="Tout sélectionner sur la page"
+                  />
+                </TableHead>
                 <TableHead className="font-sans text-xs">Nom commercial</TableHead>
                 <TableHead className="font-sans text-xs">Email</TableHead>
                 <TableHead className="font-sans text-xs">Téléphone</TableHead>
@@ -858,13 +962,25 @@ export default function Prestataires() {
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                   <TableRow key={i}>{Array.from({ length: 10 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>
+                   <TableRow key={i}>{Array.from({ length: 11 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>
                 ))
               ) : filteredData.length === 0 ? (
-                <TableRow><TableCell colSpan={10} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
+                <TableRow><TableCell colSpan={11} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
               ) : (
-                filteredData.map((p) => (
-                  <TableRow key={p.id}>
+                filteredData.map((p) => {
+                  const ineligibility = getIneligibilityReason(p);
+                  const isSelected = selectedIds.has(p.id);
+                  return (
+                  <TableRow key={p.id} className={isSelected ? "bg-or/5" : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleOne(p.id)}
+                        disabled={!!ineligibility}
+                        aria-label={`Sélectionner ${p.nom_commercial}`}
+                        title={ineligibility ? `Non éligible : ${ineligibilityLabel(ineligibility)}` : undefined}
+                      />
+                    </TableCell>
                     <TableCell className="font-sans text-sm font-medium">{p.nom_commercial}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.email_contact || "—"}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.telephone || "—"}</TableCell>
@@ -946,7 +1062,8 @@ export default function Prestataires() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -1290,6 +1407,79 @@ export default function Prestataires() {
         recipientEmail={logsFor?.email_contact ?? null}
         nomCommercial={logsFor?.nom_commercial ?? ""}
       />
+
+      {/* Bulk confirm dialog */}
+      <AlertDialog open={bulkConfirmOpen} onOpenChange={setBulkConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Valider & inviter {selectedCount} fiche{selectedCount > 1 ? "s" : ""} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Pour chaque fiche sélectionnée : passage au statut <strong>validée</strong> (chemin identique à la validation manuelle) puis envoi d'une invitation d'activation via le lien longue durée (60 jours, réservé aux fiches issues de la migration). Le traitement continue même si certaines fiches échouent ; un rapport détaillé s'affichera à la fin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={runBulkAction}>Lancer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk report dialog */}
+      <Dialog open={!!bulkReport} onOpenChange={(o) => { if (!o) setBulkReport(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-lg">Rapport — Valider & inviter</DialogTitle>
+          </DialogHeader>
+          {bulkReport && (
+            <div className="space-y-3">
+              <div className="rounded border bg-muted/20 p-3 font-sans text-sm">
+                <div>Total traité : <strong>{bulkReport.totals.total}</strong></div>
+                <div className="text-emerald-700">✓ Succès complets : {bulkReport.totals.fullSuccess}</div>
+                <div className="text-amber-700">⚠ Validée mais invitation échouée : {bulkReport.totals.partialSuccess}</div>
+                <div className="text-destructive">✗ Échecs de validation : {bulkReport.totals.failed}</div>
+                <div className="text-muted-foreground">⊘ Ignorées (non éligibles) : {bulkReport.totals.skipped}</div>
+              </div>
+              <ScrollArea className="max-h-[45vh]">
+                <ul className="space-y-1.5 font-sans text-sm">
+                  {bulkReport.results.map((r: BulkItemResult) => {
+                    const icon = r.validation === "ok" && r.invitation === "ok" ? "✓"
+                      : r.validation === "ok" && r.invitation === "error" ? "⚠"
+                      : "✗";
+                    const tone = icon === "✓" ? "text-emerald-700" : icon === "⚠" ? "text-amber-700" : "text-destructive";
+                    return (
+                      <li key={r.id} className={tone}>
+                        <span className="font-semibold">{icon} {r.nomCommercial}</span>
+                        {r.finalStatut && <span className="ml-2 text-xs text-muted-foreground">(→ {r.finalStatut})</span>}
+                        {r.errors.length > 0 && <div className="ml-5 text-xs">{r.errors.join(" — ")}</div>}
+                      </li>
+                    );
+                  })}
+                  {bulkReport.skipped.map((s) => (
+                    <li key={s.id} className="text-muted-foreground">
+                      <span className="font-semibold">⊘ {s.nomCommercial}</span>
+                      <span className="ml-2 text-xs">({ineligibilityLabel(s.reason)})</span>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (bulkReport) {
+                  navigator.clipboard.writeText(formatReportAsText(bulkReport));
+                  toast.success("Rapport copié dans le presse-papiers");
+                }
+              }}
+            >
+              Copier le rapport
+            </Button>
+            <Button onClick={() => setBulkReport(null)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

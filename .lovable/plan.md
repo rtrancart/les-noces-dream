@@ -1,60 +1,89 @@
-## Objectif
+# Sélection multiple et action groupée sur la liste des prestataires
 
-Permettre au Tunnel « campagne d'invitation des prestataires migrés » d'émettre des liens d'invitation valides **60 jours**, tout en laissant le Tunnel A admin classique continuer d'émettre des liens à **7 jours** (comportement actuel inchangé), et sans jamais modifier le TTL par défaut du helper.
+Objectif : ajouter, sur l'écran back-office d'administration des fiches prestataires, la sélection multiple et une action groupée « Valider & inviter » réservée à la revue par lots des fiches importées. Aucune règle métier n'est modifiée : on ne fait que déclencher, pour chaque fiche cochée, les deux chemins existants (validation manuelle + invitation longue durée réservée aux fiches d'origine `migration`).
 
-## Principe
+## 1. Sélection multiple dans la liste
 
-Le TTL doit être décidé **au site d'appel**, pas dans le helper. `signInvitationToken` accepte déjà `ttlSeconds` en paramètre optionnel avec un défaut de 7 jours — ce défaut reste tel quel et fait autorité pour tout appel qui ne précise rien. La campagne migration passera explicitement 60 jours.
+- **Case par ligne** : nouvelle première colonne du tableau avec une case à cocher par fiche. Case désactivée avec info-bulle si la fiche n'est pas éligible à l'action groupée (voir §3 pour les critères).
+- **Case « tout sélectionner »** dans l'entête du tableau : coche/décoche uniquement les fiches éligibles de la page courante (respect des filtres statut/catégorie/région/recherche déjà en place). État indéterminé si sélection partielle.
+- **État de sélection** : `Set<string>` d'IDs stocké dans le composant `Prestataires.tsx`. Réinitialisé quand les filtres changent (pour éviter d'agir sur des fiches invisibles).
+- **Persistance visuelle** : ligne sélectionnée légèrement teintée. Aucun changement au reste du tableau, aux filtres, ni au formulaire d'édition.
 
-## Comment on distingue le contexte
+## 2. Barre d'actions groupées
 
-Le signal métier existe déjà : la colonne `prestataires.origine` (dont la valeur `migration` est utilisée pour les fiches importées de l'ancien site) est **immuable après création** (trigger `prevent_origine_prestataire_modification`). C'est le signal le plus fiable et il est déjà source de vérité.
+- Apparaît en haut du tableau dès qu'au moins une fiche est sélectionnée. Sticky sous les filtres.
+- Affiche : « N fiche(s) sélectionnée(s) », un bouton **Valider & inviter**, un bouton **Tout désélectionner**.
+- Le bouton principal ouvre une confirmation modale rappelant les deux effets (validation + invitation longue durée 60 j) et le nombre exact de fiches concernées. Rappelle également que l'invitation n'est envoyée qu'aux fiches d'origine `migration` avec un email de contact valide.
+- Pendant l'exécution : bouton en état chargement, progression « X / N traitées ».
 
-Approche retenue : un **paramètre explicite** `long_ttl` (ou équivalent) accepté par `invite-prestataire` et `resend-magic-link`, avec un garde-fou serveur qui n'autorise ce mode long que si la fiche a bien `origine = 'migration'`. Le client (UI admin) fournit l'intention ; le serveur vérifie l'éligibilité. On évite ainsi qu'un admin passe accidentellement (ou volontairement) 60 jours à une invitation individuelle Tunnel A.
+## 3. Éligibilité par fiche (évaluée côté client avant lancement)
 
-Deux valeurs discrètes uniquement, pas un TTL libre :
+Une fiche est **cochable** si toutes ces conditions sont vraies :
 
-- absent / `false` → 7 jours (défaut actuel, comportement Tunnel A inchangé)
-- `true` → 60 jours, **uniquement si `origine = 'migration'`** ; sinon 400 explicite
+- `email_contact` renseigné et non vide.
+- Statut actuel ∈ statuts sélectionnables (exclut `actif` — déjà validée — et `archive`).
+- `origine = 'migration'` (contrainte du chemin d'invitation longue durée existant ; les autres fiches doivent passer par la validation individuelle classique).
 
-## Changements
+Les fiches non éligibles restent visibles mais leur case est désactivée avec une info-bulle expliquant la raison.
 
-### 1. Edge function `invite-prestataire`
-- Accepter `long_ttl: boolean` (optionnel, défaut `false`) dans le body.
-- Si `long_ttl === true` :
-  - Vérifier que la fiche cible (existante ou en cours de mise à jour) a `origine = 'migration'`. Sinon renvoyer 400 « long_ttl réservé aux fiches migration ».
-  - Appeler `signInvitationToken({ …, ttlSeconds: 60*60*24*60 })`.
-- Sinon : appel inchangé (TTL 7 j par défaut du helper).
-- Loguer dans `logs_admin` la durée retenue (`ttl_days: 7 | 60`) pour audit de campagne.
+## 4. Structure : intention vs mécanique d'envoi
 
-### 2. Edge function `resend-magic-link`
-- Mêmes règles : accepter `long_ttl`, même garde-fou `origine = 'migration'`.
-- Cela permet de relancer une fiche migration avec un lien frais également valable 60 jours, comme demandé (relance conservée comme filet de sécurité, pas de lien unique).
+Un nouveau module `src/lib/admin/bulkValidateInvite.ts` sépare clairement les deux couches :
 
-### 3. UI admin
-- Sur la liste des prestataires, exposer l'option « invitation campagne migration (60 j) » **uniquement** pour les fiches dont `origine = 'migration'`. Pour toutes les autres, l'UI n'offre pas cette option — cohérent avec le garde-fou serveur.
-- Une action de masse (« Inviter la sélection ») applique automatiquement `long_ttl: true` puisque la sélection est filtrée sur `origine = 'migration'`.
+```text
+UI (Prestataires.tsx)
+  └─ appelle runBulkValidateInvite({ ids, onProgress })
+       ├─ Étape « intention » : pour chaque id, produit un ordre
+       │      { prestataireId, actions: ['validate', 'invite'] }
+       │
+       └─ Étape « exécution » : dispatcher qui, aujourd'hui,
+              exécute les ordres séquentiellement en direct.
+              Interface prête à être remplacée plus tard par un
+              scheduler (file d'attente / lissage temporel) sans
+              rien changer à l'UI ni au producteur d'ordres.
+```
 
-### 4. Helper `signInvitationToken`
-- **Aucun changement.** Le défaut de 7 jours reste tel quel, aucun appelant qui ne précise pas `ttlSeconds` ne voit son comportement bouger.
+Concrètement :
 
-## Ce qui reste identique
+- `buildBulkIntents(ids)` — pur, retourne la liste des intentions par fiche.
+- `executeIntent(intent)` — exécute **une** intention en réutilisant strictement les chemins existants :
+  1. **Validation** : réplique exactement ce que fait `updateStatut(id, 'validee')` déjà présent dans `Prestataires.tsx` (update `statut = 'validee'` + `logAdmin` + email `validation_publication_fiche` déclenché quand le trigger DB flip vers `actif`). Aucun nouveau chemin d'écriture. Le passage à `actif` reste conditionné par le trigger DB (charte signée / exemption).
+  2. **Invitation** : appel à l'edge function existante `invite-prestataire` avec `long_ttl: true` et les champs de la fiche (identique à `handleSendInvitation({ longTtl: true })`). Le garde-fou serveur `origine = 'migration'` reste souverain.
+- `runBulkValidateInvite` orchestre : boucle sur les intentions, capture succès/échec par fiche, appelle `onProgress` après chaque item.
 
-- Table `invitation_tokens`, `jti`, usage unique, colonnes probatoires immuables : inchangés.
-- Route `/accept-invitation`, echange `verifyOtp` côté serveur, ouverture de session Supabase : inchangés.
-- Tunnel A admin classique (invitation individuelle sans `long_ttl`) : 7 jours, aucune régression.
-- Emails transactionnels : templates inchangés (le lien pointe toujours vers `/accept-invitation?token=…`).
+**Pourquoi cette découpe** : quand viendra le lissage d'envoi, on remplacera uniquement `executeIntent` (ou son dispatcher) par un enqueue vers une table de campagne + worker. `buildBulkIntents` et l'UI resteront inchangés.
 
-## Validation prévue
+## 5. Compte-rendu par fiche
 
-- Test 1 : `invite-prestataire` sans `long_ttl` sur fiche non-migration → token `expires_at ≈ now + 7 j`. PASS attendu.
-- Test 2 : `invite-prestataire` avec `long_ttl: true` sur fiche `origine = 'migration'` → token `expires_at ≈ now + 60 j`. PASS attendu.
-- Test 3 : `invite-prestataire` avec `long_ttl: true` sur fiche `origine != 'migration'` → 400 explicite, aucun token émis. PASS attendu.
-- Test 4 : `resend-magic-link` avec `long_ttl: true` sur fiche migration déjà invitée → nouveau token 60 j, ancien inchangé (usage unique préservé). PASS attendu.
-- Test 5 : clic sur un lien 60 j après ~5 j → session ouverte normalement (le magic link Supabase est minté à la volée côté serveur, l'`email_otp_expiry` Supabase n'entre jamais en jeu côté utilisateur).
+À la fin du traitement, une modale récapitulative liste **chaque fiche traitée** avec :
 
-## Hors périmètre
+- ✓ Nom commercial — succès (validation + invitation)
+- ⚠ Nom commercial — validation OK, invitation échouée : *message d'erreur*
+- ✗ Nom commercial — validation échouée : *message d'erreur* (invitation non tentée)
+- ⊘ Nom commercial — ignorée (non éligible) : *raison*
 
-- Modification du défaut global du helper.
-- TTL libre côté client (on garde deux valeurs discrètes uniquement).
-- Nouveau mécanisme de token ou nouvelle table : rien à créer.
+Chaque ligne indique l'action effectivement réalisée et le message d'erreur brut renvoyé par le chemin sous-jacent. Un bouton « Copier le rapport » exporte la liste au presse-papiers en texte. Un `logAdmin("bulk_validate_invite", ...)` synthétise les compteurs (total, succès, erreurs) en fin de run.
+
+Politique en cas d'échec partiel : les fiches suivantes continuent d'être traitées. Aucune fiche n'est ignorée silencieusement.
+
+## 6. Onglet Photos — état actuel et complément proposé
+
+**État actuel** (`PrestatairePhotosTab.tsx`) : upload multi-fichiers dans le bucket `prestataires-photos`, affichage combiné `photo_url` (principale) + `galerie_urls`, définition d'une photo principale, suppression individuelle. Limite 5 Mo par image, filtrage type MIME.
+
+**Complément suggéré, à confirmer** : pour la revue par lots, la seule action régulièrement utile mais absente est le **réordonnancement** des photos de la galerie (drag-and-drop) et un **avertissement visuel** quand une fiche importée n'a aucune photo ou seulement la photo principale — utile pour repérer les fiches à compléter avant validation.
+
+Je ne toucherai à l'onglet Photos que si vous confirmez ce périmètre ; il n'est pas bloquant pour la sélection multiple.
+
+## 7. Hors périmètre (rappel)
+
+- Aucune modification de `updateStatut`, du trigger DB `validee → actif`, du mécanisme d'exemption de charte.
+- Aucune modification des edge functions `invite-prestataire` / `resend-magic-link`.
+- Aucun import de données, aucune refonte des filtres ni du formulaire d'édition.
+- Le lissage temporel des envois est explicitement reporté à une étape ultérieure : la découpe intention/exécution du §4 rend ce futur ajout non intrusif.
+
+## 8. Fichiers touchés
+
+- `src/pages/admin/Prestataires.tsx` : nouvelle colonne case à cocher, entête « tout sélectionner », barre d'actions groupée, modale de confirmation, modale de rapport.
+- `src/lib/admin/bulkValidateInvite.ts` (nouveau) : `buildBulkIntents`, `executeIntent`, `runBulkValidateInvite`, types du rapport.
+
+Aucun changement backend, aucun changement de schéma.
