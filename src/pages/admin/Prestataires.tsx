@@ -1062,7 +1062,8 @@ export default function Prestataires() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>
