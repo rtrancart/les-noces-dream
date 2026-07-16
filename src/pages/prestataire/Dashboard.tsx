@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Star, MessageSquare, TrendingUp, AlertCircle, ImageIcon, User } from "lucide-react";
+import { FileText, Star, MessageSquare, TrendingUp, AlertCircle, ImageIcon, User, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useMemo } from "react";
@@ -136,10 +137,29 @@ export default function PrestataireDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="font-serif text-2xl md:text-3xl text-foreground">
           Bonjour{prestataire.nom_commercial ? `, ${prestataire.nom_commercial}` : ""} 👋
         </h2>
+        <Button
+          asChild
+          variant="outline"
+          className="shrink-0"
+          title="Voir ma fiche telle qu'elle apparaîtra au public"
+        >
+          <a
+            href={
+              prestataire.slug
+                ? `/prestataire/${prestataire.slug}/preview`
+                : `/prestataire/id/${prestataire.id}/preview`
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Prévisualiser ma fiche
+          </a>
+        </Button>
       </div>
 
       {/* Stats Cards - Clickable */}
