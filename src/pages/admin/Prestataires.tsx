@@ -1262,6 +1262,11 @@ export default function Prestataires() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving} className="font-sans text-sm">
                   Annuler
                 </Button>
+                {(editItem as any).origine === "migration" && (
+                  <Button variant="secondary" onClick={() => handleSendInvitation({ longTtl: true })} disabled={saving} className="font-sans text-sm">
+                    {saving ? "Envoi…" : "Inviter (campagne migration — 60 j)"}
+                  </Button>
+                )}
                 <Button onClick={handleSave} disabled={saving} className="font-sans text-sm">
                   {saving ? "Enregistrement…" : "Enregistrer les modifications"}
                 </Button>
@@ -1271,11 +1276,6 @@ export default function Prestataires() {
                 <Button variant="outline" onClick={handleSave} disabled={saving} className="font-sans text-sm">
                   {saving ? "Enregistrement…" : "Sauvegarder et continuer plus tard"}
                 </Button>
-                {editItem && (editItem as any).origine === "migration" && (
-                  <Button variant="secondary" onClick={() => handleSendInvitation({ longTtl: true })} disabled={saving} className="font-sans text-sm">
-                    {saving ? "Envoi…" : "Inviter (campagne migration — 60 j)"}
-                  </Button>
-                )}
                 <Button onClick={() => handleSendInvitation()} disabled={saving} className="font-sans text-sm">
                   {saving ? "Envoi…" : "Sauvegarder et envoyer l'invitation"}
                 </Button>
