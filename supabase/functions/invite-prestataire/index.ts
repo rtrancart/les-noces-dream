@@ -198,6 +198,7 @@ Deno.serve(async (req) => {
     const { token: invitationToken, jti, expiresAt } = await signInvitationToken({
       userId: userId!,
       prestataireId: presta.id,
+      ttlSeconds,
     });
     const { error: tokenInsertErr } = await adminClient.from("invitation_tokens").insert({
       jti,
@@ -210,12 +211,13 @@ Deno.serve(async (req) => {
     const magicLink = `${siteUrl}/accept-invitation?token=${invitationToken}`;
 
     // 4. Email
+    const expirationHeures = Math.round(ttlSeconds / 3600);
     await adminClient.functions.invoke("send-transactional-email", {
       body: {
         templateName: "invitation_prestataire",
         recipientEmail: cleanEmail,
         idempotencyKey: `invite-${presta.id}-${Date.now()}`,
-        templateData: { prenom: prenom ?? null, nom_commercial, magic_link: magicLink, expiration_heures: 24 },
+        templateData: { prenom: prenom ?? null, nom_commercial, magic_link: magicLink, expiration_heures: expirationHeures },
       },
     });
 
@@ -225,7 +227,7 @@ Deno.serve(async (req) => {
       action: "invitation_envoyee",
       entite: "prestataires",
       entite_id: presta.id,
-      details: { email: cleanEmail, nom_commercial },
+      details: { email: cleanEmail, nom_commercial, ttl_days: Math.round(ttlSeconds / 86400), long_ttl: long_ttl === true },
     });
 
     return new Response(JSON.stringify({ success: true, prestataire_id: presta.id, user_id: userId }),
