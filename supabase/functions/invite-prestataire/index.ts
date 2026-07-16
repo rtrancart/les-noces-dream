@@ -44,10 +44,27 @@ Deno.serve(async (req) => {
       ville, region, code_postal,
       description, description_courte,
       notes_pre_inscription,
+      long_ttl,
     } = body;
 
     if (!email || !nom_commercial || !categorie_mere_id || !ville || !region) {
       throw new Error("Champs requis manquants (email, nom_commercial, catégorie, ville, région)");
+    }
+
+    // Garde-fou : long_ttl (60 j) réservé aux fiches d'origine 'migration'.
+    // Le défaut reste 7 jours pour toutes les autres invitations.
+    let ttlSeconds = 60 * 60 * 24 * 7;
+    if (long_ttl === true) {
+      if (!prestataire_id) {
+        throw new Error("long_ttl réservé aux fiches existantes d'origine migration (prestataire_id requis)");
+      }
+      const { data: origineRow, error: origineErr } = await adminClient
+        .from("prestataires").select("origine").eq("id", prestataire_id).maybeSingle();
+      if (origineErr) throw origineErr;
+      if (!origineRow || origineRow.origine !== "migration") {
+        throw new Error("long_ttl réservé aux fiches d'origine migration");
+      }
+      ttlSeconds = 60 * 60 * 24 * 60;
     }
     const cleanEmail = String(email).trim().toLowerCase();
 
@@ -181,6 +198,7 @@ Deno.serve(async (req) => {
     const { token: invitationToken, jti, expiresAt } = await signInvitationToken({
       userId: userId!,
       prestataireId: presta.id,
+      ttlSeconds,
     });
     const { error: tokenInsertErr } = await adminClient.from("invitation_tokens").insert({
       jti,
@@ -193,12 +211,13 @@ Deno.serve(async (req) => {
     const magicLink = `${siteUrl}/accept-invitation?token=${invitationToken}`;
 
     // 4. Email
+    const expirationHeures = Math.round(ttlSeconds / 3600);
     await adminClient.functions.invoke("send-transactional-email", {
       body: {
         templateName: "invitation_prestataire",
         recipientEmail: cleanEmail,
         idempotencyKey: `invite-${presta.id}-${Date.now()}`,
-        templateData: { prenom: prenom ?? null, nom_commercial, magic_link: magicLink, expiration_heures: 24 },
+        templateData: { prenom: prenom ?? null, nom_commercial, magic_link: magicLink, expiration_heures: expirationHeures },
       },
     });
 
@@ -208,7 +227,7 @@ Deno.serve(async (req) => {
       action: "invitation_envoyee",
       entite: "prestataires",
       entite_id: presta.id,
-      details: { email: cleanEmail, nom_commercial },
+      details: { email: cleanEmail, nom_commercial, ttl_days: Math.round(ttlSeconds / 86400), long_ttl: long_ttl === true },
     });
 
     return new Response(JSON.stringify({ success: true, prestataire_id: presta.id, user_id: userId }),

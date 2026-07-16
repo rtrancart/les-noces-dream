@@ -621,7 +621,8 @@ export default function Prestataires() {
     setSaving(false);
   };
 
-  const handleSendInvitation = async () => {
+  const handleSendInvitation = async (opts?: { longTtl?: boolean }) => {
+    const longTtl = opts?.longTtl === true;
     if (!form.email_contact) {
       toast.error("L'email du prestataire est obligatoire pour envoyer l'invitation.");
       return;
@@ -634,7 +635,8 @@ export default function Prestataires() {
       toast.error("Prénom et nom du contact sont obligatoires pour l'invitation.");
       return;
     }
-    if (!window.confirm(`Envoyer l'invitation à ${form.email_contact} ? Le prestataire recevra un email pour activer son espace et signer la Charte Qualité.`)) {
+    const dureeLabel = longTtl ? "60 jours (campagne migration)" : "7 jours";
+    if (!window.confirm(`Envoyer l'invitation à ${form.email_contact} ? Lien valide ${dureeLabel}. Le prestataire recevra un email pour activer son espace et signer la Charte Qualité.`)) {
       return;
     }
     setSaving(true);
@@ -658,11 +660,12 @@ export default function Prestataires() {
           description: form.description || null,
           description_courte: form.description_courte || null,
           notes_pre_inscription: form.notes_pre_inscription || null,
+          long_ttl: longTtl,
         },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(`Invitation envoyée à ${form.email_contact}`);
+      toast.success(`Invitation envoyée à ${form.email_contact} (lien valide ${dureeLabel})`);
       setDialogOpen(false);
       fetchData(); fetchGlobalCounts();
     } catch (e: any) {
@@ -1259,6 +1262,11 @@ export default function Prestataires() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving} className="font-sans text-sm">
                   Annuler
                 </Button>
+                {(editItem as any).origine === "migration" && (
+                  <Button variant="secondary" onClick={() => handleSendInvitation({ longTtl: true })} disabled={saving} className="font-sans text-sm">
+                    {saving ? "Envoi…" : "Inviter (campagne migration — 60 j)"}
+                  </Button>
+                )}
                 <Button onClick={handleSave} disabled={saving} className="font-sans text-sm">
                   {saving ? "Enregistrement…" : "Enregistrer les modifications"}
                 </Button>
@@ -1268,7 +1276,7 @@ export default function Prestataires() {
                 <Button variant="outline" onClick={handleSave} disabled={saving} className="font-sans text-sm">
                   {saving ? "Enregistrement…" : "Sauvegarder et continuer plus tard"}
                 </Button>
-                <Button onClick={handleSendInvitation} disabled={saving} className="font-sans text-sm">
+                <Button onClick={() => handleSendInvitation()} disabled={saving} className="font-sans text-sm">
                   {saving ? "Envoi…" : "Sauvegarder et envoyer l'invitation"}
                 </Button>
               </>

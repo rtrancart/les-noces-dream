@@ -30,15 +30,24 @@ Deno.serve(async (req) => {
       throw new Error("Accès refusé : rôle admin requis");
     }
 
-    const { prestataire_id } = await req.json();
+    const { prestataire_id, long_ttl } = await req.json();
     if (!prestataire_id) throw new Error("prestataire_id requis");
 
     const { data: presta, error: pErr } = await adminClient.from("prestataires")
-      .select("id, email_contact, nom_commercial, user_id, statut, relances_envoyees, premier_login_le")
+      .select("id, email_contact, nom_commercial, user_id, statut, relances_envoyees, premier_login_le, origine")
       .eq("id", prestataire_id).maybeSingle();
     if (pErr) throw pErr;
     if (!presta) throw new Error("Prestataire introuvable");
     if (!presta.email_contact) throw new Error("Prestataire sans email");
+
+    // Garde-fou : long_ttl (60 j) réservé aux fiches d'origine 'migration'.
+    let ttlSeconds = 60 * 60 * 24 * 7;
+    if (long_ttl === true) {
+      if (presta.origine !== "migration") {
+        throw new Error("long_ttl réservé aux fiches d'origine migration");
+      }
+      ttlSeconds = 60 * 60 * 24 * 60;
+    }
 
     const { data: profile } = await adminClient.from("profiles").select("prenom").eq("id", presta.user_id).maybeSingle();
 
@@ -46,6 +55,7 @@ Deno.serve(async (req) => {
     const { token: invitationToken, jti, expiresAt } = await signInvitationToken({
       userId: presta.user_id,
       prestataireId: presta.id,
+      ttlSeconds,
     });
     const { error: tokenInsertErr } = await adminClient.from("invitation_tokens").insert({
       jti,
