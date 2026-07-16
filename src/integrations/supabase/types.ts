@@ -1355,6 +1355,7 @@ export type Database = {
           categorie_fille_id: string | null
           categorie_mere_id: string
           champs_specifiques: Json | null
+          charte_exemptee_jusqua: string | null
           charte_signee_le: string | null
           charte_version_signee: string | null
           code_postal: string | null
@@ -1390,6 +1391,7 @@ export type Database = {
           notes_admin: string | null
           notes_pre_inscription: string | null
           notification_charte_obsolete_envoyee_le: string | null
+          origine: Database["public"]["Enums"]["origine_prestataire"]
           photo_principale_url: string | null
           premier_login_le: string | null
           prix_depart: number | null
@@ -1421,6 +1423,7 @@ export type Database = {
           categorie_fille_id?: string | null
           categorie_mere_id: string
           champs_specifiques?: Json | null
+          charte_exemptee_jusqua?: string | null
           charte_signee_le?: string | null
           charte_version_signee?: string | null
           code_postal?: string | null
@@ -1456,6 +1459,7 @@ export type Database = {
           notes_admin?: string | null
           notes_pre_inscription?: string | null
           notification_charte_obsolete_envoyee_le?: string | null
+          origine?: Database["public"]["Enums"]["origine_prestataire"]
           photo_principale_url?: string | null
           premier_login_le?: string | null
           prix_depart?: number | null
@@ -1487,6 +1491,7 @@ export type Database = {
           categorie_fille_id?: string | null
           categorie_mere_id?: string
           champs_specifiques?: Json | null
+          charte_exemptee_jusqua?: string | null
           charte_signee_le?: string | null
           charte_version_signee?: string | null
           code_postal?: string | null
@@ -1522,6 +1527,7 @@ export type Database = {
           notes_admin?: string | null
           notes_pre_inscription?: string | null
           notification_charte_obsolete_envoyee_le?: string | null
+          origine?: Database["public"]["Enums"]["origine_prestataire"]
           photo_principale_url?: string | null
           premier_login_le?: string | null
           prix_depart?: number | null
@@ -2112,6 +2118,10 @@ export type Database = {
         | "charte_non_signee"
         | "charte_obsolete"
       objet_demande: "mariage" | "evenement_entreprise" | "cocktail" | "autre"
+      origine_prestataire:
+        | "inscription_admin"
+        | "auto_inscription"
+        | "migration"
       pack_boost: "5j_5eur" | "15j_12eur" | "30j_20eur"
       plan_abonnement:
         | "essai"
@@ -2300,6 +2310,11 @@ export const Constants = {
         "charte_obsolete",
       ],
       objet_demande: ["mariage", "evenement_entreprise", "cocktail", "autre"],
+      origine_prestataire: [
+        "inscription_admin",
+        "auto_inscription",
+        "migration",
+      ],
       pack_boost: ["5j_5eur", "15j_12eur", "30j_20eur"],
       plan_abonnement: [
         "essai",

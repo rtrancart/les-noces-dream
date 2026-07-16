@@ -1,38 +1,75 @@
-## Audit runtime de la séquence d'emails d'impayé
+## Objectif
 
-Objectif : dérouler un cycle Stripe complet en simulation et vérifier via `email_send_log` et l'état DB que chaque email part exactement une fois, dans le bon ordre, avec les bons marqueurs.
+Préparer le modèle de données de `public.prestataires` pour la reprise du parc (~3 293 fiches) en ajoutant deux informations **indépendantes** :
 
-### Prestataire de test
-`rodolphe.trancart@gmail.com` (compte super_admin, déjà utilisé pour les tests précédents). Récupération de son `abonnements.id`, `prestataire_id`, `stripe_subscription_id` en début d'audit.
+1. **Origine de la fiche** (provenance immuable)
+2. **Date d'exemption à la charte** (optionnelle, ponctuelle)
 
-### Scénario déroulé
+Aucun comportement de publication n'est modifié à cette étape — uniquement le schéma.
 
-Utilisation de `stripe-webhook-simulate` (déjà présent dans le projet) ou d'`INSERT` DB + `curl_edge_functions` sur `stripe-webhook` avec des payloads Stripe fabriqués. Le webhook est appelé sans signature valide → basculer temporairement sur `stripe-webhook-simulate` qui court-circuite la vérif de signature.
+---
 
-Étapes chronologiques :
+## 1. Origine de la fiche
 
-| # | Événement injecté | Vérification DB attendue | Vérification email |
-|---|---|---|---|
-| 1 | `invoice.payment_failed` #1 | `nb_echecs_paiement = 1`, `premier_echec_le` posé, `statut = en_retard` | 1 ligne `impaye_premier_echec` en `sent` |
-| 2 | `invoice.payment_failed` #2 (rejeu Smart Retries) | `nb_echecs_paiement = 2`, `premier_echec_le` inchangé, `rappel_impaye_envoye_le` toujours NULL | **aucun nouvel email** |
-| 3 | `invoice.payment_failed` #3 | `nb_echecs_paiement = 3` | aucun nouvel email |
-| 4 | Backdate `premier_echec_le = now() - 8j` puis lancer `cron-relance-impaye-j7` | `rappel_impaye_envoye_le` posé | 1 ligne `impaye_rappel_intermediaire` en `sent` |
-| 5 | Re-lancer `cron-relance-impaye-j7` immédiatement | `rappel_impaye_envoye_le` inchangé | **aucun nouvel email** (idempotence) |
-| 6 | `customer.subscription.deleted` avec `cancellation_details.reason = payment_failed` | `suspendu_pour_impaye_le` posé | 1 ligne `impaye_suspension` en `sent` |
-| 7 | `invoice.payment_failed` post-suspension | état inchangé | aucun email (garde `suspendu_pour_impaye_le`) |
-| 8 | Restauration : reset des 4 champs à NULL, `nb_echecs_paiement = 0`, `statut = actif` | cycle rouvert | — |
-| 9 | Nouveau `invoice.payment_failed` | `premier_echec_le` reposé, `nb_echecs_paiement = 1` | 1 nouvelle ligne `impaye_premier_echec` (nouveau cycle → reparti proprement) |
+Type ENUM `public.origine_prestataire` avec 3 valeurs :
 
-### Requêtes de contrôle utilisées
-- `SELECT nb_echecs_paiement, premier_echec_le, rappel_impaye_envoye_le, suspendu_pour_impaye_le, statut FROM abonnements WHERE prestataire_id = ...`
-- `SELECT DISTINCT ON (message_id) template_name, status, created_at, error_message FROM email_send_log WHERE recipient_email = 'rodolphe.trancart@gmail.com' AND template_name LIKE 'impaye_%' ORDER BY message_id, created_at DESC`
+- `inscription_admin` — fiche créée par l'équipe depuis le back-office (**valeur par défaut**, cas nominal)
+- `auto_inscription` — le prestataire s'inscrit lui-même via le formulaire public
+- `migration` — fiche reprise de l'ancien site
 
-### Livrables
-- Rapport en fin d'audit : tableau réel observé vs attendu, statut PASS/FAIL par étape, éventuelles anomalies + correctifs proposés.
-- Restauration finale de l'état de l'abonnement du compte de test (aucune trace résiduelle).
-- Aucun envoi réel d'email vers ta boîte n'est nécessaire côté logique — mais comme les templates sont ré-enqueuedés par `send-transactional-email`, tu recevras probablement 3 à 4 emails de test (identiques à ceux du tour précédent). Dis-moi si tu veux les recevoir ou si je dois supprimer les envois du queue avant traitement.
+Colonne : `prestataires.origine origine_prestataire NOT NULL DEFAULT 'inscription_admin'`.
 
-Confirme-moi que je peux :
-1. Utiliser ton compte prestataire comme sujet de test,
-2. Injecter les événements via `stripe-webhook-simulate` (ou fabriquer les updates DB si la fonction n'accepte pas tous les cas),
-3. T'envoyer réellement les emails ou les intercepter avant envoi.
+- Aucun backfill : fiches existantes → défaut. Les ~3293 fiches migrées seront marquées `migration` au moment de l'import. Les auto-inscriptions futures seront marquées `auto_inscription` par le code applicatif (étape suivante).
+- **Immuabilité** : trigger `BEFORE UPDATE` rejetant toute modification de `origine`.
+- **Coexistence** : `cree_par_admin` conservé tel quel, aucune synchronisation, pas de suppression.
+
+---
+
+## 2. Date d'exemption à la charte
+
+Colonne : `prestataires.charte_exemptee_jusqua timestamptz NULL`.
+
+- Cohérent avec les autres `timestamptz` (`charte_signee_le`, `fin_premium`).
+- Nullable : absence = régime normal, présence = exemption jusqu'à cette date.
+- Indépendante de `origine` — aucun couplage DB.
+- Pas de contrainte de valeur, pas d'immuabilité (l'admin doit pouvoir poser/retirer/prolonger).
+
+---
+
+## Ce qui N'EST PAS fait à cette étape
+
+- Aucune modification de `prestataires_public`, `on_prestataire_validation`, `prevent_direct_actif_write`, `handle_new_user`.
+- Aucune règle de publication ni de bascule vers `statut = 'actif'` liée à l'exemption.
+- Aucun backfill, aucun changement RLS, `cree_par_admin` inchangé.
+
+---
+
+## Migration SQL prévue
+
+```sql
+CREATE TYPE public.origine_prestataire AS ENUM (
+  'inscription_admin',
+  'auto_inscription',
+  'migration'
+);
+
+ALTER TABLE public.prestataires
+  ADD COLUMN origine public.origine_prestataire
+    NOT NULL DEFAULT 'inscription_admin',
+  ADD COLUMN charte_exemptee_jusqua timestamptz NULL;
+
+CREATE OR REPLACE FUNCTION public.prevent_origine_prestataire_modification()
+RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
+BEGIN
+  IF NEW.origine IS DISTINCT FROM OLD.origine THEN
+    RAISE EXCEPTION 'La colonne origine d''un prestataire est immuable après création.';
+  END IF;
+  RETURN NEW;
+END; $$;
+
+CREATE TRIGGER trg_prestataires_origine_immutable
+  BEFORE UPDATE ON public.prestataires
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_origine_prestataire_modification();
+```
+
+Après approbation, régénération auto de `src/integrations/supabase/types.ts`. Aucun code applicatif modifié à cette étape.
