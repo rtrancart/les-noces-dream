@@ -902,6 +902,21 @@ export default function Prestataires() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          title="Prévisualiser la fiche"
+                          onClick={() => window.open(
+                            p.slug
+                              ? `/prestataire/${p.slug}/preview`
+                              : `/prestataire/id/${p.id}/preview`,
+                            "_blank",
+                            "noopener,noreferrer",
+                          )}
+                        >
+                          <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Button>
                         <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Voir les emails envoyés" onClick={() => setLogsFor(p)}>
                           <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                         </Button>

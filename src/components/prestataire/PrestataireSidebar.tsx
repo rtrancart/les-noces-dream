@@ -10,6 +10,7 @@ import {
   CreditCard,
   ClipboardList,
   AlertCircle,
+  Eye,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -160,8 +161,25 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
       })}
 
       <div className="border-t border-border mt-2 pt-2">
+        {prestataire && (
+          <a
+            href={
+              prestataire.slug
+                ? `/prestataire/${prestataire.slug}/preview`
+                : `/prestataire/id/${prestataire.id}/preview`
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onNavigate}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-sm font-sans text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+            title="Voir ma fiche telle qu'elle apparaîtra au public"
+          >
+            <Eye className="h-4 w-4 shrink-0" />
+            <span>Prévisualiser ma fiche</span>
+          </a>
+        )}
         {profile && (
-          <p className="px-4 mb-1 truncate font-sans text-xs text-muted-foreground">
+          <p className="px-4 mb-1 mt-2 truncate font-sans text-xs text-muted-foreground">
             {profile.prenom} {profile.nom}
           </p>
         )}
