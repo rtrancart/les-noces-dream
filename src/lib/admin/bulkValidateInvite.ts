@@ -180,20 +180,34 @@ export async function executeIntent(intent: BulkIntent): Promise<BulkItemResult>
 
   // 2) Invitation — edge function existante, long_ttl=true.
   try {
-    const { data: p, error: fetchErr } = await supabase
+    const { data: pRaw, error: fetchErr } = await supabase
       .from("prestataires")
-      .select("id, email_contact, nom_commercial, telephone, categorie_mere_id, categorie_fille_id, ville, region, code_postal, description, description_courte, notes_pre_inscription, prenom_contact, nom_contact")
+      .select("*")
       .eq("id", intent.prestataireId)
       .maybeSingle();
     if (fetchErr) throw fetchErr;
-    if (!p) throw new Error("Prestataire introuvable pour l'invitation");
+    if (!pRaw) throw new Error("Prestataire introuvable pour l'invitation");
+    const p = pRaw as any;
+
+    // prenom/nom du contact = profil lié à user_id (comme dans openEdit).
+    let prenomContact: string | null = null;
+    let nomContact: string | null = null;
+    if (p.user_id) {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("prenom, nom")
+        .eq("id", p.user_id)
+        .maybeSingle();
+      prenomContact = prof?.prenom ?? null;
+      nomContact = prof?.nom ?? null;
+    }
 
     const { data, error } = await supabase.functions.invoke("invite-prestataire", {
       body: {
         prestataire_id: p.id,
         email: p.email_contact,
-        prenom: (p as any).prenom_contact ?? null,
-        nom: (p as any).nom_contact ?? null,
+        prenom: prenomContact,
+        nom: nomContact,
         nom_commercial: p.nom_commercial,
         telephone: p.telephone,
         categorie_mere_id: p.categorie_mere_id,
@@ -203,7 +217,7 @@ export async function executeIntent(intent: BulkIntent): Promise<BulkItemResult>
         code_postal: p.code_postal || null,
         description: p.description || null,
         description_courte: p.description_courte || null,
-        notes_pre_inscription: (p as any).notes_pre_inscription || null,
+        notes_pre_inscription: p.notes_pre_inscription || null,
         long_ttl: true,
       },
     });
