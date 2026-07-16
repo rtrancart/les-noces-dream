@@ -37,6 +37,9 @@ Allow: /
 
 User-agent: *
 Allow: /
+# Prévisualisation privée des fiches non publiées — jamais indexable.
+Disallow: /*/preview
+Disallow: /prestataire/id/
 
 Sitemap: https://egbohbwiywgyyculswvf.supabase.co/functions/v1/generate-sitemap
 # URL directe de l'Edge Function Supabase. À remplacer par https://lesnoces.net/sitemap.xml

@@ -16,6 +16,7 @@ import MotDePasseOublie from "./pages/MotDePasseOublie";
 import ResetPassword from "./pages/ResetPassword";
 import Recherche from "./pages/Recherche";
 import FichePrestataire from "./pages/FichePrestataire";
+import FichePrestatairePreview from "./pages/FichePrestatairePreview";
 import PrestatairesConsultes from "./pages/PrestatairesConsultes";
 import Unsubscribe from "./pages/Unsubscribe";
 import Blog from "./pages/Blog";
@@ -111,6 +112,11 @@ const App = () => (
             <Route path="/pro/charte" element={<ProtectedRoute><CharteProgressive /></ProtectedRoute>} />
             <Route path="/reactivation" element={<Reactivation />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+
+            {/* Prévisualisation de fiche — accès contrôlé côté serveur par la RPC
+                get_prestataire_preview / _by_id (admin, super_admin, ou propriétaire). */}
+            <Route path="/prestataire/:slug/preview" element={<ProtectedRoute><FichePrestatairePreview /></ProtectedRoute>} />
+            <Route path="/prestataire/id/:id/preview" element={<ProtectedRoute><FichePrestatairePreview /></ProtectedRoute>} />
 
             {/* Espace client */}
             <Route
