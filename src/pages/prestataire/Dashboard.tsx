@@ -137,10 +137,29 @@ export default function PrestataireDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="font-serif text-2xl md:text-3xl text-foreground">
           Bonjour{prestataire.nom_commercial ? `, ${prestataire.nom_commercial}` : ""} 👋
         </h2>
+        <Button
+          asChild
+          variant="outline"
+          className="shrink-0"
+          title="Voir ma fiche telle qu'elle apparaîtra au public"
+        >
+          <a
+            href={
+              prestataire.slug
+                ? `/prestataire/${prestataire.slug}/preview`
+                : `/prestataire/id/${prestataire.id}/preview`
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Prévisualiser ma fiche
+          </a>
+        </Button>
       </div>
 
       {/* Stats Cards - Clickable */}
