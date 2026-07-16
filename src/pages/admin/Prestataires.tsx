@@ -417,6 +417,8 @@ export default function Prestataires() {
   };
 
   useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
+  // Reset selection whenever filters/search change (evite d'agir sur des fiches invisibles)
+  useEffect(() => { setSelectedIds(new Set()); }, [filterStatut, filterCategorie, search, filterSousSeuil, locationZones, citySearch]);
 
   // Compteurs globaux par statut (indépendants des filtres)
   const [globalCounts, setGlobalCounts] = useState<Record<string, number>>({});
