@@ -328,6 +328,13 @@ export default function Prestataires() {
   const [showPassword, setShowPassword] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
+  // Sélection multiple pour l'action groupée "Valider & inviter".
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [bulkReport, setBulkReport] = useState<BulkReport | null>(null);
+
   const handleChangePassword = async () => {
     if (!editItem?.user_id) return;
     if (!newPassword || newPassword.length < 6) {
