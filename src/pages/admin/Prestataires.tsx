@@ -907,10 +907,46 @@ export default function Prestataires() {
             {loading ? "Chargement…" : `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`}
           </p>
         </CardHeader>
+        {selectedCount > 0 && (
+          <div className="sticky top-0 z-10 mx-4 mb-3 flex flex-wrap items-center justify-between gap-3 rounded border border-or/40 bg-or/10 px-4 py-2.5">
+            <span className="font-sans text-sm text-foreground">
+              {selectedCount} fiche{selectedCount > 1 ? "s" : ""} sélectionnée{selectedCount > 1 ? "s" : ""}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="font-sans text-xs"
+                onClick={clearSelection}
+                disabled={bulkRunning}
+              >
+                Tout désélectionner
+              </Button>
+              <Button
+                size="sm"
+                className="font-sans text-xs"
+                onClick={() => setBulkConfirmOpen(true)}
+                disabled={bulkRunning}
+              >
+                {bulkRunning
+                  ? `Traitement… ${bulkProgress?.done ?? 0} / ${bulkProgress?.total ?? 0}`
+                  : "Valider & inviter"}
+              </Button>
+            </div>
+          </div>
+        )}
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allEligibleSelected ? true : someEligibleSelected ? "indeterminate" : false}
+                    onCheckedChange={toggleAllOnPage}
+                    disabled={eligibleInFiltered.length === 0}
+                    aria-label="Tout sélectionner sur la page"
+                  />
+                </TableHead>
                 <TableHead className="font-sans text-xs">Nom commercial</TableHead>
                 <TableHead className="font-sans text-xs">Email</TableHead>
                 <TableHead className="font-sans text-xs">Téléphone</TableHead>
@@ -926,13 +962,25 @@ export default function Prestataires() {
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                   <TableRow key={i}>{Array.from({ length: 10 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>
+                   <TableRow key={i}>{Array.from({ length: 11 }).map((_, j) => (<TableCell key={j}><div className="h-4 w-20 animate-pulse rounded bg-muted/30" /></TableCell>))}</TableRow>
                 ))
               ) : filteredData.length === 0 ? (
-                <TableRow><TableCell colSpan={10} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
+                <TableRow><TableCell colSpan={11} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
               ) : (
-                filteredData.map((p) => (
-                  <TableRow key={p.id}>
+                filteredData.map((p) => {
+                  const ineligibility = getIneligibilityReason(p);
+                  const isSelected = selectedIds.has(p.id);
+                  return (
+                  <TableRow key={p.id} className={isSelected ? "bg-or/5" : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleOne(p.id)}
+                        disabled={!!ineligibility}
+                        aria-label={`Sélectionner ${p.nom_commercial}`}
+                        title={ineligibility ? `Non éligible : ${ineligibilityLabel(ineligibility)}` : undefined}
+                      />
+                    </TableCell>
                     <TableCell className="font-sans text-sm font-medium">{p.nom_commercial}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.email_contact || "—"}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.telephone || "—"}</TableCell>
