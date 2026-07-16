@@ -1,61 +1,60 @@
+## Objectif
 
-## État actuel
+Permettre au Tunnel « campagne d'invitation des prestataires migrés » d'émettre des liens d'invitation valides **60 jours**, tout en laissant le Tunnel A admin classique continuer d'émettre des liens à **7 jours** (comportement actuel inchangé), et sans jamais modifier le TTL par défaut du helper.
 
-Migrations DB **déjà exécutées et approuvées** :
-- Vue `public.prestataires_public_all` (miroir de `prestataires_public` sans filtre statut) — accès direct **verrouillé** (`REVOKE ALL` pour anon/authenticated, `security_invoker = true`).
-- RPC `get_prestataire_preview(slug text)` et `get_prestataire_preview_by_id(id uuid)` en SECURITY DEFINER, `GRANT EXECUTE` uniquement à `authenticated`, contrôle d'accès `admin | super_admin | user_id = auth.uid()`.
+## Principe
 
-## Reste à implémenter (frontend, build mode)
+Le TTL doit être décidé **au site d'appel**, pas dans le helper. `signInvitationToken` accepte déjà `ttlSeconds` en paramètre optionnel avec un défaut de 7 jours — ce défaut reste tel quel et fait autorité pour tout appel qui ne précise rien. La campagne migration passera explicitement 60 jours.
 
-### 1. Extraction du rendu (aucune régression visuelle attendue)
+## Comment on distingue le contexte
 
-`src/components/fiche/FichePrestataireView.tsx` — nouveau composant présentationnel qui reçoit toutes les données en props (`presta`, `catMere`, `catFille`, `avis`, `champsCategorie`, `similaires`, `previewMode?`, `onAvisRefetch?`). Contient l'intégralité du JSX actuellement dans `FichePrestataire.tsx`. En `previewMode` :
-- Bandeau ambre en tête : « Prévisualisation — cette fiche n'est pas visible du public (statut : …) ».
-- `SeoHead noindex`, aucun `<JsonLd>`.
-- `FavoriButton`, `FicheDevisSidebar`, `FicheStickyMobileCTA`, `FicheDevisDialog`, section « Prestataires similaires » masqués.
-- `trackEvent`/`trackRevealPhone` désactivés sur la révélation du téléphone.
+Le signal métier existe déjà : la colonne `prestataires.origine` (dont la valeur `migration` est utilisée pour les fiches importées de l'ancien site) est **immuable après création** (trigger `prevent_origine_prestataire_modification`). C'est le signal le plus fiable et il est déjà source de vérité.
 
-### 2. Slim-down de la page publique
+Approche retenue : un **paramètre explicite** `long_ttl` (ou équivalent) accepté par `invite-prestataire` et `resend-magic-link`, avec un garde-fou serveur qui n'autorise ce mode long que si la fiche a bien `origine = 'migration'`. Le client (UI admin) fournit l'intention ; le serveur vérifie l'éligibilité. On évite ainsi qu'un admin passe accidentellement (ou volontairement) 60 jours à une invitation individuelle Tunnel A.
 
-`src/pages/FichePrestataire.tsx` — devient un conteneur de fetch (via `prestataires_public`, `statut='actif'`) + tracking (`useTrackVisitePrestataire`, `vue_profil`) + rendu `<FichePrestataireView />`. Aucun changement fonctionnel côté public.
+Deux valeurs discrètes uniquement, pas un TTL libre :
 
-### 3. Nouvelle page de preview
+- absent / `false` → 7 jours (défaut actuel, comportement Tunnel A inchangé)
+- `true` → 60 jours, **uniquement si `origine = 'migration'`** ; sinon 400 explicite
 
-`src/pages/FichePrestatairePreview.tsx` — appelle `supabase.rpc('get_prestataire_preview'|_by_id')` selon les params de route, gère `loading / forbidden / not_found / ok`, puis rend `<FichePrestataireView previewMode />`. Aucun tracking. Similaires omis.
+## Changements
 
-### 4. Routes
+### 1. Edge function `invite-prestataire`
+- Accepter `long_ttl: boolean` (optionnel, défaut `false`) dans le body.
+- Si `long_ttl === true` :
+  - Vérifier que la fiche cible (existante ou en cours de mise à jour) a `origine = 'migration'`. Sinon renvoyer 400 « long_ttl réservé aux fiches migration ».
+  - Appeler `signInvitationToken({ …, ttlSeconds: 60*60*24*60 })`.
+- Sinon : appel inchangé (TTL 7 j par défaut du helper).
+- Loguer dans `logs_admin` la durée retenue (`ttl_days: 7 | 60`) pour audit de campagne.
 
-Dans `src/App.tsx`, ajouter deux routes SPA protégées, hors `PublicLayout` :
+### 2. Edge function `resend-magic-link`
+- Mêmes règles : accepter `long_ttl`, même garde-fou `origine = 'migration'`.
+- Cela permet de relancer une fiche migration avec un lien frais également valable 60 jours, comme demandé (relance conservée comme filet de sécurité, pas de lien unique).
 
-```tsx
-<Route path="/prestataire/:slug/preview" element={<ProtectedRoute><FichePrestatairePreview /></ProtectedRoute>} />
-<Route path="/prestataire/id/:id/preview" element={<ProtectedRoute><FichePrestatairePreview /></ProtectedRoute>} />
-```
+### 3. UI admin
+- Sur la liste des prestataires, exposer l'option « invitation campagne migration (60 j) » **uniquement** pour les fiches dont `origine = 'migration'`. Pour toutes les autres, l'UI n'offre pas cette option — cohérent avec le garde-fou serveur.
+- Une action de masse (« Inviter la sélection ») applique automatiquement `long_ttl: true` puisque la sélection est filtrée sur `origine = 'migration'`.
 
-### 5. Points d'accès UI
+### 4. Helper `signInvitationToken`
+- **Aucun changement.** Le défaut de 7 jours reste tel quel, aucun appelant qui ne précise pas `ttlSeconds` ne voit son comportement bouger.
 
-- **Espace prestataire** : bouton « Prévisualiser ma fiche » (icône `Eye`) ajouté dans `PrestataireSidebar` (juste au-dessus du bloc déconnexion) — ouvre `/prestataire/{slug}/preview` dans un nouvel onglet. Actif quel que soit le statut, désactivé uniquement si le slug est manquant (fallback vers `/prestataire/id/{id}/preview`).
-- **Back-office admin** : dans `src/pages/admin/Prestataires.tsx`, ajouter à chaque ligne un bouton icône `Eye` (title="Prévisualiser") avant le crayon d'édition, pointant vers `/prestataire/{slug}/preview` (nouvel onglet).
+## Ce qui reste identique
 
-### 6. Non-indexation
+- Table `invitation_tokens`, `jti`, usage unique, colonnes probatoires immuables : inchangés.
+- Route `/accept-invitation`, echange `verifyOtp` côté serveur, ouverture de session Supabase : inchangés.
+- Tunnel A admin classique (invitation individuelle sans `long_ttl`) : 7 jours, aucune régression.
+- Emails transactionnels : templates inchangés (le lien pointe toujours vers `/accept-invitation?token=…`).
 
-`public/robots.txt` — ajouter `Disallow: /*/preview` dans les blocs pertinents (à minima sous `User-agent: *`, `Googlebot`, `Bingbot` et les crawlers IA). La route n'est de toute façon jamais dans le sitemap.
+## Validation prévue
 
-## Ce qui NE change PAS
+- Test 1 : `invite-prestataire` sans `long_ttl` sur fiche non-migration → token `expires_at ≈ now + 7 j`. PASS attendu.
+- Test 2 : `invite-prestataire` avec `long_ttl: true` sur fiche `origine = 'migration'` → token `expires_at ≈ now + 60 j`. PASS attendu.
+- Test 3 : `invite-prestataire` avec `long_ttl: true` sur fiche `origine != 'migration'` → 400 explicite, aucun token émis. PASS attendu.
+- Test 4 : `resend-magic-link` avec `long_ttl: true` sur fiche migration déjà invitée → nouveau token 60 j, ancien inchangé (usage unique préservé). PASS attendu.
+- Test 5 : clic sur un lien 60 j après ~5 j → session ouverte normalement (le magic link Supabase est minté à la volée côté serveur, l'`email_otp_expiry` Supabase n'entre jamais en jeu côté utilisateur).
 
-- Aucune modification des règles de publication, des triggers, du statut, de `charte_ok_pour_publication`, de l'abonnement, du parcours d'inscription ou d'import.
-- Aucune modification de RLS existante.
-- Aucun changement visuel de la fiche publique (le refactor est un pur déplacement de JSX).
+## Hors périmètre
 
-## Fichiers touchés
-
-```text
-src/components/fiche/FichePrestataireView.tsx   (nouveau)
-src/pages/FichePrestataire.tsx                  (allégé)
-src/pages/FichePrestatairePreview.tsx           (nouveau)
-src/App.tsx                                     (2 routes)
-src/components/prestataire/PrestataireSidebar.tsx  (bouton preview)
-src/pages/admin/Prestataires.tsx                (bouton preview par ligne)
-public/robots.txt                               (Disallow /*/preview)
-.lovable/plan.md                                (mise à jour)
-```
+- Modification du défaut global du helper.
+- TTL libre côté client (on garde deux valeurs discrètes uniquement).
+- Nouveau mécanisme de token ou nouvelle table : rien à créer.
