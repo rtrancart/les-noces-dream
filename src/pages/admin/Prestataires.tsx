@@ -774,6 +774,57 @@ export default function Prestataires() {
     { key: "archive", label: "Archivés", tone: statutColors.archive },
   ];
 
+  // Éligibilité + sélection groupée
+  const eligibleInFiltered = useMemo(() => filteredData.filter((p) => !getIneligibilityReason(p)), [filteredData]);
+  const eligibleIds = useMemo(() => new Set(eligibleInFiltered.map((p) => p.id)), [eligibleInFiltered]);
+  const selectedCount = selectedIds.size;
+  const allEligibleSelected = eligibleInFiltered.length > 0 && eligibleInFiltered.every((p) => selectedIds.has(p.id));
+  const someEligibleSelected = selectedCount > 0 && !allEligibleSelected;
+
+  const toggleOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleAllOnPage = () => {
+    setSelectedIds((prev) => {
+      if (eligibleInFiltered.every((p) => prev.has(p.id))) {
+        // désélectionner celles de la page
+        const next = new Set(prev);
+        eligibleInFiltered.forEach((p) => next.delete(p.id));
+        return next;
+      }
+      const next = new Set(prev);
+      eligibleInFiltered.forEach((p) => next.add(p.id));
+      return next;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const runBulkAction = async () => {
+    const targets = data.filter((p) => selectedIds.has(p.id));
+    setBulkConfirmOpen(false);
+    setBulkRunning(true);
+    setBulkProgress({ done: 0, total: targets.filter((p) => !getIneligibilityReason(p)).length });
+    try {
+      const report = await runBulkValidateInvite({
+        prestataires: targets,
+        onProgress: (done, total) => setBulkProgress({ done, total }),
+      });
+      setBulkReport(report);
+      clearSelection();
+      fetchData();
+      fetchGlobalCounts();
+    } catch (e: any) {
+      toast.error("Erreur pendant l'action groupée : " + (e?.message ?? String(e)));
+    } finally {
+      setBulkRunning(false);
+      setBulkProgress(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
