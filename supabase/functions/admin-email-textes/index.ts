@@ -6,6 +6,8 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 import { DESIGNED_TEMPLATES } from './build-designed-html.ts'
+import { renderShellParts } from '../_shared/email-shell.ts'
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
