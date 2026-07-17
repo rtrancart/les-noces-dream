@@ -246,7 +246,7 @@ export default function Emails() {
                       <div className="bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">Aperçu</div>
                       <iframe
                         title={`preview-${it.templateName}`}
-                        srcDoc={getCorps(it)}
+                        srcDoc={/<!doctype|<html/i.test(getCorps(it)) ? getCorps(it) : `${it.shellHead ?? ""}${getCorps(it)}${it.shellFoot ?? ""}`}
                         className="w-full h-[500px] bg-white"
                       />
                     </div>
