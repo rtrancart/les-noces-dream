@@ -76,15 +76,19 @@ Deno.serve(async (req) => {
           dbRow.est_actif &&
           typeof dbRow.sujet === 'string' && dbRow.sujet.trim().length > 0 &&
           typeof dbRow.corps_html === 'string' && dbRow.corps_html.trim().length > 0
+        const { head: shellHead, foot: shellFoot } = renderShellParts(name)
         items.push({
           templateName: name,
           displayName: entry.displayName ?? name,
           variables: def.variables,
           defaultSubject: def.subject,
           defaultHtml: def.html,
+          shellHead,
+          shellFoot,
           dbRow,
           source: hasCustom ? 'db' : 'code',
         })
+
       }
       return new Response(JSON.stringify({ items }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
