@@ -18,6 +18,8 @@ interface Item {
   variables: string[];
   defaultSubject: string;
   defaultHtml: string;
+  shellHead?: string;
+  shellFoot?: string;
   source: "db" | "code";
   dbRow: {
     id: string;
@@ -26,6 +28,7 @@ interface Item {
     est_actif: boolean;
   } | null;
 }
+
 
 type Draft = { sujet?: string; corps_html?: string };
 
