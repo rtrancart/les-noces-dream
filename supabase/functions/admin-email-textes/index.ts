@@ -6,6 +6,8 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 import { DESIGNED_TEMPLATES } from './build-designed-html.ts'
+import { renderShellParts } from '../_shared/email-shell.ts'
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -74,15 +76,19 @@ Deno.serve(async (req) => {
           dbRow.est_actif &&
           typeof dbRow.sujet === 'string' && dbRow.sujet.trim().length > 0 &&
           typeof dbRow.corps_html === 'string' && dbRow.corps_html.trim().length > 0
+        const { head: shellHead, foot: shellFoot } = renderShellParts(name)
         items.push({
           templateName: name,
           displayName: entry.displayName ?? name,
           variables: def.variables,
           defaultSubject: def.subject,
           defaultHtml: def.html,
+          shellHead,
+          shellFoot,
           dbRow,
           source: hasCustom ? 'db' : 'code',
         })
+
       }
       return new Response(JSON.stringify({ items }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

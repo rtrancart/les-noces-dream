@@ -2,6 +2,8 @@ import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
+import { wrapWithShell } from '../_shared/email-shell.ts'
+
 
 // Configuration baked in at scaffold time — do NOT change these manually.
 // To update, re-run the email domain setup flow.
@@ -325,13 +327,17 @@ Deno.serve(async (req) => {
     const subjectSub = substitute(dbTexte.sujet)
     const bodySub = substitute(dbTexte.corps_html)
     resolvedSubject = subjectSub.out
-    html = bodySub.out
+    // Coquille commune (header + footer + signature) : appliquée si le
+    // contenu stocké est un corps seul. Les anciens gabarits full-doc
+    // sont détectés et laissés intacts par wrapWithShell.
+    html = wrapWithShell(templateName, bodySub.out)
     plainText = bodySub.out.replace(/<style[\s\S]*?<\/style>/gi, '')
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
     subjectSub.unresolved.forEach((v) => unresolvedVars.add(v))
     bodySub.unresolved.forEach((v) => unresolvedVars.add(v))
+
   } else {
     html = await renderAsync(
       React.createElement(template.component, templateData)

@@ -18,6 +18,8 @@ interface Item {
   variables: string[];
   defaultSubject: string;
   defaultHtml: string;
+  shellHead?: string;
+  shellFoot?: string;
   source: "db" | "code";
   dbRow: {
     id: string;
@@ -26,6 +28,7 @@ interface Item {
     est_actif: boolean;
   } | null;
 }
+
 
 type Draft = { sujet?: string; corps_html?: string };
 
@@ -145,6 +148,12 @@ export default function Emails() {
           Chaque template dispose d'un contenu par défaut dans le code : si vous désactivez la personnalisation
           ou la réinitialisez, ce contenu prend le relais automatiquement.
         </p>
+        <div className="mt-3 p-3 rounded-md border border-primary/20 bg-primary/5 text-sm text-foreground">
+          <b>Header et pied de page communs.</b> Tous les emails partagent la même en-tête (logo,
+          navigation) et le même pied de page (coordonnées, signature). Vous n'éditez ici que le
+          <i> contenu central </i>. L'aperçu ci-dessous affiche l'email complet, coquille comprise.
+        </div>
+
         <div className="mt-3">
           <Button
             variant="outline"
@@ -237,7 +246,7 @@ export default function Emails() {
                       <div className="bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">Aperçu</div>
                       <iframe
                         title={`preview-${it.templateName}`}
-                        srcDoc={getCorps(it)}
+                        srcDoc={/<!doctype|<html/i.test(getCorps(it)) ? getCorps(it) : `${it.shellHead ?? ""}${getCorps(it)}${it.shellFoot ?? ""}`}
                         className="w-full h-[500px] bg-white"
                       />
                     </div>
