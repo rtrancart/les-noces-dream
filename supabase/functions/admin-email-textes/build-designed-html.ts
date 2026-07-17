@@ -115,8 +115,10 @@ function compose(_preview: string, blocks: Block[], _signer: Signer) {
 export interface DesignedTemplate {
   subject: string
   html: string // corps uniquement (sera enveloppé par la coquille commune)
+}
 
 export const DESIGNED_TEMPLATES: Record<string, DesignedTemplate> = {
+
 
 
   // A-01
