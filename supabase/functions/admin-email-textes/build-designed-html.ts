@@ -100,86 +100,23 @@ function renderBlock(b: Block): string {
   }
 }
 
-// -------------------- Header, footer, signatures --------------------
-function header() {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.abysse}"><tr><td align="center" style="padding:36px 30px 24px">
-  <img src="${BRAND_ASSETS.wordmarkWhite}" width="180" alt="LesNoces.net" style="display:block;margin:0 auto 12px;height:auto;border:0" />
-  <div style="font-family:${SANS};font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:${C.champagne};font-weight:600">Mariage &amp; événementiel d'exception</div>
-</td></tr>
-<tr><td align="center" style="padding:14px 20px 16px;border-top:1px solid rgba(255,255,255,.14);font-family:${SANS}">
-  <a href="https://lesnoces.net/" style="color:#e8e0cf;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Accueil</a>
-  <span style="color:rgba(255,255,255,.35);font-size:8px">◆</span>
-  <a href="https://lesnoces.net/prestataires" style="color:#e8e0cf;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Trouver un prestataire</a>
-  <span style="color:rgba(255,255,255,.35);font-size:8px">◆</span>
-  <a href="https://lesnoces.net/connexion" style="color:#e8e0cf;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Mon espace</a>
-</td></tr></table>`
-}
-
-function footer() {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.abysse}"><tr><td align="center" style="padding:32px 40px 28px;font-family:${SANS};color:#b7b1a6">
-  <img src="${BRAND_ASSETS.wordmarkWhite}" width="140" alt="LesNoces.net" style="display:block;margin:0 auto 12px;height:auto;border:0" />
-  <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:${C.champagne};margin:0 0 16px">Prestataires sélectionnés à la main</div>
-  <div style="font-size:12.5px;color:#cbc5ba;line-height:1.8">📞 02 96 01 00 17 — du lundi au vendredi, 10h à 13h<br />📧 <a href="mailto:contact@lesnoces.net" style="color:#cbc5ba;text-decoration:none">contact@lesnoces.net</a></div>
-  <div style="height:1px;background:rgba(255,255,255,.08);margin:20px 0"></div>
-  <div style="font-size:10.5px;color:#6f6a62;line-height:1.7">LesNoces.net — Marketplace de prestataires haut de gamme.</div>
-</td></tr></table>`
-}
-
-function signatureNathalie() {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:28px;border-top:1px solid ${C.champagne}"><tr><td style="padding-top:20px;font-family:${SANS}">
-  <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-    <td width="56" style="width:56px;vertical-align:top">
-      <div style="width:56px;height:56px;line-height:56px;text-align:center;background:${C.or};color:#FFFFFF;font-family:${SERIF};font-style:italic;font-size:28px;border-radius:50%">N</div>
-    </td>
-    <td style="padding-left:16px;vertical-align:middle">
-      <div style="font-size:13px;color:${C.muted}">Bien à vous,</div>
-      <div style="font-family:${SERIF};font-style:italic;font-size:24px;color:${C.or};line-height:1.1">Nathalie</div>
-      <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:${C.petrole};font-weight:600;margin-top:4px">Fondatrice</div>
-    </td>
-  </tr></table>
-  <div style="font-size:12px;color:${C.muted};margin-top:12px">📞 02 96 01 00 17 · 📧 <a href="mailto:contact@lesnoces.net" style="color:${C.or};text-decoration:none">contact@lesnoces.net</a></div>
-  <div style="font-family:${SERIF};font-style:italic;font-size:13px;color:#9b9384;margin-top:8px">« Nous sélectionnons ceux que nous serions heureux de recommander à nos propres mariés. »</div>
-  <img src="${BRAND_ASSETS.wordmarkAbysse}" height="16" alt="LesNoces.net" style="display:block;margin-top:14px;border:0" />
-</td></tr></table>`
-}
-
-function signatureEquipe() {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:28px;border-top:1px solid ${C.champagne}"><tr><td style="padding-top:20px;font-family:${SANS}">
-  <div style="font-size:13px;color:${C.muted}">À très bientôt,</div>
-  <div style="font-family:${SERIF};font-style:italic;font-size:22px;color:${C.or};line-height:1.1;margin-top:2px">L'équipe LesNoces</div>
-  <div style="font-size:12px;color:${C.muted};margin-top:10px">📞 02 96 01 00 17 · 📧 <a href="mailto:contact@lesnoces.net" style="color:${C.or};text-decoration:none">contact@lesnoces.net</a></div>
-  <img src="${BRAND_ASSETS.wordmarkAbysse}" height="16" alt="LesNoces.net" style="display:block;margin-top:14px;border:0" />
-</td></tr></table>`
-}
-
 // -------------------- Composer --------------------
+// La coquille (header + footer + signature) est désormais gérée à l'envoi
+// par `_shared/email-shell.ts`. Ici on ne produit que le CORPS du template,
+// ce qui permet de partager un header/pied de page communs à tous les emails.
 type Signer = 'nathalie' | 'equipe' | 'none'
 
-function wrap(preview: string, body: string, signer: Signer) {
-  const sig = signer === 'nathalie' ? signatureNathalie() : signer === 'equipe' ? signatureEquipe() : ''
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="x-apple-disable-message-reformatting"><title>LesNoces.net</title></head>
-<body style="margin:0;padding:0;background:#f2ede2;font-family:${SANS}">
-<div style="display:none;font-size:1px;color:#f2ede2;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden">${preview}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2ede2"><tr><td align="center" style="padding:24px 12px">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:${C.paper}">
-<tr><td>${header()}</td></tr>
-<tr><td style="padding:32px 32px 24px">${body}${sig}</td></tr>
-<tr><td>${footer()}</td></tr>
-</table></td></tr></table></body></html>`
-}
-
-function compose(preview: string, blocks: Block[], signer: Signer) {
-  return wrap(preview, blocks.map(renderBlock).join(''), signer)
+function compose(_preview: string, blocks: Block[], _signer: Signer) {
+  return blocks.map(renderBlock).join('')
 }
 
 // -------------------- Definitions (11 templates) --------------------
 
 export interface DesignedTemplate {
   subject: string
-  html: string
+  html: string // corps uniquement (sera enveloppé par la coquille commune)
 }
 
-export const DESIGNED_TEMPLATES: Record<string, DesignedTemplate> = {
   // A-01
   invitation_prestataire: {
     subject: 'LesNoces.net vous a sélectionné pour rejoindre notre marketplace',
