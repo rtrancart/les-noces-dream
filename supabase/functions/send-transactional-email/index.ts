@@ -327,13 +327,17 @@ Deno.serve(async (req) => {
     const subjectSub = substitute(dbTexte.sujet)
     const bodySub = substitute(dbTexte.corps_html)
     resolvedSubject = subjectSub.out
-    html = bodySub.out
+    // Coquille commune (header + footer + signature) : appliquée si le
+    // contenu stocké est un corps seul. Les anciens gabarits full-doc
+    // sont détectés et laissés intacts par wrapWithShell.
+    html = wrapWithShell(templateName, bodySub.out)
     plainText = bodySub.out.replace(/<style[\s\S]*?<\/style>/gi, '')
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
     subjectSub.unresolved.forEach((v) => unresolvedVars.add(v))
     bodySub.unresolved.forEach((v) => unresolvedVars.add(v))
+
   } else {
     html = await renderAsync(
       React.createElement(template.component, templateData)
