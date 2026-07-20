@@ -31,6 +31,10 @@ export const SHELL_META: Record<string, { preview: string; signer: Signer }> = {
     preview: 'Votre fiche vous attend — quelques minutes suffisent',
     signer: 'nathalie',
   },
+  relance_decouverte_j7: {
+    preview: "Votre profil est prêt, et vos 90 jours n'ont pas encore commencé.",
+    signer: 'nathalie',
+  },
   notif_nouvelle_soumission_fiche: {
     preview: 'Un prestataire vient de soumettre sa fiche pour validation',
     signer: 'none',
