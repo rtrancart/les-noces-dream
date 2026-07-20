@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
             prenom: profile?.prenom ?? null,
             nom_commercial: p.nom_commercial,
             numero_version: active.numero_version,
-            magic_link: `${siteUrl}/espace-pro/charte`,
+            magic_link: `${siteUrl}/pro/charte`,
           },
         },
       });
