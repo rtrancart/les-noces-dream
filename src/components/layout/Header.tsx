@@ -106,7 +106,7 @@ export default function Header() {
                   setSearchOpen((v) => !v);
                   setMega(null);
                 }}
-                className="text-white/95 hover:text-white"
+                className="text-white/95 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors"
                 aria-label="Rechercher"
               >
                 <Search className="w-5 h-5" />
