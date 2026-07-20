@@ -41,9 +41,12 @@ const visualLabels: Record<VisualStatus, { label: string; className: string }> =
 
 export default function ClientMessagerie() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [demandes, setDemandes] = useState<DemandeMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [deepLinkHandled, setDeepLinkHandled] = useState(false);
+
 
   const fetchDemandes = useCallback(async () => {
     if (!user?.id) return;
