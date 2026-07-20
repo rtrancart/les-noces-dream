@@ -76,12 +76,12 @@ const HistoriqueTriggerButton = forwardRef<HTMLButtonElement, HistoriqueTriggerP
     <button
       ref={ref}
       {...props}
-      className="relative text-white/90 hover:text-white transition-colors"
+      className="relative text-white/90 hover:text-white hover:bg-white/10 rounded-full p-1.5 transition-colors"
       aria-label="Historique de navigation"
     >
       <History className="w-5 h-5" />
       {count > 0 && (
-        <span className="absolute -bottom-1 -left-1 min-w-[14px] h-[14px] px-0.5 flex items-center justify-center bg-primary text-white text-[9px] font-sans font-semibold rounded-full">
+        <span className="absolute bottom-0 left-0 min-w-[14px] h-[14px] px-0.5 flex items-center justify-center bg-primary text-white text-[9px] font-sans font-semibold rounded-full">
           {count >= 10 ? "9+" : count}
         </span>
       )}
