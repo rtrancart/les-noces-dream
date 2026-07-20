@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,9 +41,12 @@ const visualLabels: Record<VisualStatus, { label: string; className: string }> =
 
 export default function ClientMessagerie() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [demandes, setDemandes] = useState<DemandeMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [deepLinkHandled, setDeepLinkHandled] = useState(false);
+
 
   const fetchDemandes = useCallback(async () => {
     if (!user?.id) return;
@@ -84,7 +88,18 @@ export default function ClientMessagerie() {
     fetchDemandes();
   }, [fetchDemandes]);
 
+  // Deep-link ?demande=… : pré-sélection tolérante (une seule fois, silencieuse si absent).
+  useEffect(() => {
+    if (deepLinkHandled || loading) return;
+    const target = searchParams.get("demande");
+    if (target && demandes.some((d) => d.id === target)) {
+      setSelectedId(target);
+    }
+    setDeepLinkHandled(true);
+  }, [loading, demandes, searchParams, deepLinkHandled]);
+
   const selected = demandes.find((d) => d.id === selectedId);
+
 
   if (loading) {
     return (

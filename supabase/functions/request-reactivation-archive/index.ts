@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
           nom_commercial: presta.nom_commercial,
           email_prestataire: presta.email_contact,
           prestataire_id: presta.id,
-          lien_backoffice: `${siteUrl}/admin/prestataires/${presta.id}`,
+          lien_backoffice: `${siteUrl}/admin/prestataires?focus=${presta.id}`,
         },
       },
     });

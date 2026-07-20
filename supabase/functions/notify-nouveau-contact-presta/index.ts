@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     message: demande.message,
     dateEvenement: formatDateFr(demande.date_evenement),
     lieuEvenement: demande.lieu_evenement ?? undefined,
-    lienConversation: `${SITE_URL}/pro/messages/${demande.id}`,
+    lienConversation: `${SITE_URL}/espace-pro/demandes?demande=${demande.id}`,
   };
 
   const { error: mailErr } = await admin.functions.invoke("send-transactional-email", {

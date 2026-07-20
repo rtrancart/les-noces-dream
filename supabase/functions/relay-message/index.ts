@@ -1,9 +1,9 @@
 // Edge Function : relay-message
-// Centralise l'insertion d'un message de la messagerie + déclenche l'email de notification
-// adéquat (3 cas) + génère un magic token pour accès direct à la conversation.
+// Insertion d'un message + dispatch email (3 cas). Les CTA email pointent vers
+// les routes protégées existantes avec un query param `?demande=` consommé côté
+// front pour pré-sélectionner la conversation.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { create as createJwt, getNumericDate } from 'https://deno.land/x/djwt@v3.0.2/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,28 +16,14 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 
-async function signMagicToken(secret: string, payload: Record<string, unknown>) {
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign', 'verify'],
-  )
-  return await createJwt(
-    { alg: 'HS256', typ: 'JWT' },
-    { ...payload, exp: getNumericDate(60 * 60 * 24 * 7) },
-    key,
-  )
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
-  const MAGIC_SECRET = Deno.env.get('MAGIC_LINK_SECRET')!
+  const SITE_URL = Deno.env.get('PUBLIC_SITE_URL') ?? 'https://lesnoces.net'
+
 
   // --- Auth ---
   const authHeader = req.headers.get('Authorization')
@@ -167,18 +153,6 @@ Deno.serve(async (req) => {
     .eq('id', demande_id)
     .in('statut', ['nouveau', 'lu'])
 
-  // --- Magic token ---
-  let magic = ''
-  try {
-    magic = await signMagicToken(MAGIC_SECRET, {
-      demande_id,
-      sub: expediteur_type === 'prestataire' ? (demande.profile_id ?? clientEmail) : presta.user_id,
-      action: 'reply',
-    })
-  } catch (e) {
-    console.error('Magic token error', e)
-  }
-
   // --- Email dispatch ---
   const messageExtrait = contenu.length > 280 ? contenu.slice(0, 280) + '…' : contenu
   let templateName: string | null = null
@@ -193,7 +167,7 @@ Deno.serve(async (req) => {
       clientPrenom,
       prestataireNom: presta.nom_commercial,
       messageExtrait,
-      lienMessagerie: `https://lesnoces.net/mon-espace/messages/${demande_id}?token=${magic}`,
+      lienMessagerie: `${SITE_URL}/mon-compte/messagerie?demande=${demande_id}`,
     }
   } else if (expediteur_type === 'prestataire' && !demande.profile_id) {
     // CAS B : client sans compte — pas d'accès invité côté plateforme.
@@ -207,7 +181,7 @@ Deno.serve(async (req) => {
       prestataireEmail: presta.email_contact,
       prestataireTelephone: presta.telephone,
       messageExtrait,
-      lienInscription: `https://lesnoces.net/inscription?email=${encodeURIComponent(clientEmail ?? '')}&demande_id=${demande_id}`,
+      lienInscription: `${SITE_URL}/inscription?email=${encodeURIComponent(clientEmail ?? '')}&demande_id=${demande_id}`,
     }
   } else if (expediteur_type === 'visiteur') {
     // CAS C : notification prestataire
@@ -217,9 +191,10 @@ Deno.serve(async (req) => {
       prestataireNom: presta.nom_commercial,
       clientNom: demande.nom_contact ?? clientPrenom ?? 'Un client',
       messageExtrait,
-      lienMessagerie: `https://lesnoces.net/pro/messages/${demande_id}?token=${magic}`,
+      lienMessagerie: `${SITE_URL}/espace-pro/demandes?demande=${demande_id}`,
     }
   }
+
 
   let emailError = false
   if (templateName && recipientEmail) {
