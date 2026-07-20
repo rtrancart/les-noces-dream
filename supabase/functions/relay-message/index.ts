@@ -196,14 +196,17 @@ Deno.serve(async (req) => {
       lienMessagerie: `https://lesnoces.net/mon-espace/messages/${demande_id}?token=${magic}`,
     }
   } else if (expediteur_type === 'prestataire' && !demande.profile_id) {
-    // CAS B : client sans compte
+    // CAS B : client sans compte — pas d'accès invité côté plateforme.
+    // On affiche les coordonnées du prestataire pour une réponse hors plateforme,
+    // et on propose la création de compte pour retrouver l'historique.
     templateName = 'notif_reponse_client_sans_compte'
     recipientEmail = clientEmail
     templateData = {
       clientPrenom,
       prestataireNom: presta.nom_commercial,
+      prestataireEmail: presta.email_contact,
+      prestataireTelephone: presta.telephone,
       messageExtrait,
-      lienMagique: `https://lesnoces.net/messagerie/${demande_id}?token=${magic}`,
       lienInscription: `https://lesnoces.net/inscription?email=${encodeURIComponent(clientEmail ?? '')}&demande_id=${demande_id}`,
     }
   } else if (expediteur_type === 'visiteur') {

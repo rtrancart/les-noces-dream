@@ -1,6 +1,6 @@
 import * as React from 'npm:react@18.3.1'
 import {
-  Body, Button, Container, Font, Head, Heading, Html, Img, Preview, Section, Text,
+  Body, Button, Container, Font, Head, Heading, Html, Img, Link, Preview, Section, Text,
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
@@ -10,16 +10,18 @@ const LOGO_URL = 'https://egbohbwiywgyyculswvf.supabase.co/storage/v1/object/pub
 interface Props {
   clientPrenom?: string
   prestataireNom?: string
+  prestataireEmail?: string
+  prestataireTelephone?: string | null
   messageExtrait?: string
-  lienMagique?: string
   lienInscription?: string
 }
 
 const Email = ({
   clientPrenom,
   prestataireNom,
+  prestataireEmail,
+  prestataireTelephone,
   messageExtrait,
-  lienMagique,
   lienInscription,
 }: Props) => (
   <Html lang="fr" dir="ltr">
@@ -36,6 +38,10 @@ const Email = ({
 
         <Heading style={h1}>Vous avez un nouveau message</Heading>
 
+        <Text style={text}>
+          Bonjour{clientPrenom ? ` ${clientPrenom}` : ''}, {prestataireNom ?? 'un prestataire'} vient de répondre à votre demande. Vous pouvez lui répondre directement par email ou par téléphone grâce aux coordonnées ci-dessous.
+        </Text>
+
         {messageExtrait && (
           <Section style={card}>
             <Text style={cardLabel}>{prestataireNom ?? 'Un prestataire'}</Text>
@@ -43,17 +49,22 @@ const Email = ({
           </Section>
         )}
 
-        <Text style={text}>
-          Bonjour{clientPrenom ? ` ${clientPrenom}` : ''}, {prestataireNom ?? 'un prestataire'} vient de répondre à votre demande de devis.
-        </Text>
-
-        <Section style={ctaWrapper}>
-          <Button href={lienMagique ?? '#'} style={button}>
-            Lire et répondre
-          </Button>
-          <Text style={hint}>
-            Lien sécurisé, valable 30 jours. Aucun mot de passe nécessaire.
+        <Section style={coordCard}>
+          <Text style={coordTitle}>
+            Répondre à {prestataireNom ?? 'ce prestataire'}
           </Text>
+          {prestataireEmail && (
+            <Text style={coordLine}>
+              <span style={coordLabelInline}>Email :</span>{' '}
+              <Link href={`mailto:${prestataireEmail}`} style={coordLink}>{prestataireEmail}</Link>
+            </Text>
+          )}
+          {prestataireTelephone && (
+            <Text style={coordLine}>
+              <span style={coordLabelInline}>Téléphone :</span>{' '}
+              <Link href={`tel:${prestataireTelephone.replace(/\s+/g, '')}`} style={coordLink}>{prestataireTelephone}</Link>
+            </Text>
+          )}
         </Section>
 
         <Section style={separator}>
@@ -63,7 +74,7 @@ const Email = ({
         <Section style={signupCard}>
           <Text style={signupTitle}>Créez votre compte gratuit</Text>
           <Text style={signupText}>
-            Pour retrouver tous vos échanges et organiser votre mariage en un seul endroit.
+            Retrouvez l'historique de toutes vos conversations avec vos prestataires et centralisez l'organisation de votre mariage en un seul endroit.
           </Text>
           <Button href={lienInscription ?? 'https://lesnoces.net/inscription'} style={buttonOutline}>
             Créer mon compte
@@ -86,8 +97,9 @@ export const template = {
   previewData: {
     clientPrenom: 'Sophie',
     prestataireNom: 'Atelier Marie',
+    prestataireEmail: 'contact@atelier-marie.fr',
+    prestataireTelephone: '06 12 34 56 78',
     messageExtrait: 'Bonjour Sophie, merci pour votre demande ! Je serais ravie de vous accompagner pour votre mariage...',
-    lienMagique: 'https://lesnoces.net/messagerie/abc123token',
     lienInscription: 'https://lesnoces.net/inscription',
   },
 } satisfies TemplateEntry
@@ -101,10 +113,12 @@ const text = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '0
 const card = { backgroundColor: '#FAF7F1', padding: '28px 24px', borderRadius: '6px', border: '1px solid #E8E0D0', margin: '0 28px 24px' }
 const cardLabel = { fontSize: '12px', textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: '#A57D27', margin: '0 0 12px', fontWeight: 'bold', fontFamily: 'Montserrat, Arial, sans-serif' }
 const messageStyle = { fontSize: '17px', color: '#2C3E50', lineHeight: '1.6', margin: 0, fontFamily: 'Playfair Display, Georgia, serif', whiteSpace: 'pre-wrap' as const }
-const ctaWrapper = { textAlign: 'center' as const, margin: '32px 28px' }
-const button = { backgroundColor: '#A57D27', color: '#ffffff', padding: '12px 28px', borderRadius: '2px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' as const, fontFamily: 'Montserrat, Arial, sans-serif' }
+const coordCard = { padding: '24px', backgroundColor: '#ffffff', border: '1px solid #E8E0D0', borderRadius: '6px', margin: '0 28px 24px' }
+const coordTitle = { fontFamily: 'Playfair Display, Georgia, serif', fontSize: '18px', color: '#2C3E50', fontWeight: 'normal', margin: '0 0 12px' }
+const coordLine = { fontSize: '15px', color: '#2C3E50', margin: '6px 0', fontFamily: 'Montserrat, Arial, sans-serif', lineHeight: '1.5' }
+const coordLabelInline = { color: '#A57D27', fontWeight: 'bold' as const, fontSize: '13px', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
+const coordLink = { color: '#A57D27', textDecoration: 'underline' }
 const buttonOutline = { backgroundColor: 'transparent', color: '#A57D27', padding: '10px 24px', borderRadius: '2px', fontSize: '12px', fontWeight: 'bold', textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' as const, border: '1px solid #A57D27', fontFamily: 'Montserrat, Arial, sans-serif' }
-const hint = { fontSize: '12px', color: '#999', margin: '12px 0 0', fontFamily: 'Montserrat, Arial, sans-serif' }
 const separator = { textAlign: 'center' as const, margin: '24px 0' }
 const separatorText = { fontSize: '11px', color: '#A57D27', letterSpacing: '0.15em', margin: 0, fontFamily: 'Montserrat, Arial, sans-serif' }
 const signupCard = { textAlign: 'center' as const, padding: '24px', backgroundColor: '#FAF7F1', borderRadius: '4px', margin: '0 28px 24px' }
