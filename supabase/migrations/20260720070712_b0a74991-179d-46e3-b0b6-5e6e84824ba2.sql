@@ -1,0 +1,1 @@
+ALTER TABLE public.prestataires ADD COLUMN IF NOT EXISTS relance_decouverte_j7_envoye_le timestamptz;

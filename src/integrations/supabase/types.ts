@@ -1447,6 +1447,7 @@ export type Database = {
           prix_max: number | null
           raison_sociale: string | null
           region: string
+          relance_decouverte_j7_envoye_le: string | null
           relances_envoyees: number
           representant_nom: string | null
           representant_prenom: string | null
@@ -1515,6 +1516,7 @@ export type Database = {
           prix_max?: number | null
           raison_sociale?: string | null
           region: string
+          relance_decouverte_j7_envoye_le?: string | null
           relances_envoyees?: number
           representant_nom?: string | null
           representant_prenom?: string | null
@@ -1583,6 +1585,7 @@ export type Database = {
           prix_max?: number | null
           raison_sociale?: string | null
           region?: string
+          relance_decouverte_j7_envoye_le?: string | null
           relances_envoyees?: number
           representant_nom?: string | null
           representant_prenom?: string | null
