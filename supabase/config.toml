@@ -39,5 +39,7 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = true
   [functions.cron-relance-impaye-j7]
     verify_jwt = false
+  [functions.cron-relance-decouverte-j7]
+    verify_jwt = false
   [functions.stripe-webhook]
     verify_jwt = false
