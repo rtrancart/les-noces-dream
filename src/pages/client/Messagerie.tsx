@@ -88,7 +88,18 @@ export default function ClientMessagerie() {
     fetchDemandes();
   }, [fetchDemandes]);
 
+  // Deep-link ?demande=… : pré-sélection tolérante (une seule fois, silencieuse si absent).
+  useEffect(() => {
+    if (deepLinkHandled || loading) return;
+    const target = searchParams.get("demande");
+    if (target && demandes.some((d) => d.id === target)) {
+      setSelectedId(target);
+    }
+    setDeepLinkHandled(true);
+  }, [loading, demandes, searchParams, deepLinkHandled]);
+
   const selected = demandes.find((d) => d.id === selectedId);
+
 
   if (loading) {
     return (
