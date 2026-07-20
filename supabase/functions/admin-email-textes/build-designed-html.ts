@@ -32,10 +32,13 @@ type Block =
   | { t: 'quote'; text: string }
   | { t: 'ul'; items: string[] }
   | { t: 'ol'; items: [string, string?][] }
+  | { t: 'checks'; items: [string, string][] }
   | { t: 'info'; rows: [string, string][] }
   | { t: 'stats'; items: [string, string][] }
   | { t: 'btn'; label: string; href: string }
   | { t: 'ghost'; label: string; href: string }
+  | { t: 'hr' }
+  | { t: 'italic'; text: string }
 
 function eyebrow(text: string) {
   return `<p style="margin:0 0 12px;font-family:${SANS};font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:${C.or};font-weight:600">${text}</p>`
@@ -82,6 +85,17 @@ function ghost(label: string, href: string) {
   return `<div style="margin:0 0 20px"><a href="${href}" style="display:inline-block;padding:12px 26px;font-family:${SANS};font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:${C.petrole};text-decoration:none;border:1px solid ${C.petrole};border-radius:2px">${label}</a></div>`
 }
 
+function checks(items: [string, string][]) {
+  const rows = items.map(([label, desc]) => `<tr><td valign="top" width="22" style="padding:0 10px 12px 0;font-family:${SANS};font-size:15px;color:${C.or};font-weight:700;line-height:1.5">✓</td><td style="padding:0 0 12px;font-family:${SANS};font-size:14.5px;line-height:1.6;color:${C.text}"><b style="color:${C.abysse}">${label}</b> — ${desc}</td></tr>`).join('')
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px">${rows}</table>`
+}
+function hr() {
+  return `<hr style="border:0;border-top:1px solid ${C.border};margin:28px 0 20px" />`
+}
+function italic(text: string) {
+  return `<p style="margin:20px 0 0;font-family:${SERIF};font-style:italic;font-size:14px;line-height:1.6;color:${C.muted}">${text}</p>`
+}
+
 function renderBlock(b: Block): string {
   switch (b.t) {
     case 'eyebrow': return eyebrow(b.text)
@@ -93,10 +107,13 @@ function renderBlock(b: Block): string {
     case 'quote': return quote(b.text)
     case 'ul': return ul(b.items)
     case 'ol': return ol(b.items)
+    case 'checks': return checks(b.items)
     case 'info': return info(b.rows)
     case 'stats': return stats(b.items)
     case 'btn': return btn(b.label, b.href)
     case 'ghost': return ghost(b.label, b.href)
+    case 'hr': return hr()
+    case 'italic': return italic(b.text)
   }
 }
 
@@ -119,7 +136,32 @@ export interface DesignedTemplate {
 
 export const DESIGNED_TEMPLATES: Record<string, DesignedTemplate> = {
 
-
+  // Relance J+7 Tunnel A (prestataire invité, jamais connecté)
+  relance_decouverte_j7: {
+    subject: 'Votre profil vous attend toujours, {{prenom}}',
+    html: compose(
+      "Votre profil est prêt, et vos 90 jours n'ont pas encore commencé.",
+      [
+        { t: 'eyebrow', text: 'Sélection LesNoces' },
+        { t: 'h', text: 'Votre place vous attend toujours' },
+        { t: 'p', text: 'Bonjour {{prenom}},' },
+        { t: 'p', text: 'Il y a une semaine, nous vous annoncions que <b>{{nom_commercial}}</b> faisait partie des prestataires que nous avons sélectionnés pour LesNoces.net. Vous n\'avez peut-être simplement pas eu le temps d\'y jeter un œil.' },
+        { t: 'p', text: 'Votre profil a été créé par nos soins, il n\'attend plus que vous pour être finalisé et visible auprès de milliers de clients.' },
+        { t: 'note', text: '✨ Il vous suffit de vous connecter, de compléter votre profil et de signer notre Charte de Qualité pour bénéficier de <b>90 jours de visibilité gratuits</b>.' },
+        { t: 'btn', label: 'Découvrir mon espace', href: '{{magic_link}}' },
+        { t: 'hr' },
+        { t: 'eyebrow', text: 'Pourquoi LesNoces est différent' },
+        { t: 'checks', items: [
+          ['Une sélection à la main', "pas d'inscription automatique, pas d'annuaire ouvert. Chaque professionnel est étudié individuellement."],
+          ["Des couples qui viennent pour l'exigence", 'ils savent que chaque prestataire présenté a été validé avant d\'apparaître.'],
+          ['Une Charte Qualité partagée', 'le socle commun qui protège votre positionnement autant que le nôtre.'],
+          ['90 jours pour juger sur pièces', 'sans carte bancaire, sans engagement.'],
+        ]},
+        { t: 'italic', text: 'Une question avant de vous lancer ? Répondez simplement à cet email, ou appelez-nous au 02 96 01 00 17 — nous prenons le temps d\'échanger avec chaque professionnel.' },
+      ],
+      'nathalie'
+    ),
+  },
 
   // A-01
   invitation_prestataire: {
