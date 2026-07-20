@@ -73,48 +73,57 @@ export const SHELL_META: Record<string, { preview: string; signer: Signer }> = {
   suspension_charte_exemption_expiree: { preview: 'Signature de la charte requise', signer: 'nathalie' },
 }
 
+// URL de base du site pour les liens du header. Lue depuis PUBLIC_SITE_URL
+// (uniformisée avec le reste des Edge Functions). Fallback sur le domaine prod.
+const SITE_URL = (typeof Deno !== 'undefined' ? Deno.env.get('PUBLIC_SITE_URL') : undefined) ?? 'https://lesnoces.net'
+
 // -------------------- Blocs de coquille --------------------
 function headerBlock() {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.abysse}"><tr><td align="center" style="padding:36px 30px 24px">
-  <img src="${BRAND_ASSETS.wordmarkWhite}" width="180" alt="LesNoces.net" style="display:block;margin:0 auto 12px;height:auto;border:0" />
-  <div style="font-family:${SANS};font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:${C.champagne};font-weight:600">Mariage &amp; événementiel d'exception</div>
-</td></tr>
-<tr><td align="center" style="padding:14px 20px 16px;border-top:1px solid rgba(255,255,255,.14);font-family:${SANS}">
-  <a href="https://lesnoces.net/" style="color:#e8e0cf;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Accueil</a>
-  <span style="color:rgba(255,255,255,.35);font-size:8px">◆</span>
-  <a href="https://lesnoces.net/prestataires" style="color:#e8e0cf;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Trouver un prestataire</a>
-  <span style="color:rgba(255,255,255,.35);font-size:8px">◆</span>
-  <a href="https://lesnoces.net/connexion" style="color:#e8e0cf;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Mon espace</a>
-</td></tr></table>`
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.champagne}">
+  <tr><td align="center" style="padding:36px 30px 0">
+    <img src="${BRAND_ASSETS.ringGold}" width="130" alt="LesNoces.net" style="display:block;margin:0 auto 18px;height:auto;border:0" />
+    <div style="font-family:${SANS};font-size:9.5px;letter-spacing:.32em;text-transform:uppercase;color:#FBF3E1;font-weight:600;margin:0 0 22px">Mariage &amp; événementiel d'exception</div>
+  </td></tr>
+  <tr><td align="center" style="padding:15px 20px 17px;border-top:1px solid rgba(255,255,255,.28);font-family:${SANS}">
+    <a href="${SITE_URL}/" style="color:#FBF3E1;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Accueil</a>
+    <span style="color:rgba(255,255,255,.45);font-size:8px">◆</span>
+    <a href="${SITE_URL}/recherche" style="color:#FBF3E1;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Trouver un prestataire</a>
+    <span style="color:rgba(255,255,255,.45);font-size:8px">◆</span>
+    <a href="${SITE_URL}/connexion" style="color:#FBF3E1;text-decoration:none;font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;margin:0 9px">Mon espace</a>
+  </td></tr>
+</table>`
 }
 
 function footerBlock() {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.abysse}"><tr><td align="center" style="padding:32px 40px 28px;font-family:${SANS};color:#b7b1a6">
-  <img src="${BRAND_ASSETS.wordmarkWhite}" width="140" alt="LesNoces.net" style="display:block;margin:0 auto 12px;height:auto;border:0" />
-  <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:${C.champagne};margin:0 0 16px">Prestataires sélectionnés à la main</div>
-  <div style="font-size:12.5px;color:#cbc5ba;line-height:1.8">📞 02 96 01 00 17 — du lundi au vendredi, 10h à 13h<br />📧 <a href="mailto:contact@lesnoces.net" style="color:#cbc5ba;text-decoration:none">contact@lesnoces.net</a></div>
-  <div style="height:1px;background:rgba(255,255,255,.08);margin:20px 0"></div>
-  <div style="font-size:10.5px;color:#6f6a62;line-height:1.7">LesNoces.net — Marketplace de prestataires haut de gamme.</div>
-</td></tr></table>`
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.abysse}">
+  <tr><td align="center" style="padding:34px 40px 30px;font-family:${SANS};color:#b7b1a6">
+    <img src="${BRAND_ASSETS.wordmarkWhite}" width="140" alt="LesNoces.net" style="display:block;margin:0 auto 14px;height:auto;border:0" />
+    <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:${C.champagne};margin:0 0 18px">Prestataires sélectionnés à la main</div>
+    <div style="font-size:12.5px;color:#cbc5ba;line-height:1.8">📞 02 96 01 00 17 — du lundi au vendredi, 10h à 13h<br />📧 <a href="mailto:contact@lesnoces.net" style="color:#cbc5ba;text-decoration:none">contact@lesnoces.net</a></div>
+    <div style="height:1px;background:rgba(255,255,255,.08);margin:20px 0"></div>
+    <div style="font-size:10.5px;color:#6f6a62;line-height:1.7">
+      LesNoces.net — Marketplace de prestataires haut de gamme.<br />
+      Email transactionnel lié à votre activité sur LesNoces.net.
+    </div>
+  </td></tr>
+</table>`
 }
 
 function signatureBlock(signer: Signer) {
   if (signer === 'none') return ''
   if (signer === 'nathalie') {
-    return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:28px;border-top:1px solid ${C.champagne}"><tr><td style="padding-top:20px;font-family:${SANS}">
+    return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:24px;border-top:1px solid ${C.champagne};width:100%"><tr><td style="padding-top:20px;font-family:${SANS}">
   <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-    <td width="56" style="width:56px;vertical-align:top">
-      <div style="width:56px;height:56px;line-height:56px;text-align:center;background:${C.or};color:#FFFFFF;font-family:${SERIF};font-style:italic;font-size:28px;border-radius:50%">N</div>
+    <td width="56" style="width:56px">
+      <img src="${BRAND_ASSETS.signatureNathalie}" width="56" height="56" alt="Nathalie" style="display:block;border:0;border-radius:50%" />
     </td>
-    <td style="padding-left:16px;vertical-align:middle">
+    <td style="padding-left:16px">
       <div style="font-size:13px;color:${C.muted}">Bien à vous,</div>
-      <div style="font-family:${SERIF};font-style:italic;font-size:24px;color:${C.or};line-height:1.1">Nathalie</div>
+      <div style="font-family:${SERIF};font-style:italic;font-size:24px;color:${C.or};line-height:1">Nathalie</div>
       <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:${C.petrole};font-weight:600;margin-top:4px">Fondatrice</div>
     </td>
   </tr></table>
-  <div style="font-size:12px;color:${C.muted};margin-top:12px">📞 02 96 01 00 17 · 📧 <a href="mailto:contact@lesnoces.net" style="color:${C.or};text-decoration:none">contact@lesnoces.net</a></div>
   <div style="font-family:${SERIF};font-style:italic;font-size:13px;color:#9b9384;margin-top:8px">« Nous sélectionnons ceux que nous serions heureux de recommander à nos propres mariés. »</div>
-  <img src="${BRAND_ASSETS.wordmarkAbysse}" height="16" alt="LesNoces.net" style="display:block;margin-top:14px;border:0" />
 </td></tr></table>`
   }
   // equipe
@@ -122,7 +131,6 @@ function signatureBlock(signer: Signer) {
   <div style="font-size:13px;color:${C.muted}">À très bientôt,</div>
   <div style="font-family:${SERIF};font-style:italic;font-size:22px;color:${C.or};line-height:1.1;margin-top:2px">L'équipe LesNoces</div>
   <div style="font-size:12px;color:${C.muted};margin-top:10px">📞 02 96 01 00 17 · 📧 <a href="mailto:contact@lesnoces.net" style="color:${C.or};text-decoration:none">contact@lesnoces.net</a></div>
-  <img src="${BRAND_ASSETS.wordmarkAbysse}" height="16" alt="LesNoces.net" style="display:block;margin-top:14px;border:0" />
 </td></tr></table>`
 }
 
