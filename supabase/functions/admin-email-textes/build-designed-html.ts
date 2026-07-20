@@ -136,7 +136,32 @@ export interface DesignedTemplate {
 
 export const DESIGNED_TEMPLATES: Record<string, DesignedTemplate> = {
 
-
+  // Relance J+7 Tunnel A (prestataire invité, jamais connecté)
+  relance_decouverte_j7: {
+    subject: 'Votre profil vous attend toujours, {{prenom}}',
+    html: compose(
+      "Votre profil est prêt, et vos 90 jours n'ont pas encore commencé.",
+      [
+        { t: 'eyebrow', text: 'Sélection LesNoces' },
+        { t: 'h', text: 'Votre place vous attend toujours' },
+        { t: 'p', text: 'Bonjour {{prenom}},' },
+        { t: 'p', text: 'Il y a une semaine, nous vous annoncions que <b>{{nom_commercial}}</b> faisait partie des prestataires que nous avons sélectionnés pour LesNoces.net. Vous n\'avez peut-être simplement pas eu le temps d\'y jeter un œil.' },
+        { t: 'p', text: 'Votre profil a été créé par nos soins, il n\'attend plus que vous pour être finalisé et visible auprès de milliers de clients.' },
+        { t: 'note', text: '✨ Il vous suffit de vous connecter, de compléter votre profil et de signer notre Charte de Qualité pour bénéficier de <b>90 jours de visibilité gratuits</b>.' },
+        { t: 'btn', label: 'Découvrir mon espace', href: '{{magic_link}}' },
+        { t: 'hr' },
+        { t: 'eyebrow', text: 'Pourquoi LesNoces est différent' },
+        { t: 'checks', items: [
+          ['Une sélection à la main', "pas d'inscription automatique, pas d'annuaire ouvert. Chaque professionnel est étudié individuellement."],
+          ["Des couples qui viennent pour l'exigence", 'ils savent que chaque prestataire présenté a été validé avant d\'apparaître.'],
+          ['Une Charte Qualité partagée', 'le socle commun qui protège votre positionnement autant que le nôtre.'],
+          ['90 jours pour juger sur pièces', 'sans carte bancaire, sans engagement.'],
+        ]},
+        { t: 'italic', text: 'Une question avant de vous lancer ? Répondez simplement à cet email, ou appelez-nous au 02 96 01 00 17 — nous prenons le temps d\'échanger avec chaque professionnel.' },
+      ],
+      'nathalie'
+    ),
+  },
 
   // A-01
   invitation_prestataire: {
