@@ -126,6 +126,13 @@ function signatureBlock(signer: Signer) {
   <div style="font-family:${SERIF};font-style:italic;font-size:13px;color:#9b9384;margin-top:8px">« Nous sélectionnons ceux que nous serions heureux de recommander à nos propres mariés. »</div>
 </td></tr></table>`
   }
+  // equipe
+  return `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:28px;border-top:1px solid ${C.champagne}"><tr><td style="padding-top:20px;font-family:${SANS}">
+  <div style="font-size:13px;color:${C.muted}">À très bientôt,</div>
+  <div style="font-family:${SERIF};font-style:italic;font-size:22px;color:${C.or};line-height:1.1;margin-top:2px">L'équipe LesNoces</div>
+  <div style="font-size:12px;color:${C.muted};margin-top:10px">📞 02 96 01 00 17 · 📧 <a href="mailto:contact@lesnoces.net" style="color:${C.or};text-decoration:none">contact@lesnoces.net</a></div>
+</td></tr></table>`
+}
 
 // -------------------- API publique --------------------
 
