@@ -64,9 +64,11 @@ const closedStatuses: { value: ClosedStatus; label: string }[] = [
 
 export default function PrestataireDemandes() {
   const { prestataire, loading: loadingPrest } = useSharedPrestataire();
+  const [searchParams] = useSearchParams();
   const [demandes, setDemandes] = useState<Demande[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [deepLinkHandled, setDeepLinkHandled] = useState(false);
 
   const fetchDemandes = useCallback(async () => {
     if (!prestataire?.id) return;
@@ -96,6 +98,17 @@ export default function PrestataireDemandes() {
   useEffect(() => {
     fetchDemandes();
   }, [fetchDemandes]);
+
+  // Deep-link ?demande=… : pré-sélection tolérante (une seule fois, silencieuse si absent).
+  useEffect(() => {
+    if (deepLinkHandled || loading) return;
+    const target = searchParams.get("demande");
+    if (target && demandes.some((d) => d.id === target)) {
+      setSelectedId(target);
+    }
+    setDeepLinkHandled(true);
+  }, [loading, demandes, searchParams, deepLinkHandled]);
+
 
   // Auto-mark as "lu" when opening a "nouveau" demande
   useEffect(() => {
