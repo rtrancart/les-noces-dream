@@ -246,7 +246,19 @@ export default function Emails() {
                       <div className="bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">Aperçu</div>
                       <iframe
                         title={`preview-${it.templateName}`}
-                        srcDoc={/<!doctype|<html/i.test(getCorps(it)) ? getCorps(it) : `${it.shellHead ?? ""}${getCorps(it)}${it.shellFoot ?? ""}`}
+                        srcDoc={(() => {
+                          const corps = getCorps(it);
+                          const isFullDoc = /<!doctype|<html/i.test(corps);
+                          let inner = corps;
+                          if (isFullDoc) {
+                            const m = corps.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+                            inner = (m ? m[1] : corps)
+                              .replace(/<style[\s\S]*?<\/style>/gi, "")
+                              .replace(/<script[\s\S]*?<\/script>/gi, "")
+                              .trim();
+                          }
+                          return `${it.shellHead ?? ""}${inner}${it.shellFoot ?? ""}`;
+                        })()}
                         className="w-full h-[500px] bg-white"
                       />
                     </div>

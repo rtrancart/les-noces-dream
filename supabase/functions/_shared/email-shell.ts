@@ -149,6 +149,18 @@ export function isFullHtmlDoc(html: string): boolean {
   return s.startsWith('<!doctype') || s.startsWith('<html')
 }
 
+// Extrait le contenu de <body>…</body> d'un document HTML complet
+// (rendu React Email), en retirant <style>/<script>. Permet d'appliquer la
+// coquille commune même quand le corps stocké est un doc complet.
+export function extractBodyInner(html: string): string {
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+  const inner = bodyMatch ? bodyMatch[1] : html
+  return inner
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .trim()
+}
+
 function metaFor(templateName: string): { preview: string; signer: Signer } {
   return SHELL_META[templateName] ?? { preview: '', signer: 'none' }
 }
@@ -169,7 +181,7 @@ export function renderShellParts(templateName: string): { head: string; foot: st
 }
 
 export function wrapWithShell(templateName: string, bodyHtml: string): string {
-  if (isFullHtmlDoc(bodyHtml)) return bodyHtml
   const { head, foot } = renderShellParts(templateName)
-  return head + bodyHtml + foot
+  const inner = isFullHtmlDoc(bodyHtml) ? extractBodyInner(bodyHtml) : bodyHtml
+  return head + inner + foot
 }
