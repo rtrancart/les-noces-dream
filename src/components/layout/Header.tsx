@@ -57,7 +57,7 @@ export default function Header() {
               <img
                 src={logoSrc}
                 alt="LesNoces.net"
-                className="h-10 md:h-[52px] w-auto brightness-0 invert"
+                className="h-[52px] md:h-[68px] w-auto brightness-0 invert"
               />
             </Link>
 
