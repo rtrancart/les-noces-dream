@@ -35,6 +35,10 @@ export const SHELL_META: Record<string, { preview: string; signer: Signer }> = {
     preview: "Votre profil est prêt, et vos 90 jours n'ont pas encore commencé.",
     signer: 'nathalie',
   },
+  dernier_contact_tunnel_a: {
+    preview: 'Un dernier mot avant de vous laisser tranquille.',
+    signer: 'nathalie',
+  },
   notif_nouvelle_soumission_fiche: {
     preview: 'Un prestataire vient de soumettre sa fiche pour validation',
     signer: 'none',
