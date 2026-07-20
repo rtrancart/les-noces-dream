@@ -1413,6 +1413,7 @@ export type Database = {
           date_premiere_publication: string | null
           demande_reactivation_le: string | null
           demande_reactivation_message: string | null
+          dernier_contact_tunnel_a_envoye_le: string | null
           description: string | null
           description_courte: string | null
           email_contact: string | null
@@ -1482,6 +1483,7 @@ export type Database = {
           date_premiere_publication?: string | null
           demande_reactivation_le?: string | null
           demande_reactivation_message?: string | null
+          dernier_contact_tunnel_a_envoye_le?: string | null
           description?: string | null
           description_courte?: string | null
           email_contact?: string | null
@@ -1551,6 +1553,7 @@ export type Database = {
           date_premiere_publication?: string | null
           demande_reactivation_le?: string | null
           demande_reactivation_message?: string | null
+          dernier_contact_tunnel_a_envoye_le?: string | null
           description?: string | null
           description_courte?: string | null
           email_contact?: string | null
