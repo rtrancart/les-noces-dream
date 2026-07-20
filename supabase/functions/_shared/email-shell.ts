@@ -181,7 +181,7 @@ export function renderShellParts(templateName: string): { head: string; foot: st
 }
 
 export function wrapWithShell(templateName: string, bodyHtml: string): string {
-  if (isFullHtmlDoc(bodyHtml)) return bodyHtml
   const { head, foot } = renderShellParts(templateName)
-  return head + bodyHtml + foot
+  const inner = isFullHtmlDoc(bodyHtml) ? extractBodyInner(bodyHtml) : bodyHtml
+  return head + inner + foot
 }
