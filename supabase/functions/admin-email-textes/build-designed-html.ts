@@ -163,6 +163,29 @@ export const DESIGNED_TEMPLATES: Record<string, DesignedTemplate> = {
     ),
   },
 
+  // Dernier contact Tunnel A (J+14) — aucun email suivant après celui-ci.
+  dernier_contact_tunnel_a: {
+    subject: 'Dernier message concernant votre profil',
+    html: compose(
+      'Un dernier mot avant de vous laisser tranquille.',
+      [
+        { t: 'eyebrow', text: 'Dernier message' },
+        { t: 'h', text: "Votre profil n'attend que vous" },
+        { t: 'p', text: 'Bonjour {{prenom}},' },
+        { t: 'p', text: "C'est notre dernier message — nous ne souhaitons pas vous solliciter davantage." },
+        { t: 'p', text: 'Votre profil <b>{{nom_commercial}}</b> a été créé à votre nom il y a deux semaines, après que notre équipe a étudié votre travail et choisi de le retenir. Il est toujours en attente, et nous ne le publierons jamais sans votre accord.' },
+        { t: 'note', text: 'Deux possibilités, et les deux nous conviennent : vous prenez quelques minutes pour découvrir votre espace, ou vous nous dites que ce n\'est pas le moment — nous retirerons votre profil.' },
+        { t: 'btn', label: 'Découvrir mon espace', href: '{{magic_link}}' },
+        { t: 'small', text: 'Vous préférez que nous retirions votre profil ? <a href="{{lien_retrait}}" style="color:#A57D27;text-decoration:underline">Nous en informer</a>.' },
+        { t: 'hr' },
+        { t: 'eyebrow', text: 'Ce que vous laissez de côté' },
+        { t: 'p', text: 'Une visibilité auprès de couples qui cherchent des prestataires de votre niveau, 90 jours entièrement gratuits pour l\'éprouver, et une sélection dont l\'exigence — validée par notre Charte Qualité — fait toute la valeur.' },
+        { t: 'italic', text: 'Au plaisir peut-être de vous accueillir prochainement parmi les professionnels sélectionnés par LesNoces.net.' },
+      ],
+      'nathalie'
+    ),
+  },
+
   // A-01
   invitation_prestataire: {
     subject: 'LesNoces.net vous a sélectionné pour rejoindre notre marketplace',

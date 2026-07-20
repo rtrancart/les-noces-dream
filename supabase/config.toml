@@ -41,5 +41,7 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = false
   [functions.cron-relance-decouverte-j7]
     verify_jwt = false
+  [functions.cron-dernier-contact-tunnel-a]
+    verify_jwt = false
   [functions.stripe-webhook]
     verify_jwt = false

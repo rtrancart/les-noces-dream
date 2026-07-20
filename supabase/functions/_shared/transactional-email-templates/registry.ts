@@ -17,6 +17,7 @@ import { template as notifReponsePresta } from './notif-reponse-presta.tsx'
 import { template as invitationPrestataire } from './invitation-prestataire.tsx'
 import { template as relanceSignatureCharte } from './relance-signature-charte.tsx'
 import { template as relanceDecouverteJ7 } from './relance-decouverte-j7.tsx'
+import { template as dernierContactTunnelA } from './dernier-contact-tunnel-a.tsx'
 import { template as notifNouvelleVersionCharte } from './notif-nouvelle-version-charte.tsx'
 import { template as demandeReactivation } from './demande-reactivation.tsx'
 import { template as notifNouvelleSoumissionFiche } from './notif-nouvelle-soumission-fiche.tsx'
@@ -35,6 +36,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'invitation_prestataire': invitationPrestataire,
   'relance_signature_charte': relanceSignatureCharte,
   'relance_decouverte_j7': relanceDecouverteJ7,
+  'dernier_contact_tunnel_a': dernierContactTunnelA,
   'notif_nouvelle_version_charte': notifNouvelleVersionCharte,
   'demande_reactivation': demandeReactivation,
   'notif_nouvelle_soumission_fiche': notifNouvelleSoumissionFiche,
