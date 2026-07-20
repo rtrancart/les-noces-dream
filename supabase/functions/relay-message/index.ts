@@ -153,18 +153,6 @@ Deno.serve(async (req) => {
     .eq('id', demande_id)
     .in('statut', ['nouveau', 'lu'])
 
-  // --- Magic token ---
-  let magic = ''
-  try {
-    magic = await signMagicToken(MAGIC_SECRET, {
-      demande_id,
-      sub: expediteur_type === 'prestataire' ? (demande.profile_id ?? clientEmail) : presta.user_id,
-      action: 'reply',
-    })
-  } catch (e) {
-    console.error('Magic token error', e)
-  }
-
   // --- Email dispatch ---
   const messageExtrait = contenu.length > 280 ? contenu.slice(0, 280) + '…' : contenu
   let templateName: string | null = null
@@ -179,7 +167,7 @@ Deno.serve(async (req) => {
       clientPrenom,
       prestataireNom: presta.nom_commercial,
       messageExtrait,
-      lienMessagerie: `https://lesnoces.net/mon-espace/messages/${demande_id}?token=${magic}`,
+      lienMessagerie: `${SITE_URL}/mon-compte/messagerie?demande=${demande_id}`,
     }
   } else if (expediteur_type === 'prestataire' && !demande.profile_id) {
     // CAS B : client sans compte — pas d'accès invité côté plateforme.
@@ -193,7 +181,7 @@ Deno.serve(async (req) => {
       prestataireEmail: presta.email_contact,
       prestataireTelephone: presta.telephone,
       messageExtrait,
-      lienInscription: `https://lesnoces.net/inscription?email=${encodeURIComponent(clientEmail ?? '')}&demande_id=${demande_id}`,
+      lienInscription: `${SITE_URL}/inscription?email=${encodeURIComponent(clientEmail ?? '')}&demande_id=${demande_id}`,
     }
   } else if (expediteur_type === 'visiteur') {
     // CAS C : notification prestataire
@@ -203,9 +191,10 @@ Deno.serve(async (req) => {
       prestataireNom: presta.nom_commercial,
       clientNom: demande.nom_contact ?? clientPrenom ?? 'Un client',
       messageExtrait,
-      lienMessagerie: `https://lesnoces.net/pro/messages/${demande_id}?token=${magic}`,
+      lienMessagerie: `${SITE_URL}/espace-pro/demandes?demande=${demande_id}`,
     }
   }
+
 
   let emailError = false
   if (templateName && recipientEmail) {
