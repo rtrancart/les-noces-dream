@@ -31,6 +31,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
 import { regionNomToSlug } from "@/lib/regions";
 import SeoHead from "@/components/SeoHead";
+import MarkdownDescription from "@/components/MarkdownDescription";
 import JsonLd from "@/components/JsonLd";
 import { buildProviderJsonLd, buildBreadcrumbJsonLd } from "@/lib/jsonld";
 
@@ -387,9 +388,7 @@ export default function FichePrestataireView({
                 <h2 className="font-serif text-xl font-semibold text-foreground mb-3">
                   À propos
                 </h2>
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
-                  {presta.description}
-                </p>
+                <MarkdownDescription source={presta.description} />
               </div>
             )}
 
