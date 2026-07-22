@@ -45,3 +45,5 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = false
   [functions.stripe-webhook]
     verify_jwt = false
+  [functions.migrate-photos-oldsite]
+    verify_jwt = false
