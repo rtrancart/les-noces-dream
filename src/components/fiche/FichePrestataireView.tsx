@@ -31,6 +31,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
 import { regionNomToSlug } from "@/lib/regions";
 import SeoHead from "@/components/SeoHead";
+import MarkdownDescription from "@/components/MarkdownDescription";
 import JsonLd from "@/components/JsonLd";
 import { buildProviderJsonLd, buildBreadcrumbJsonLd } from "@/lib/jsonld";
 
