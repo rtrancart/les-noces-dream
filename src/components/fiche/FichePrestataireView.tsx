@@ -387,9 +387,7 @@ export default function FichePrestataireView({
                 <h2 className="font-serif text-xl font-semibold text-foreground mb-3">
                   À propos
                 </h2>
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
-                  {presta.description}
-                </p>
+                <MarkdownDescription source={presta.description} />
               </div>
             )}
 
