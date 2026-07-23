@@ -25,7 +25,7 @@ const Email = ({ prenom, nom_commercial, numero_version, magic_link }: Props) =>
         <Text style={text}>Bonjour{prenom ? ` ${prenom}` : ''},</Text>
         <Text style={text}>
           La Charte Qualité {SITE_NAME} a été mise à jour {numero_version ? `(version ${numero_version})` : ''}.
-          Pour que la fiche <strong>{nom_commercial ?? ''}</strong> reste publiée, il vous faut signer cette nouvelle version sous <strong>15 jours</strong>.
+          Pour que la fiche <strong>{nom_commercial ?? ''}</strong> reste publiée, il vous faut signer cette nouvelle version sous <strong>30 jours</strong>.
         </Text>
         {magic_link && (
           <Section style={{ textAlign: 'center', margin: '32px 0' }}>
