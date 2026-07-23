@@ -1,35 +1,71 @@
-## Diagnostic
+## Confirmations préalables
 
-Erreur RLS lors du passage `a_completer` → `en_attente` sur `prestataires` : la policy UPDATE de `prestataires` autorise bien le propriétaire, mais le trigger AFTER `trg_log_statut_transition` appelle `public.log_statut_transition()` qui fait un `INSERT INTO public.logs_admin`. Cette fonction n'est **pas** `SECURITY DEFINER` — elle s'exécute donc avec le rôle du prestataire, et la policy INSERT de `logs_admin` exige `has_role(admin | super_admin)` → « new row violates row-level security policy for table "logs_admin" ».
+**1. Pattern flag ↔ non-renouvelabilité.** Oui, le pattern permet un blocage fin à deux niveaux :
+- **Barrière 1 (flag requis)** : toute écriture (INSERT non-NULL, ou UPDATE modifiant la valeur) exige `app.allow_exemption_write = 'on'` → bloque tout PostgREST (admin/super_admin/owner) et tout code service_role qui n'a pas explicitement posé le flag.
+- **Barrière 2 (règle métier, indépendante du flag)** : si `OLD.charte_exemptee_jusqua IS NOT NULL` et `NEW` diffère (autre date ou passage à NULL) → **RAISE inconditionnel**, même flag posé. Une exemption déjà consommée est immuable → non renouvelable, y compris pour un script service_role bien intentionné. Seul chemin d'écriture possible : `NULL → non-NULL` sous flag.
 
-## Audit des autres triggers du schéma public
+**2. Portée du trigger `BEFORE UPDATE OF charte_exemptee_jusqua`.** Confirmé : Postgres n'exécute un trigger `UPDATE OF colX` que si `colX` figure dans la clause `SET` de l'UPDATE (indépendamment de la valeur réellement changée). Un `UPDATE prestataires SET description=..., ville=...` ne le déclenche jamais. Zéro effet de bord sur les updates courants (profil, statut, photos, etc.). La branche INSERT reste `BEFORE INSERT` classique (déclenchée à chaque INSERT mais court-circuitée immédiatement si `NEW.charte_exemptee_jusqua IS NULL`, cas majoritaire).
 
-Passé en revue tous les triggers non-internes du schéma `public` (via `pg_trigger`), en croisant : (a) déclenchable par un utilisateur non-admin, (b) écrit dans une table protégée par RLS restrictive, (c) pas déjà `SECURITY DEFINER`.
+**3. Contrôle `email_textes` pour `notif_nouvelle_version_charte`.** Ligne DB inspectée : le `corps_html` stocké **ne mentionne pas** « 15 jours » (ni aucun autre délai en dur). Il indique seulement « merci de relire les évolutions et de signer cette nouvelle version ». Le délai vit donc à **un seul endroit textuel** : le template TSX `notif-nouvelle-version-charte.tsx` (ligne 28). Aucune correction DB nécessaire — mais je remplace « 15 jours » par « 30 jours » dans le TSX pour cohérence.
 
-| Trigger / fonction | Écrit dans | Déclenchable par non-admin ? | SECURITY DEFINER ? | Verdict |
-|---|---|---|---|---|
-| `log_statut_transition` | `logs_admin` (INSERT réservé admin) | Oui (prestataire modifie sa fiche) | Non | **À corriger** |
-| `sync_note_prestataire` | `prestataires` | Oui (dépôt d'avis) | Oui | OK |
-| `on_signature_charte_created` | `prestataires` (statut `actif`) | Oui (prestataire signe la charte) | Non | OK — la policy « Owner can update own prestataire » couvre l'écriture, et le trigger BEFORE `prevent_direct_actif_write` est levé via `app.allow_actif_write` posé par la fonction elle-même. Pas de cross-table protégée. |
-| `on_prestataire_validation` | Aucune écriture cross-table (modifie NEW) | — | Non | OK |
-| `prevent_direct_actif_write`, `prevent_origine_prestataire_modification`, `prevent_archived_version_modification`, `prevent_signature_modification`, `prevent_invitation_token_proof_modification`, `chartes_versions_enforce_hash` | RAISE / modifie NEW | — | — | OK (pas d'INSERT cross-table) |
-| `update_updated_at_column` (générique) | Colonne locale | — | — | OK |
+Résumé : le délai vit techniquement à **deux endroits** (cron TS + template TSX), textuellement à **un seul** (template TSX). Les deux seront modifiés.
 
-**Une seule fonction à corriger : `log_statut_transition`.**
+---
 
-## Correctif
+## Implémentation validée
 
-Migration unique :
+### Demande 1 — Migration DB unique
 
-1. `CREATE OR REPLACE FUNCTION public.log_statut_transition()` avec le corps actuel inchangé, mais en ajoutant :
-   - `SECURITY DEFINER`
-   - `SET search_path = public` (verrouillage du search_path, requis pour toute fonction DEFINER — évite le hijack par un schéma tiers).
+```sql
+CREATE OR REPLACE FUNCTION public.prevent_direct_exemption_write()
+RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
+BEGIN
+  -- INSERT avec valeur non-NULL : flag requis
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.charte_exemptee_jusqua IS NOT NULL
+       AND COALESCE(current_setting('app.allow_exemption_write', true), 'off') <> 'on' THEN
+      RAISE EXCEPTION 'charte_exemptee_jusqua ne peut être posée que par un script de migration autorisé (flag app.allow_exemption_write).';
+    END IF;
+    RETURN NEW;
+  END IF;
 
-Aucune modification :
-- au trigger `trg_log_statut_transition` lui-même,
-- aux policies de `logs_admin` ou `prestataires`,
-- au frontend (`src/pages/prestataire/Profil.tsx`).
+  -- UPDATE : rien à faire si la colonne n'est pas modifiée
+  IF NEW.charte_exemptee_jusqua IS NOT DISTINCT FROM OLD.charte_exemptee_jusqua THEN
+    RETURN NEW;
+  END IF;
 
-## Vérification
+  -- Règle métier : exemption non renouvelable, immuable une fois posée
+  IF OLD.charte_exemptee_jusqua IS NOT NULL THEN
+    RAISE EXCEPTION 'charte_exemptee_jusqua est immuable une fois posée : une exemption ne peut être ni modifiée, ni renouvelée, ni effacée.';
+  END IF;
 
-Après migration : reprendre la soumission de la fiche Test 01 depuis `/pro/profil` → la fiche passe en `en_attente` sans erreur, et une ligne apparaît dans `logs_admin` (action `statut_transition`, ancien = `a_completer`, nouveau = `en_attente`, `auto = true` puisque `auth.uid()` n'est pas admin, `admin_id` = user_id du prestataire), visible dans l'admin Logs.
+  -- Première pose (NULL → non-NULL) : flag requis
+  IF COALESCE(current_setting('app.allow_exemption_write', true), 'off') <> 'on' THEN
+    RAISE EXCEPTION 'charte_exemptee_jusqua ne peut être posée que par un script de migration autorisé (flag app.allow_exemption_write).';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_prevent_direct_exemption_write
+  BEFORE INSERT OR UPDATE OF charte_exemptee_jusqua ON public.prestataires
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_direct_exemption_write();
+```
+
+Aucune modif de policy, code TS, ou UI.
+
+### Demande 2 — Deux fichiers
+
+1. `supabase/functions/cron-suspend-charte-obsolete/index.ts`
+   - Commentaire d'en-tête : `within 15 days` → `within 30 days`
+   - `const fifteenDaysAgo = ... 15 * 24 * 3600 * 1000` → `const thirtyDaysAgo = ... 30 * 24 * 3600 * 1000`
+   - `.lt("notification_charte_obsolete_envoyee_le", fifteenDaysAgo)` → `... thirtyDaysAgo`
+2. `supabase/functions/_shared/transactional-email-templates/notif-nouvelle-version-charte.tsx`
+   - Ligne 28 : `sous <strong>15 jours</strong>` → `sous <strong>30 jours</strong>`
+3. `supabase/functions/sign-charte/index_test.ts`
+   - Renommer les mentions « 15 jours » en « 30 jours » dans le commentaire ligne 11 et le nom de test ligne 180 (cohérence documentaire, comportement du test inchangé — il vérifie une notif > seuil).
+
+Aucune modification `email_textes` (validé DB : pas de délai en dur).
+
+Prêt à passer en implémentation dès votre feu vert.

@@ -1,4 +1,4 @@
-// cron-suspend-charte-obsolete — Suspends active providers who haven't signed the new charter version within 15 days
+// cron-suspend-charte-obsolete — Suspends active providers who haven't signed the new charter version within 30 days
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -17,13 +17,13 @@ Deno.serve(async (req) => {
       .select("numero_version").is("archivee_le", null).maybeSingle();
     if (!active) throw new Error("Aucune charte active");
 
-    const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 3600 * 1000).toISOString();
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
 
     const { data: candidates, error } = await adminClient.from("prestataires")
       .select("id, charte_version_signee, notification_charte_obsolete_envoyee_le")
       .eq("statut", "actif")
       .not("notification_charte_obsolete_envoyee_le", "is", null)
-      .lt("notification_charte_obsolete_envoyee_le", fifteenDaysAgo);
+      .lt("notification_charte_obsolete_envoyee_le", thirtyDaysAgo);
     if (error) throw error;
 
     const toSuspend = (candidates ?? []).filter(p =>
