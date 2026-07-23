@@ -8,7 +8,7 @@
 //   2. sign-charte : INSERT signature + déclenchement async PDF
 //   3. generate-charte-pdf-preuve : upload bucket + UPDATE write-once
 //   4. cron-archive-unsigned-prestataires : critère 60 jours + report
-//   5. cron-suspend-charte-obsolete : critère 15 jours + version signée
+//   5. cron-suspend-charte-obsolete : critère 30 jours + version signée
 //
 // Pré-requis : SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY fournis par le runtime.
 // Lance via : supabase--test_edge_functions { functions: ["sign-charte"] }
@@ -177,13 +177,13 @@ Deno.test({ name: "Cron archive : report d'archivage respecté", sanitizeOps: fa
 });
 
 // ===========================================================================
-Deno.test({ name: "Cron suspend : actif avec notification > 15 jours sans signer nouvelle version", sanitizeOps: false, sanitizeResources: false }, async () => {
+Deno.test({ name: "Cron suspend : actif avec notification > 30 jours sans signer nouvelle version", sanitizeOps: false, sanitizeResources: false }, async () => {
   const a = admin();
   const charte = await seedActiveCharte();
-  const sixteenDaysAgo = new Date(Date.now() - 16 * 24 * 3600 * 1000).toISOString();
+  const thirtyOneDaysAgo = new Date(Date.now() - 31 * 24 * 3600 * 1000).toISOString();
   const { prestataire } = await seedUserAndPrestataire("actif", {
     charte_version_signee: "vieille-version-xyz",
-    notification_charte_obsolete_envoyee_le: sixteenDaysAgo,
+    notification_charte_obsolete_envoyee_le: thirtyOneDaysAgo,
   });
 
   const res = await fetch(`${SUPABASE_URL}/functions/v1/cron-suspend-charte-obsolete`, {
