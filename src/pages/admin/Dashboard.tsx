@@ -128,6 +128,9 @@ export default function Dashboard() {
         <p className="mt-1 font-sans text-sm text-muted-foreground">Vue d'ensemble de votre plateforme</p>
       </div>
 
+      <MigratePhotosBatchPanel />
+
+
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
