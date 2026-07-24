@@ -1193,6 +1193,30 @@ export type Database = {
           },
         ]
       }
+      migration_photos_mapping: {
+        Row: {
+          erreurs: string | null
+          galerie: string[] | null
+          legacy_id: number
+          photo_principale: string | null
+          traite: boolean
+        }
+        Insert: {
+          erreurs?: string | null
+          galerie?: string[] | null
+          legacy_id: number
+          photo_principale?: string | null
+          traite?: boolean
+        }
+        Update: {
+          erreurs?: string | null
+          galerie?: string[] | null
+          legacy_id?: number
+          photo_principale?: string | null
+          traite?: boolean
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           corps: string
