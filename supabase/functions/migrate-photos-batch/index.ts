@@ -103,17 +103,20 @@ Deno.serve(async (req) => {
     );
   }
 
-  // 2) Resolve legacy_id -> prestataire UUID (single query, strict word boundary).
-  //    POSIX \M = end-of-word => '17' never matches '170', '7' never matches '70'.
+  // 2) Resolve legacy_id -> prestataire UUID.
+  //    PostgREST rejects complex regex via `~`; we fetch candidates with ilike
+  //    (brackets are literal) and enforce the strict word boundary in TS below.
   const legacyIds = rows.map((r) => r.legacy_id);
   const legacyIdsSet = new Set(legacyIds);
-  const idsAlt = legacyIds.join("|");
-  const regex = `\\[legacy_id\\]\\s+(${idsAlt})\\M`;
+  const orClause = legacyIds
+    .map((id) => `notes_pre_inscription.ilike.*[legacy_id] ${id}*`)
+    .join(",");
 
   const { data: prestas, error: presErr } = await supabase
     .from("prestataires")
     .select("id, notes_pre_inscription")
-    .filter("notes_pre_inscription", "~", regex);
+    .or(orClause);
+
 
   if (presErr) {
     return new Response(JSON.stringify({ error: `lookup: ${presErr.message}` }), {
