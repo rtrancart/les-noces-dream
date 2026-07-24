@@ -12,6 +12,8 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
+import { MigratePhotosBatchPanel } from "@/components/admin/MigratePhotosBatchPanel";
+
 
 type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
 type Demande = Database["public"]["Tables"]["demandes_devis"]["Row"];
@@ -127,6 +129,9 @@ export default function Dashboard() {
         <h1 className="text-2xl font-serif font-semibold text-foreground">Tableau de bord</h1>
         <p className="mt-1 font-sans text-sm text-muted-foreground">Vue d'ensemble de votre plateforme</p>
       </div>
+
+      <MigratePhotosBatchPanel />
+
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
