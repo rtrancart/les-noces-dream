@@ -26,13 +26,16 @@ Nouveau module partagé `supabase/functions/_shared/brevo-client.ts` :
   - `rate_limited` (429, lecture de `Retry-After`)
   - `unavailable` (5xx, timeout, erreur réseau)
   - `bad_request` (4xx autre)
-- Timeout via `AbortController` (10 s) et **retry** avec backoff exponentiel sur `rate_limited` et `unavailable` uniquement (2 tentatives max), jamais sur les erreurs d'authentification.
-- Ce module sera le seul point d'appel Brevo : la future synchro contacts/attributs/événements passera par lui.
+- Politique de retry **paramétrable par appel** : `brevoFetch(path, init, { retries, timeoutMs })`.
+  - Défaut (synchro) : timeout 10 s, backoff exponentiel sur `rate_limited` et `unavailable` uniquement, 2 tentatives max, jamais sur les erreurs d'authentification.
+  - Mode « échec rapide » : `retries: 0` + timeout court, disponible pour tout appel interactif.
+- Ce module sera le seul point d'appel Brevo : la future synchro contacts/attributs/événements passera par lui, avec le retry complet.
+
 
 ### Point d'entrée de test
 Nouvelle Edge Function `brevo-test-connection` :
 - Réservée aux admins : vérification du JWT + `has_role(admin|super_admin)`, sinon 403.
-- Appelle `GET /v3/account` (lecture seule, aucun effet de bord).
+- Appelle `GET /v3/account` (lecture seule, aucun effet de bord) en **échec rapide** : `retries: 0`, timeout 5 s. Aucune attente de backoff — un Brevo indisponible remonte l'erreur en quelques secondes au lieu de 20-30 s.
 - Réponse claire :
   ```json
   { "ok": true, "compte": { "email": "...", "companyName": "...", "plan": [...] } }
