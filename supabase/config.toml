@@ -49,3 +49,6 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = false
   [functions.migrate-photos-batch]
     verify_jwt = true
+  [functions.brevo-test-connection]
+    verify_jwt = true
+
