@@ -35,7 +35,7 @@ Nouveau module partagé `supabase/functions/_shared/brevo-client.ts` :
 ### Point d'entrée de test
 Nouvelle Edge Function `brevo-test-connection` :
 - Réservée aux admins : vérification du JWT + `has_role(admin|super_admin)`, sinon 403.
-- Appelle `GET /v3/account` (lecture seule, aucun effet de bord).
+- Appelle `GET /v3/account` (lecture seule, aucun effet de bord) en **échec rapide** : `retries: 0`, timeout 5 s. Aucune attente de backoff — un Brevo indisponible remonte l'erreur en quelques secondes au lieu de 20-30 s.
 - Réponse claire :
   ```json
   { "ok": true, "compte": { "email": "...", "companyName": "...", "plan": [...] } }
