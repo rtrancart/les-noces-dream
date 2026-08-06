@@ -13,6 +13,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
 import { MigratePhotosBatchPanel } from "@/components/admin/MigratePhotosBatchPanel";
+import { BrevoConnectionPanel } from "@/components/admin/BrevoConnectionPanel";
+
 
 
 type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
