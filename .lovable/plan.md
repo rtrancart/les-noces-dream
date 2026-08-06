@@ -1,67 +1,57 @@
-## Edge Function `migrate-photos-batch`
+# Connexion technique Brevo — socle CRM
 
-Base validée : lot 20, principale KO préserve la colonne existante, fiche sans prestataire reste `traite=false` avec log, borne regex stricte, `Promise.allSettled` par fiche.
+## 1. Audit (état actuel, vérifié)
 
-### Fichier créé
+- **Aucune intégration Brevo** dans le projet : zéro occurrence de "brevo" dans le code, aucune Edge Function, aucun appel API.
+- **Aucun secret Brevo** : la liste des secrets backend contient uniquement Lovable/Stripe/Supabase (`LOVABLE_API_KEY`, `STRIPE_*`, `SUPABASE_*`, `MAGIC_LINK_SECRET`, `PUBLIC_SITE_URL`, `REACTIVATION_TEAM_EMAIL`). Pas de `BREVO_API_KEY`.
+- **Aucun connecteur** disponible/branché dans l'espace de travail (liste vide).
+- **Existant marketing** : deux Edge Functions `mailchimp-add-tag` et `mailchimp-remove-tag`, qui sont des **stubs no-op** (elles loguent et renvoient `{success:true, stub:true}`, aucun appel externe). Une colonne `il_id text` existe sur une table de migration (identifiant d'outil marketing externe, non utilisé).
+- **Transactionnel** : géré nativement (queue pgmq + `process-email-queue` + `send-transactional-email`). Rien à déplacer vers Brevo.
 
-`supabase/functions/migrate-photos-batch/index.ts` (nouvelle fonction, indépendante de `migrate-photos-oldsite`).
+Conclusion : le tuyau Brevo est à créer entièrement, rien à réutiliser sauf le modèle de stub marketing (qui pourra plus tard être remplacé par de vrais appels Brevo).
 
-### Logique
+## 2. Intention d'implémentation (canal de connexion + test)
 
-1. **Sélection du lot** : `SELECT legacy_id, photo_principale, galerie FROM migration_photos_mapping WHERE traite = false ORDER BY legacy_id LIMIT 20` (paramètre `?batch_size=N` optionnel, borné à 50).
+### Secret
+- Création du secret backend `BREVO_API_KEY` via le formulaire sécurisé (vous saisissez la valeur, elle n'apparaît jamais dans le code ni côté client).
+- Aucune lecture côté navigateur : la clé n'est lue que par `Deno.env.get()` dans les Edge Functions.
 
-2. **Résolution legacy_id → UUID (borne stricte)** :
-   - Un seul `SELECT` par lot sur `prestataires` avec regex POSIX :
-     ```
-     notes_pre_inscription ~ '\[legacy_id\]\s+(7|9|10|...)\M'
-     ```
-     `\M` = fin de mot POSIX Postgres → `7` ne matche jamais `70`, `17` ne matche jamais `170`.
-   - Extraction TS avec `/\[legacy_id\]\s+(\d+)\b/`, puis vérification que l'entier extrait est bien dans la liste du lot (double sécurité).
-   - Map en mémoire `legacy_id → uuid`.
+### Client Brevo réutilisable
+Nouveau module partagé `supabase/functions/_shared/brevo-client.ts` :
+- `brevoFetch(path, init)` : construit l'appel sur `https://api.brevo.com/v3`, injecte l'en-tête `api-key`, `Content-Type` JSON.
+- Normalisation des erreurs en un type unique `BrevoError { kind, status, message, retryAfterSeconds? }` avec `kind` parmi :
+  - `missing_key` (secret absent)
+  - `invalid_key` (401)
+  - `forbidden` (403 — IP non autorisée / droits insuffisants)
+  - `rate_limited` (429, lecture de `Retry-After`)
+  - `unavailable` (5xx, timeout, erreur réseau)
+  - `bad_request` (4xx autre)
+- Timeout via `AbortController` (10 s) et **retry** avec backoff exponentiel sur `rate_limited` et `unavailable` uniquement (2 tentatives max), jamais sur les erreurs d'authentification.
+- Ce module sera le seul point d'appel Brevo : la future synchro contacts/attributs/événements passera par lui.
 
-3. **Traitement fiche par fiche** :
-   - **Si `uuid` absent** → `UPDATE migration_photos_mapping SET traite=false, erreurs='prestataire introuvable'`. **Non archivée**, reste visible.
-   - **Sinon** :
-     - `Promise.allSettled([principale, ...galerie])` : chaque photo est indépendante. Un fetch qui throw, un 404, un timeout, un upload storage KO → n'interrompt jamais les autres.
-     - Chaque `uploadOne` a en plus son propre `try/catch` interne et retourne `{ok:true, publicUrl}` ou `{ok:false, error}` — `allSettled` est la ceinture par-dessus les bretelles.
-     - Pour chaque résultat : si `status='fulfilled'` et `value.ok` → succès ; sinon (rejected OU fulfilled mais ok=false) → échec, consigné dans `erreurs`.
+### Point d'entrée de test
+Nouvelle Edge Function `brevo-test-connection` :
+- Réservée aux admins : vérification du JWT + `has_role(admin|super_admin)`, sinon 403.
+- Appelle `GET /v3/account` (lecture seule, aucun effet de bord).
+- Réponse claire :
+  ```json
+  { "ok": true, "compte": { "email": "...", "companyName": "...", "plan": [...] } }
+  ```
+  ou en échec :
+  ```json
+  { "ok": false, "kind": "invalid_key", "status": 401, "message": "..." }
+  ```
+- Aucune donnée sensible (clé, en-têtes) loguée ou renvoyée.
 
-4. **Écriture DB fiche** :
-   - `photo_principale_url` : uniquement ajoutée au `UPDATE` si succès. Sur échec, colonne intacte (jamais NULL).
-   - `urls_galerie` (`text[]`) : tableau des URLs OK dans l'ordre source, échecs omis.
-   - `UPDATE migration_photos_mapping SET traite=true, erreurs=<log|null>`.
+### Vérification côté admin
+- Petit encart « Connexion Brevo » dans le tableau de bord admin avec un bouton « Tester la connexion » affichant OK (vert, + nom du compte) ou l'échec avec son motif lisible en français.
 
-5. **Format `erreurs`** (multi-ligne) :
-   ```
-   principale:jakob-owens.jpg:HTTP 404
-   galerie:castille-2.jpg:HTTP 500
-   galerie:foo.jpg:exception: fetch failed
-   ```
+### Hors périmètre (étapes suivantes)
+Synchro des contacts, attributs custom, listes, push d'événements — non traités ici.
 
-6. **Exceptions résiduelles** (seuls cas qui laissent la fiche `traite=false`) :
-   - Résolution UUID → gérée séparément (message dédié).
-   - `UPDATE prestataires` KO → `erreurs='db update: ...'`, retry au prochain appel.
-   - Exception fiche-level catch-all → `erreurs='exception: ...'`.
-   - **Aucun fichier ne peut faire tomber une fiche** grâce à `allSettled`.
+## 3. Détails techniques
 
-7. **Réponse JSON** :
-   ```json
-   {
-     "batch_size": 20,
-     "fiches_traitees": 19,
-     "fiches_sans_prestataire": 1,
-     "fichiers_ok": 187,
-     "fichiers_ko": 3,
-     "restantes": 3186,
-     "details": [{ "legacy_id": 7, "uuid": "...", "principale": "ok", "galerie_ok": 27, "galerie_ko": 0 }]
-   }
-   ```
-
-### Config
-
-- `[functions.migrate-photos-batch] verify_jwt = true` dans `supabase/config.toml`.
-- Utilise `SUPABASE_SERVICE_ROLE_KEY` (déjà en secrets).
-
-### Utilisation
-
-Appel POST répété jusqu'à `restantes = 0` (~160 appels pour 3 206 fiches).
+- Fichiers créés : `supabase/functions/_shared/brevo-client.ts`, `supabase/functions/brevo-test-connection/index.ts`, `src/components/admin/BrevoConnectionPanel.tsx` (+ montage dans `src/pages/admin/Dashboard.tsx`).
+- `supabase/config.toml` : `[functions.brevo-test-connection] verify_jwt = true`.
+- Aucune migration de base, aucune modification des fonctions email existantes.
+- Ordre d'exécution : je demanderai d'abord le secret `BREVO_API_KEY`, puis je déploierai la fonction et testerai la connexion réellement avant de vous rendre la main.
