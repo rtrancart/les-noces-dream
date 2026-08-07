@@ -69,6 +69,74 @@ function toDate(value: string | null): string | undefined {
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString().slice(0, 10);
 }
 
+/** contact_{categorie} : minuscules, sans accents, séparateurs en underscore. */
+function slugTag(libelle: string): string {
+  const base = libelle
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return `contact_${base}`;
+}
+
+/** Cache nom -> id, valable pour la durée de vie de l'instance. */
+const listCache = new Map<string, number>();
+let folderIdCache: number | null = null;
+
+async function ensureFolderId(): Promise<number> {
+  if (folderIdCache !== null) return folderIdCache;
+  const res = await brevoFetch<{ folders?: { id: number; name: string }[] }>(
+    "/contacts/folders?limit=50&offset=0",
+    { method: "GET" },
+    CALL_OPTIONS,
+  );
+  const folders = res?.folders ?? [];
+  const found = folders.find((f) => f.name?.toLowerCase() === "lesnoces") ?? folders[0];
+  if (found) {
+    folderIdCache = found.id;
+    return found.id;
+  }
+  const created = await brevoFetch<{ id: number }>(
+    "/contacts/folders",
+    { method: "POST", body: JSON.stringify({ name: "LesNoces" }) },
+    CALL_OPTIONS,
+  );
+  folderIdCache = created.id;
+  return created.id;
+}
+
+/** Retrouve la liste par nom, la crée si absente. Brevo dédoublonne nativement l'appartenance. */
+async function ensureList(nom: string): Promise<number> {
+  const cached = listCache.get(nom);
+  if (cached) return cached;
+
+  const limit = 50;
+  for (let offset = 0; offset < 1000; offset += limit) {
+    const page = await brevoFetch<{ lists?: { id: number; name: string }[]; count?: number }>(
+      `/contacts/lists?limit=${limit}&offset=${offset}`,
+      { method: "GET" },
+      CALL_OPTIONS,
+    );
+    const lists = page?.lists ?? [];
+    const hit = lists.find((l) => l.name === nom);
+    if (hit) {
+      listCache.set(nom, hit.id);
+      return hit.id;
+    }
+    if (lists.length < limit) break;
+  }
+
+  const folderId = await ensureFolderId();
+  const created = await brevoFetch<{ id: number }>(
+    "/contacts/lists",
+    { method: "POST", body: JSON.stringify({ name: nom, folderId }) },
+    CALL_OPTIONS,
+  );
+  listCache.set(nom, created.id);
+  return created.id;
+}
+
 type Admin = ReturnType<typeof createClient>;
 
 async function syncDemande(admin: Admin, demandeId: string) {
@@ -113,22 +181,44 @@ async function syncDemande(admin: Admin, demandeId: string) {
     TYPE_EVENEMENT: demande.objet,
     DATE_EVENT: toDate(demande.date_evenement),
     DATE_CONTACT: toDate(demande.created_at),
-    PRESTA_NOM: presta?.nom_commercial ?? undefined,
-    PRESTA_CAT: presta?.categorie?.nom ?? undefined,
     CONSENTEMENT_MKT: false,
     A_UN_COMPTE: Boolean(contact?.profile_id ?? demande.profile_id),
   };
-  if (prestaRegion) attributes.PRESTA_REGION = prestaRegion;
   for (const k of Object.keys(attributes)) {
     if (attributes[k] === undefined || attributes[k] === "") delete attributes[k];
+  }
+
+  // Marqueur de catégorie contactée : une liste Brevo par catégorie mère.
+  // Brevo dédoublonne nativement l'appartenance ; un échec ici ne bloque pas la synchro.
+  let tagListe: string | null = null;
+  let listIds: number[] | undefined;
+  const categorieNom = presta?.categorie?.nom ?? null;
+  if (categorieNom) {
+    tagListe = slugTag(categorieNom);
+    try {
+      listIds = [await ensureList(tagListe)];
+    } catch (err) {
+      const motif = err instanceof BrevoError ? BREVO_ERROR_LABELS[err.kind] : String(err);
+      console.error(`[brevo-sync-contact] liste ${tagListe} non résolue : ${motif}`);
+      listIds = undefined;
+    }
   }
 
   // 1) Upsert du contact (identifié par l'email)
   await brevoFetch(
     "/contacts",
-    { method: "POST", body: JSON.stringify({ email, attributes, updateEnabled: true }) },
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        attributes,
+        updateEnabled: true,
+        ...(listIds ? { listIds } : {}),
+      }),
+    },
     CALL_OPTIONS,
   );
+
 
   // 2) Événement de suivi
   await brevoFetch(
@@ -144,15 +234,21 @@ async function syncDemande(admin: Admin, demandeId: string) {
           demande_id: demande.id,
           type_evenement: demande.objet,
           presta_nom: presta?.nom_commercial ?? null,
-          presta_cat: presta?.categorie?.nom ?? null,
+          presta_cat: categorieNom,
           presta_region: prestaRegion,
+          tag_liste: tagListe,
         },
       }),
     },
     CALL_OPTIONS,
   );
 
-  return { region_resolue: Boolean(prestaRegion), attributs: Object.keys(attributes) };
+  return {
+    region_resolue: Boolean(prestaRegion),
+    attributs: Object.keys(attributes),
+    tag_liste: tagListe,
+    liste_posee: Boolean(listIds),
+  };
 }
 
 async function traiter(admin: Admin, demandeId: string, tentativesActuelles: number) {
