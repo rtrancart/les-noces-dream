@@ -2323,6 +2323,27 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      brevo_compteurs_journal: {
+        Args: {
+          p_ids: string[]
+          p_motif?: string
+          p_status?: number
+          p_statut: string
+        }
+        Returns: number
+      }
+      brevo_compteurs_prestataires: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          email: string
+          nb_demandes: number
+          nb_favoris: number
+          nb_vues: number
+          note_moyenne: number
+          prestataire_id: string
+          taux_reponse: number
+        }[]
+      }
       brevo_sync_prestataire_wake: {
         Args: { p_kind: string; p_prestataire_id: string }
         Returns: undefined
