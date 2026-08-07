@@ -411,33 +411,36 @@ export type Database = {
       brevo_sync_log: {
         Row: {
           created_at: string
-          demande_id: string
+          demande_id: string | null
           dernier_motif: string | null
           dernier_status: number | null
           id: string
           kind: string
+          prestataire_id: string | null
           statut: string
           tentatives: number
           updated_at: string
         }
         Insert: {
           created_at?: string
-          demande_id: string
+          demande_id?: string | null
           dernier_motif?: string | null
           dernier_status?: number | null
           id?: string
           kind?: string
+          prestataire_id?: string | null
           statut?: string
           tentatives?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
-          demande_id?: string
+          demande_id?: string | null
           dernier_motif?: string | null
           dernier_status?: number | null
           id?: string
           kind?: string
+          prestataire_id?: string | null
           statut?: string
           tentatives?: number
           updated_at?: string
@@ -448,6 +451,27 @@ export type Database = {
             columns: ["demande_id"]
             isOneToOne: false
             referencedRelation: "demandes_devis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brevo_sync_log_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brevo_sync_log_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brevo_sync_log_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public_all"
             referencedColumns: ["id"]
           },
         ]
@@ -1469,6 +1493,7 @@ export type Database = {
         Row: {
           adresse: string | null
           archivage_reporte_a: string | null
+          brevo_email_hash: string | null
           categorie_fille_id: string | null
           categorie_mere_id: string
           champs_specifiques: Json | null
@@ -1539,6 +1564,7 @@ export type Database = {
         Insert: {
           adresse?: string | null
           archivage_reporte_a?: string | null
+          brevo_email_hash?: string | null
           categorie_fille_id?: string | null
           categorie_mere_id: string
           champs_specifiques?: Json | null
@@ -1609,6 +1635,7 @@ export type Database = {
         Update: {
           adresse?: string | null
           archivage_reporte_a?: string | null
+          brevo_email_hash?: string | null
           categorie_fille_id?: string | null
           categorie_mere_id?: string
           champs_specifiques?: Json | null
@@ -2294,6 +2321,10 @@ export type Database = {
     Functions: {
       admin_delete_user_cascade: {
         Args: { p_user_id: string }
+        Returns: undefined
+      }
+      brevo_sync_prestataire_wake: {
+        Args: { p_kind: string; p_prestataire_id: string }
         Returns: undefined
       }
       calculer_taux_reponse: {
