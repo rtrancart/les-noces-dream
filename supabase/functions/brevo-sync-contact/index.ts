@@ -188,6 +188,16 @@ async function syncDemande(admin: Admin, demandeId: string) {
     if (attributes[k] === undefined || attributes[k] === "") delete attributes[k];
   }
 
+  // Croisement marié / prestataire : une même adresse peut être à la fois l'email
+  // d'un contact marié et l'email_contact d'une fiche. Le prestataire relève de
+  // l'intérêt légitime B2B : son consentement prime, on ne le rétrograde jamais.
+  const { data: prestaHomonyme } = await admin
+    .from("prestataires")
+    .select("id")
+    .ilike("email_contact", email)
+    .limit(1);
+  if ((prestaHomonyme?.length ?? 0) > 0) delete attributes.CONSENTEMENT_MKT;
+
   // Marqueur de catégorie contactée : une liste Brevo par catégorie mère.
   // Brevo dédoublonne nativement l'appartenance ; un échec ici ne bloque pas la synchro.
   let tagListe: string | null = null;

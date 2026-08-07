@@ -65,6 +65,7 @@ const FIXED_CATEGORIES: Record<string, string[]> = {
     "actif",
     "suspendu",
     "archive",
+    "resilie_expire",
   ],
 };
 

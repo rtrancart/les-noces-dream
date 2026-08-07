@@ -57,3 +57,5 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = false
 
 
+  [functions.brevo-sync-prestataire]
+    verify_jwt = false
