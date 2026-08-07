@@ -69,7 +69,74 @@ function toDate(value: string | null): string | undefined {
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString().slice(0, 10);
 }
 
-type Admin = ReturnType<typeof createClient>;
+/** contact_{categorie} : minuscules, sans accents, séparateurs en underscore. */
+function slugTag(libelle: string): string {
+  const base = libelle
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return `contact_${base}`;
+}
+
+/** Cache nom -> id, valable pour la durée de vie de l'instance. */
+const listCache = new Map<string, number>();
+let folderIdCache: number | null = null;
+
+async function ensureFolderId(): Promise<number> {
+  if (folderIdCache !== null) return folderIdCache;
+  const res = await brevoFetch<{ folders?: { id: number; name: string }[] }>(
+    "/contacts/folders?limit=50&offset=0",
+    { method: "GET" },
+    CALL_OPTIONS,
+  );
+  const folders = res?.folders ?? [];
+  const found = folders.find((f) => f.name?.toLowerCase() === "lesnoces") ?? folders[0];
+  if (found) {
+    folderIdCache = found.id;
+    return found.id;
+  }
+  const created = await brevoFetch<{ id: number }>(
+    "/contacts/folders",
+    { method: "POST", body: JSON.stringify({ name: "LesNoces" }) },
+    CALL_OPTIONS,
+  );
+  folderIdCache = created.id;
+  return created.id;
+}
+
+/** Retrouve la liste par nom, la crée si absente. Brevo dédoublonne nativement l'appartenance. */
+async function ensureList(nom: string): Promise<number> {
+  const cached = listCache.get(nom);
+  if (cached) return cached;
+
+  const limit = 50;
+  for (let offset = 0; offset < 1000; offset += limit) {
+    const page = await brevoFetch<{ lists?: { id: number; name: string }[]; count?: number }>(
+      `/contacts/lists?limit=${limit}&offset=${offset}`,
+      { method: "GET" },
+      CALL_OPTIONS,
+    );
+    const lists = page?.lists ?? [];
+    const hit = lists.find((l) => l.name === nom);
+    if (hit) {
+      listCache.set(nom, hit.id);
+      return hit.id;
+    }
+    if (lists.length < limit) break;
+  }
+
+  const folderId = await ensureFolderId();
+  const created = await brevoFetch<{ id: number }>(
+    "/contacts/lists",
+    { method: "POST", body: JSON.stringify({ name: nom, folderId }) },
+    CALL_OPTIONS,
+  );
+  listCache.set(nom, created.id);
+  return created.id;
+}
+
 
 async function syncDemande(admin: Admin, demandeId: string) {
   const { data: demande, error } = await admin
