@@ -24,6 +24,11 @@ const SIMPLE_ATTRIBUTES: Array<{ name: string; type: SimpleType }> = [
   // text
   { name: "PRESTA_NOM", type: "text" },
   { name: "NOM_COMMERCIAL", type: "text" },
+  // text — référentiels métier vivants (ex-category ouvertes, option B)
+  { name: "REGION", type: "text" },
+  { name: "CATEGORIE", type: "text" },
+  { name: "PRESTA_CAT", type: "text" },
+  { name: "PRESTA_REGION", type: "text" },
   // date
   { name: "DATE_CONTACT", type: "date" },
   { name: "DATE_EVENT", type: "date" },
@@ -46,7 +51,6 @@ const SIMPLE_ATTRIBUTES: Array<{ name: string; type: SimpleType }> = [
 /** Attributs natifs Brevo réutilisés tels quels — jamais recréés. */
 const NATIVE_REUSED = ["PRENOM", "NOM"];
 
-const OPEN_CATEGORIES = ["REGION", "CATEGORIE", "PRESTA_CAT", "PRESTA_REGION"];
 
 const FIXED_CATEGORIES: Record<string, string[]> = {
   TYPE_EVENEMENT: ["mariage", "evenement_entreprise", "cocktail", "autre"],
