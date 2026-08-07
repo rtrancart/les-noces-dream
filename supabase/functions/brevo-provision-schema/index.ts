@@ -24,6 +24,11 @@ const SIMPLE_ATTRIBUTES: Array<{ name: string; type: SimpleType }> = [
   // text
   { name: "PRESTA_NOM", type: "text" },
   { name: "NOM_COMMERCIAL", type: "text" },
+  // text — référentiels métier vivants (ex-category ouvertes, option B)
+  { name: "REGION", type: "text" },
+  { name: "CATEGORIE", type: "text" },
+  { name: "PRESTA_CAT", type: "text" },
+  { name: "PRESTA_REGION", type: "text" },
   // date
   { name: "DATE_CONTACT", type: "date" },
   { name: "DATE_EVENT", type: "date" },
@@ -46,7 +51,6 @@ const SIMPLE_ATTRIBUTES: Array<{ name: string; type: SimpleType }> = [
 /** Attributs natifs Brevo réutilisés tels quels — jamais recréés. */
 const NATIVE_REUSED = ["PRENOM", "NOM"];
 
-const OPEN_CATEGORIES = ["REGION", "CATEGORIE", "PRESTA_CAT", "PRESTA_REGION"];
 
 const FIXED_CATEGORIES: Record<string, string[]> = {
   TYPE_EVENEMENT: ["mariage", "evenement_entreprise", "cocktail", "autre"],
@@ -174,41 +178,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3) Category ouvertes — création sans valeurs
-    for (const name of OPEN_CATEGORIES) {
-      if (byName.has(name)) {
-        lignes.push({ attribut: name, type: "category", etat: "deja_present" });
-        continue;
-      }
-      let created = false;
-      let lastMsg = "";
-      for (const body of [{ enumeration: [] as unknown[] }, {}]) {
-        try {
-          await brevoFetch(
-            `/contacts/attributes/category/${encodeURIComponent(name)}`,
-            { method: "POST", body: JSON.stringify(body) },
-            FAST,
-          );
-          created = true;
-          break;
-        } catch (err) {
-          lastMsg = describeError(err);
-          if (/exist|duplicate/i.test(lastMsg)) {
-            created = true;
-            break;
-          }
-        }
-      }
-      lignes.push({
-        attribut: name,
-        type: "category",
-        etat: created ? "cree" : "echec",
-        motif: created ? undefined : lastMsg,
-        valeurs: [],
-      });
-    }
-
-    // 4) Category à valeurs figées — création + vérification/complément des valeurs
+    // 3) Category à valeurs figées — création + vérification/complément des valeurs
     for (const [name, labels] of Object.entries(FIXED_CATEGORIES)) {
       const found = byName.get(name);
       try {
@@ -218,6 +188,7 @@ Deno.serve(async (req) => {
             {
               method: "POST",
               body: JSON.stringify({
+                type: "category",
                 enumeration: labels.map((label, i) => ({ value: i + 1, label })),
               }),
             },
@@ -226,6 +197,7 @@ Deno.serve(async (req) => {
           lignes.push({ attribut: name, type: "category", etat: "cree", valeurs: labels });
           continue;
         }
+
 
         const current = found.enumeration ?? [];
         const currentLabels = current.map((e) => e.label);
@@ -246,7 +218,7 @@ Deno.serve(async (req) => {
         ];
         await brevoFetch(
           `/contacts/attributes/category/${encodeURIComponent(name)}`,
-          { method: "PUT", body: JSON.stringify({ enumeration: merged }) },
+          { method: "PUT", body: JSON.stringify({ type: "category", enumeration: merged }) },
           FAST,
         );
         lignes.push({
