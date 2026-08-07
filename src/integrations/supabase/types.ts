@@ -408,6 +408,50 @@ export type Database = {
           },
         ]
       }
+      brevo_sync_log: {
+        Row: {
+          created_at: string
+          demande_id: string
+          dernier_motif: string | null
+          dernier_status: number | null
+          id: string
+          kind: string
+          statut: string
+          tentatives: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          demande_id: string
+          dernier_motif?: string | null
+          dernier_status?: number | null
+          id?: string
+          kind?: string
+          statut?: string
+          tentatives?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          demande_id?: string
+          dernier_motif?: string | null
+          dernier_status?: number | null
+          id?: string
+          kind?: string
+          statut?: string
+          tentatives?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brevo_sync_log_demande_id_fkey"
+            columns: ["demande_id"]
+            isOneToOne: false
+            referencedRelation: "demandes_devis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           contenu_seo: string | null
@@ -2436,6 +2480,7 @@ export type Database = {
         }
         Returns: number
       }
+      normaliser_cle_zone: { Args: { p_valeur: string }; Returns: string }
       purger_historique_navigation: { Args: never; Returns: number }
       reactiver_prestataire_paiement: {
         Args: { p_prestataire_id: string }
@@ -2449,6 +2494,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      resoudre_region_label: { Args: { p_region: string }; Returns: string }
       soumettre_avis: {
         Args: {
           p_commentaire: string
