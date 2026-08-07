@@ -137,6 +137,7 @@ async function ensureList(nom: string): Promise<number> {
   return created.id;
 }
 
+type Admin = ReturnType<typeof createClient>;
 
 async function syncDemande(admin: Admin, demandeId: string) {
   const { data: demande, error } = await admin
