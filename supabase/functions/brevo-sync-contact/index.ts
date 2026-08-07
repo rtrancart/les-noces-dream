@@ -40,7 +40,23 @@ function describeError(err: unknown): { motif: string; status: number | null; re
   return { motif: err instanceof Error ? err.message : String(err), status: null, retryable: true };
 }
 
+/** Décodage sans vérification : le JWT provient de pg_net (réseau interne). */
+function parseJwtClaims(token: string): Record<string, unknown> | null {
+  const parts = token.split(".");
+  if (parts.length < 2) return null;
+  try {
+    const payload = parts[1]
+      .replaceAll("-", "+")
+      .replaceAll("_", "/")
+      .padEnd(Math.ceil(parts[1].length / 4) * 4, "=");
+    return JSON.parse(atob(payload)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 function splitNom(nomComplet: string | null): { prenom: string; nom: string } {
+
   const parts = (nomComplet ?? "").trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return { prenom: "", nom: "" };
   if (parts.length === 1) return { prenom: parts[0], nom: "" };
