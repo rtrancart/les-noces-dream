@@ -218,7 +218,7 @@ Deno.serve(async (req) => {
         ];
         await brevoFetch(
           `/contacts/attributes/category/${encodeURIComponent(name)}`,
-          { method: "PUT", body: JSON.stringify({ enumeration: merged }) },
+          { method: "PUT", body: JSON.stringify({ type: "category", enumeration: merged }) },
           FAST,
         );
         lignes.push({
