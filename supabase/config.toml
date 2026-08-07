@@ -53,4 +53,7 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = true
   [functions.brevo-provision-schema]
     verify_jwt = true
+  [functions.brevo-sync-contact]
+    verify_jwt = false
+
 
