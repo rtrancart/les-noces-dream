@@ -234,15 +234,21 @@ async function syncDemande(admin: Admin, demandeId: string) {
           demande_id: demande.id,
           type_evenement: demande.objet,
           presta_nom: presta?.nom_commercial ?? null,
-          presta_cat: presta?.categorie?.nom ?? null,
+          presta_cat: categorieNom,
           presta_region: prestaRegion,
+          tag_liste: tagListe,
         },
       }),
     },
     CALL_OPTIONS,
   );
 
-  return { region_resolue: Boolean(prestaRegion), attributs: Object.keys(attributes) };
+  return {
+    region_resolue: Boolean(prestaRegion),
+    attributs: Object.keys(attributes),
+    tag_liste: tagListe,
+    liste_posee: Boolean(listIds),
+  };
 }
 
 async function traiter(admin: Admin, demandeId: string, tentativesActuelles: number) {
