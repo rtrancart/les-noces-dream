@@ -181,22 +181,44 @@ async function syncDemande(admin: Admin, demandeId: string) {
     TYPE_EVENEMENT: demande.objet,
     DATE_EVENT: toDate(demande.date_evenement),
     DATE_CONTACT: toDate(demande.created_at),
-    PRESTA_NOM: presta?.nom_commercial ?? undefined,
-    PRESTA_CAT: presta?.categorie?.nom ?? undefined,
     CONSENTEMENT_MKT: false,
     A_UN_COMPTE: Boolean(contact?.profile_id ?? demande.profile_id),
   };
-  if (prestaRegion) attributes.PRESTA_REGION = prestaRegion;
   for (const k of Object.keys(attributes)) {
     if (attributes[k] === undefined || attributes[k] === "") delete attributes[k];
+  }
+
+  // Marqueur de catégorie contactée : une liste Brevo par catégorie mère.
+  // Brevo dédoublonne nativement l'appartenance ; un échec ici ne bloque pas la synchro.
+  let tagListe: string | null = null;
+  let listIds: number[] | undefined;
+  const categorieNom = presta?.categorie?.nom ?? null;
+  if (categorieNom) {
+    tagListe = slugTag(categorieNom);
+    try {
+      listIds = [await ensureList(tagListe)];
+    } catch (err) {
+      const motif = err instanceof BrevoError ? BREVO_ERROR_LABELS[err.kind] : String(err);
+      console.error(`[brevo-sync-contact] liste ${tagListe} non résolue : ${motif}`);
+      listIds = undefined;
+    }
   }
 
   // 1) Upsert du contact (identifié par l'email)
   await brevoFetch(
     "/contacts",
-    { method: "POST", body: JSON.stringify({ email, attributes, updateEnabled: true }) },
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        attributes,
+        updateEnabled: true,
+        ...(listIds ? { listIds } : {}),
+      }),
+    },
     CALL_OPTIONS,
   );
+
 
   // 2) Événement de suivi
   await brevoFetch(
