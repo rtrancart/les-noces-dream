@@ -183,9 +183,12 @@ Deno.serve(async (req) => {
 
   // Appel machine uniquement (trigger pg_net ou cron), jamais depuis le navigateur.
   const auth = req.headers.get("Authorization") ?? "";
-  if (auth !== `Bearer ${serviceRoleKey}`) {
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const claims = parseJwtClaims(token);
+  if (token !== serviceRoleKey && claims?.role !== "service_role") {
     return json({ ok: false, message: "Non autorisé" }, 401);
   }
+
 
   const admin = createClient(supabaseUrl, serviceRoleKey);
 
