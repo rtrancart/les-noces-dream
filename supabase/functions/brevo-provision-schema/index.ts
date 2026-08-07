@@ -178,41 +178,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3) Category ouvertes — création sans valeurs
-    for (const name of OPEN_CATEGORIES) {
-      if (byName.has(name)) {
-        lignes.push({ attribut: name, type: "category", etat: "deja_present" });
-        continue;
-      }
-      let created = false;
-      let lastMsg = "";
-      for (const body of [{ enumeration: [] as unknown[] }, {}]) {
-        try {
-          await brevoFetch(
-            `/contacts/attributes/category/${encodeURIComponent(name)}`,
-            { method: "POST", body: JSON.stringify(body) },
-            FAST,
-          );
-          created = true;
-          break;
-        } catch (err) {
-          lastMsg = describeError(err);
-          if (/exist|duplicate/i.test(lastMsg)) {
-            created = true;
-            break;
-          }
-        }
-      }
-      lignes.push({
-        attribut: name,
-        type: "category",
-        etat: created ? "cree" : "echec",
-        motif: created ? undefined : lastMsg,
-        valeurs: [],
-      });
-    }
-
-    // 4) Category à valeurs figées — création + vérification/complément des valeurs
+    // 3) Category à valeurs figées — création + vérification/complément des valeurs
     for (const [name, labels] of Object.entries(FIXED_CATEGORIES)) {
       const found = byName.get(name);
       try {
@@ -222,6 +188,7 @@ Deno.serve(async (req) => {
             {
               method: "POST",
               body: JSON.stringify({
+                type: "category",
                 enumeration: labels.map((label, i) => ({ value: i + 1, label })),
               }),
             },
@@ -230,6 +197,7 @@ Deno.serve(async (req) => {
           lignes.push({ attribut: name, type: "category", etat: "cree", valeurs: labels });
           continue;
         }
+
 
         const current = found.enumeration ?? [];
         const currentLabels = current.map((e) => e.label);
