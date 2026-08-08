@@ -184,6 +184,10 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
 
   const cycleVie = deriveCycleVie(presta.statut as string, abo);
 
+  // Opposition marketing remontée par Brevo : vérité globale à l'adresse email,
+  // elle prime sur l'intérêt légitime B2B (le contact a exprimé un refus explicite).
+  const oppose = await estOppose(admin, email);
+
   const attributes: Record<string, unknown> = {
     NOM_COMMERCIAL: presta.nom_commercial,
     STATUT_FICHE: presta.statut,
@@ -191,8 +195,8 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
     FIN_ESSAI: toDate(abo?.fin_essai_le),
     DATE_PREMIERE_PUBLI: toDate(presta.date_premiere_publication as string | null),
     REGION: regionLabel ?? undefined,
-    // Intérêt légitime B2B : le prestataire est toujours opt-in par défaut.
-    CONSENTEMENT_MKT: true,
+    // Intérêt légitime B2B : le prestataire est opt-in par défaut, sauf opposition.
+    ...(oppose ? {} : { CONSENTEMENT_MKT: true }),
   };
   for (const k of Object.keys(attributes)) {
     if (attributes[k] === undefined || attributes[k] === null || attributes[k] === "") {
@@ -200,13 +204,14 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
     }
   }
 
-  // Liste d'audience prestataires (échec non bloquant).
+  // Liste d'audience : technique si opposition, prestataires sinon (échec non bloquant).
   let listIds: number[] | undefined;
+  const listeCible = oppose ? "desinscrits_marketing" : LISTE_PRESTATAIRES;
   try {
-    listIds = [await ensureList(LISTE_PRESTATAIRES)];
+    listIds = [oppose ? await ensureListeDesinscrits() : await ensureList(LISTE_PRESTATAIRES)];
   } catch (err) {
     const motif = err instanceof BrevoError ? BREVO_ERROR_LABELS[err.kind] : String(err);
-    console.error(`[brevo-sync-prestataire] liste ${LISTE_PRESTATAIRES} non résolue : ${motif}`);
+    console.error(`[brevo-sync-prestataire] liste ${listeCible} non résolue : ${motif}`);
   }
 
   // Changement d'email_contact : on renomme le contact existant (identifié par ext_id)
