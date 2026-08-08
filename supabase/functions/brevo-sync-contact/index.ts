@@ -272,6 +272,7 @@ async function syncDemande(admin: Admin, demandeId: string) {
     attributs: Object.keys(attributes),
     tag_liste: tagListe,
     liste_posee: Boolean(listIds),
+    oppose,
   };
 }
 
