@@ -1,0 +1,1 @@
+UPDATE public.prestataires SET updated_at = now() WHERE id = '081199da-c7da-4a3a-ac93-4bf80adfddc8';

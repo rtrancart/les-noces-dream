@@ -1,0 +1,2 @@
+INSERT INTO public.demandes_devis (contact_id, email_contact, nom_contact, objet, message, prestataire_id, source, statut)
+VALUES ('f011b18d-b3d1-4e10-be71-f0e599600020','test-mixte-lovable@lesnoces.test','ZZ Test Lovable','mariage','Test technique opposition - ignorer','7248d3af-7b4c-440a-9991-7c5ebff005e4','lesnoces.net','nouveau');
