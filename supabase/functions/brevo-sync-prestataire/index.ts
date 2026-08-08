@@ -284,6 +284,8 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
     region_resolue: Boolean(regionLabel),
     attributs: Object.keys(attributes),
     liste_posee: Boolean(listIds),
+    liste_cible: listeCible,
+    oppose,
     email_renomme: emailMisAJour,
   };
 }
