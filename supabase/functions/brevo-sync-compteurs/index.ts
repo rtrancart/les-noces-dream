@@ -93,6 +93,8 @@ interface Ligne {
   nb_favoris: number;
   taux_reponse: number | null;
   note_moyenne: number | null;
+  /** true si l'adresse s'est opposée au marketing (signal remonté par Brevo). */
+  oppose: boolean;
 }
 
 Deno.serve(async (req) => {
