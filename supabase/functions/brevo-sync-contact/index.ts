@@ -8,6 +8,7 @@
 // Aucune donnée sensible (email, message, téléphone) n'est journalisée.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { brevoFetch, BrevoError, BREVO_ERROR_LABELS } from "../_shared/brevo-client.ts";
+import { estOppose, ensureListeDesinscrits } from "../_shared/brevo-opposition.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -198,12 +199,25 @@ async function syncDemande(admin: Admin, demandeId: string) {
     .limit(1);
   if ((prestaHomonyme?.length ?? 0) > 0) delete attributes.CONSENTEMENT_MKT;
 
+  // Opposition marketing (signal remonté par Brevo) : vérité globale à l'adresse.
+  // On ne réaffirme jamais le consentement et on n'inscrit jamais dans une liste marketing.
+  const oppose = await estOppose(admin, email);
+  if (oppose) delete attributes.CONSENTEMENT_MKT;
+
   // Marqueur de catégorie contactée : une liste Brevo par catégorie mère.
   // Brevo dédoublonne nativement l'appartenance ; un échec ici ne bloque pas la synchro.
   let tagListe: string | null = null;
   let listIds: number[] | undefined;
   const categorieNom = presta?.categorie?.nom ?? null;
-  if (categorieNom) {
+  if (oppose) {
+    try {
+      listIds = [await ensureListeDesinscrits()];
+    } catch (err) {
+      const motif = err instanceof BrevoError ? BREVO_ERROR_LABELS[err.kind] : String(err);
+      console.error(`[brevo-sync-contact] liste technique non résolue : ${motif}`);
+      listIds = undefined;
+    }
+  } else if (categorieNom) {
     tagListe = slugTag(categorieNom);
     try {
       listIds = [await ensureList(tagListe)];
@@ -258,6 +272,7 @@ async function syncDemande(admin: Admin, demandeId: string) {
     attributs: Object.keys(attributes),
     tag_liste: tagListe,
     liste_posee: Boolean(listIds),
+    oppose,
   };
 }
 

@@ -1333,6 +1333,33 @@ export type Database = {
           },
         ]
       }
+      oppositions_marketing: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          metadata: Json | null
+          motif: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          metadata?: Json | null
+          motif: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          metadata?: Json | null
+          motif?: string
+          source?: string
+        }
+        Relationships: []
+      }
       pages_contenu: {
         Row: {
           builder_io_content_id: string | null
@@ -2340,6 +2367,7 @@ export type Database = {
           nb_favoris: number
           nb_vues: number
           note_moyenne: number
+          oppose: boolean
           prestataire_id: string
           taux_reponse: number
         }[]

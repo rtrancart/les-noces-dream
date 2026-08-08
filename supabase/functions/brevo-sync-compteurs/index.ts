@@ -18,6 +18,7 @@
 // brevo_sync_log (kind = 'compteurs_sync') sans donnée sensible.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { brevoFetch, BrevoError, BREVO_ERROR_LABELS } from "../_shared/brevo-client.ts";
+import { ensureListeDesinscrits } from "../_shared/brevo-opposition.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -93,6 +94,8 @@ interface Ligne {
   nb_favoris: number;
   taux_reponse: number | null;
   note_moyenne: number | null;
+  /** true si l'adresse s'est opposée au marketing (signal remonté par Brevo). */
+  oppose: boolean;
 }
 
 Deno.serve(async (req) => {
@@ -192,7 +195,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const jsonBody = lignes.map((l) => ({
+      const versPayload = (l: Ligne) => ({
         email: l.email,
         attributes: {
           NB_VUES: l.nb_vues,
@@ -201,48 +204,62 @@ Deno.serve(async (req) => {
           TAUX_REPONSE: l.taux_reponse === null ? 0 : Number(l.taux_reponse),
           NOTE_MOYENNE: l.note_moyenne === null ? 0 : Number(l.note_moyenne),
         },
-      }));
+      });
+
+      // listIds est obligatoire sur /contacts/import : sans scission, l'import
+      // réinscrirait les contacts opposés dans la liste marketing. On envoie donc
+      // deux appels distincts, chacun vers sa liste de destination.
+      const actifs = lignes.filter((l) => !l.oppose);
+      const opposes = lignes.filter((l) => l.oppose);
+      const sousLots: { lignes: Ligne[]; liste: () => Promise<number>; nom: string }[] = [
+        { lignes: actifs, liste: resoudreListePrestataires, nom: LISTE_PRESTATAIRES },
+        { lignes: opposes, liste: ensureListeDesinscrits, nom: "desinscrits_marketing" },
+      ];
 
       if (dryRun) {
+        const jsonBody = lignes.map(versPayload);
         if (apercu.length < 5) apercu.push(...jsonBody.slice(0, 5 - apercu.length));
       } else {
-        try {
-          const imported = await brevoFetch<{ processId?: number }>(
-            "/contacts/import",
-            {
-              method: "POST",
-              body: JSON.stringify({
-                jsonBody,
-                listIds: [await resoudreListePrestataires()],
-                updateExistingContacts: true,
-                emptyContactsAttributes: false,
-              }),
-            },
-            CALL_OPTIONS,
-          );
-          appelsBrevo++;
-          console.log(
-            `[brevo-sync-compteurs] lot offset=${offset} taille=${lignes.length} processId=${imported?.processId ?? "?"}`,
-          );
-          await admin.rpc("brevo_compteurs_journal", {
-            p_ids: lignes.map((l) => l.prestataire_id),
-            p_statut: "reussi",
-            p_motif: null,
-            p_status: null,
-          });
-        } catch (err) {
-          appelsBrevo++;
-          echecs += lignes.length;
-          const { motif, status } = describeError(err);
-          console.error(
-            `[brevo-sync-compteurs] lot offset=${offset} taille=${lignes.length} échec : ${motif}`,
-          );
-          await admin.rpc("brevo_compteurs_journal", {
-            p_ids: lignes.map((l) => l.prestataire_id),
-            p_statut: "a_rejouer",
-            p_motif: motif,
-            p_status: status,
-          });
+        for (const sousLot of sousLots) {
+          if (sousLot.lignes.length === 0) continue;
+          try {
+            const imported = await brevoFetch<{ processId?: number }>(
+              "/contacts/import",
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  jsonBody: sousLot.lignes.map(versPayload),
+                  listIds: [await sousLot.liste()],
+                  updateExistingContacts: true,
+                  emptyContactsAttributes: false,
+                }),
+              },
+              CALL_OPTIONS,
+            );
+            appelsBrevo++;
+            console.log(
+              `[brevo-sync-compteurs] lot offset=${offset} liste=${sousLot.nom} taille=${sousLot.lignes.length} processId=${imported?.processId ?? "?"}`,
+            );
+            await admin.rpc("brevo_compteurs_journal", {
+              p_ids: sousLot.lignes.map((l) => l.prestataire_id),
+              p_statut: "reussi",
+              p_motif: null,
+              p_status: null,
+            });
+          } catch (err) {
+            appelsBrevo++;
+            echecs += sousLot.lignes.length;
+            const { motif, status } = describeError(err);
+            console.error(
+              `[brevo-sync-compteurs] lot offset=${offset} liste=${sousLot.nom} taille=${sousLot.lignes.length} échec : ${motif}`,
+            );
+            await admin.rpc("brevo_compteurs_journal", {
+              p_ids: sousLot.lignes.map((l) => l.prestataire_id),
+              p_statut: "a_rejouer",
+              p_motif: motif,
+              p_status: status,
+            });
+          }
         }
       }
 
