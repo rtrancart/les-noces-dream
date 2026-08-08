@@ -8,6 +8,7 @@
 // seule une empreinte courte (sha-256 tronquée) sert à détecter un changement d'adresse.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { brevoFetch, BrevoError, BREVO_ERROR_LABELS } from "../_shared/brevo-client.ts";
+import { estOppose, ensureListeDesinscrits } from "../_shared/brevo-opposition.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
