@@ -8,6 +8,7 @@
 // Aucune donnée sensible (email, message, téléphone) n'est journalisée.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { brevoFetch, BrevoError, BREVO_ERROR_LABELS } from "../_shared/brevo-client.ts";
+import { estOppose, ensureListeDesinscrits } from "../_shared/brevo-opposition.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
