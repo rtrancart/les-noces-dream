@@ -12,6 +12,8 @@ interface AuthContextType {
   roles: AppRole[];
   isLoading: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+
   hasRole: (role: AppRole) => boolean;
   isAdmin: boolean;
   isPrestataire: boolean;
