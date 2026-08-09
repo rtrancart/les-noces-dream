@@ -48,6 +48,7 @@ const Inscription = () => {
           prenom,
           nom,
           role_souhaite: role,
+          ...(role === "client" && { consentement_marketing: consentMarketing }),
           ...(role === "prestataire" && {
             nom_commercial: nomCommercial.trim(),
             raison_sociale: raisonSociale.trim() || nomCommercial.trim(),
@@ -55,6 +56,7 @@ const Inscription = () => {
         },
       },
     });
+
 
     setLoading(false);
     if (error) {
