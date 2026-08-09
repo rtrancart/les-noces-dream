@@ -154,6 +154,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         roles,
         isLoading,
         signOut,
+        refreshProfile,
+
         hasRole,
         isAdmin: hasRole("admin") || hasRole("super_admin"),
         isPrestataire: hasRole("prestataire"),
