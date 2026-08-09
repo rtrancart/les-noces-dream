@@ -27,8 +27,10 @@ const Inscription = () => {
   const [nomCommercial, setNomCommercial] = useState("");
   const [raisonSociale, setRaisonSociale] = useState("");
   const [role, setRole] = useState<"client" | "prestataire">("client");
+  const [consentMarketing, setConsentMarketing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
