@@ -250,6 +250,29 @@ const Inscription = () => {
           </div>
         </div>
 
+        {role === "client" && (
+          <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-4">
+            <Checkbox
+              id="consentement-marketing"
+              checked={consentMarketing}
+              onCheckedChange={(v) => setConsentMarketing(v === true)}
+              className="mt-0.5"
+            />
+            <Label
+              htmlFor="consentement-marketing"
+              className="font-sans text-xs font-normal leading-relaxed text-muted-foreground cursor-pointer"
+            >
+              J'accepte de recevoir les actualités, conseils et offres de LesNoces par email.
+              Je peux me désinscrire à tout moment.{" "}
+              <Link to="/confidentialite" className="text-primary hover:underline">
+                Politique de confidentialité
+              </Link>
+              .
+            </Label>
+          </div>
+        )}
+
+
         <Button type="submit" disabled={loading} className="w-full font-sans font-semibold tracking-wide">
           {loading ? "Création…" : "Créer mon compte"}
         </Button>
