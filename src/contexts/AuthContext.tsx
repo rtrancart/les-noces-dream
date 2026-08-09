@@ -126,8 +126,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [user?.id, roles]);
 
+  const refreshProfile = useCallback(async () => {
+    if (!user?.id) return;
+    await fetchProfileAndRoles(user.id);
+  }, [user?.id, fetchProfileAndRoles]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
+
     currentUidRef.current = null;
     setSession(null);
     setUser(null);
