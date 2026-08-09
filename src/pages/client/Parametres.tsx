@@ -1,19 +1,57 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ClientParametres() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [consent, setConsent] = useState(Boolean(profile?.consentement_marketing));
+  const [savingConsent, setSavingConsent] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    setConsent(Boolean(profile?.consentement_marketing));
+  }, [profile?.consentement_marketing]);
+
+  const updateConsent = async (next: boolean) => {
+    setConfirmOpen(false);
+    setSavingConsent(true);
+    const { error } = await supabase.rpc("definir_consentement_marketing", { p_consent: next });
+    setSavingConsent(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setConsent(next);
+    await refreshProfile();
+    toast.success(
+      next
+        ? "Consentement enregistré, vous recevrez nos communications"
+        : "Consentement retiré, vous ne recevrez plus d'emails marketing",
+    );
+  };
+
 
   const handlePasswordChange = async () => {
     if (!newPwd || newPwd.length < 8) {
