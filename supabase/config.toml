@@ -61,4 +61,7 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = false
   [functions.brevo-sync-compteurs]
     verify_jwt = false
+  [functions.brevo-consentement-marketing]
+    verify_jwt = false
+
 

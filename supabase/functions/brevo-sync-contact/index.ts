@@ -176,18 +176,27 @@ async function syncDemande(admin: Admin, demandeId: string) {
   const split = splitNom(demande.nom_contact);
   const prenom = (contact?.prenom ?? "").trim() || split.prenom;
 
+  // Consentement marketing : un compte marié ayant coché la case RGPD ne doit jamais
+  // être rétrogradé par une simple demande de devis.
+  const { data: profilConsent } = await admin
+    .from("profiles")
+    .select("consentement_marketing")
+    .ilike("email", email)
+    .maybeSingle();
+
   const attributes: Record<string, unknown> = {
     PRENOM: prenom,
     NOM: split.nom,
     TYPE_EVENEMENT: demande.objet,
     DATE_EVENT: toDate(demande.date_evenement),
     DATE_CONTACT: toDate(demande.created_at),
-    CONSENTEMENT_MKT: false,
+    CONSENTEMENT_MKT: Boolean(profilConsent?.consentement_marketing),
     A_UN_COMPTE: Boolean(contact?.profile_id ?? demande.profile_id),
   };
   for (const k of Object.keys(attributes)) {
     if (attributes[k] === undefined || attributes[k] === "") delete attributes[k];
   }
+
 
   // Croisement marié / prestataire : une même adresse peut être à la fois l'email
   // d'un contact marié et l'email_contact d'une fiche. Le prestataire relève de

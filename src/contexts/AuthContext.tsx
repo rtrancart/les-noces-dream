@@ -12,6 +12,8 @@ interface AuthContextType {
   roles: AppRole[];
   isLoading: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
+
   hasRole: (role: AppRole) => boolean;
   isAdmin: boolean;
   isPrestataire: boolean;
@@ -124,8 +126,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [user?.id, roles]);
 
+  const refreshProfile = useCallback(async () => {
+    if (!user?.id) return;
+    await fetchProfileAndRoles(user.id);
+  }, [user?.id, fetchProfileAndRoles]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
+
     currentUidRef.current = null;
     setSession(null);
     setUser(null);
@@ -146,6 +154,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         roles,
         isLoading,
         signOut,
+        refreshProfile,
+
         hasRole,
         isAdmin: hasRole("admin") || hasRole("super_admin"),
         isPrestataire: hasRole("prestataire"),

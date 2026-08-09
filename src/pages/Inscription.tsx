@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+
 import { toast } from "sonner";
 import { Mail, Lock, User, Heart, Briefcase, Building2 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
@@ -27,8 +29,10 @@ const Inscription = () => {
   const [nomCommercial, setNomCommercial] = useState("");
   const [raisonSociale, setRaisonSociale] = useState("");
   const [role, setRole] = useState<"client" | "prestataire">("client");
+  const [consentMarketing, setConsentMarketing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +50,7 @@ const Inscription = () => {
           prenom,
           nom,
           role_souhaite: role,
+          ...(role === "client" && { consentement_marketing: consentMarketing }),
           ...(role === "prestataire" && {
             nom_commercial: nomCommercial.trim(),
             raison_sociale: raisonSociale.trim() || nomCommercial.trim(),
@@ -53,6 +58,7 @@ const Inscription = () => {
         },
       },
     });
+
 
     setLoading(false);
     if (error) {
@@ -245,6 +251,29 @@ const Inscription = () => {
             />
           </div>
         </div>
+
+        {role === "client" && (
+          <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-4">
+            <Checkbox
+              id="consentement-marketing"
+              checked={consentMarketing}
+              onCheckedChange={(v) => setConsentMarketing(v === true)}
+              className="mt-0.5"
+            />
+            <Label
+              htmlFor="consentement-marketing"
+              className="font-sans text-xs font-normal leading-relaxed text-muted-foreground cursor-pointer"
+            >
+              J'accepte de recevoir les actualités, conseils et offres de LesNoces par email.
+              Je peux me désinscrire à tout moment.{" "}
+              <Link to="/confidentialite" className="text-primary hover:underline">
+                Politique de confidentialité
+              </Link>
+              .
+            </Label>
+          </div>
+        )}
+
 
         <Button type="submit" disabled={loading} className="w-full font-sans font-semibold tracking-wide">
           {loading ? "Création…" : "Créer mon compte"}
