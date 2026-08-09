@@ -1767,6 +1767,9 @@ export type Database = {
           cgu_acceptees_le: string | null
           cgu_version_acceptee: string | null
           compte_supprime_le: string | null
+          consentement_marketing: boolean
+          consentement_marketing_le: string | null
+          consentement_marketing_source: string | null
           created_at: string
           date_naissance: string | null
           email: string
@@ -1782,6 +1785,9 @@ export type Database = {
           cgu_acceptees_le?: string | null
           cgu_version_acceptee?: string | null
           compte_supprime_le?: string | null
+          consentement_marketing?: boolean
+          consentement_marketing_le?: string | null
+          consentement_marketing_source?: string | null
           created_at?: string
           date_naissance?: string | null
           email: string
@@ -1797,6 +1803,9 @@ export type Database = {
           cgu_acceptees_le?: string | null
           cgu_version_acceptee?: string | null
           compte_supprime_le?: string | null
+          consentement_marketing?: boolean
+          consentement_marketing_le?: string | null
+          consentement_marketing_source?: string | null
           created_at?: string
           date_naissance?: string | null
           email?: string
@@ -2393,6 +2402,10 @@ export type Database = {
       }
       charte_ok_pour_publication: {
         Args: { p_charte_exemptee_jusqua: string; p_charte_signee_le: string }
+        Returns: boolean
+      }
+      definir_consentement_marketing: {
+        Args: { p_consent: boolean }
         Returns: boolean
       }
       delete_email: {
