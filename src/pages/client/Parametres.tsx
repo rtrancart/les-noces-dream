@@ -99,6 +99,62 @@ export default function ClientParametres() {
           </Button>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-sans text-lg">Communications marketing</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="consentement-marketing" className="font-sans text-sm">
+                Recevoir les actualités, conseils et offres de LesNoces
+              </Label>
+              <p className="font-sans text-xs text-muted-foreground">
+                {consent
+                  ? "Vous recevez nos emails marketing. Vous pouvez vous désinscrire à tout moment."
+                  : "Vous ne recevez aucun email marketing de notre part."}
+              </p>
+            </div>
+            <Switch
+              id="consentement-marketing"
+              checked={consent}
+              disabled={savingConsent}
+              onCheckedChange={(v) => {
+                if (v) void updateConsent(true);
+                else setConfirmOpen(true);
+              }}
+            />
+          </div>
+          {savingConsent && (
+            <p className="flex items-center gap-2 font-sans text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" /> Enregistrement…
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif">
+              Confirmer le retrait de votre consentement
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-sans">
+              Ce retrait est définitif : votre adresse email sera enregistrée comme opposition
+              marketing et ne pourra plus être réinscrite à nos communications, même depuis cet
+              écran. Vos emails liés à votre compte et à vos demandes continueront d'être envoyés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="font-sans">Annuler</AlertDialogCancel>
+            <AlertDialogAction className="font-sans" onClick={() => void updateConsent(false)}>
+              Retirer définitivement
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
