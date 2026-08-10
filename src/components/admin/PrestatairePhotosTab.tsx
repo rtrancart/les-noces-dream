@@ -44,24 +44,24 @@ function SortablePhoto({ url, isMain, isDeleting, onSetMain, onDelete }: TilePro
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      style={{ transform: CSS.Transform.toString(transform), transition, touchAction: "none" }}
       className={cn(
-        "relative group aspect-square rounded-lg overflow-hidden border-2",
+        "relative group aspect-square rounded-lg overflow-hidden border-2 select-none cursor-grab active:cursor-grabbing",
         isMain ? "border-primary" : "border-transparent",
         isDragging && "z-10 opacity-80 shadow-lg",
       )}
+      {...attributes}
+      {...listeners}
     >
-      <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
+      <img src={url} alt="" draggable={false} className="w-full h-full object-cover pointer-events-none select-none" />
 
-      <button
-        type="button"
-        aria-label="Déplacer la photo"
-        className="absolute top-1.5 right-1.5 h-6 w-6 rounded bg-background/80 text-foreground flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-        {...attributes}
-        {...listeners}
+      <div
+        aria-hidden
+        className="absolute top-1.5 right-1.5 h-6 w-6 rounded bg-background/80 text-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
       >
         <GripVertical className="h-3.5 w-3.5" />
-      </button>
+      </div>
+
 
       {isMain && (
         <div className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground px-1.5 py-0.5 rounded text-[10px] font-sans font-medium flex items-center gap-1">
@@ -69,7 +69,10 @@ function SortablePhoto({ url, isMain, isDeleting, onSetMain, onDelete }: TilePro
         </div>
       )}
 
-      <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+      <div
+        onPointerDown={(e) => e.stopPropagation()}
+        className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100"
+      >
         {!isMain && (
           <Button size="sm" variant="secondary" className="h-7 text-[11px] font-sans gap-1" onClick={() => onSetMain(url)}>
             <Star className="h-3 w-3" /> Principale
