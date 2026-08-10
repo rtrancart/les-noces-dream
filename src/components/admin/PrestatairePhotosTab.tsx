@@ -69,16 +69,26 @@ function SortablePhoto({ url, isMain, isDeleting, onSetMain, onDelete }: TilePro
         </div>
       )}
 
-      <div
-        onPointerDown={(e) => e.stopPropagation()}
-        className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100"
-      >
+      <div className="pointer-events-none absolute inset-0 bg-foreground/0 group-hover:bg-foreground/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
         {!isMain && (
-          <Button size="sm" variant="secondary" className="h-7 text-[11px] font-sans gap-1" onClick={() => onSetMain(url)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="pointer-events-auto h-7 text-[11px] font-sans gap-1"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={() => onSetMain(url)}
+          >
             <Star className="h-3 w-3" /> Principale
           </Button>
         )}
-        <Button size="sm" variant="destructive" className="h-7 w-7 p-0" disabled={isDeleting} onClick={() => onDelete(url)}>
+        <Button
+          size="sm"
+          variant="destructive"
+          className="pointer-events-auto h-7 w-7 p-0"
+          disabled={isDeleting}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={() => onDelete(url)}
+        >
           {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3.5 w-3.5" />}
         </Button>
       </div>
