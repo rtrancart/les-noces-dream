@@ -116,11 +116,35 @@ export async function syncStripeInvoiceToPennylane(
   }
 
   // 1) Trace locale d'abord (jamais perdue même si Pennylane est indisponible).
-  const { data: row, error: upsertError } = await supabase
+  // L'unicité sur stripe_invoice_id est un index PARTIEL : PostgREST ne peut pas
+  // l'utiliser pour un ON CONFLICT. On fait donc select → update/insert.
+  const { data: existant } = await supabase
     .from('factures_pennylane')
-    .upsert(base, { onConflict: 'stripe_invoice_id' })
     .select('id, pennylane_invoice_id')
+    .eq('stripe_invoice_id', invoice.id)
     .maybeSingle()
+
+  let row: { id: string; pennylane_invoice_id: string | null } | null = existant ?? null
+  let upsertError: { message: string } | null = null
+
+  if (existant?.id) {
+    const { data, error } = await supabase
+      .from('factures_pennylane')
+      .update(base)
+      .eq('id', existant.id)
+      .select('id, pennylane_invoice_id')
+      .maybeSingle()
+    row = data ?? existant
+    upsertError = error
+  } else {
+    const { data, error } = await supabase
+      .from('factures_pennylane')
+      .insert(base)
+      .select('id, pennylane_invoice_id')
+      .maybeSingle()
+    row = data ?? null
+    upsertError = error
+  }
 
   if (upsertError) {
     console.error('pennylane-sync: upsert local échoué', upsertError)
