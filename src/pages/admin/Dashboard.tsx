@@ -136,6 +136,8 @@ export default function Dashboard() {
 
       <BrevoConnectionPanel />
 
+      <PennylaneConnectionPanel />
+
 
 
       {/* Stats Grid */}
