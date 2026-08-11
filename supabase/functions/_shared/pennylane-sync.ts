@@ -49,7 +49,7 @@ export async function ensurePennylaneCustomer(
   const payload: Record<string, unknown> = {
     customer_type: 'company',
     name,
-    external_reference: presta.id,
+    reference: presta.id,
     emails: presta.email_contact ? [presta.email_contact] : [],
     billing_address: {
       address: presta.adresse ?? '',
@@ -61,7 +61,9 @@ export async function ensurePennylaneCustomer(
   if (presta.siret) payload.reg_no = presta.siret
   if (presta.tva_intracom) payload.vat_number = presta.tva_intracom
 
-  return await pennylaneFetch<PennylaneCustomer>('/customers', {
+  // /customers est une route de lecture agrégée. La création d'une société
+  // passe par la route dédiée /company_customers en API V2.
+  return await pennylaneFetch<PennylaneCustomer>('/company_customers', {
     method: 'POST',
     body: JSON.stringify(payload),
   })

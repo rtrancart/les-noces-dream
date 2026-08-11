@@ -194,6 +194,7 @@ export interface PennylaneCustomer {
   source_id?: string
   name?: string
   external_reference?: string
+  reference?: string
   emails?: string[]
   customer_type?: 'company' | 'individual'
 }
@@ -224,13 +225,13 @@ function encodeFilter(filter: Array<Record<string, unknown>>): string {
   return encodeURIComponent(JSON.stringify(filter))
 }
 
-/** Recherche un client par référence externe (id prestataire). */
+/** Recherche un client par référence métier (id prestataire). */
 export async function findCustomerByExternalReference(
   externalReference: string,
   options: PennylaneFetchOptions = {},
 ): Promise<PennylaneCustomer | null> {
   const filter = encodeFilter([
-    { field: 'external_reference', operator: 'eq', value: externalReference },
+    { field: 'reference', operator: 'eq', value: externalReference },
   ])
   try {
     const res = await pennylaneFetch<PennylaneListResponse<PennylaneCustomer>>(
