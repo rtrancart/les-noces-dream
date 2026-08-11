@@ -47,9 +47,8 @@ export async function ensurePennylaneCustomer(
 
   const name = presta.raison_sociale || presta.nom_commercial || `Prestataire ${presta.id}`
   const payload: Record<string, unknown> = {
-    customer_type: 'company',
     name,
-    reference: presta.id,
+    external_reference: presta.id,
     emails: presta.email_contact ? [presta.email_contact] : [],
     billing_address: {
       address: presta.adresse ?? '',

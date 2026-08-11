@@ -231,7 +231,7 @@ export async function findCustomerByExternalReference(
   options: PennylaneFetchOptions = {},
 ): Promise<PennylaneCustomer | null> {
   const filter = encodeFilter([
-    { field: 'reference', operator: 'eq', value: externalReference },
+    { field: 'external_reference', operator: 'eq', value: externalReference },
   ])
   try {
     const res = await pennylaneFetch<PennylaneListResponse<PennylaneCustomer>>(
