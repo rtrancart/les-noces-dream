@@ -67,6 +67,21 @@ export async function ensurePennylaneCustomer(
   })
 }
 
+export interface SyncOptions {
+  /** Champs supplémentaires envoyés à Pennylane (ex. { draft: true } pour un test). */
+  extraInvoiceFields?: Record<string, unknown>
+}
+
+export interface SyncResult {
+  ok: boolean
+  error?: string
+  customerId?: string | null
+  customerCree?: boolean
+  pennylaneInvoiceId?: string | null
+  numero?: string | null
+  pdfUrl?: string | null
+}
+
 /**
  * Enregistre une facture Stripe en base et tente sa création dans Pennylane.
  * Idempotent via l'index unique sur `stripe_invoice_id`.
@@ -75,7 +90,9 @@ export async function syncStripeInvoiceToPennylane(
   supabase: Supabase,
   prestataireId: string,
   invoice: StripeInvoice,
-): Promise<{ ok: boolean; error?: string }> {
+  opts: SyncOptions = {},
+): Promise<SyncResult> {
+
   const montantTtc = invoice.total ?? invoice.amount_paid ?? 0
   const montantTva = invoice.tax ?? 0
   const montantHt = invoice.subtotal ?? montantTtc - montantTva
@@ -148,21 +165,31 @@ export async function syncStripeInvoiceToPennylane(
             vat_rate: montantTva > 0 ? 'FR_200' : 'exempt',
           },
         ],
+        ...(opts.extraInvoiceFields ?? {}),
       }),
     })
+
+    const pdfUrl = created?.public_file_url ?? created?.file_url ?? base.pdf_url
 
     await supabase
       .from('factures_pennylane')
       .update({
         pennylane_invoice_id: created?.id ? String(created.id) : null,
         pennylane_customer_id: String(customer.id ?? customer.source_id),
-        pdf_url: created?.public_file_url ?? created?.file_url ?? base.pdf_url,
+        pdf_url: pdfUrl,
         erreur: null,
         payload: created ?? null,
       })
       .eq('stripe_invoice_id', invoice.id)
 
-    return { ok: true }
+    return {
+      ok: true,
+      customerId: String(customer.id ?? customer.source_id),
+      pennylaneInvoiceId: created?.id ? String(created.id) : null,
+      numero: created?.invoice_number ?? base.numero ?? null,
+      pdfUrl: pdfUrl ?? null,
+    }
+
   } catch (err) {
     const message = err instanceof PennylaneError
       ? `${err.kind}: ${err.message}`

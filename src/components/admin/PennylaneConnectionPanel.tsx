@@ -3,15 +3,36 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Loader2, Receipt } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Receipt, Trash2 } from "lucide-react";
 
 type TestResult =
   | { ok: true; latence_ms: number; lecture_clients_ok: boolean; nb_clients_echantillon: number }
   | { ok: false; kind?: string; status?: number | null; motif?: string; message?: string };
 
+interface Etape {
+  libelle: string;
+  ok: boolean;
+  detail?: string;
+}
+
+interface E2eResult {
+  ok: boolean;
+  etapes?: Etape[];
+  stripe_invoice_id?: string;
+  prestataire?: string;
+  pdf_url?: string | null;
+  numero?: string | null;
+  motif?: string;
+  message?: string;
+}
+
 export function PennylaneConnectionPanel() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
+  const [e2eLoading, setE2eLoading] = useState(false);
+  const [e2e, setE2e] = useState<E2eResult | null>(null);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [cleanupMsg, setCleanupMsg] = useState<string | null>(null);
 
   const test = async () => {
     setLoading(true);
@@ -36,6 +57,65 @@ export function PennylaneConnectionPanel() {
     }
   };
 
+  const testComplet = async () => {
+    const confirme = window.confirm(
+      "Une facture de démonstration (1,00 € HT) va être créée en brouillon dans Pennylane pour vérifier toute la chaîne. Vous pourrez la supprimer juste après. Continuer ?",
+    );
+    if (!confirme) return;
+    setE2eLoading(true);
+    setE2e(null);
+    setCleanupMsg(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("pennylane-test-e2e", {
+        body: { action: "run" },
+      });
+      if (error) {
+        setE2e({ ok: false, motif: "Appel de la fonction impossible", message: error.message });
+      } else {
+        setE2e(data as E2eResult);
+      }
+    } catch (e) {
+      setE2e({
+        ok: false,
+        motif: "Erreur inattendue",
+        message: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setE2eLoading(false);
+    }
+  };
+
+  const nettoyer = async () => {
+    if (!e2e?.stripe_invoice_id) return;
+    setCleanupLoading(true);
+    setCleanupMsg(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("pennylane-test-e2e", {
+        body: { action: "cleanup", stripe_invoice_id: e2e.stripe_invoice_id },
+      });
+      if (error) {
+        setCleanupMsg(`Suppression impossible : ${error.message}`);
+      } else {
+        const res = data as {
+          pennylane_supprime?: boolean;
+          message_pennylane?: string | null;
+          numero?: string | null;
+        };
+        setCleanupMsg(
+          res.pennylane_supprime
+            ? "Facture de test supprimée dans Pennylane et en base."
+            : `Ligne supprimée en base. À annuler manuellement dans Pennylane${
+                res.numero ? ` (n° ${res.numero})` : ""
+              }${res.message_pennylane ? ` — ${res.message_pennylane}` : ""}.`,
+        );
+        setE2e(null);
+      }
+    } finally {
+      setCleanupLoading(false);
+    }
+  };
+
+
   return (
     <Card className="shadow-card">
       <CardHeader className="pb-3">
@@ -44,12 +124,30 @@ export function PennylaneConnectionPanel() {
             <Receipt className="h-4 w-4 text-primary" />
             Connexion Pennylane
           </CardTitle>
-          <Button size="sm" onClick={test} disabled={loading} className="font-sans text-xs">
-            {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-            Tester la connexion
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={test}
+              disabled={loading}
+              className="font-sans text-xs"
+            >
+              {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+              Tester la connexion
+            </Button>
+            <Button
+              size="sm"
+              onClick={testComplet}
+              disabled={e2eLoading}
+              className="font-sans text-xs"
+            >
+              {e2eLoading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+              Test complet (facture de démo)
+            </Button>
+          </div>
         </div>
       </CardHeader>
+
       <CardContent>
         {!result && (
           <p className="font-sans text-sm text-muted-foreground">
@@ -84,7 +182,89 @@ export function PennylaneConnectionPanel() {
             )}
           </div>
         )}
+
+        {cleanupMsg && (
+          <p className="mt-3 font-sans text-xs text-muted-foreground">{cleanupMsg}</p>
+        )}
+
+        {e2e && (
+          <div className="mt-4 space-y-2 border-t border-border/60 pt-3">
+            <div className="flex items-center gap-2">
+              <Badge
+                className={
+                  e2e.ok
+                    ? "bg-sauge/20 text-sauge font-sans text-[10px] font-normal"
+                    : "bg-destructive/10 text-destructive font-sans text-[10px] font-normal"
+                }
+              >
+                {e2e.ok ? (
+                  <CheckCircle2 className="mr-1 h-3 w-3" />
+                ) : (
+                  <XCircle className="mr-1 h-3 w-3" />
+                )}
+                Test complet {e2e.ok ? "réussi" : "en échec"}
+              </Badge>
+              {e2e.prestataire && (
+                <span className="font-sans text-xs text-muted-foreground">{e2e.prestataire}</span>
+              )}
+            </div>
+
+            {(e2e.motif || e2e.message) && (
+              <p className="font-sans text-xs text-destructive break-words">
+                {e2e.motif} {e2e.message}
+              </p>
+            )}
+
+            <ul className="space-y-1">
+              {(e2e.etapes ?? []).map((etape, i) => (
+                <li key={i} className="flex items-start gap-2 font-sans text-xs">
+                  {etape.ok ? (
+                    <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-sauge" />
+                  ) : (
+                    <XCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-destructive" />
+                  )}
+                  <span className="text-foreground">
+                    {etape.libelle}
+                    {etape.detail && (
+                      <span className="text-muted-foreground"> — {etape.detail}</span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              {e2e.pdf_url && (
+                <a
+                  href={e2e.pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-sans text-xs text-primary hover:underline"
+                >
+                  Voir le PDF généré
+                </a>
+              )}
+              {e2e.stripe_invoice_id && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={nettoyer}
+                  disabled={cleanupLoading}
+                  className="font-sans text-xs"
+                >
+                  {cleanupLoading ? (
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-3.5 w-3.5" />
+                  )}
+                  Supprimer la facture de test
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </CardContent>
+
     </Card>
   );
 }
