@@ -126,6 +126,13 @@ Deno.serve(async (req) => {
         await supabase.rpc("reactiver_prestataire_paiement", {
           p_prestataire_id: prestataireId,
         });
+
+        // Synchro comptable Pennylane (best effort, ne bloque jamais le webhook)
+        try {
+          await syncStripeInvoiceToPennylane(supabase, prestataireId, invoice);
+        } catch (e) {
+          console.error("pennylane sync error", e);
+        }
         break;
       }
 
