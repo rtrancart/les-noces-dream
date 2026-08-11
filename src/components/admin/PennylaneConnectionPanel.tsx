@@ -124,12 +124,30 @@ export function PennylaneConnectionPanel() {
             <Receipt className="h-4 w-4 text-primary" />
             Connexion Pennylane
           </CardTitle>
-          <Button size="sm" onClick={test} disabled={loading} className="font-sans text-xs">
-            {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-            Tester la connexion
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={test}
+              disabled={loading}
+              className="font-sans text-xs"
+            >
+              {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+              Tester la connexion
+            </Button>
+            <Button
+              size="sm"
+              onClick={testComplet}
+              disabled={e2eLoading}
+              className="font-sans text-xs"
+            >
+              {e2eLoading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+              Test complet (facture de démo)
+            </Button>
+          </div>
         </div>
       </CardHeader>
+
       <CardContent>
         {!result && (
           <p className="font-sans text-sm text-muted-foreground">
