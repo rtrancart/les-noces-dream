@@ -47,7 +47,6 @@ export async function ensurePennylaneCustomer(
 
   const name = presta.raison_sociale || presta.nom_commercial || `Prestataire ${presta.id}`
   const payload: Record<string, unknown> = {
-    customer_type: 'company',
     name,
     external_reference: presta.id,
     emails: presta.email_contact ? [presta.email_contact] : [],
@@ -61,7 +60,9 @@ export async function ensurePennylaneCustomer(
   if (presta.siret) payload.reg_no = presta.siret
   if (presta.tva_intracom) payload.vat_number = presta.tva_intracom
 
-  return await pennylaneFetch<PennylaneCustomer>('/customers', {
+  // /customers est une route de lecture agrégée. La création d'une société
+  // passe par la route dédiée /company_customers en API V2.
+  return await pennylaneFetch<PennylaneCustomer>('/company_customers', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
@@ -164,34 +165,52 @@ export async function syncStripeInvoiceToPennylane(
 
     if (!presta) throw new Error('Prestataire introuvable')
 
-    const customer = await ensurePennylaneCustomer(presta as PrestataireFacturation)
+    let customer: PennylaneCustomer | null
+    try {
+      customer = await ensurePennylaneCustomer(presta as PrestataireFacturation)
+    } catch (err) {
+      if (err instanceof PennylaneError) {
+        throw new PennylaneError(err.kind, `Client : ${err.message}`, err.status, err.retryAfterSeconds)
+      }
+      throw err
+    }
     if (!customer?.id && !customer?.source_id) throw new Error('Client Pennylane introuvable')
 
     const lineLabel = invoice.lines?.data?.[0]?.description
       ?? `Abonnement Lesnoces.net ${base.numero ?? ''}`.trim()
 
-    const created = await pennylaneFetch<PennylaneInvoice>('/customer_invoices/import', {
-      method: 'POST',
-      body: JSON.stringify({
-        create_customer: false,
-        customer_id: customer.id ?? customer.source_id,
-        external_reference: invoice.id,
-        date: base.date_facture,
-        deadline: base.date_echeance ?? base.date_facture,
-        invoice_number: base.numero,
-        currency: base.devise,
-        invoice_lines: [
-          {
-            label: lineLabel,
-            quantity: 1,
-            unit: 'piece',
-            raw_currency_unit_price: (montantHt / 100).toFixed(2),
-            vat_rate: montantTva > 0 ? 'FR_200' : 'exempt',
-          },
-        ],
-        ...(opts.extraInvoiceFields ?? {}),
-      }),
-    })
+    // L'API V2 de création structurée expose POST /customer_invoices.
+    // /customer_invoices/import n'existe pas en V2 (404) et l'import de PDF
+    // relève d'un autre parcours. Le schéma est strict : ne pas envoyer les
+    // anciens champs create_customer / invoice_number.
+    let created: PennylaneInvoice
+    try {
+      created = await pennylaneFetch<PennylaneInvoice>('/customer_invoices', {
+        method: 'POST',
+        body: JSON.stringify({
+          customer_id: customer.id ?? customer.source_id,
+          external_reference: invoice.id,
+          date: base.date_facture,
+          deadline: base.date_echeance ?? base.date_facture,
+          currency: base.devise,
+          invoice_lines: [
+            {
+              label: lineLabel,
+              quantity: 1,
+              unit: 'piece',
+              raw_currency_unit_price: (montantHt / 100).toFixed(2),
+              vat_rate: montantTva > 0 ? 'FR_200' : 'exempt',
+            },
+          ],
+          ...(opts.extraInvoiceFields ?? {}),
+        }),
+      })
+    } catch (err) {
+      if (err instanceof PennylaneError) {
+        throw new PennylaneError(err.kind, `Facture : ${err.message}`, err.status, err.retryAfterSeconds)
+      }
+      throw err
+    }
 
     const pdfUrl = created?.public_file_url ?? created?.file_url ?? base.pdf_url
 

@@ -194,6 +194,7 @@ export interface PennylaneCustomer {
   source_id?: string
   name?: string
   external_reference?: string
+  reference?: string
   emails?: string[]
   customer_type?: 'company' | 'individual'
 }
@@ -224,7 +225,7 @@ function encodeFilter(filter: Array<Record<string, unknown>>): string {
   return encodeURIComponent(JSON.stringify(filter))
 }
 
-/** Recherche un client par référence externe (id prestataire). */
+/** Recherche un client par référence métier (id prestataire). */
 export async function findCustomerByExternalReference(
   externalReference: string,
   options: PennylaneFetchOptions = {},
@@ -232,12 +233,19 @@ export async function findCustomerByExternalReference(
   const filter = encodeFilter([
     { field: 'external_reference', operator: 'eq', value: externalReference },
   ])
-  const res = await pennylaneFetch<PennylaneListResponse<PennylaneCustomer>>(
-    `/customers?limit=1&filter=${filter}`,
-    { method: 'GET' },
-    options,
-  )
-  return res?.items?.[0] ?? null
+  try {
+    const res = await pennylaneFetch<PennylaneListResponse<PennylaneCustomer>>(
+      `/customers?limit=1&filter=${filter}`,
+      { method: 'GET' },
+      options,
+    )
+    return res?.items?.[0] ?? null
+  } catch (err) {
+    // Pennylane répond 404 lorsqu'aucun client ne correspond à certains
+    // filtres, au lieu de renvoyer une collection vide.
+    if (err instanceof PennylaneError && err.kind === 'not_found') return null
+    throw err
+  }
 }
 
 /** Recherche un client par email (secours si la référence externe n'existe pas encore). */
@@ -248,12 +256,17 @@ export async function findCustomerByEmail(
   const filter = encodeFilter([
     { field: 'emails', operator: 'in', value: [email] },
   ])
-  const res = await pennylaneFetch<PennylaneListResponse<PennylaneCustomer>>(
-    `/customers?limit=1&filter=${filter}`,
-    { method: 'GET' },
-    options,
-  )
-  return res?.items?.[0] ?? null
+  try {
+    const res = await pennylaneFetch<PennylaneListResponse<PennylaneCustomer>>(
+      `/customers?limit=1&filter=${filter}`,
+      { method: 'GET' },
+      options,
+    )
+    return res?.items?.[0] ?? null
+  } catch (err) {
+    if (err instanceof PennylaneError && err.kind === 'not_found') return null
+    throw err
+  }
 }
 
 /** Appel de vérification (lecture seule, aucun effet de bord). */
