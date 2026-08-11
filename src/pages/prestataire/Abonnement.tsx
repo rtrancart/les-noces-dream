@@ -492,6 +492,7 @@ function GestionAbonnement({
   cancelScheduledChange: () => void;
   cancellingSchedule: boolean;
 }) {
+  const { prestataire } = useSharedPrestataire();
   const etat = deriveEtat(abo);
   const formuleKey = planToFormule(abo.plan);
   const formule = formuleKey ? FORMULES[formuleKey] : null;
