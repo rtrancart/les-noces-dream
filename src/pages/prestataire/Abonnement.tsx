@@ -670,6 +670,8 @@ function GestionAbonnement({
           </>
         )}
       </section>
+
+      <FacturesList prestataireId={prestataire?.id} />
     </div>
   );
 }
