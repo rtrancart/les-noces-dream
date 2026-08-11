@@ -67,6 +67,21 @@ export async function ensurePennylaneCustomer(
   })
 }
 
+export interface SyncOptions {
+  /** Champs supplémentaires envoyés à Pennylane (ex. { draft: true } pour un test). */
+  extraInvoiceFields?: Record<string, unknown>
+}
+
+export interface SyncResult {
+  ok: boolean
+  error?: string
+  customerId?: string | null
+  customerCree?: boolean
+  pennylaneInvoiceId?: string | null
+  numero?: string | null
+  pdfUrl?: string | null
+}
+
 /**
  * Enregistre une facture Stripe en base et tente sa création dans Pennylane.
  * Idempotent via l'index unique sur `stripe_invoice_id`.
@@ -75,7 +90,9 @@ export async function syncStripeInvoiceToPennylane(
   supabase: Supabase,
   prestataireId: string,
   invoice: StripeInvoice,
-): Promise<{ ok: boolean; error?: string }> {
+  opts: SyncOptions = {},
+): Promise<SyncResult> {
+
   const montantTtc = invoice.total ?? invoice.amount_paid ?? 0
   const montantTva = invoice.tax ?? 0
   const montantHt = invoice.subtotal ?? montantTtc - montantTva
