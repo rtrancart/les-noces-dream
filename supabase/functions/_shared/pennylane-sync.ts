@@ -170,15 +170,17 @@ export async function syncStripeInvoiceToPennylane(
     const lineLabel = invoice.lines?.data?.[0]?.description
       ?? `Abonnement Lesnoces.net ${base.numero ?? ''}`.trim()
 
-    const created = await pennylaneFetch<PennylaneInvoice>('/customer_invoices/import', {
+    // L'API V2 de création structurée expose POST /customer_invoices.
+    // /customer_invoices/import n'existe pas en V2 (404) et l'import de PDF
+    // relève d'un autre parcours. Le schéma est strict : ne pas envoyer les
+    // anciens champs create_customer / invoice_number.
+    const created = await pennylaneFetch<PennylaneInvoice>('/customer_invoices', {
       method: 'POST',
       body: JSON.stringify({
-        create_customer: false,
         customer_id: customer.id ?? customer.source_id,
         external_reference: invoice.id,
         date: base.date_facture,
         deadline: base.date_echeance ?? base.date_facture,
-        invoice_number: base.numero,
         currency: base.devise,
         invoice_lines: [
           {
