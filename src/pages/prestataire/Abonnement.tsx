@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import FacturesList from "@/components/facturation/FacturesList";
 
 type Formule = "standard" | "premium" | "annuel";
 
