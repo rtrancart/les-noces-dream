@@ -165,21 +165,31 @@ export async function syncStripeInvoiceToPennylane(
             vat_rate: montantTva > 0 ? 'FR_200' : 'exempt',
           },
         ],
+        ...(opts.extraInvoiceFields ?? {}),
       }),
     })
+
+    const pdfUrl = created?.public_file_url ?? created?.file_url ?? base.pdf_url
 
     await supabase
       .from('factures_pennylane')
       .update({
         pennylane_invoice_id: created?.id ? String(created.id) : null,
         pennylane_customer_id: String(customer.id ?? customer.source_id),
-        pdf_url: created?.public_file_url ?? created?.file_url ?? base.pdf_url,
+        pdf_url: pdfUrl,
         erreur: null,
         payload: created ?? null,
       })
       .eq('stripe_invoice_id', invoice.id)
 
-    return { ok: true }
+    return {
+      ok: true,
+      customerId: String(customer.id ?? customer.source_id),
+      pennylaneInvoiceId: created?.id ? String(created.id) : null,
+      numero: created?.invoice_number ?? base.numero ?? null,
+      pdfUrl: pdfUrl ?? null,
+    }
+
   } catch (err) {
     const message = err instanceof PennylaneError
       ? `${err.kind}: ${err.message}`
