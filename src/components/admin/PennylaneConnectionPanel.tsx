@@ -182,7 +182,89 @@ export function PennylaneConnectionPanel() {
             )}
           </div>
         )}
+
+        {cleanupMsg && (
+          <p className="mt-3 font-sans text-xs text-muted-foreground">{cleanupMsg}</p>
+        )}
+
+        {e2e && (
+          <div className="mt-4 space-y-2 border-t border-border/60 pt-3">
+            <div className="flex items-center gap-2">
+              <Badge
+                className={
+                  e2e.ok
+                    ? "bg-sauge/20 text-sauge font-sans text-[10px] font-normal"
+                    : "bg-destructive/10 text-destructive font-sans text-[10px] font-normal"
+                }
+              >
+                {e2e.ok ? (
+                  <CheckCircle2 className="mr-1 h-3 w-3" />
+                ) : (
+                  <XCircle className="mr-1 h-3 w-3" />
+                )}
+                Test complet {e2e.ok ? "réussi" : "en échec"}
+              </Badge>
+              {e2e.prestataire && (
+                <span className="font-sans text-xs text-muted-foreground">{e2e.prestataire}</span>
+              )}
+            </div>
+
+            {(e2e.motif || e2e.message) && (
+              <p className="font-sans text-xs text-destructive break-words">
+                {e2e.motif} {e2e.message}
+              </p>
+            )}
+
+            <ul className="space-y-1">
+              {(e2e.etapes ?? []).map((etape, i) => (
+                <li key={i} className="flex items-start gap-2 font-sans text-xs">
+                  {etape.ok ? (
+                    <CheckCircle2 className="mt-0.5 h-3 w-3 flex-shrink-0 text-sauge" />
+                  ) : (
+                    <XCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-destructive" />
+                  )}
+                  <span className="text-foreground">
+                    {etape.libelle}
+                    {etape.detail && (
+                      <span className="text-muted-foreground"> — {etape.detail}</span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              {e2e.pdf_url && (
+                <a
+                  href={e2e.pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-sans text-xs text-primary hover:underline"
+                >
+                  Voir le PDF généré
+                </a>
+              )}
+              {e2e.stripe_invoice_id && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={nettoyer}
+                  disabled={cleanupLoading}
+                  className="font-sans text-xs"
+                >
+                  {cleanupLoading ? (
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-3.5 w-3.5" />
+                  )}
+                  Supprimer la facture de test
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </CardContent>
+
     </Card>
   );
 }
