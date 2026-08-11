@@ -14,6 +14,7 @@ import { fr } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
 import { MigratePhotosBatchPanel } from "@/components/admin/MigratePhotosBatchPanel";
 import { BrevoConnectionPanel } from "@/components/admin/BrevoConnectionPanel";
+import { PennylaneConnectionPanel } from "@/components/admin/PennylaneConnectionPanel";
 
 
 
@@ -135,6 +136,8 @@ export default function Dashboard() {
       <MigratePhotosBatchPanel />
 
       <BrevoConnectionPanel />
+
+      <PennylaneConnectionPanel />
 
 
 
