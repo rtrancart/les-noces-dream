@@ -1,6 +1,6 @@
 // pennylane-test-e2e — rejoue la chaîne complète de facturation Pennylane
 // (prestataire → client → facture → ligne en base) avec une facture de démo.
-// Réservé aux admins. Utilise exactement le code de production.
+// Réservé aux admins. Utilise exactement le code de production (API V2).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { syncStripeInvoiceToPennylane } from "../_shared/pennylane-sync.ts";
 import { pennylaneFetch, PennylaneError } from "../_shared/pennylane-client.ts";
