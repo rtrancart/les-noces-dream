@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import FacturesList from "@/components/facturation/FacturesList";
 
 type Formule = "standard" | "premium" | "annuel";
 
@@ -492,6 +493,7 @@ function GestionAbonnement({
   cancelScheduledChange: () => void;
   cancellingSchedule: boolean;
 }) {
+  const { prestataire } = useSharedPrestataire();
   const etat = deriveEtat(abo);
   const formuleKey = planToFormule(abo.plan);
   const formule = formuleKey ? FORMULES[formuleKey] : null;
@@ -670,6 +672,8 @@ function GestionAbonnement({
           </>
         )}
       </section>
+
+      <FacturesList prestataireId={prestataire?.id} />
     </div>
   );
 }

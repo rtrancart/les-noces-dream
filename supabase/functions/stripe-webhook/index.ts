@@ -2,6 +2,7 @@
 // Vérifie la signature Stripe (STRIPE_WEBHOOK_SECRET). verify_jwt = false.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@17";
+import { syncStripeInvoiceToPennylane } from "../_shared/pennylane-sync.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2024-11-20.acacia",
@@ -126,6 +127,13 @@ Deno.serve(async (req) => {
         await supabase.rpc("reactiver_prestataire_paiement", {
           p_prestataire_id: prestataireId,
         });
+
+        // Synchro comptable Pennylane (best effort, ne bloque jamais le webhook)
+        try {
+          await syncStripeInvoiceToPennylane(supabase, prestataireId, invoice);
+        } catch (e) {
+          console.error("pennylane sync error", e);
+        }
         break;
       }
 

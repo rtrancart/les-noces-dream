@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FacturesList from "@/components/facturation/FacturesList";
 import { toast } from "sonner";
 import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon, X, ChevronDown, ChevronRight, EyeOff, ImageIcon } from "lucide-react";
 import PrestatairePhotosTab from "@/components/admin/PrestatairePhotosTab";
@@ -1256,6 +1257,7 @@ export default function Prestataires() {
               <Field label="Notes admin (interne)">
                 <Textarea value={form.notes_admin} onChange={(e) => setForm({ ...form, notes_admin: e.target.value })} rows={3} />
               </Field>
+              {editItem && <FacturesList prestataireId={editItem.id} />}
             </TabsContent>
 
             {editItem && (

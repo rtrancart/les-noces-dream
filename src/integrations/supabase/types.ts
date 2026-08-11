@@ -1008,6 +1008,97 @@ export type Database = {
           },
         ]
       }
+      factures_pennylane: {
+        Row: {
+          created_at: string
+          date_echeance: string | null
+          date_facture: string | null
+          devise: string
+          erreur: string | null
+          id: string
+          montant_ht_cents: number | null
+          montant_ttc_cents: number | null
+          montant_tva_cents: number | null
+          numero: string | null
+          payload: Json | null
+          pdf_url: string | null
+          pennylane_customer_id: string | null
+          pennylane_invoice_id: string | null
+          prestataire_id: string
+          source: string
+          statut: string
+          stripe_invoice_id: string | null
+          stripe_payment_intent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_echeance?: string | null
+          date_facture?: string | null
+          devise?: string
+          erreur?: string | null
+          id?: string
+          montant_ht_cents?: number | null
+          montant_ttc_cents?: number | null
+          montant_tva_cents?: number | null
+          numero?: string | null
+          payload?: Json | null
+          pdf_url?: string | null
+          pennylane_customer_id?: string | null
+          pennylane_invoice_id?: string | null
+          prestataire_id: string
+          source?: string
+          statut?: string
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_echeance?: string | null
+          date_facture?: string | null
+          devise?: string
+          erreur?: string | null
+          id?: string
+          montant_ht_cents?: number | null
+          montant_ttc_cents?: number | null
+          montant_tva_cents?: number | null
+          numero?: string | null
+          payload?: Json | null
+          pdf_url?: string | null
+          pennylane_customer_id?: string | null
+          pennylane_invoice_id?: string | null
+          prestataire_id?: string
+          source?: string
+          statut?: string
+          stripe_invoice_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_pennylane_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_pennylane_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_pennylane_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public_all"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favoris: {
         Row: {
           created_at: string
@@ -1572,6 +1663,7 @@ export type Database = {
           relances_envoyees: number
           representant_nom: string | null
           representant_prenom: string | null
+          siret: string | null
           site_web: string | null
           slug: string
           statut: Database["public"]["Enums"]["statut_prestataire"]
@@ -1581,6 +1673,7 @@ export type Database = {
           taux_reponse_calcule_le: string | null
           taux_reponse_nb_demandes_90j: number | null
           telephone: string | null
+          tva_intracom: string | null
           updated_at: string
           urls_galerie: string[] | null
           user_id: string | null
@@ -1643,6 +1736,7 @@ export type Database = {
           relances_envoyees?: number
           representant_nom?: string | null
           representant_prenom?: string | null
+          siret?: string | null
           site_web?: string | null
           slug: string
           statut?: Database["public"]["Enums"]["statut_prestataire"]
@@ -1652,6 +1746,7 @@ export type Database = {
           taux_reponse_calcule_le?: string | null
           taux_reponse_nb_demandes_90j?: number | null
           telephone?: string | null
+          tva_intracom?: string | null
           updated_at?: string
           urls_galerie?: string[] | null
           user_id?: string | null
@@ -1714,6 +1809,7 @@ export type Database = {
           relances_envoyees?: number
           representant_nom?: string | null
           representant_prenom?: string | null
+          siret?: string | null
           site_web?: string | null
           slug?: string
           statut?: Database["public"]["Enums"]["statut_prestataire"]
@@ -1723,6 +1819,7 @@ export type Database = {
           taux_reponse_calcule_le?: string | null
           taux_reponse_nb_demandes_90j?: number | null
           telephone?: string | null
+          tva_intracom?: string | null
           updated_at?: string
           urls_galerie?: string[] | null
           user_id?: string | null
