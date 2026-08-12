@@ -13,6 +13,7 @@ import {
   MapPin,
   UserPlus,
   FileSignature,
+  Plug,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -47,6 +48,10 @@ const contentItems = [
   { title: "Pages contenu", url: "/admin/pages", icon: FileText },
   { title: "Pages région", url: "/admin/regions", icon: MapPin },
   { title: "Emails", url: "/admin/emails", icon: Mail },
+];
+
+const systemItems = [
+  { title: "Connecteurs", url: "/admin/connecteurs", icon: Plug },
 ];
 
 export function AdminSidebar() {
@@ -131,7 +136,7 @@ export function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-3">
+        <SidebarFooter className="border-t border-sidebar-border p-3">
         {!collapsed && profile && (
           <p className="mb-2 truncate font-sans text-xs text-sidebar-foreground/50">
             {profile.prenom} {profile.nom}
