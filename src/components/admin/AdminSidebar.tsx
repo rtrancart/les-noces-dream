@@ -13,6 +13,7 @@ import {
   MapPin,
   UserPlus,
   FileSignature,
+  Plug,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -47,6 +48,10 @@ const contentItems = [
   { title: "Pages contenu", url: "/admin/pages", icon: FileText },
   { title: "Pages région", url: "/admin/regions", icon: MapPin },
   { title: "Emails", url: "/admin/emails", icon: Mail },
+];
+
+const systemItems = [
+  { title: "Connecteurs", url: "/admin/connecteurs", icon: Plug },
 ];
 
 export function AdminSidebar() {
@@ -111,6 +116,33 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {contentItems.map((item) => (
+                <SidebarMenuItem key={item.url}>
+                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                    <NavLink
+                      to={item.url}
+                      className="flex items-center gap-2 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                      activeClassName="!bg-sidebar-accent !text-sidebar-primary font-medium"
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      {!collapsed && (
+                        <span className="font-sans text-sm">{item.title}</span>
+                      )}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* System Nav */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-[0.15em] text-sidebar-foreground/40 font-sans">
+            Système
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {systemItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <NavLink

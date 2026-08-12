@@ -12,9 +12,6 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
-import { MigratePhotosBatchPanel } from "@/components/admin/MigratePhotosBatchPanel";
-import { BrevoConnectionPanel } from "@/components/admin/BrevoConnectionPanel";
-import { PennylaneConnectionPanel } from "@/components/admin/PennylaneConnectionPanel";
 
 
 
@@ -133,11 +130,6 @@ export default function Dashboard() {
         <p className="mt-1 font-sans text-sm text-muted-foreground">Vue d'ensemble de votre plateforme</p>
       </div>
 
-      <MigratePhotosBatchPanel />
-
-      <BrevoConnectionPanel />
-
-      <PennylaneConnectionPanel />
 
 
 

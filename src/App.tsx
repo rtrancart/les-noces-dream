@@ -55,6 +55,7 @@ import PrestatairePrestation from "./pages/prestataire/Prestation";
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
+import AdminConnecteurs from "./pages/admin/Connecteurs";
 import AdminPrestataires from "./pages/admin/Prestataires";
 import AdminCategories from "./pages/admin/Categories";
 import AdminDemandes from "./pages/admin/Demandes";
@@ -175,6 +176,7 @@ const App = () => (
               <Route path="regions" element={<AdminRegions />} />
               <Route path="prestataires-pre-inscrits" element={<Navigate to="/admin/prestataires" replace />} />
               <Route path="chartes" element={<AdminChartes />} />
+              <Route path="connecteurs" element={<AdminConnecteurs />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
