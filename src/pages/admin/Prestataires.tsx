@@ -405,7 +405,14 @@ export default function Prestataires() {
       .limit(200);
     if (filterStatut !== "tous") query = query.eq("statut", filterStatut as StatutPrestataire);
     if (filterCategorie !== "toutes") query = query.eq("categorie_mere_id", filterCategorie);
-    if (search) query = query.ilike("nom_commercial", `%${search}%`);
+    // Recherche insensible aux accents et à la casse (colonne normalisée côté DB)
+    if (search) {
+      const normalized = search
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+      query = query.ilike("nom_commercial_norm", `%${normalized}%`);
+    }
 
     const [{ data: result, error }, { data: cats }] = await Promise.all([
       query,
