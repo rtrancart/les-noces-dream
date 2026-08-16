@@ -1642,6 +1642,7 @@ export type Database = {
             | Database["public"]["Enums"]["motif_suspension_enum"]
             | null
           nom_commercial: string
+          nom_commercial_norm: string | null
           nombre_avis: number | null
           nombre_demandes: number | null
           note_flexibilite: number | null
@@ -1715,6 +1716,7 @@ export type Database = {
             | Database["public"]["Enums"]["motif_suspension_enum"]
             | null
           nom_commercial: string
+          nom_commercial_norm?: string | null
           nombre_avis?: number | null
           nombre_demandes?: number | null
           note_flexibilite?: number | null
@@ -1788,6 +1790,7 @@ export type Database = {
             | Database["public"]["Enums"]["motif_suspension_enum"]
             | null
           nom_commercial?: string
+          nom_commercial_norm?: string | null
           nombre_avis?: number | null
           nombre_demandes?: number | null
           note_flexibilite?: number | null
@@ -2660,6 +2663,7 @@ export type Database = {
         Args: { ts_debut: string; ts_fin: string }
         Returns: number
       }
+      immutable_unaccent: { Args: { "": string }; Returns: string }
       mark_prestataire_first_login: { Args: never; Returns: undefined }
       move_to_dlq: {
         Args: {
