@@ -1,0 +1,952 @@
+{
+  "redirects": [
+    {
+      "source": "/prestataire-profil/1211-:oldslug*",
+      "destination": "/prestataire/dcs-evenementiel",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "1"
+        }
+      ],
+      "destination": "/prestataires/animation-animateur",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "1"
+        }
+      ],
+      "destination": "/prestataires/animation-animateur",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "2"
+        }
+      ],
+      "destination": "/prestataires/artificier",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "2"
+        }
+      ],
+      "destination": "/prestataires/artificier",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "3"
+        }
+      ],
+      "destination": "/prestataires/vetements-mariage-robes-de-mariees",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "3"
+        }
+      ],
+      "destination": "/prestataires/vetements-mariage-robes-de-mariees",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "4"
+        }
+      ],
+      "destination": "/prestataires/transport-vehicules-helicopteres-caleches-autres",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "4"
+        }
+      ],
+      "destination": "/prestataires/transport-vehicules-helicopteres-caleches-autres",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "5"
+        }
+      ],
+      "destination": "/prestataires/caviste-domaine-viticole",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "5"
+        }
+      ],
+      "destination": "/prestataires/caviste-domaine-viticole",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "6"
+        }
+      ],
+      "destination": "/prestataires/lieux-de-reception-chateaux",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "6"
+        }
+      ],
+      "destination": "/prestataires/lieux-de-reception-chateaux",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "7"
+        }
+      ],
+      "destination": "/prestataires/beaute-coiffure",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "7"
+        }
+      ],
+      "destination": "/prestataires/beaute-coiffure",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "8"
+        }
+      ],
+      "destination": "/prestataires/decoration",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "8"
+        }
+      ],
+      "destination": "/prestataires/decoration",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "9"
+        }
+      ],
+      "destination": "/prestataires/musicien-dj",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "9"
+        }
+      ],
+      "destination": "/prestataires/musicien-dj",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "11"
+        }
+      ],
+      "destination": "/prestataires/faire-parts",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "11"
+        }
+      ],
+      "destination": "/prestataires/faire-parts",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "12"
+        }
+      ],
+      "destination": "/prestataires/fleuriste",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "12"
+        }
+      ],
+      "destination": "/prestataires/fleuriste",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "13"
+        }
+      ],
+      "destination": "/prestataires/musicien-dj",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "13"
+        }
+      ],
+      "destination": "/prestataires/musicien-dj",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "15"
+        }
+      ],
+      "destination": "/prestataires/hebergements-hotel",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "15"
+        }
+      ],
+      "destination": "/prestataires/hebergements-hotel",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "16"
+        }
+      ],
+      "destination": "/prestataires/bijoux-de-mariage",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "16"
+        }
+      ],
+      "destination": "/prestataires/bijoux-de-mariage",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "17"
+        }
+      ],
+      "destination": "/prestataires/transport-vehicules",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "17"
+        }
+      ],
+      "destination": "/prestataires/transport-vehicules",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "18"
+        }
+      ],
+      "destination": "/prestataires/nounous-et-animatrice-enfants",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "18"
+        }
+      ],
+      "destination": "/prestataires/nounous-et-animatrice-enfants",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "19"
+        }
+      ],
+      "destination": "/prestataires/photographe-videaste",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "19"
+        }
+      ],
+      "destination": "/prestataires/photographe-videaste",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "21"
+        }
+      ],
+      "destination": "/prestataires/traiteur-gastronomie-restaurant-traiteur",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "21"
+        }
+      ],
+      "destination": "/prestataires/traiteur-gastronomie-restaurant-traiteur",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "23"
+        }
+      ],
+      "destination": "/prestataires/wedding-planner",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "23"
+        }
+      ],
+      "destination": "/prestataires/wedding-planner",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "25"
+        }
+      ],
+      "destination": "/prestataires/vetements-mariage-costume",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "25"
+        }
+      ],
+      "destination": "/prestataires/vetements-mariage-costume",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "26"
+        }
+      ],
+      "destination": "/prestataires/transport-vehicules-voiture-de-luxe-de-collection",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "26"
+        }
+      ],
+      "destination": "/prestataires/transport-vehicules-voiture-de-luxe-de-collection",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "27"
+        }
+      ],
+      "destination": "/prestataires/beaute-institut-de-beaute-maquillage",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "27"
+        }
+      ],
+      "destination": "/prestataires/beaute-institut-de-beaute-maquillage",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "28"
+        }
+      ],
+      "destination": "/prestataires/lieux-de-reception-manoirs-lieux-atypiques",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "28"
+        }
+      ],
+      "destination": "/prestataires/lieux-de-reception-manoirs-lieux-atypiques",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "30"
+        }
+      ],
+      "destination": "/prestataires/vetements-mariage-accessoires",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "30"
+        }
+      ],
+      "destination": "/prestataires/vetements-mariage-accessoires",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "31"
+        }
+      ],
+      "destination": "/prestataires/location-de-materiel-mobilier-et-autres",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "31"
+        }
+      ],
+      "destination": "/prestataires/location-de-materiel-mobilier-et-autres",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "32"
+        }
+      ],
+      "destination": "/prestataires/location-de-materiel-son-lumiere",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "32"
+        }
+      ],
+      "destination": "/prestataires/location-de-materiel-son-lumiere",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "33"
+        }
+      ],
+      "destination": "/prestataires/traiteur-gastronomie-wedding-cake",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "33"
+        }
+      ],
+      "destination": "/prestataires/traiteur-gastronomie-wedding-cake",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "35"
+        }
+      ],
+      "destination": "/prestataires/caviste-domaine-viticole",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "35"
+        }
+      ],
+      "destination": "/prestataires/caviste-domaine-viticole",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "37"
+        }
+      ],
+      "destination": "/prestataires/officiant-de-ceremonie",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "37"
+        }
+      ],
+      "destination": "/prestataires/officiant-de-ceremonie",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "38"
+        }
+      ],
+      "destination": "/prestataires/traiteur-gastronomie-patissier",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "38"
+        }
+      ],
+      "destination": "/prestataires/traiteur-gastronomie-patissier",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "39"
+        }
+      ],
+      "destination": "/prestataires/hebergements-chambre-dhotes",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "39"
+        }
+      ],
+      "destination": "/prestataires/hebergements-chambre-dhotes",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "40"
+        }
+      ],
+      "destination": "/prestataires/hebergements-gite",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "40"
+        }
+      ],
+      "destination": "/prestataires/hebergements-gite",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "41"
+        }
+      ],
+      "destination": "/prestataires/service-de-menage",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "41"
+        }
+      ],
+      "destination": "/prestataires/service-de-menage",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "42"
+        }
+      ],
+      "destination": "/prestataires/animation-magicien-illusioniste",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "42"
+        }
+      ],
+      "destination": "/prestataires/animation-magicien-illusioniste",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "44"
+        }
+      ],
+      "destination": "/prestataires/vetements-mariage-lingerie",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "44"
+        }
+      ],
+      "destination": "/prestataires/vetements-mariage-lingerie",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "45"
+        }
+      ],
+      "destination": "/prestataires/barmen",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "45"
+        }
+      ],
+      "destination": "/prestataires/barmen",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId%5B%5D",
+          "value": "48"
+        }
+      ],
+      "destination": "/prestataires/graphiste-designer",
+      "permanent": true
+    },
+    {
+      "source": "/recherche",
+      "has": [
+        {
+          "type": "query",
+          "key": "prestataireTypeId[]",
+          "value": "48"
+        }
+      ],
+      "destination": "/prestataires/graphiste-designer",
+      "permanent": true
+    },
+    {
+      "source": "/lieux-reception",
+      "destination": "/prestataires/lieux-de-reception",
+      "permanent": true
+    },
+    {
+      "source": "/mentions-legales",
+      "destination": "/mentions-legales",
+      "permanent": true
+    },
+    {
+      "source": "/cgu",
+      "destination": "/cgu",
+      "permanent": true
+    },
+    {
+      "source": "/connexion",
+      "destination": "/connexion",
+      "permanent": true
+    },
+    {
+      "source": "/client/inscription",
+      "destination": "/inscription",
+      "permanent": true
+    },
+    {
+      "source": "/prestataire/inscription",
+      "destination": "/inscription",
+      "permanent": true
+    },
+    {
+      "source": "/contact",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/mariages",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/video-les-noces",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/actualite/21-groupes-musiciens",
+      "destination": "/blog",
+      "permanent": true
+    },
+    {
+      "source": "/prestataire-profil/:rest*",
+      "destination": "/recherche",
+      "permanent": true
+    }
+  ]
+}
