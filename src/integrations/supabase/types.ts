@@ -1607,6 +1607,57 @@ export type Database = {
           },
         ]
       }
+      prerender_queue: {
+        Row: {
+          created_at: string
+          dernier_motif: string | null
+          dernier_status: number | null
+          id: string
+          page_type: string
+          rendu_le: string | null
+          signature_rendue: string | null
+          signature_visible: string | null
+          source_id: string | null
+          statut: string
+          storage_path: string | null
+          tentatives: number
+          updated_at: string
+          url_path: string
+        }
+        Insert: {
+          created_at?: string
+          dernier_motif?: string | null
+          dernier_status?: number | null
+          id?: string
+          page_type: string
+          rendu_le?: string | null
+          signature_rendue?: string | null
+          signature_visible?: string | null
+          source_id?: string | null
+          statut?: string
+          storage_path?: string | null
+          tentatives?: number
+          updated_at?: string
+          url_path: string
+        }
+        Update: {
+          created_at?: string
+          dernier_motif?: string | null
+          dernier_status?: number | null
+          id?: string
+          page_type?: string
+          rendu_le?: string | null
+          signature_rendue?: string | null
+          signature_visible?: string | null
+          source_id?: string | null
+          statut?: string
+          storage_path?: string | null
+          tentatives?: number
+          updated_at?: string
+          url_path?: string
+        }
+        Relationships: []
+      }
       prestataires: {
         Row: {
           adresse: string | null
