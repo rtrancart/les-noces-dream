@@ -27,11 +27,15 @@ interface Article {
 
 const SHARE_LINKS = ["Copier le lien", "Envoyer par email", "Instagram", "Pinterest"];
 
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
+
 export default function BlogArticle() {
   const { slug } = useParams<{ slug: string }>();
   const [article, setArticle] = useState<Article | null>(null);
   const [related, setRelated] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+
+  usePrerenderStatus(loading ? "loading" : article ? "ready" : "error");
 
   useEffect(() => {
     async function load() {

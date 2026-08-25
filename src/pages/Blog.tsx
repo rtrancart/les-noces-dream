@@ -21,18 +21,30 @@ interface Article {
 
 const PAGE_SIZE = 9;
 
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
+
 export default function Blog() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCat, setActiveCat] = useState<string>("all");
   const [page, setPage] = useState(1);
+  const [error, setError] = useState(false);
+
+  // Le JSON-LD du blog est construit depuis `articles` : prêt seulement s'il est peuplé.
+  usePrerenderStatus(
+    error || (!loading && articles.length === 0)
+      ? "error"
+      : !loading && articles.length > 0
+        ? "ready"
+        : "loading",
+  );
 
   // SEO is rendered via <SeoHead> below.
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const { data } = await supabase
+      const { data, error: err } = await supabase
         .from("articles_blog")
         .select(
           "id, slug, titre, extrait, categorie_blog, image_couverture_url, publie_le, auteur:profiles(prenom, nom)"
@@ -40,6 +52,7 @@ export default function Blog() {
         .eq("est_publie", true)
         .order("publie_le", { ascending: false, nullsFirst: false });
 
+      setError(!!err);
       setArticles((data as unknown as Article[]) ?? []);
       setLoading(false);
     }

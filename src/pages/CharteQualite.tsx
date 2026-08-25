@@ -20,11 +20,15 @@ interface ChartVersion {
  * /charte-qualite — page publique. Affiche la version active par défaut.
  * Sélecteur de version permet de consulter l'historique (versions archivées).
  */
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
+
 export default function CharteQualite() {
   const [versions, setVersions] = useState<ChartVersion[]>([]);
   const [current, setCurrent] = useState<ChartVersion | null>(null);
   const [loading, setLoading] = useState(true);
   const [params, setParams] = useSearchParams();
+
+  usePrerenderStatus(loading ? "loading" : current ? "ready" : "error");
 
   useEffect(() => {
     (async () => {
