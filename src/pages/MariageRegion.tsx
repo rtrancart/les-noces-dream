@@ -9,6 +9,7 @@ import {
 } from "@/lib/jsonld";
 
 import { supabase } from "@/integrations/supabase/client";
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
 import { regionSlugToNom } from "@/lib/regions";
 import { REGIONS as ZONES_REGIONS } from "@/lib/zonesIntervention";
 import { parseMarkdown, renderInlineHtml } from "@/lib/markdown";
@@ -311,6 +312,8 @@ export default function MariageRegion() {
       cancelled = true;
     };
   }, [slug, nomRegion]);
+
+  usePrerenderStatus(notFound ? "error" : loading || !page ? "loading" : "ready");
 
   if (notFound) return <Navigate to="/404" replace />;
 

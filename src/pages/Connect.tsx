@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Copy, Check, ExternalLink, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SeoHead from "@/components/SeoHead";
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
 
 const mcpUrl = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/mcp`;
 
@@ -36,6 +37,8 @@ function StepList({ children }: { children: React.ReactNode }) {
 }
 
 export default function Connect() {
+  usePrerenderStatus("ready");
+
   return (
     <>
       <SeoHead

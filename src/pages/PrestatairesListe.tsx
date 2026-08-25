@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import { resolveZoneSlug, ZoneApiError, type ResolvedZone } from "@/lib/zoneResolver";
 import { useZones } from "@/contexts/ZonesContext";
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
 import { haversineDistanceKm } from "@/lib/haversine";
 import SeoHead from "@/components/SeoHead";
 import JsonLd from "@/components/JsonLd";
@@ -261,6 +262,16 @@ export default function PrestatairesListe() {
       fallbackSlug &&
       providers.length === 0 &&
       !zone);
+
+  // Prêt seulement quand catégorie/zone/prestataires sont résolus : le compteur
+  // du H1 ne doit jamais être capturé à zéro pendant le chargement.
+  usePrerenderStatus(
+    hardNotFound
+      ? "error"
+      : routeLoading || providersLoading || !seo
+        ? "loading"
+        : "ready",
+  );
 
   if (hardNotFound) {
     return (

@@ -8,12 +8,15 @@ import HistoriqueByCategory from "@/components/historique/HistoriqueByCategory";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import SeoHead from "@/components/SeoHead";
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
 
 export default function PrestatairesConsultes() {
   const { user } = useAuth();
   const [entries, setEntries] = useState<HistoriqueEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [categorySlugs, setCategorySlugs] = useState<Record<string, string>>({});
+
+  usePrerenderStatus(loading ? "loading" : "ready");
 
   const load = async () => {
     setLoading(true);

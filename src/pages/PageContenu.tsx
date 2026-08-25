@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import SeoHead from "@/components/SeoHead";
 import { parseMarkdown, renderInlineHtml } from "@/lib/markdown";
 import NotFound from "./NotFound";
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
 
 type PageRow = {
   titre: string;
@@ -19,6 +20,8 @@ export default function PageContenu() {
   const slug = params.slug ?? location.pathname.replace(/^\/+/, "").split("/")[0];
   const [page, setPage] = useState<PageRow | null>(null);
   const [loading, setLoading] = useState(true);
+
+  usePrerenderStatus(loading ? "loading" : page ? "ready" : "error");
 
   useEffect(() => {
     if (!slug) return;
