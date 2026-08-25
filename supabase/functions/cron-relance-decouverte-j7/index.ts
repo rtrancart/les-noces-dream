@@ -22,6 +22,8 @@ Deno.serve(async (req) => {
     .from("prestataires")
     .select("id, user_id, email_contact, nom_commercial, origine, magic_link_envoye_le")
     .eq("statut", "pre_inscrit")
+    // Les fiches migrées suivent la chaîne dédiée M-01→M-05 (anti-doublon)
+    .neq("origine", "migration")
     .is("premier_login_le", null)
     .not("magic_link_envoye_le", "is", null)
     .lte("magic_link_envoye_le", cutoff)
