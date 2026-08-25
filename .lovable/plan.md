@@ -1,61 +1,32 @@
-# Plan SEO — LesNoces.net
+# Brevo — `subscription_started` = entrée dans le tunnel + attribut ORIGINE
 
-Objectif : viser le top 1-2 sur les requêtes « [catégorie] mariage [ville/région] » et les requêtes de marque prestataire. Le blocage structurel n'est pas React en soi, mais le fait que le site est une SPA 100 % client : le HTML servi est vide, et tout le contenu (titres, textes, données prestataires) n'existe qu'après exécution du JavaScript.
+## Constat (vérifié dans le code)
 
-## État constaté
+- Le champ existe bien : `prestataires.origine` (type `origine_prestataire`) avec 3 valeurs : `inscription_admin`, `auto_inscription`, `migration`. Il est immuable (trigger `prevent_origine_prestataire_modification`).
+- **Il n'est pas envoyé à Brevo** : les attributs poussés par `brevo-sync-prestataire` sont `NOM_COMMERCIAL`, `STATUT_FICHE`, `CYCLE_VIE`, `FIN_ESSAI`, `DATE_PREMIERE_PUBLI`, `REGION`, `CONSENTEMENT_MKT`. Aucune trace d'`ORIGINE`, ni dans les propriétés d'événement.
+- Aujourd'hui `subscription_started` est déclenché par le trigger sur `abonnements` quand un abonnement passe à `actif` — donc à la **fin** du parcours (paiement), pas à son début.
 
-- Aucun pré-rendu ni SSR actif : `vite.config.ts` est une configuration SPA standard, aucune dépendance SSR/SSG dans `package.json`.
-- Les balises SEO sont posées côté client via `react-helmet-async` (`SeoHead`), donc invisibles pour les crawlers sociaux et fragiles pour les moteurs.
-- `vercel.json` ne contient que des redirections 301 (reprise de l'ancien site) — pas de règle de rendu.
-- Sitemap dynamique fonctionnel (Edge Function, fiches `statut = actif` uniquement), robots.txt correct.
-- Le commentaire dans `SeoHead.tsx` évoquant un « snapshot Vercel » ne correspond à aucune configuration réelle.
+## Ce que je vais changer
 
-## Phase 1 — Le socle : passer en rendu serveur
+### 1. `subscription_started` = début du tunnel d'inscription
+Nouveau déclenchement, sur la fiche prestataire elle-même, une seule fois par fiche :
+- **Inscription par l'admin** : au clic sur « Sauvegarder et envoyer l'invitation » — la fiche est créée/mise à jour en `pre_inscrit` avec `magic_link_envoye_le` renseigné. C'est ce moment qui déclenche l'événement.
+- **Auto-inscription depuis le site** : à la création de la fiche (`origine = auto_inscription`).
+- **Migration du parc** (`origine = migration`) : exclue. Ces 3 293 fiches n'ont pas fait de tunnel d'inscription ; les faire entrer déclencherait un envoi de masse d'événements historiques. Elles entreront dans le tunnel au moment de leur invitation (`magic_link_envoye_le`), ce qui reste couvert par la règle admin ci-dessus.
 
-C'est le levier n°1, et sans lui les autres optimisations plafonnent. Deux options :
+L'événement reste non rejouable (garde-fou existant : un `kind` d'événement déjà `reussi` dans `brevo_sync_log` n'est jamais renvoyé).
 
-1. **Migrer vers le template SSR de Lovable (TanStack Start)** — recommandé. Le HTML est généré serveur : contenu, titres, métadonnées et JSON-LD sont lisibles par tous les crawlers, y compris les IA et les aperçus sociaux. C'est une migration structurelle du projet (routing et pages réécrits), à planifier comme un chantier à part entière.
-2. **Pré-rendu par snapshot** — une Edge Function appelle un service de rendu externe, stocke le HTML dans le Storage, et Vercel sert ce HTML aux crawlers. Moins invasif mais c'est une brique à maintenir (fraîcheur, coût, ~3 300 fiches à re-rendre).
+### 2. Le moment « abonnement payé » ne disparaît pas
+Le trigger sur `abonnements` cesse d'émettre `subscription_started` (le nom devient impropre) et se contente de la synchro d'état : `CYCLE_VIE` passe de `essai` à `abonne`, `FIN_ESSAI` est mis à jour. C'est cet attribut qui sert de segmentation « client payant » côté Brevo, plus fiable qu'un événement puisqu'il reflète l'état courant.
 
-À trancher avant d'aller plus loin, car la Phase 2 s'implémente différemment selon le choix.
-
-## Phase 2 — Métadonnées et données structurées par page
-
-- Un `<title>` et une meta description uniques, écrits à la main par gabarit, pour chaque type de page : accueil, catégorie, catégorie + région, fiche prestataire, région, article de blog.
-- Canonical auto-référencé sur chaque route, et canonical de `/recherche` filtré vers la page catégorie correspondante pour éviter la cannibalisation.
-- JSON-LD par type de page : `LocalBusiness` (fiche prestataire, avec `aggregateRating` quand des avis existent), `BreadcrumbList`, `ItemList` sur les pages catégorie, `Article` sur le blog.
-- Vérifier que `og:url` et canonical pointent bien sur la page elle-même.
-
-## Phase 3 — Architecture de pages et maillage
-
-C'est là que se gagnent les positions sur la longue traîne.
-
-- Créer des pages croisées **catégorie × département/ville** (ex. `/prestataires/photographe-videaste/gironde`) : ce sont les requêtes réellement tapées. Une par couple ayant suffisamment de prestataires pour justifier une vraie page.
-- Contenu propre à chaque page : introduction éditoriale, prestataires listés, fourchettes de prix, FAQ locale — jamais un texte dupliqué avec variable remplacée.
-- Maillage interne : liens catégorie → sous-catégorie → page locale → fiches, et remontée depuis les fiches vers leurs pages parentes.
-- Fiches prestataires : contenu réellement unique (les descriptions reprises de l'ancien site doivent être vérifiées contre la duplication).
-- Étendre le sitemap aux nouvelles pages locales, et le segmenter en sitemap index si le volume dépasse ~10 000 URL.
-
-## Phase 4 — Performance et Core Web Vitals
-
-- Découpage du bundle par route (`React.lazy`) et allègement de la page d'accueil (vidéo hero en `preload="none"` + poster).
-- Images prestataires servies en WebP/AVIF dimensionnées, `loading="lazy"` hors first-fold, `width`/`height` explicites pour éviter le CLS.
-- Polices : `display=swap` déjà présent, préchargement du Playfair utilisé au-dessus de la ligne de flottaison.
-- Mesure avant/après sur les 4 gabarits principaux.
-
-## Phase 5 — Pilotage
-
-- Search Console : suivi de l'indexation des nouvelles pages, correction des exclusions.
-- Recherche de mots-clés (volumes et difficulté réels) avant d'ouvrir les pages locales, pour prioriser les couples catégorie/zone rentables.
-- Contrôle des redirections 301 de l'ancien site : vérifier qu'aucune URL à trafic ne tombe en 404.
+### 3. Attribut `ORIGINE` poussé à Brevo
+- Ajout de `ORIGINE` aux attributs de contact de tout prestataire (valeurs : `inscription_admin`, `auto_inscription`, `migration`), donc présent sur **tous** les flux prestataire (synchro d'état, `fiche_published`, `subscription_started`, batch compteurs par héritage des attributs de contact).
+- Ajout de `origine` aux propriétés de l'événement `subscription_started`, avec `statut_fiche` et `region` déjà présents.
+- Déclaration de l'attribut dans le provisioning de schéma Brevo en type liste fermée (`category`), comme `CYCLE_VIE` et `STATUT_FICHE`, pour rester segmentable proprement.
 
 ## Détails techniques
 
-- Pages locales : nouvelle route `/prestataires/:categorie/:zone` alimentée par la table `zones_intervention` et la hiérarchie région/département déjà en place ; réutiliser le resolver `src/lib/zoneResolver.ts`.
-- `generate-sitemap` : ajouter les combinaisons catégorie × zone au-dessus d'un seuil de prestataires actifs, et passer en `sitemapindex` si nécessaire.
-- Retirer le commentaire trompeur sur le prérendu Vercel dans `src/components/SeoHead.tsx`.
-- Ne rien changer aux redirections existantes de `vercel.json` sans vérification.
-
-## Ordre proposé
-
-Phase 1 (décision) → Phase 2 → Phase 3 → Phase 4 → Phase 5. Les phases 2 et 4 peuvent démarrer immédiatement même si la décision de Phase 1 est repoussée ; la Phase 3 n'a de valeur pleine qu'avec un rendu serveur.
+- Migration SQL : `brevo_prestataire_sync_trigger()` — ajout du déclenchement `subscription_started` sur INSERT (`origine IN ('inscription_admin','auto_inscription')`) et sur UPDATE quand `magic_link_envoye_le` passe de NULL à une date ; `brevo_abonnement_sync_trigger()` — retrait de l'émission `subscription_started`, bascule sur `presta_sync`.
+- `supabase/functions/brevo-sync-prestataire/index.ts` : lecture de `origine` dans le SELECT, ajout de `ORIGINE` dans `attributes` et de `origine` dans `event_properties`.
+- `supabase/functions/brevo-provision-schema/index.ts` : ajout de `ORIGINE` à la liste des attributs `category` avec ses 3 valeurs, puis relance du provisioning depuis l'onglet Connecteurs.
+- Redéploiement des deux Edge Functions. Aucune rétro-émission d'événements sur l'existant.
