@@ -51,4 +51,9 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'impaye_rappel_intermediaire': impayeRappelIntermediaire,
   'impaye_suspension': impayeSuspension,
   'suspension_charte_exemption_expiree': suspensionCharteExemptionExpiree,
+  'migration_m01_reactivation': migrationM01,
+  'migration_m02_relance': migrationM02,
+  'migration_m03_relance': migrationM03,
+  'migration_m04_relance': migrationM04,
+  'migration_m05_charte': migrationM05,
 }
