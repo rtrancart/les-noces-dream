@@ -79,6 +79,12 @@ export const SHELL_META: Record<string, { preview: string; signer: Signer }> = {
   impaye_rappel_intermediaire: { preview: "Second essai de paiement en préparation", signer: 'equipe' },
   impaye_suspension: { preview: 'Votre fiche vient d\'être suspendue', signer: 'equipe' },
   suspension_charte_exemption_expiree: { preview: 'Signature de la charte requise', signer: 'nathalie' },
+  // Chaîne « prestataires migrés » (jetable après la campagne de reprise du parc)
+  migration_m01_reactivation: { preview: 'Votre profil prestataire vous y attend', signer: 'nathalie' },
+  migration_m02_relance: { preview: "Elle n'est pas encore visible auprès des futurs mariés", signer: 'nathalie' },
+  migration_m03_relance: { preview: 'Vous pouvez la réactiver en quelques clics', signer: 'nathalie' },
+  migration_m04_relance: { preview: 'Rendez-vous visible auprès de milliers de mariés', signer: 'nathalie' },
+  migration_m05_charte: { preview: 'Signez la Charte Qualité en quelques minutes', signer: 'nathalie' },
 }
 
 // URL de base du site pour les liens du header. Lue depuis PUBLIC_SITE_URL
