@@ -88,6 +88,9 @@ export interface BulkItemResult {
   validation: StepOutcome;
   invitation: StepOutcome;
   finalStatut?: StatutPrestataire;
+  /** Échéance d'exemption de charte appliquée (90 j) le cas échéant. */
+  exemptionJusqua?: string;
+
   errors: string[];
 }
 
