@@ -55,7 +55,9 @@ const NATIVE_REUSED = ["PRENOM", "NOM"];
 const FIXED_CATEGORIES: Record<string, string[]> = {
   TYPE_EVENEMENT: ["mariage", "evenement_entreprise", "cocktail", "autre"],
   CYCLE_VIE: ["essai", "abonne", "resilie", "churned", "suspendu"],
+  ORIGINE: ["inscription_admin", "auto_inscription", "migration"],
   STATUT_FICHE: [
+
     "brouillon",
     "pre_inscrit",
     "a_completer",

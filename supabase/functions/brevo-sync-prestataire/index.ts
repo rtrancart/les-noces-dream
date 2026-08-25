@@ -154,7 +154,7 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
   const { data: presta, error } = await admin
     .from("prestataires")
     .select(
-      "id, nom_commercial, email_contact, region, statut, date_premiere_publication, brevo_email_hash",
+      "id, nom_commercial, email_contact, region, statut, origine, date_premiere_publication, brevo_email_hash",
     )
     .eq("id", prestataireId)
     .maybeSingle();
@@ -191,6 +191,7 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
   const attributes: Record<string, unknown> = {
     NOM_COMMERCIAL: presta.nom_commercial,
     STATUT_FICHE: presta.statut,
+    ORIGINE: presta.origine,
     CYCLE_VIE: cycleVie,
     FIN_ESSAI: toDate(abo?.fin_essai_le),
     DATE_PREMIERE_PUBLI: toDate(presta.date_premiere_publication as string | null),
@@ -269,6 +270,7 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
           event_properties: {
             prestataire_id: prestataireId,
             statut_fiche: presta.statut,
+            origine: presta.origine,
             cycle_vie: cycleVie,
             region: regionLabel,
           },
