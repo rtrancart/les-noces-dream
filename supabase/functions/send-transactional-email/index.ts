@@ -16,6 +16,21 @@ const SENDER_DOMAIN = "notify.lesnoces.net"
 // When display_from_root is enabled, this can be the root domain for cleaner branding,
 // even though actual sending uses the subdomain above.
 const FROM_DOMAIN = "notify.lesnoces.net"
+// Local-part de l'expéditeur, paramétrable par template. Par défaut "noreply".
+// La chaîne « prestataires migrés » utilise une local-part dédiée (aucun
+// changement DNS : même domaine d'envoi vérifié).
+const DEFAULT_FROM_LOCAL_PART = "noreply"
+const FROM_LOCAL_PART_BY_TEMPLATE: Record<string, string> = {
+  migration_m01_reactivation: 'reactivation',
+  migration_m02_relance: 'reactivation',
+  migration_m03_relance: 'reactivation',
+  migration_m04_relance: 'reactivation',
+  migration_m05_charte: 'reactivation',
+}
+function fromAddressFor(templateName: string): string {
+  const local = FROM_LOCAL_PART_BY_TEMPLATE[templateName] ?? DEFAULT_FROM_LOCAL_PART
+  return `${SITE_NAME} <${local}@${FROM_DOMAIN}>`
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -380,7 +395,7 @@ Deno.serve(async (req) => {
     payload: {
       message_id: messageId,
       to: effectiveRecipient,
-      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      from: fromAddressFor(templateName),
       sender_domain: SENDER_DOMAIN,
       subject: resolvedSubject,
       html,

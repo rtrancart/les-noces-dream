@@ -1689,6 +1689,11 @@ export type Database = {
           magic_link_envoye_le: string | null
           magic_link_ouvert: boolean
           metadonnees_seo: Json | null
+          migration_m01_envoye_le: string | null
+          migration_m02_envoye_le: string | null
+          migration_m03_envoye_le: string | null
+          migration_m04_envoye_le: string | null
+          migration_m05_envoye_le: string | null
           motif_suspension:
             | Database["public"]["Enums"]["motif_suspension_enum"]
             | null
@@ -1763,6 +1768,11 @@ export type Database = {
           magic_link_envoye_le?: string | null
           magic_link_ouvert?: boolean
           metadonnees_seo?: Json | null
+          migration_m01_envoye_le?: string | null
+          migration_m02_envoye_le?: string | null
+          migration_m03_envoye_le?: string | null
+          migration_m04_envoye_le?: string | null
+          migration_m05_envoye_le?: string | null
           motif_suspension?:
             | Database["public"]["Enums"]["motif_suspension_enum"]
             | null
@@ -1837,6 +1847,11 @@ export type Database = {
           magic_link_envoye_le?: string | null
           magic_link_ouvert?: boolean
           metadonnees_seo?: Json | null
+          migration_m01_envoye_le?: string | null
+          migration_m02_envoye_le?: string | null
+          migration_m03_envoye_le?: string | null
+          migration_m04_envoye_le?: string | null
+          migration_m05_envoye_le?: string | null
           motif_suspension?:
             | Database["public"]["Enums"]["motif_suspension_enum"]
             | null
