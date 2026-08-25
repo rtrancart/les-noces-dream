@@ -10,6 +10,7 @@ import SeoHead from "@/components/SeoHead";
 import JsonLd from "@/components/JsonLd";
 import { buildHomeCategoriesJsonLd } from "@/lib/jsonld";
 import { getImageUrl } from "@/lib/images";
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
 
 
 
@@ -58,6 +59,7 @@ function useHomeData() {
   const [providers, setProviders] = useState<ProviderData[]>([]);
   const [articles, setArticles] = useState<ArticleData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     async function fetch() {
@@ -88,6 +90,12 @@ function useHomeData() {
           .order("created_at", { ascending: false })
           .limit(4),
       ]);
+
+      if (catRes.error || allCatRes.error) {
+        setError(true);
+        setLoading(false);
+        return;
+      }
 
       // Build category tree for picker
       if (allCatRes.data) {
@@ -171,7 +179,7 @@ function useHomeData() {
     fetch();
   }, []);
 
-  return { categories, categoryTree, providers, articles, loading };
+  return { categories, categoryTree, providers, articles, loading, error };
 }
 
 /* ─── Price Helper ───────────────────────────────────────── */
@@ -637,7 +645,17 @@ function RegionalSection() {
 /* ─── Page d'accueil ─────────────────────────────────────── */
 
 export default function Index() {
-  const { categories, categoryTree, providers, articles } = useHomeData();
+  const { categories, categoryTree, providers, articles, loading, error } = useHomeData();
+
+  // Prêt uniquement quand les listes réellement affichées et les données
+  // structurées sont peuplées — jamais sur un accueil vide.
+  usePrerenderStatus(
+    error
+      ? "error"
+      : !loading && categories.length > 0 && categoryTree.length > 0
+        ? "ready"
+        : "loading",
+  );
 
   return (
     <>
