@@ -295,7 +295,11 @@ export function formatReportAsText(report: BulkReport): string {
       : r.validation === "ok" && r.invitation === "error" ? "⚠"
       : "✗";
     const detail = r.errors.length ? ` — ${r.errors.join(" | ")}` : "";
-    lines.push(`${icon} ${r.nomCommercial}${detail}`);
+    const exemption = r.exemptionJusqua
+      ? ` — charte à signer avant le ${new Date(r.exemptionJusqua).toLocaleDateString("fr-FR")}`
+      : "";
+    lines.push(`${icon} ${r.nomCommercial}${exemption}${detail}`);
+
   }
   for (const s of report.skipped) {
     lines.push(`⊘ ${s.nomCommercial} — ignorée (${ineligibilityLabel(s.reason)})`);
