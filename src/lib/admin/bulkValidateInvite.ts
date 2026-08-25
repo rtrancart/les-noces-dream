@@ -123,22 +123,24 @@ export async function executeIntent(intent: BulkIntent): Promise<BulkItemResult>
     errors: [],
   };
 
-  // 1) Validation — même chemin que la validation manuelle individuelle.
+  // 1) Validation — RPC dédiée aux fiches migrées : pose une exemption de
+  //    charte de 90 jours (si aucune n'existe) puis passe la fiche en
+  //    'validee'. Le trigger DB flip ensuite vers 'actif' (exemption valide).
   try {
-    const { data: updated, error } = await supabase
-      .from("prestataires")
-      .update({ statut: "validee" as StatutPrestataire })
-      .eq("id", intent.prestataireId)
-      .select("id, nom_commercial, slug, statut, user_id, email_contact")
-      .maybeSingle();
+    const { data: rows, error } = await supabase
+      .rpc("valider_prestataire_migre", { p_prestataire_id: intent.prestataireId });
     if (error) throw error;
+    const updated = Array.isArray(rows) ? rows[0] : rows;
     if (!updated) throw new Error("Prestataire introuvable après mise à jour");
     result.validation = "ok";
     result.finalStatut = updated.statut as StatutPrestataire;
+    result.exemptionJusqua = updated.charte_exemptee_jusqua ?? undefined;
     logAdmin("update_statut_prestataire", "prestataires", intent.prestataireId, {
       statut: "validee",
       bulk: true,
+      charte_exemptee_jusqua: updated.charte_exemptee_jusqua,
     });
+
 
     // Le trigger DB peut flip vers 'actif' si charte signée / exemption valide.
     // Dans ce cas, envoyer l'email de publication (même logique que
