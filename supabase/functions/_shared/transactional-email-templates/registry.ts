@@ -26,6 +26,12 @@ import { template as impayePremierEchec } from './impaye-premier-echec.tsx'
 import { template as impayeRappelIntermediaire } from './impaye-rappel-intermediaire.tsx'
 import { template as impayeSuspension } from './impaye-suspension.tsx'
 import { template as suspensionCharteExemptionExpiree } from './suspension-charte-exemption-expiree.tsx'
+// Chaîne « prestataires migrés » (jetable après la campagne de reprise du parc)
+import { template as migrationM01 } from './migration-m01-reactivation.tsx'
+import { template as migrationM02 } from './migration-m02-relance.tsx'
+import { template as migrationM03 } from './migration-m03-relance.tsx'
+import { template as migrationM04 } from './migration-m04-relance.tsx'
+import { template as migrationM05 } from './migration-m05-charte.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'notif_nouveau_contact_presta': notifNouveauContactPresta,
