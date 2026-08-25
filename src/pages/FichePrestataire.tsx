@@ -13,6 +13,7 @@ import FichePrestataireView, {
   type ChampCategorie,
 } from "@/components/fiche/FichePrestataireView";
 import type { ProviderCardData } from "@/components/search/ProviderCard";
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
 
 /**
  * Page publique de la fiche prestataire. Charge une fiche `statut='actif'`
@@ -31,6 +32,9 @@ export default function FichePrestataire() {
   const [champsCategorie, setChampsCategorie] = useState<ChampCategorie[]>([]);
   const [similaires, setSimilaires] = useState<ProviderCardData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Réversible : un rechargement de la fiche retire le signal "prêt".
+  usePrerenderStatus(loading ? "loading" : presta ? "ready" : "error");
 
   const { trackViewItem } = useTracking();
 

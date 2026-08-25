@@ -15,6 +15,7 @@ import { haversineDistanceKm } from "@/lib/haversine";
 import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
 import SeoHead from "@/components/SeoHead";
+import { usePrerenderStatus } from "@/contexts/PrerenderContext";
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
 
@@ -109,6 +110,10 @@ function matchesZones(provider: any, selectedZones: string[]): boolean {
 export default function Recherche() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { providers: allProviders, categoryTree, loading } = useSearchData();
+
+  usePrerenderStatus(
+    loading ? "loading" : categoryTree.length > 0 ? "ready" : "error",
+  );
   const isMobile = useIsMobile();
   const { trackSearch } = useTracking();
 
