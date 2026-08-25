@@ -2769,6 +2769,18 @@ export type Database = {
         }
         Returns: string
       }
+      valider_prestataire_migre: {
+        Args: { p_prestataire_id: string }
+        Returns: {
+          charte_exemptee_jusqua: string
+          email_contact: string
+          id: string
+          nom_commercial: string
+          slug: string
+          statut: Database["public"]["Enums"]["statut_prestataire"]
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "client" | "prestataire" | "admin" | "super_admin"
