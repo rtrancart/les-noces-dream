@@ -25,17 +25,6 @@ const BUDGET_MS = 40_000;
 const BUCKET = "prerender-snapshots";
 const READY_TIMEOUT_MS = 30_000;
 
-/** Empreinte rapide du contenu pour le cache sémantique. */
-function hashVisible(content: string | null | undefined): string | null {
-  if (!content) return null;
-  let h = 0;
-  for (let i = 0; i < content.length; i++) {
-    h = ((h << 5) - h + content.charCodeAt(i)) | 0;
-  }
-  return (h >>> 0).toString(36);
-}
-
-/** Dérive un chemin déterministe et stable dans le bucket depuis un URL path. */
 function storagePathFromUrlPath(urlPath: string): string {
   // Trim leading slash and normalize trailing .html if absent.
   const clean = urlPath.replace(/^\/+/, "").replace(/\/$/, "index");
