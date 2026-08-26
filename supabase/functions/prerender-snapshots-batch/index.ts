@@ -63,9 +63,28 @@ Deno.serve(async (req) => {
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   const claims = parseJwtClaims(token);
-  if (token !== serviceRoleKey && claims?.role !== "service_role") {
-    return json({ ok: false, message: "Non autorisé" }, 401);
+  const isServiceRole = token === serviceRoleKey || claims?.role === "service_role";
+
+  if (!isServiceRole) {
+    // Voie alternative : admin authentifié (panneau back-office).
+    if (!token) return json({ ok: false, message: "Non autorisé" }, 401);
+    const asUser = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data: userData } = await asUser.auth.getUser();
+    const uid = userData?.user?.id;
+    if (!uid) return json({ ok: false, message: "Non autorisé" }, 401);
+
+    const svc = createClient(supabaseUrl, serviceRoleKey);
+    const [{ data: isAdmin }, { data: isSuper }] = await Promise.all([
+      svc.rpc("has_role", { _user_id: uid, _role: "admin" }),
+      svc.rpc("has_role", { _user_id: uid, _role: "super_admin" }),
+    ]);
+    if (isAdmin !== true && isSuper !== true) {
+      return json({ ok: false, message: "Accès réservé aux administrateurs" }, 403);
+    }
   }
+
 
   const serviceUrl = Deno.env.get("PRERENDER_SERVICE_URL");
   const serviceToken = Deno.env.get("PRERENDER_SERVICE_TOKEN");
