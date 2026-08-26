@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
       traites++;
       const id = entry.id as string;
       const urlPath = entry.url_path as string;
-      const visibleSig = hashVisible(entry.signature_visible as string | null | undefined);
+      const visibleSig = entry.signature_visible as string | null | undefined;
       const renderedSig = entry.signature_rendue as string | null | undefined;
 
       // 1. Court-circuit si le contenu visible n'a pas changé.
