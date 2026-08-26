@@ -86,6 +86,11 @@
     --shadow-card: 0 2px 12px -2px hsl(220 30% 7% / 0.06);
     --shadow-elevated: 0 12px 40px -8px hsl(220 30% 7% / 0.12);
     --shadow-header-mega: 0 20px 48px -12px hsl(34 40% 25% / 0.22);
+
+    /* Courbes des graphiques (dashboard prestataire) */
+    --chart-1: 42 62% 40%;   /* Or Riche */
+    --chart-2: 210 31% 26%;  /* Bleu Pétrole */
+    --chart-3: 90 15% 38%;   /* Sauge */
   }
 
   .dark {
@@ -116,6 +121,11 @@
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 210 15% 15%;
     --sidebar-ring: 42 62% 50%;
+
+    /* Courbes des graphiques (dashboard prestataire) */
+    --chart-1: 42 62% 50%;   /* Or Riche */
+    --chart-2: 210 31% 46%;  /* Bleu Pétrole éclairci */
+    --chart-3: 90 15% 55%;   /* Sauge éclaircie */
   }
 }
 
