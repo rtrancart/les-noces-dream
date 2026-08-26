@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, PlayCircle, StopCircle, TestTube2 } from "lucide-react";
+import { Loader2, PlayCircle, RefreshCw, StopCircle, TestTube2 } from "lucide-react";
 
 const DELAI_MS = 1500;
 const MAX_ITERATIONS = 500;
@@ -32,6 +32,7 @@ const initialProgress: Progress = {
 
 export function PrerenderSnapshotsPanel() {
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [batchSize, setBatchSize] = useState(5);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +47,32 @@ export function PrerenderSnapshotsPanel() {
     });
     if (error) throw error;
     return data as Record<string, unknown>;
+  };
+
+  /** Réconciliation : recense les pages indexables, met la file à jour, purge les orphelines. */
+  const synchroniser = async () => {
+    setSyncing(true);
+    setError(null);
+    setResult(null);
+    setStartedAt(new Date().toLocaleTimeString("fr-FR"));
+    try {
+      let offset = 0;
+      for (let i = 0; i < 50; i++) {
+        const { data, error } = await supabase.functions.invoke("prerender-reconcile", {
+          method: "POST",
+          body: { limit: 500, offset, purge: true },
+        });
+        if (error) throw error;
+        const d = data as Record<string, unknown>;
+        setResult(JSON.stringify(d, null, 2));
+        if (d?.termine === true) break;
+        offset = Number(d?.relance_offset ?? offset);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? String(e));
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const run = async (boucle: boolean) => {

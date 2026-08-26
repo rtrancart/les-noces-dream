@@ -66,5 +66,9 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = false
   [functions.brevo-consentement-marketing]
     verify_jwt = false
+  [functions.prerender-reconcile]
+    verify_jwt = false
+  [functions.cron-prerender-nightly]
+    verify_jwt = false
 
 
