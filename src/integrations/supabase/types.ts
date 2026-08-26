@@ -1670,6 +1670,7 @@ export type Database = {
           charte_signee_le: string | null
           charte_version_signee: string | null
           code_postal: string | null
+          compte_active_le: string | null
           created_at: string
           cree_par_admin: boolean | null
           date_premiere_publication: string | null
@@ -1749,6 +1750,7 @@ export type Database = {
           charte_signee_le?: string | null
           charte_version_signee?: string | null
           code_postal?: string | null
+          compte_active_le?: string | null
           created_at?: string
           cree_par_admin?: boolean | null
           date_premiere_publication?: string | null
@@ -1828,6 +1830,7 @@ export type Database = {
           charte_signee_le?: string | null
           charte_version_signee?: string | null
           code_postal?: string | null
+          compte_active_le?: string | null
           created_at?: string
           cree_par_admin?: boolean | null
           date_premiere_publication?: string | null

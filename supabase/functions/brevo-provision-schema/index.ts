@@ -35,6 +35,7 @@ const SIMPLE_ATTRIBUTES: Array<{ name: string; type: SimpleType }> = [
   { name: "DERNIERE_CONNEXION", type: "date" },
   { name: "FIN_ESSAI", type: "date" },
   { name: "DATE_PREMIERE_PUBLI", type: "date" },
+  { name: "DATE_ACTIVATION_COMPTE", type: "date" },
   // boolean
   { name: "CONSENTEMENT_MKT", type: "boolean" },
   { name: "A_UN_COMPTE", type: "boolean" },

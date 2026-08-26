@@ -22,7 +22,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 const SYNC_KIND = "presta_sync";
-const EVENT_KINDS = new Set(["fiche_published", "subscription_started"]);
+const EVENT_KINDS = new Set(["fiche_published", "subscription_started", "compte_active"]);
 const MAX_TENTATIVES = 5;
 const RETRY_BATCH = 20;
 const LISTE_PRESTATAIRES = "prestataires";
@@ -154,7 +154,7 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
   const { data: presta, error } = await admin
     .from("prestataires")
     .select(
-      "id, nom_commercial, email_contact, region, statut, origine, date_premiere_publication, brevo_email_hash",
+      "id, nom_commercial, email_contact, region, statut, origine, date_premiere_publication, brevo_email_hash, user_id, compte_active_le",
     )
     .eq("id", prestataireId)
     .maybeSingle();
@@ -188,6 +188,8 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
   // elle prime sur l'intérêt légitime B2B (le contact a exprimé un refus explicite).
   const oppose = await estOppose(admin, email);
 
+  const aUnCompte = Boolean(presta.user_id);
+
   const attributes: Record<string, unknown> = {
     NOM_COMMERCIAL: presta.nom_commercial,
     STATUT_FICHE: presta.statut,
@@ -196,6 +198,8 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
     FIN_ESSAI: toDate(abo?.fin_essai_le),
     DATE_PREMIERE_PUBLI: toDate(presta.date_premiere_publication as string | null),
     REGION: regionLabel ?? undefined,
+    A_UN_COMPTE: aUnCompte,
+    DATE_ACTIVATION_COMPTE: toDate(presta.compte_active_le as string | null),
     // Intérêt légitime B2B : le prestataire est opt-in par défaut, sauf opposition.
     ...(oppose ? {} : { CONSENTEMENT_MKT: true }),
   };
@@ -273,6 +277,7 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
             origine: presta.origine,
             cycle_vie: cycleVie,
             region: regionLabel,
+            a_un_compte: aUnCompte,
           },
         }),
       },
