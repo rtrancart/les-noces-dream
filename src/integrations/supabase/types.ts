@@ -2744,6 +2744,42 @@ export type Database = {
         Returns: number
       }
       normaliser_cle_zone: { Args: { p_valeur: string }; Returns: string }
+      prerender_orphelins: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          storage_path: string
+          url_path: string
+        }[]
+      }
+      prerender_pages_indexables: {
+        Args: never
+        Returns: {
+          lastmod: string
+          page_type: string
+          signature: string
+          source_id: string
+          url_path: string
+        }[]
+      }
+      prerender_reconcilier: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          ajoutees: number
+          inchangees: number
+          remises: number
+          traitees: number
+        }[]
+      }
+      prerender_stats: {
+        Args: never
+        Returns: {
+          total_a_traiter: number
+          total_file: number
+          total_indexables: number
+          total_orphelins: number
+        }[]
+      }
       purger_historique_navigation: { Args: never; Returns: number }
       reactiver_prestataire_paiement: {
         Args: { p_prestataire_id: string }
