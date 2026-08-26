@@ -22,7 +22,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 const SYNC_KIND = "presta_sync";
-const EVENT_KINDS = new Set(["fiche_published", "subscription_started"]);
+const EVENT_KINDS = new Set(["fiche_published", "subscription_started", "compte_active"]);
 const MAX_TENTATIVES = 5;
 const RETRY_BATCH = 20;
 const LISTE_PRESTATAIRES = "prestataires";
