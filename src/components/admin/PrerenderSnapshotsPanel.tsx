@@ -124,8 +124,11 @@ export function PrerenderSnapshotsPanel() {
           </span>
         </CardTitle>
         <p className="font-sans text-xs text-muted-foreground">
-          Invoque <code>prerender-snapshots-batch</code> en boucle jusqu'à épuisement de la file de
-          pré-rendu. Le mode test lance un seul lot pour vérifier le bon fonctionnement.
+          « Synchroniser la file » recense les pages indexables (mêmes filtres que le sitemap),
+          ajoute ou remet à traiter celles dont le contenu visible a changé et purge les entrées
+          devenues non indexables. Les autres boutons invoquent{" "}
+          <code>prerender-snapshots-batch</code> jusqu'à épuisement de la file. La chaîne complète
+          tourne automatiquement chaque nuit à 03:00.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -140,15 +143,29 @@ export function PrerenderSnapshotsPanel() {
               min={1}
               max={15}
               value={batchSize}
-              disabled={loading}
+              disabled={loading || syncing}
               onChange={(e) => setBatchSize(Number(e.target.value))}
             />
           </div>
-          <Button variant="outline" onClick={() => run(false)} disabled={loading} className="gap-2">
+          <Button
+            variant="outline"
+            onClick={synchroniser}
+            disabled={loading || syncing}
+            className="gap-2"
+          >
+            {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {syncing ? "Synchronisation…" : "Synchroniser la file"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => run(false)}
+            disabled={loading || syncing}
+            className="gap-2"
+          >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <TestTube2 className="h-4 w-4" />}
             Lancer un lot de test
           </Button>
-          <Button onClick={() => run(true)} disabled={loading} className="gap-2">
+          <Button onClick={() => run(true)} disabled={loading || syncing} className="gap-2">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
             {loading ? "Traitement en cours…" : "Traiter toute la file"}
           </Button>
