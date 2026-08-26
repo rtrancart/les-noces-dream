@@ -154,7 +154,7 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
   const { data: presta, error } = await admin
     .from("prestataires")
     .select(
-      "id, nom_commercial, email_contact, region, statut, origine, date_premiere_publication, brevo_email_hash",
+      "id, nom_commercial, email_contact, region, statut, origine, date_premiere_publication, brevo_email_hash, user_id, compte_active_le",
     )
     .eq("id", prestataireId)
     .maybeSingle();
