@@ -35,4 +35,4 @@ Comme dans `migrate-photos-batch` : client `service_role`, puis `supabase.storag
 ## Détails techniques
 - Aucune migration nécessaire : la table et le bucket couvrent déjà tous les champs requis.
 - Nouveaux secrets `PRERENDER_SERVICE_URL` et `PRERENDER_SERVICE_TOKEN` — j'attends leurs valeurs.
-- Contrat attendu du service de rendu : réponse JSON `{ html, ready|status }` ou HTML brut ; je gère les deux et considère « non prêt / erreur » comme un échec rejouable.
+- Contrat attendu du service de rendu : `/chromium/content` renvoie directement le corps HTML brut. La garantie de succès vient du fait que `waitForFunction` a abouti ; tout échec / timeout est traité comme un échec rejouable.
