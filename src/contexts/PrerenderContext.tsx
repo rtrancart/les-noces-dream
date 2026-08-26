@@ -92,7 +92,6 @@ export function PrerenderProvider({ children }: { children: ReactNode }) {
   // Nouvelle route : on repart de zéro (signal réversible).
   useEffect(() => {
     setTimedOut(false);
-    applyMarker("loading");
   }, [pathname, search]);
 
   const state: PrerenderState = useMemo(() => {
@@ -104,9 +103,12 @@ export function PrerenderProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick, timedOut, pathname, search]);
 
+  // Application du marqueur : source unique de vérité, réévaluée aussi bien
+  // sur changement d'état que sur navigation (évite un marqueur figé sur
+  // "loading" quand la nouvelle page est prête immédiatement).
   useEffect(() => {
     applyMarker(state);
-  }, [state]);
+  }, [state, pathname, search]);
 
   // Délai plafond, réarmé à chaque navigation.
   useEffect(() => {
@@ -114,6 +116,7 @@ export function PrerenderProvider({ children }: { children: ReactNode }) {
     const t = window.setTimeout(() => setTimedOut(true), PRERENDER_TIMEOUT_MS);
     return () => window.clearTimeout(t);
   }, [state, pathname, search]);
+
 
   useEffect(() => clearMarker, []);
 
