@@ -121,6 +121,11 @@
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 210 15% 15%;
     --sidebar-ring: 42 62% 50%;
+
+    /* Courbes des graphiques (dashboard prestataire) */
+    --chart-1: 42 62% 50%;   /* Or Riche */
+    --chart-2: 210 31% 46%;  /* Bleu Pétrole éclairci */
+    --chart-3: 90 15% 55%;   /* Sauge éclaircie */
   }
 }
 
