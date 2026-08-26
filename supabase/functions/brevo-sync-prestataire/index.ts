@@ -188,6 +188,8 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
   // elle prime sur l'intérêt légitime B2B (le contact a exprimé un refus explicite).
   const oppose = await estOppose(admin, email);
 
+  const aUnCompte = Boolean(presta.user_id);
+
   const attributes: Record<string, unknown> = {
     NOM_COMMERCIAL: presta.nom_commercial,
     STATUT_FICHE: presta.statut,
@@ -196,6 +198,8 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
     FIN_ESSAI: toDate(abo?.fin_essai_le),
     DATE_PREMIERE_PUBLI: toDate(presta.date_premiere_publication as string | null),
     REGION: regionLabel ?? undefined,
+    A_UN_COMPTE: aUnCompte,
+    DATE_ACTIVATION_COMPTE: toDate(presta.compte_active_le as string | null),
     // Intérêt légitime B2B : le prestataire est opt-in par défaut, sauf opposition.
     ...(oppose ? {} : { CONSENTEMENT_MKT: true }),
   };
