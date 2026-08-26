@@ -1,6 +1,8 @@
 import { BrevoConnectionPanel } from "@/components/admin/BrevoConnectionPanel";
 import { MigratePhotosBatchPanel } from "@/components/admin/MigratePhotosBatchPanel";
 import { PennylaneConnectionPanel } from "@/components/admin/PennylaneConnectionPanel";
+import { PrerenderSnapshotsPanel } from "@/components/admin/PrerenderSnapshotsPanel";
+
 
 export default function AdminConnecteurs() {
   return (
@@ -17,6 +19,9 @@ export default function AdminConnecteurs() {
       <PennylaneConnectionPanel />
 
       <MigratePhotosBatchPanel />
+
+      <PrerenderSnapshotsPanel />
+
     </div>
   );
 }
