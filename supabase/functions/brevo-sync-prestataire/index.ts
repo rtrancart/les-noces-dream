@@ -277,6 +277,7 @@ async function syncPrestataire(admin: Admin, prestataireId: string, kind: string
             origine: presta.origine,
             cycle_vie: cycleVie,
             region: regionLabel,
+            a_un_compte: aUnCompte,
           },
         }),
       },
