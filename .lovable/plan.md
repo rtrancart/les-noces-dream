@@ -1,60 +1,55 @@
-# Réconciliation nocturne de la file de pré-rendu
+# Audit — Servir les snapshots aux robots (lecture seule)
 
-## Audit
+État constaté : bucket public `prerender-snapshots`, 121 entrées de file toutes `a_jour` avec un `storage_path` renseigné (`pages/<slug>.html`, `/` → `pages/index.html`). `vercel.json` ne contient aujourd'hui que 86 redirections héritées, aucune réécriture ni en-tête.
 
-### 1. Source de vérité des pages indexables
-`supabase/functions/generate-sitemap/index.ts` recense les URL avec exactement ces filtres :
+## 1. Point d'interception — options réellement disponibles
 
-| Type | Requête | URL |
-|---|---|---|
-| statiques | liste en dur (5 entrées) | `/`, `/recherche`, `/blog`, `/connexion`, `/inscription` |
-| régions | `pages_regions_mariage` où `est_publiee` | `/mariage/{slug_region}` |
-| catégories mères | `categories` où `est_active` et `parent_id is null` | `/prestataires/{slug}` |
-| catégories filles | `categories` où `est_active` et `parent_id not null` | `/prestataires/{slug_mere}/{slug_fille}` |
-| articles | `articles_blog` où `est_publie`, hors `noindex`, hors `inclure_sitemap = false` | `/blog/{slug}` |
-| fiches | `prestataires` où `statut = 'actif'` | `/prestataire/{slug}` |
+| Option | Fonctionnement | Couplage hébergeur | Couplage outil de dev |
+|---|---|---|---|
+| A. Edge Middleware Vercel (`middleware.ts` racine) | S'exécute avant tout, lit l'en-tête d'agent, réécrit vers le snapshot ou laisse passer | Fort (API `next/server` réimplémentée par Vercel, format propriétaire) | Faible (indépendant de Vite) |
+| B. Vercel Function (`/api/prerender.ts`) + `rewrites` conditionnels dans `vercel.json` | La règle `rewrites` avec `has: [{type:"header",key:"user-agent",value:"(?i)...bot..."}]` route les robots vers une fonction qui va chercher le HTML dans le bucket | Moyen (syntaxe `vercel.json`, mais logique métier dans un fichier standard) | Nul |
+| C. `rewrites` conditionnels pointant directement vers l'URL publique du bucket | Aucun code : `destination: "https://<bucket>/pages/:path*.html"` | Moyen (uniquement du déclaratif JSON) | Nul |
+| D. Renvoi vers une Edge Function backend existante (Deno) | `rewrites` conditionnel → fonction backend qui lit la file + le bucket | Faible (la logique vit côté backend, portable vers tout hébergeur qui sait faire un proxy conditionnel) | Nul |
 
-Point à noter : le sitemap **n'inclut pas** `pages_contenu` (pages éditoriales), alors que l'énoncé les mentionne. La logique est aujourd'hui inline dans la fonction sitemap — pour ne pas la dupliquer, elle sera extraite dans un module partagé `supabase/functions/_shared/pages-indexables.ts`, consommé à la fois par `generate-sitemap` et par la réconciliation. Le générateur de sitemap garde un rendu strictement identique.
+**Recommandation : option D**, avec repli C. Une seule ligne de `rewrites` conditionnel dans `vercel.json` (le seul artefact propriétaire, trivialement traduisible en règle Cloudflare / Netlify / nginx), et toute la logique — détection fine, correspondance URL→snapshot, 404 — dans une fonction backend Deno déjà dans le dépôt, au même endroit que le reste de la chaîne de pré-rendu. Zéro dépendance à Vite, aucune dépendance au runtime Vercel. Le middleware (A) est à éviter : c'est l'option la plus verrouillée à l'hébergeur.
 
-Volumes actuels : 32 fiches actives, 47 catégories, 13 régions, 25 articles, 2 pages éditoriales, 5 statiques — soit ~120 pages. Ce chiffre montera à plusieurs milliers quand les 3 230 fiches migrées passeront en `actif`.
+## 2. Détection robot / humain
 
-### 2. Empreintes de contenu visible
-`prerender_queue.signature_visible` existe (`text`, nullable) mais **rien ne l'alimente** : la file compte 4 lignes, toutes créées à la main. Le consommateur, `prerender-snapshots-batch`, se contente de comparer `signature_visible` à `signature_rendue` (court-circuit) et de recopier la première dans la seconde après rendu — il ne calcule aucune empreinte. C'est donc au mécanisme de réconciliation de la produire.
+Signaux disponibles au point d'interception : en-tête `user-agent` (principal), `accept` (les robots demandent rarement autre chose que `text/html`), absence de cookie de session, et un paramètre d'échappatoire (`?_prerender=1`) pour tester.
 
-Le calcul sera fait **en SQL**, côté base, dans une fonction `security definer` : `md5` sur une concaténation ordonnée des champs réellement affichés, jamais les champs internes ni `updated_at`.
+Agents à servir en priorité, en correspondance insensible à la casse :
+- Moteurs : `googlebot`, `bingbot`, `duckduckbot`, `yandex`, `baiduspider`, `applebot`, `qwantify`, `seznambot`.
+- IA : `gptbot`, `oai-searchbot`, `chatgpt-user`, `perplexitybot`, `perplexity-user`, `claudebot`, `anthropic-ai`, `claude-web`, `google-extended`, `bytespider`, `amazonbot`, `meta-externalagent`, `ccbot`, `cohere-ai`, `youbot`, `diffbot`, `applebot-extended`, `mistralai-user`.
+- Aperçus sociaux : `facebookexternalhit`, `twitterbot`, `linkedinbot`, `slackbot`, `whatsapp`, `discordbot`, `telegrambot`, `pinterest`.
+- Filet large recommandé, conforme à votre arbitrage « dans le doute, snapshot » : tout agent contenant `bot`, `crawl`, `spider`, `slurp`, `fetch`, `preview`, `search`, ou un agent vide/absent.
 
-- fiche : `nom_commercial, description, description_courte, prix_depart, prix_max, ville, region, zones_intervention, photo_principale_url, urls_galerie, tags, champs_specifiques, video_url, site_web, categorie_mere_id, categorie_fille_id, note_moyenne, nombre_avis, est_premium, est_verifie` + empreinte agrégée des avis validés
-- catégorie : `nom, slug, description_seo, contenu_seo, photo_url, icone_url, ordre_affichage` (+ pour une mère, la liste ordonnée des slugs de filles actives)
-- région : `nom_region, intro_editoriale, specificites, conseils, faq, budgets, contenu_seo_bas, image_hero_url, meta_*`
-- article : `titre, extrait, contenu, image_couverture_url, faq, meta_*, auteur, temps_lecture`
-- statique : empreinte constante (rendu piloté par des données globales) — remise à traiter uniquement si absente
+Un humain servi par erreur voit une page HTML complète et statique, sans conséquence fonctionnelle grave ; on peut y adjoindre un script de réhydratation optionnel. L'inverse coûte l'indexation.
 
-### 3. Modèle des tâches nocturnes
-Toutes les tâches sont déclarées en `pg_cron` (`cron.schedule`) et appellent la fonction via `net.http_post`, avec un `Authorization: Bearer` lu dans `vault.decrypted_secrets` (`email_queue_service_role_key`) — c'est le modèle retenu (ex. `brevo-sync-compteurs-nightly`, 04:00).
+## 3. Correspondance URL → snapshot
 
-Pour la reprise par lots, `brevo-sync-compteurs` fournit le modèle exact : budget `BUDGET_MS = 40 s`, boucle interne, puis **auto-relance** par `fetch` sur sa propre URL avec l'offset courant, et compte-rendu `{ ok, termine, offset_final, ... }`. C'est ce modèle qui sera repris.
+Règle déjà figée par le générateur : chemin d'URL → `pages/<chemin sans slash initial>.html`, `/` → `pages/index.html`. Deux stratégies :
+- **Directe** : construire le chemin par la même règle et lire l'objet public du bucket. Rapide, aucune requête base.
+- **Autoritaire** : lire `storage_path` dans `prerender_queue` pour l'`url_path` demandé (une seule lecture indexée), puis récupérer l'objet. Plus robuste si la règle de nommage évolue, et permet de distinguer « page indexable connue mais snapshot pas encore produit » de « page inconnue ».
 
-### 4. Suppression d'un fichier du bucket
-Client `service_role` puis `supabase.storage.from('prerender-snapshots').remove([storage_path])` — le bucket existe, il est public en lecture seule, l'écriture/suppression passe par le `service_role`.
+Le bucket étant public en lecture, la récupération est un simple GET sur l'URL publique — pas de clé de service, pas de signature. On renvoie le HTML tel quel avec `content-type: text/html`, un `cache-control` court côté périphérie, et un en-tête de traçabilité (`x-prerender: hit|miss`).
 
-### 5. Points coûteux / risqués à l'échelle
-- **Recalcul intégral des empreintes chaque nuit** : à 3 300 fiches, l'agrégat des avis par fiche est le poste lourd. Il sera calculé en une seule requête ensembliste (jointure groupée), pas fiche par fiche, et paginé par tranches de 500.
-- **Comparaison en base, pas en mémoire** : la réconciliation ne charge jamais l'ensemble des pages côté Deno ; le calcul, la comparaison et l'`upsert` se font dans une fonction SQL travaillant par tranches.
-- **Risque de remise à traiter massive** : si une empreinte change de définition (ajout d'un champ), toute la file repasse `a_traiter` → 3 300 rendus séquentiels à ~5 s = plusieurs heures. Un plafond quotidien de mises en file sera prévu, paramétrable.
-- **Suppressions destructrices** : une erreur de filtre viderait le bucket. Garde-fou : si la réconciliation veut supprimer plus de X % de la file en une passe, elle s'arrête et journalise sans rien effacer.
-- **Durée du traitement** : 3 300 pages × (rendu + pause 1,5 s) dépasse largement une nuit. Le déclenchement bouclera dans une limite de temps bornée et reprendra la nuit suivante — la file étant triée par `updated_at`, aucune page n'est jamais laissée de côté indéfiniment.
-- Les entrées `abandonne` (3 échecs) ne sont pas rejouées par la réconciliation tant que leur empreinte n'a pas changé, ce qui évite de boucler sur des pages cassées.
+Recommandation : consultation autoritaire de la file, avec repli sur la règle directe si la lecture base échoue, puis repli sur l'application si le snapshot est introuvable — jamais d'erreur serveur visible par un robot.
 
-## Découpage proposé
+## 4. Cas « pas de snapshot » et vrais 404
 
-1. **Module partagé** `_shared/pages-indexables.ts` : extraction de la logique de recensement du sitemap (mêmes filtres, mêmes URL), réutilisé par `generate-sitemap` sans changement de sortie.
-2. **Migration** : fonction SQL `prerender_reconcilier(p_limit, p_offset)` qui calcule les empreintes visibles par tranche et fait l'`upsert` dans `prerender_queue` (insertion → `a_traiter`, empreinte changée → `a_traiter`, inchangée → rien), plus une fonction listant les entrées orphelines à purger.
-3. **Fonction `prerender-reconcile`** : garde `service_role` + admin (même modèle que `prerender-snapshots-batch`), passes bornées à 40 s avec auto-relance par offset, purge des orphelins (suppression bucket puis suppression de ligne), compte-rendu `{ ajoutees, remises, inchangees, purgees, restantes }`.
-4. **Fonction `cron-prerender-nightly`** : appelle la réconciliation jusqu'à `termine`, puis boucle sur `prerender-snapshots-batch` jusqu'à `restantes = 0` ou épuisement du budget de nuit, séquentiellement, sans parallélisme.
-5. **Planification** `pg_cron` une fois par nuit (proposition : 04:30, après le batch Brevo de 04:00), même en-tête `Authorization` depuis le vault.
-6. **Panneau admin** : ajout d'un bouton « Synchroniser la file » dans `PrerenderSnapshotsPanel` pour déclencher la réconciliation à la demande, avec le même affichage de compteurs.
+Oui, c'est faisable et c'est le bon endroit pour le faire. Aujourd'hui l'application est une SPA : toute URL renvoie `index.html` en 200, y compris les pages inexistantes (faux succès signalé). Au point d'interception, le statut HTTP est entièrement contrôlé, donc pour un robot :
+- URL présente dans la file → snapshot, statut 200.
+- URL absente de la file mais correspondant à une forme de page dynamique (fiche prestataire, article) → vérification en base de l'existence de la ressource ; absente → **404 réel** avec une page d'erreur minimale.
+- URL indexable connue mais snapshot pas encore généré → laisser passer vers l'application en 200 (état transitoire, pas une absence).
 
-## Points à trancher
+Pour les humains, un vrai 404 exigerait que l'application connaisse le statut côté serveur ; le plus simple est de laisser le comportement SPA actuel et de corriger le signal uniquement pour les robots, qui sont les seuls que ce faux succès pénalise. Un rendu côté serveur généralisé serait la seule façon d'unifier les deux — [ce que l'upgrade vers TanStack Start apporterait](https://lovable.dev/blog/building-apps-using-tanstack-start), sans que ce soit nécessaire ici.
 
-- Faut-il inclure les pages éditoriales `pages_contenu` (absentes du sitemap aujourd'hui) — et si oui, les ajouter aussi au sitemap ?
-- Heure du cron : 04:30 convient-il ?
+## 5. Configuration Vercel existante
+
+`vercel.json` à la racine : **uniquement** une clé `redirects` de 86 entrées, toutes des redirections permanentes héritées de l'ancien site (`/prestataire-profil/1211-:oldslug*`, `/recherche?prestataireTypeId[]=N` vers les pages catégorie en double encodage brut et pourcent, `/actualite/...` vers `/blog`, catch-all final `/prestataire-profil/:rest*` → `/recherche`). Aucune clé `rewrites`, `headers`, `functions` ou `cleanUrls`. Aucun `middleware.ts` dans le dépôt.
+
+Point de vigilance : chez Vercel, `redirects` s'applique **avant** `rewrites`. Ajouter un bloc `rewrites` est donc purement additif et ne peut pas casser les 86 redirections existantes — le catch-all `/prestataire-profil/:rest*` continuera de primer. À l'inverse, il faudra veiller à ce que la règle de pré-rendu n'attrape ni les fichiers d'actifs (`/assets/*`, images, `sitemap.xml`, `robots.txt`) ni les chemins d'espace privé.
+
+## Suite possible
+
+Sur validation, l'implémentation consisterait en : une Edge Function backend de service de snapshot, une règle `rewrites` conditionnelle unique dans `vercel.json`, et la liste d'agents centralisée dans un module partagé du dépôt.
