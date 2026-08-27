@@ -281,7 +281,7 @@ export default function Recherche() {
     }
 
     return result;
-  }, [allProviders, categoryIds, locationZones, priceFilters, ratingFilter, citySearch]);
+  }, [allProviders, categoryIds, locationZones, priceFilters, ratingFilter, citySearch, zoneIndex]);
 
   // Update URL params
   useEffect(() => {
