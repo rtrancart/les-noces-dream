@@ -24,23 +24,42 @@ Conclusion : l'import de migration a écrit des **slugs de département** là o�
 
 Deux chemins, tous deux comparant à `zone_value` :
 
-- `/recherche` (`src/pages/Recherche.tsx`, `matchesZones`) : compare les valeurs sélectionnées (codes dépt / régions snake, issues de `src/lib/zonesIntervention.ts`) au tableau `zones_intervention`, plus un repli sur le libellé `region` de la fiche.
+- `/recherche` (`src/pages/Recherche.tsx`, `matchesZones`) : compare les valeurs sélectionnées (codes dépt / régions snake) au tableau `zones_intervention`, plus un repli sur le libellé `region` de la fiche.
 - Pages listing `/{categorie}/{zone}` (`src/pages/PrestatairesListe.tsx` + `src/lib/zoneResolver.ts`) : la zone d'URL est résolue via `zones_reference` puis comparée à `zone_value`, avec repli région et rayon Haversine pour les villes.
 
-Deux angles morts confirmés dans `matchesZones` :
+Angle mort confirmé dans `matchesZones` : sélectionner une **région** ne fait pas remonter une fiche qui ne liste que des **départements** de cette région.
 
-1. sélectionner une **région** ne fait pas remonter une fiche qui ne liste que des **départements** de cette région ;
-2. le repli région s'appuie sur une table de libellés locale (`zonesIntervention.ts`) au lieu du référentiel base.
+## Pass audit-only du mapping (déjà exécuté)
+
+Table de correspondance construite depuis `zones_reference` sur une clé normalisée (minuscules, sans accents, sans tirets/apostrophes/underscores), alimentée par `slug` **+** `label` **+** `zone_value` — donc régions, départements, DOM et pays au même titre. Résultat sur les données réelles :
+
+- **0 valeur orpheline** après application (hors `france_entiere`, conservé tel quel) — `cotes-darmor`, `val-doise` et `provence_alpes_cote_dazur` sont bien rattrapés, la variante région incluse.
+- **0 collision** : aucune clé normalisée ne pointe vers deux `zone_value` différentes.
 
 ## Ce que je vais faire
 
-1. **Migration de normalisation des données** : réécrire `zones_intervention` de toutes les fiches vers les `zone_value` du référentiel — slug de département → code, variantes orthographiques (`cotes-darmor` → `22`, `val-doise` → `95`, `provence_alpes_cote_dazur` → `provence_alpes_cote_azur`) → valeur canonique, dédoublonnage, conservation de `france_entiere`. Rapport avant/après et vérification qu'il ne reste zéro valeur hors référentiel.
-2. **Garde-fou en base** : trigger sur `prestataires` qui normalise à l'écriture toute valeur de `zones_intervention` (slug, code, libellé accentué) vers la `zone_value` canonique et rejette une valeur inconnue — même principe que le trigger déjà en place sur `region`.
-3. **Correctif du filtre** : dans `matchesZones`, faire remonter une fiche quand la zone sélectionnée est une région et que la fiche couvre un département de cette région (et inversement département sélectionné / région couverte, déjà géré côté listing). Aucun changement visuel.
-4. **Vérification** : contrôles SQL de couverture par région/département avant/après, et test du parcours de recherche sur une zone où seules des fiches migrées interviennent.
+1. **Filet de sécurité + migration des données**
+   - Sauvegarde préalable dans une table `zones_intervention_backup` (`prestataire_id`, `zones_avant`, `zones_apres`, date) permettant un rollback intégral.
+   - Réécriture **en remplacement valeur par valeur, sans ajout ni retrait** : `gironde` → `33`, et si la région parente figurait déjà dans le tableau elle est conservée telle quelle (aucune expansion, aucune suppression de région parente). La sémantique de couverture déclarée par le prestataire est strictement préservée.
+   - Dédoublonnage **après** mapping, ordre stable, `france_entiere` conservé.
+   - Contrôle post-migration : zéro valeur hors référentiel, et comparaison du nombre de fiches couvertes par zone avant/après.
+
+2. **Garde-fou en base — tolérant, pas bloquant**
+   - Trigger `BEFORE INSERT/UPDATE` qui normalise chaque entrée via la même clé (donc **idempotent** : `33` → `33`, `ile_de_france` → `ile_de_france`, une valeur déjà canonique n'est jamais cassée).
+   - Une valeur inconnue n'annule **pas** la transaction : elle est écartée du tableau et journalisée (`logs_admin`, action `zone_intervention_inconnue`), les valeurs valides sont écrites. Pas de `RAISE EXCEPTION`.
+   - Tableau vide ou `NULL` reste accepté.
+
+3. **Correctif du filtre `matchesZones`**
+   - Une fiche remonte sur une région sélectionnée si elle couvre cette région **ou** au moins un de ses départements. L'expansion est strictement bornée à la relation région → ses départements enfants via `parent_region_zone_value` de `zones_reference` : un `belgique`, un `monaco` ou un DOM n'est jamais aspiré par l'expansion d'une région métropolitaine.
+   - `france_entiere` conserve son comportement actuel (match universel), inchangé.
+   - Performance : l'index région → départements est construit **une seule fois** (mémoïsé depuis `ZonesContext`), pas par fiche ni par frappe ; le filtrage reste une intersection de `Set`. Vérification du rendu sur viewport mobile.
+
+4. **Vérification**
+   - Contrôles SQL de couverture par région et par département, avant/après.
+   - Parcours de recherche testé sur une zone servie uniquement par des fiches migrées, en desktop et en mobile.
 
 ## Détails techniques
 
-- Table de correspondance construite dynamiquement depuis `zones_reference` (`slug` → `zone_value`), avec normalisation sans accents et suppression des apostrophes pour rattraper `cotes-darmor` / `val-doise`.
-- La normalisation d'écriture réutilise `normaliser_cle_zone` / la logique du trigger `normaliser_region_prestataire`.
-- Côté front, l'expansion région ↔ départements s'appuie sur `zones_reference` (déjà préchargé dans `ZonesContext`), pas sur la liste statique.
+- Clé de normalisation partagée entre la migration et le trigger (fonction SQL unique), basée sur `immutable_unaccent` + suppression des séparateurs.
+- La table de correspondance est dérivée dynamiquement de `zones_reference` (slug, label et zone_value), donc elle suit automatiquement toute évolution du référentiel.
+- Côté front, l'expansion s'appuie sur `zones_reference` déjà préchargé par `ZonesContext`, pas sur la liste statique `zonesIntervention.ts`.
