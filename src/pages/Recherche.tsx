@@ -256,8 +256,10 @@ export default function Recherche() {
         return haversineDistanceKm(citySearch.lat, citySearch.lng, lat, lng) <= citySearch.radius;
       });
     } else if (locationZones.length > 0) {
-      result = result.filter((p) => matchesZones(p, locationZones));
+      const expanded = expandZones(locationZones, Array.from(zoneIndex.values()));
+      result = result.filter((p) => matchesZones(p, locationZones, expanded));
     }
+
 
     // Price filter
     if (priceFilters.length > 0) {
