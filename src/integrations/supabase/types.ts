@@ -2117,6 +2117,52 @@ export type Database = {
         }
         Relationships: []
       }
+      zones_intervention_backup: {
+        Row: {
+          created_at: string
+          id: string
+          prestataire_id: string
+          zones_apres: string[] | null
+          zones_avant: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prestataire_id: string
+          zones_apres?: string[] | null
+          zones_avant?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prestataire_id?: string
+          zones_apres?: string[] | null
+          zones_avant?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zones_intervention_backup_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zones_intervention_backup_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zones_intervention_backup_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public_all"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       zones_reference: {
         Row: {
           created_at: string
@@ -2573,6 +2619,7 @@ export type Database = {
         Args: { p_charte_exemptee_jusqua: string; p_charte_signee_le: string }
         Returns: boolean
       }
+      cle_zone_normalisee: { Args: { p_valeur: string }; Returns: string }
       definir_consentement_marketing: {
         Args: { p_consent: boolean }
         Returns: boolean
@@ -2794,6 +2841,10 @@ export type Database = {
         }[]
       }
       resoudre_region_label: { Args: { p_region: string }; Returns: string }
+      resoudre_zone_intervention: {
+        Args: { p_valeur: string }
+        Returns: string
+      }
       soumettre_avis: {
         Args: {
           p_commentaire: string
