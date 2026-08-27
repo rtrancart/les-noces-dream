@@ -73,7 +73,10 @@ Deno.serve(async (req) => {
     query = query
       .not("premier_login_le", "is", null)
       .lte("premier_login_le", cutoff)
-      .is("charte_signee_le", null);
+      .is("charte_signee_le", null)
+      // Sans date d'exemption, le template afficherait le jeton brut
+      // {{charte_exemptee_jusqua}} : on exclut ces fiches du M-05.
+      .not("charte_exemptee_jusqua", "is", null);
   } else {
     query = query
       .is("premier_login_le", null)
@@ -117,8 +120,13 @@ Deno.serve(async (req) => {
       };
 
       if (step === "m05") {
+        const dateExemption = formatDateFr(row.charte_exemptee_jusqua);
+        if (!dateExemption) {
+          console.warn(`cron-migration-relances[${step}]: no exemption date, skipped`, row.id);
+          continue;
+        }
         templateData.charte_url = `${SITE_URL}/signer-la-charte`;
-        templateData.charte_exemptee_jusqua = formatDateFr(row.charte_exemptee_jusqua);
+        templateData.charte_exemptee_jusqua = dateExemption;
       } else {
         // Magic link frais (le précédent a pu expirer) — TTL 60 j (fiches migrées).
         const { token, jti, expiresAt } = await signInvitationToken({
