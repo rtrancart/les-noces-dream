@@ -144,6 +144,8 @@ export default function Recherche() {
     loading ? "loading" : categoryTree.length > 0 ? "ready" : "error",
   );
   const isMobile = useIsMobile();
+  const { bySlug: zoneIndex } = useZones();
+
   const { trackSearch } = useTracking();
 
   const [locationZones, setLocationZones] = useState<string[]>(() => {
