@@ -73,7 +73,10 @@ Deno.serve(async (req) => {
     query = query
       .not("premier_login_le", "is", null)
       .lte("premier_login_le", cutoff)
-      .is("charte_signee_le", null);
+      .is("charte_signee_le", null)
+      // Sans date d'exemption, le template afficherait le jeton brut
+      // {{charte_exemptee_jusqua}} : on exclut ces fiches du M-05.
+      .not("charte_exemptee_jusqua", "is", null);
   } else {
     query = query
       .is("premier_login_le", null)
