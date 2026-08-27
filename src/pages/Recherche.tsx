@@ -16,6 +16,8 @@ import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
 import SeoHead from "@/components/SeoHead";
 import { usePrerenderStatus } from "@/contexts/PrerenderContext";
+import { useZones, type ZoneRefRow } from "@/contexts/ZonesContext";
+
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
 
