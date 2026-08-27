@@ -16,6 +16,8 @@ import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
 import SeoHead from "@/components/SeoHead";
 import { usePrerenderStatus } from "@/contexts/PrerenderContext";
+import { useZones, type ZoneRefRow } from "@/contexts/ZonesContext";
+
 
 /* ─── Hook: fetch data ──────────────────────────────────── */
 
@@ -87,7 +89,33 @@ function useSearchData() {
 
 /* ─── Helper: zone matching ──────────────────────────────── */
 
-function matchesZones(provider: any, selectedZones: string[]): boolean {
+/**
+ * Expand selected zones with the départements of each selected région.
+ * Bounded strictly to the région → children relation of zones_reference,
+ * so DOM / pays (belgique, monaco…) are never pulled in by an expansion.
+ */
+function expandZones(selectedZones: string[], zoneRows: ZoneRefRow[]): Set<string> {
+  const set = new Set(selectedZones);
+  if (selectedZones.length === 0) return set;
+  const selectedRegions = new Set(
+    zoneRows
+      .filter((r) => r.type === "region" && selectedZones.includes(r.zone_value))
+      .map((r) => r.zone_value)
+  );
+  if (selectedRegions.size === 0) return set;
+  for (const r of zoneRows) {
+    if (
+      r.type === "departement" &&
+      r.parent_region_zone_value &&
+      selectedRegions.has(r.parent_region_zone_value)
+    ) {
+      set.add(r.zone_value);
+    }
+  }
+  return set;
+}
+
+function matchesZones(provider: any, selectedZones: string[], expanded: Set<string>): boolean {
   if (selectedZones.length === 0) return true;
   if (selectedZones.includes("france_entiere")) return true;
 
@@ -100,10 +128,11 @@ function matchesZones(provider: any, selectedZones: string[]): boolean {
     if (selectedZones.includes(regionMatch.value)) return true;
   }
 
-  // Match by zones_intervention
+  // Match by zones_intervention (canonical zone_value, région expanded to its départements)
   const zones: string[] = provider.zones_intervention ?? [];
-  return zones.some((z: string) => selectedZones.includes(z));
+  return zones.some((z: string) => z === "france_entiere" || expanded.has(z));
 }
+
 
 /* ─── Page ──────────────────────────────────────────────── */
 
@@ -115,6 +144,8 @@ export default function Recherche() {
     loading ? "loading" : categoryTree.length > 0 ? "ready" : "error",
   );
   const isMobile = useIsMobile();
+  const { bySlug: zoneIndex } = useZones();
+
   const { trackSearch } = useTracking();
 
   const [locationZones, setLocationZones] = useState<string[]>(() => {
@@ -225,8 +256,10 @@ export default function Recherche() {
         return haversineDistanceKm(citySearch.lat, citySearch.lng, lat, lng) <= citySearch.radius;
       });
     } else if (locationZones.length > 0) {
-      result = result.filter((p) => matchesZones(p, locationZones));
+      const expanded = expandZones(locationZones, Array.from(zoneIndex.values()));
+      result = result.filter((p) => matchesZones(p, locationZones, expanded));
     }
+
 
     // Price filter
     if (priceFilters.length > 0) {
@@ -248,7 +281,7 @@ export default function Recherche() {
     }
 
     return result;
-  }, [allProviders, categoryIds, locationZones, priceFilters, ratingFilter, citySearch]);
+  }, [allProviders, categoryIds, locationZones, priceFilters, ratingFilter, citySearch, zoneIndex]);
 
   // Update URL params
   useEffect(() => {
