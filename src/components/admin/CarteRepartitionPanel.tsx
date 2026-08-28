@@ -48,11 +48,22 @@ export default function CarteRepartitionPanel() {
     queryKey: ["admin-stats-zones-categories"],
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("admin_stats_zones_categories");
-      if (error) throw error;
-      return (data ?? []) as unknown as Row[];
+      // L'API limite chaque réponse à 1 000 lignes : on pagine jusqu'à épuisement.
+      const taille = 1000;
+      const tout: Row[] = [];
+      for (let page = 0; page < 50; page++) {
+        const { data, error } = await supabase
+          .rpc("admin_stats_zones_categories")
+          .range(page * taille, page * taille + taille - 1);
+        if (error) throw error;
+        const lot = (data ?? []) as unknown as Row[];
+        tout.push(...lot);
+        if (lot.length < taille) break;
+      }
+      return tout;
     },
   });
+
 
   const { data: familles } = useQuery({
     queryKey: ["admin-familles-categories"],
