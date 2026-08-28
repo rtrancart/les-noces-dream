@@ -191,7 +191,10 @@ export default function CarteRepartitionPanel() {
           byZoneValue.get(regionValue)?.label ??
           bySlug.get(regionValue)?.label ??
           regionValue,
-        geometry: merge(topo, geoms) as unknown as GeoPermissibleObjects,
+        geometry: merge(
+          topo,
+          geoms as unknown as Parameters<typeof merge>[1]
+        ) as unknown as GeoPermissibleObjects,
       }));
     }
 
