@@ -2574,6 +2574,21 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      admin_stats_zones_categories: {
+        Args: never
+        Returns: {
+          categorie_mere_id: string
+          categorie_nom: string
+          dept_code: string
+          label: string
+          nb: number
+          parent_region_zone_value: string
+          scope: string
+          statut: Database["public"]["Enums"]["statut_prestataire"]
+          zone_type: string
+          zone_value: string
+        }[]
+      }
       brevo_compteurs_journal: {
         Args: {
           p_ids: string[]
