@@ -100,42 +100,35 @@ export default function CarteRepartitionPanel() {
   }, [rows, perimetre, familleId, categorieId, categoriesFiltrees]);
 
   /**
-   * Agrégats cartographiables.
-   * Régions : les lignes départementales sont remontées à la région parente.
-   * Le comptage DISTINCT par fiche est déjà fait en base au niveau zone × catégorie ;
-   * on somme donc les zones, en assumant qu'une fiche déclarant plusieurs départements
-   * d'une même région n'est comptée qu'une fois grâce au regroupement par catégorie.
+   * Clé cartographique d'une ligne selon la vue courante.
+   * - Départements : lignes `carte` de type département, clé = code INSEE.
+   * - Régions : lignes `carte_region`, déjà dédoublonnées en base
+   *   (une fiche couvrant plusieurs départements d'une région n'y compte qu'une fois).
    */
+  const cleCarto = (r: Row): string | null => {
+    if (vue === "departements") {
+      if (r.scope !== "carte" || r.zone_type !== "departement") return null;
+      return r.dept_code;
+    }
+    if (r.scope !== "carte_region") return null;
+    return r.zone_value;
+  };
+
   const parZone = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of rowsFiltrees) {
-      if (r.scope !== "carte" || !r.zone_value) continue;
-      let cle: string | null = null;
-      if (vue === "departements") {
-        cle = r.zone_type === "departement" ? r.dept_code : null;
-        if (!cle && r.zone_type === "region") continue;
-      } else {
-        cle =
-          r.zone_type === "region" ? r.zone_value : (r.parent_region_zone_value ?? null);
-      }
+      const cle = cleCarto(r);
       if (!cle) continue;
       map.set(cle, (map.get(cle) ?? 0) + Number(r.nb));
     }
     return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowsFiltrees, vue]);
 
   const parZoneEtCategorie = useMemo(() => {
     const map = new Map<string, Map<string, number>>();
     for (const r of rowsFiltrees) {
-      if (r.scope !== "carte" || !r.zone_value) continue;
-      const cle =
-        vue === "departements"
-          ? r.zone_type === "departement"
-            ? r.dept_code
-            : null
-          : r.zone_type === "region"
-            ? r.zone_value
-            : r.parent_region_zone_value;
+      const cle = cleCarto(r);
       if (!cle) continue;
       const nom = r.categorie_nom ?? "Sans catégorie";
       const inner = map.get(cle) ?? new Map<string, number>();
@@ -143,7 +136,9 @@ export default function CarteRepartitionPanel() {
       map.set(cle, inner);
     }
     return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rowsFiltrees, vue]);
+
 
   const totalHorsCarte = useMemo(
     () =>
