@@ -2589,6 +2589,7 @@ export type Database = {
           zone_value: string
         }[]
       }
+      admin_stats_zones_categories_json: { Args: never; Returns: Json }
       brevo_compteurs_journal: {
         Args: {
           p_ids: string[]
