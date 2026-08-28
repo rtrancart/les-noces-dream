@@ -12,6 +12,7 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
+import CarteRepartitionPanel from "@/components/admin/CarteRepartitionPanel";
 
 
 
@@ -195,6 +196,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Répartition géographique */}
+      <CarteRepartitionPanel />
 
       {/* Two-column layout */}
       <div className="grid gap-6 lg:grid-cols-2">
