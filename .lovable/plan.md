@@ -12,11 +12,11 @@ Une fiche sans abonnement ni `fin_essai_le` **reste visible** sur le site. La vi
 
 ## Nouvelle règle
 
-Le point de départ des 90 jours devient l'**envoi de l'invitation** (`prestataires.magic_link_envoye_le`), le même moment que celui qui ouvre le tunnel côté Brevo.
+Le point de départ des 90 jours est l'**activation du compte** (`prestataires.compte_active_le`, posé automatiquement au rattachement d'un `user_id` à la fiche), exactement comme l'exemption de charte.
 
-- Tant qu'aucune invitation n'est partie : `fin_essai_le` vide, aucun décompte ne court.
-- À l'envoi de l'invitation : `fin_essai_le = magic_link_envoye_le + 90 jours`, posé une seule fois.
-- Une invitation renvoyée plus tard ne réinitialise pas et ne prolonge pas la date.
+- Tant que le compte n'est pas activé : `fin_essai_le` vide, aucun décompte ne court.
+- À l'activation : `fin_essai_le = compte_active_le + 90 jours`, posé une seule fois.
+- Aucune réinitialisation ni prolongation ensuite.
 - Uniquement pour `origine = 'migration'` ; les inscriptions admin et auto-inscriptions gardent leur fonctionnement actuel.
 
 Cette échéance s'aligne ainsi sur l'exemption de charte, elle aussi individualisée par fiche.
