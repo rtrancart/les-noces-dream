@@ -12,11 +12,11 @@ Une fiche sans abonnement ni `fin_essai_le` **reste visible** sur le site. La vi
 
 ## Nouvelle règle
 
-Le point de départ des 90 jours devient l'**envoi de l'invitation** (`prestataires.magic_link_envoye_le`), le même moment que celui qui ouvre le tunnel côté Brevo.
+Le point de départ des 90 jours est l'**activation du compte** (`prestataires.compte_active_le`, posé automatiquement au rattachement d'un `user_id` à la fiche), exactement comme l'exemption de charte.
 
-- Tant qu'aucune invitation n'est partie : `fin_essai_le` vide, aucun décompte ne court.
-- À l'envoi de l'invitation : `fin_essai_le = magic_link_envoye_le + 90 jours`, posé une seule fois.
-- Une invitation renvoyée plus tard ne réinitialise pas et ne prolonge pas la date.
+- Tant que le compte n'est pas activé : `fin_essai_le` vide, aucun décompte ne court.
+- À l'activation : `fin_essai_le = compte_active_le + 90 jours`, posé une seule fois.
+- Aucune réinitialisation ni prolongation ensuite.
 - Uniquement pour `origine = 'migration'` ; les inscriptions admin et auto-inscriptions gardent leur fonctionnement actuel.
 
 Cette échéance s'aligne ainsi sur l'exemption de charte, elle aussi individualisée par fiche.
@@ -36,9 +36,9 @@ Badge affiché dans l'espace pro du prestataire (bandeau du tableau de bord et p
 ## Détails techniques
 
 1. **Migration SQL**
-   - `UPDATE abonnements SET fin_essai_le = NULL` pour les prestataires `origine = 'migration'` dont `magic_link_envoye_le` est vide (aujourd'hui : les 3 230).
-   - Fonction trigger `set_fin_essai_migration()` sur `prestataires`, `AFTER UPDATE OF magic_link_envoye_le` : si `origine = 'migration'` et passage NULL → non NULL, écrit `fin_essai_le = magic_link_envoye_le + interval '90 days'` sur la ligne `abonnements` du prestataire, seulement quand `fin_essai_le IS NULL` (idempotent).
-   - Backfill pour les fiches migrées déjà invitées au moment de la migration (actuellement aucune).
+   - `UPDATE abonnements SET fin_essai_le = NULL` pour les prestataires `origine = 'migration'` dont `compte_active_le` est vide (aujourd'hui : les 3 230).
+   - Fonction trigger `set_fin_essai_migration()` sur `prestataires`, `AFTER UPDATE OF user_id` (après `trg_set_compte_active_le`) : si `origine = 'migration'` et passage de `user_id` NULL → non NULL, écrit `fin_essai_le = compte_active_le + interval '90 days'` sur la ligne `abonnements` du prestataire, seulement quand `fin_essai_le IS NULL` (idempotent).
+   - Backfill pour les fiches migrées déjà activées au moment de la migration (actuellement aucune).
 2. **Admin** — édition de `abonnements.fin_essai_le` depuis la fiche prestataire (`src/pages/admin/Prestataires.tsx`), avec `logAdmin`. Une politique de mise à jour d'`abonnements` réservée aux admins est ajoutée si elle manque.
 3. **Badge** — composant dans `src/components/prestataire/`, alimenté par la requête abonnement déjà présente dans l'espace pro.
 4. **Brevo** — `FIN_ESSAI` est déjà synchronisé depuis `abonnements.fin_essai_le` ; la nouvelle date remonte automatiquement.
