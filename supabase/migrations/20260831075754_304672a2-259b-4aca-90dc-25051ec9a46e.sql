@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.set_fin_essai_migration() FROM PUBLIC, anon, authenticated;
