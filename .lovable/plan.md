@@ -9,7 +9,7 @@
 
 ## Nouvelle règle
 
-L'essai gratuit de 90 jours démarre à l'**activation du compte** (`prestataires.compte_active_le`, posé automatiquement quand un `user_id` est rattaché à la fiche), et non plus à une date commune.
+L'essai gratuit est recalculé à +90j à l'**activation du compte** (`prestataires.compte_active_le`, posé automatiquement quand un `user_id` est rattaché à la fiche), et non plus à une date commune.
 
 - Tant que le compte n'est pas activé : pas de date de fin d'essai (`fin_essai_le` vide), aucun décompte ne court.
 - À l'activation : `fin_essai_le = compte_active_le + 90 jours`.
