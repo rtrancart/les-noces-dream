@@ -47,6 +47,7 @@ function PrestataireLayoutInner() {
             <div className="mb-4 md:mb-6 space-y-3">
               <ChartePendingBanner />
               <WelcomeBanner />
+              <EssaiGratuitBanner />
               <ProviderInfoBanner prestataire={prestataire} />
             </div>
           )}
