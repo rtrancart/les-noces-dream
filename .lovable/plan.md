@@ -1,34 +1,45 @@
-# Gratuité des prestataires migrés : 90 jours à partir de l'activation du compte
+# Essai gratuit des prestataires migrés : 90 jours à partir de l'invitation
+
+## Réponse à la question de visibilité
+
+Une fiche sans abonnement ni `fin_essai_le` **reste visible** sur le site. La visibilité publique ne dépend que de `statut = 'actif'` : la recherche filtre sur ce seul critère, et la fiche publique passe par la même règle. Ni l'existence d'un abonnement, ni la date de fin d'essai, ni Stripe n'entrent dans le calcul de visibilité aujourd'hui.
 
 ## Situation actuelle (vérifiée)
 
 - 3 230 abonnements `plan = essai`, `statut = trialing`, sans lien Stripe, créés à l'import du 22/07/2026.
-- `fin_essai_le` est identique pour tout le parc : **20/10/2026** (import + 90 jours fixes).
-- **Aucune** fiche migrée n'a encore de compte : `user_id`, `compte_active_le` et `premier_login_le` sont vides sur les 3 230 fiches. Le recalage peut donc se faire sans léser personne.
-- L'exemption de charte suit déjà ce principe : `charte_exemptee_jusqua` est posée individuellement au moment de la validation.
+- `fin_essai_le` identique pour tout le parc : 20/10/2026 (import + 90 jours fixes).
+- Aucune fiche migrée n'a encore de compte ni d'invitation ouverte : `user_id`, `compte_active_le`, `premier_login_le` sont vides sur les 3 230 fiches. Le recalage se fait donc sans léser personne.
 
 ## Nouvelle règle
 
-L'essai gratuit est recalculé à +90j à l'**activation du compte** (`prestataires.compte_active_le`, posé automatiquement quand un `user_id` est rattaché à la fiche), et non plus à une date commune.
+Le point de départ des 90 jours devient l'**envoi de l'invitation** (`prestataires.magic_link_envoye_le`), le même moment que celui qui ouvre le tunnel côté Brevo.
 
-- Tant que le compte n'est pas activé : pas de date de fin d'essai (`fin_essai_le` vide), aucun décompte ne court.
-- À l'activation : `fin_essai_le = compte_active_le + 90 jours`.
-- Cette date reste posée une seule fois, jamais recalculée ni prolongée ensuite.
-- Uniquement pour `origine = migration`. Les inscriptions admin et auto-inscriptions gardent leur fonctionnement actuel.
+- Tant qu'aucune invitation n'est partie : `fin_essai_le` vide, aucun décompte ne court.
+- À l'envoi de l'invitation : `fin_essai_le = magic_link_envoye_le + 90 jours`, posé une seule fois.
+- Une invitation renvoyée plus tard ne réinitialise pas et ne prolonge pas la date.
+- Uniquement pour `origine = 'migration'` ; les inscriptions admin et auto-inscriptions gardent leur fonctionnement actuel.
 
-Le reste de la mécanique est déjà compatible : la souscription Stripe relit `fin_essai_le` et le transmet en `trial_end`, donc la carte est enregistrée immédiatement et le premier prélèvement tombe à l'échéance des 90 jours. Si `fin_essai_le` est vide, la facturation démarre immédiatement — cas qui ne peut pas se produire puisqu'on ne peut souscrire qu'une fois connecté, donc après activation.
+Cette échéance s'aligne ainsi sur l'exemption de charte, elle aussi individualisée par fiche.
 
-## Affichage prestataire
+## Date limite modifiable par l'admin
 
-Sur la page Abonnement, avant activation il n'y a rien à afficher (le prestataire n'y accède pas). Après activation, le libellé existant « Fin de l'essai le … » affiche la date individuelle. Aucun changement d'écran nécessaire.
+Dans la fiche prestataire de l'admin, une ligne « Essai gratuit — fin le … » avec un bouton d'édition ouvrant une saisie de date. L'admin peut avancer, repousser ou vider la date. Chaque modification est tracée dans le journal d'activité admin. La date saisie prévaut ensuite sur tout recalcul automatique.
+
+## Souscription à tout moment
+
+La page Abonnement reste accessible en permanence et le prestataire peut souscrire quand il le souhaite, y compris pendant l'essai : la carte est enregistrée immédiatement et le premier prélèvement est repoussé à la fin de l'essai (`trial_end` transmis à Stripe). Si l'essai est déjà terminé ou la date vide, la facturation démarre immédiatement — comportement déjà en place, rien à modifier.
+
+## Badge « Essai gratuit »
+
+Badge affiché dans l'espace pro du prestataire (bandeau du tableau de bord et page Profil), visible tant que `fin_essai_le` est dans le futur et qu'aucun abonnement payant n'est actif. Libellé : « Essai gratuit — jusqu'au JJ mois AAAA », avec un ton d'alerte dans les 15 derniers jours. Badge interne : il n'apparaît pas sur la fiche publique.
 
 ## Détails techniques
 
 1. **Migration SQL**
-   - Remise à zéro : `UPDATE abonnements SET fin_essai_le = NULL` pour les fiches `origine = 'migration'` dont le prestataire n'a pas de `compte_active_le` (aujourd'hui : les 3 230).
-   - Nouvelle fonction trigger `set_fin_essai_migration()` sur `prestataires`, `AFTER UPDATE OF user_id` (après `trg_set_compte_active_le` pour que `compte_active_le` soit déjà renseigné) : si `origine = 'migration'` et passage de `user_id` NULL → non NULL, met à jour la ligne `abonnements` du prestataire avec `fin_essai_le = compte_active_le + interval '90 days'`, uniquement quand `fin_essai_le IS NULL` (idempotent, jamais de prolongation).
-   - Backfill de sécurité pour les fiches migrées déjà activées au moment de la migration (actuellement aucune).
-
-2. **Brevo** : `FIN_ESSAI` est déjà synchronisé depuis `abonnements.fin_essai_le` par `brevo-sync-prestataire`, et le trigger d'activation émet déjà `compte_active` + `presta_sync`. La nouvelle date remontera donc automatiquement.
-
-3. Aucun changement dans `stripe-create-checkout` ni dans le webhook Stripe.
+   - `UPDATE abonnements SET fin_essai_le = NULL` pour les prestataires `origine = 'migration'` dont `magic_link_envoye_le` est vide (aujourd'hui : les 3 230).
+   - Fonction trigger `set_fin_essai_migration()` sur `prestataires`, `AFTER UPDATE OF magic_link_envoye_le` : si `origine = 'migration'` et passage NULL → non NULL, écrit `fin_essai_le = magic_link_envoye_le + interval '90 days'` sur la ligne `abonnements` du prestataire, seulement quand `fin_essai_le IS NULL` (idempotent).
+   - Backfill pour les fiches migrées déjà invitées au moment de la migration (actuellement aucune).
+2. **Admin** — édition de `abonnements.fin_essai_le` depuis la fiche prestataire (`src/pages/admin/Prestataires.tsx`), avec `logAdmin`. Une politique de mise à jour d'`abonnements` réservée aux admins est ajoutée si elle manque.
+3. **Badge** — composant dans `src/components/prestataire/`, alimenté par la requête abonnement déjà présente dans l'espace pro.
+4. **Brevo** — `FIN_ESSAI` est déjà synchronisé depuis `abonnements.fin_essai_le` ; la nouvelle date remonte automatiquement.
+5. Aucun changement dans `stripe-create-checkout` ni dans le webhook Stripe.
