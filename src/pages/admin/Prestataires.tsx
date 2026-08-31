@@ -1264,6 +1264,7 @@ export default function Prestataires() {
               <Field label="Notes admin (interne)">
                 <Textarea value={form.notes_admin} onChange={(e) => setForm({ ...form, notes_admin: e.target.value })} rows={3} />
               </Field>
+              {editItem && <EssaiGratuitField prestataireId={editItem.id} />}
               {editItem && <FacturesList prestataireId={editItem.id} />}
             </TabsContent>
 
