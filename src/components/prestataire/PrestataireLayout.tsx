@@ -5,6 +5,7 @@ import { PrestataireSidebar, mainItems } from "./PrestataireSidebar";
 import { ProviderInfoBanner } from "./ProviderInfoBanner";
 import { ChartePendingBanner } from "./ChartePendingBanner";
 import { WelcomeBanner } from "./WelcomeBanner";
+import { EssaiGratuitBanner } from "./EssaiGratuitBanner";
 import Header from "@/components/layout/Header";
 import { PrestataireProvider, useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { useIsMobile } from "@/hooks/use-mobile";
