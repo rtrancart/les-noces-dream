@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon, X, ChevronDown, ChevronRight, EyeOff, ImageIcon } from "lucide-react";
 import PrestatairePhotosTab from "@/components/admin/PrestatairePhotosTab";
 import { EmailLogsDialog } from "@/components/admin/EmailLogsDialog";
+import { EssaiGratuitField } from "@/components/admin/EssaiGratuitField";
 import { Mail } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -1264,6 +1265,7 @@ export default function Prestataires() {
               <Field label="Notes admin (interne)">
                 <Textarea value={form.notes_admin} onChange={(e) => setForm({ ...form, notes_admin: e.target.value })} rows={3} />
               </Field>
+              {editItem && <EssaiGratuitField prestataireId={editItem.id} />}
               {editItem && <FacturesList prestataireId={editItem.id} />}
             </TabsContent>
 
