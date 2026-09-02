@@ -10,7 +10,7 @@ Le dashboard prestataire, lui, affiche déjà « — » quand il n'y a pas de de
 
 1. **Affichage admin** (`/admin/prestataires`) : afficher « — » (avec info-bulle « Aucune demande sur 90 j ») dès que le nombre de demandes sur 90 jours est à 0, au lieu d'un badge 100 %. Le filtre « taux < 70 % » ignore déjà ces fiches, il reste inchangé.
 2. **Données** : passer `taux_reponse` à NULL pour toutes les fiches sans aucune demande sur 90 jours, et supprimer la valeur par défaut 100 de la colonne (nouvelle fiche = pas de taux tant qu'il n'y a rien à mesurer).
-3. **Brevo** : l'attribut `TAUX_REPONSE` envoyait 100 pour ces fiches ; il enverra désormais 0 (comportement déjà prévu pour les valeurs nulles). À confirmer si tu préfères ne rien envoyer plutôt que 0.
+3. **Brevo** : l'attribut `TAUX_REPONSE` envoyait 100 pour ces fiches ; il ne sera désormais plus envoyé du tout (champ laissé vide) quand il n'y a pas de taux mesurable.
 
 ## Détails techniques
 
