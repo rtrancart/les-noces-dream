@@ -54,17 +54,20 @@ Deno.serve(async (req) => {
     // Garde-fou : long_ttl (60 j) réservé aux fiches d'origine 'migration'.
     // Le défaut reste 7 jours pour toutes les autres invitations.
     let ttlSeconds = 60 * 60 * 24 * 7;
-    if (long_ttl === true) {
-      if (!prestataire_id) {
-        throw new Error("long_ttl réservé aux fiches existantes d'origine migration (prestataire_id requis)");
-      }
+    let origineExistante: string | null = null;
+    if (prestataire_id) {
       const { data: origineRow, error: origineErr } = await adminClient
         .from("prestataires").select("origine").eq("id", prestataire_id).maybeSingle();
       if (origineErr) throw origineErr;
-      if (!origineRow || origineRow.origine !== "migration") {
-        throw new Error("long_ttl réservé aux fiches d'origine migration");
+      origineExistante = origineRow?.origine ?? null;
+      if (long_ttl === true) {
+        if (origineExistante !== "migration") {
+          throw new Error("long_ttl réservé aux fiches d'origine migration");
+        }
+        ttlSeconds = 60 * 60 * 24 * 60;
       }
-      ttlSeconds = 60 * 60 * 24 * 60;
+    } else if (long_ttl === true) {
+      throw new Error("long_ttl réservé aux fiches existantes d'origine migration (prestataire_id requis)");
     }
     const cleanEmail = String(email).trim().toLowerCase();
 
