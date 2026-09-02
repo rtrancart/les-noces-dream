@@ -130,6 +130,9 @@ Deno.serve(async (req) => {
     // 2. Resolve prestataire row: update existing or create new
     let presta: any = null;
     if (prestataire_id) {
+      // Fiches migrées : la fiche est déjà validée (actif) — l'invitation ne
+      // doit pas rétrograder le statut en pre_inscrit. On le laisse intact.
+      const statutUpdate = origineExistante === "migration" ? {} : { statut: "pre_inscrit" };
       const { data: updated, error: updErr } = await adminClient.from("prestataires").update({
         user_id: userId,
         nom_commercial, categorie_mere_id,
@@ -141,7 +144,7 @@ Deno.serve(async (req) => {
         description: description ?? null,
         description_courte: description_courte ?? null,
         notes_pre_inscription: notes_pre_inscription ?? null,
-        statut: "pre_inscrit",
+        ...statutUpdate,
         magic_link_envoye_le: new Date().toISOString(),
       }).eq("id", prestataire_id).select().single();
       if (updErr) throw updErr;
