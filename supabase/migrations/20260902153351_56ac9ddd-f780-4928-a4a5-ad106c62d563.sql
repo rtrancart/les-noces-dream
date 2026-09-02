@@ -1,0 +1,1 @@
+ALTER TABLE public.prestataires ALTER COLUMN taux_reponse DROP DEFAULT;

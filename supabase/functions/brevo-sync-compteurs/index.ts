@@ -201,7 +201,8 @@ Deno.serve(async (req) => {
           NB_VUES: l.nb_vues,
           NB_DEMANDES_PRESTA: l.nb_demandes,
           NB_FAVORIS: l.nb_favoris,
-          TAUX_REPONSE: l.taux_reponse === null ? 0 : Number(l.taux_reponse),
+          // Taux non mesurable (aucune demande sur 90 j) => champ laissé vide côté Brevo
+          TAUX_REPONSE: l.taux_reponse === null ? "" : Number(l.taux_reponse),
           NOTE_MOYENNE: l.note_moyenne === null ? 0 : Number(l.note_moyenne),
         },
       });
