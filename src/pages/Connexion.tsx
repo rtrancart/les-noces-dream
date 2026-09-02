@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +17,22 @@ const isSafeRelativePath = (p: string | null): p is string =>
 const Connexion = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { session, isLoading: authLoading } = useAuth();
   const searchParams = new URLSearchParams(location.search);
   const nextParam = searchParams.get("next");
   const nextTarget = isSafeRelativePath(nextParam) ? nextParam : null;
   const from = nextTarget ?? (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/";
   const { trackLogin } = useTracking();
+
+  useEffect(() => {
+    if (authLoading || !session) return;
+
+    if (nextTarget) {
+      window.location.href = nextTarget;
+    } else {
+      navigate(from, { replace: true });
+    }
+  }, [authLoading, session, nextTarget, from, navigate]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,6 +58,14 @@ const Connexion = () => {
       }
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <AuthLayout title="Se connecter" subtitle="Accédez à votre espace personnel">
