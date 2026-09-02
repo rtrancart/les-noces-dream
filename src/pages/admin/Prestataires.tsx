@@ -1011,7 +1011,7 @@ export default function Prestataires() {
                     </TableCell>
                     <TableCell className="font-sans text-sm">{p.note_moyenne ? `${p.note_moyenne.toFixed(1)}/5` : "—"}</TableCell>
                     <TableCell className="font-sans text-sm">
-                      {p.taux_reponse != null ? (
+                      {p.taux_reponse != null && (p.taux_reponse_nb_demandes_90j ?? 0) > 0 ? (
                         <Badge
                           className={`font-sans text-[11px] font-normal ${
                             Number(p.taux_reponse) < 70
