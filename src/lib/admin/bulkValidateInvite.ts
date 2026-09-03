@@ -81,14 +81,14 @@ export interface BulkIntent {
  * Retourne une intention par fiche éligible. Les fiches non éligibles sont
  * omises ici mais rapportées à l'appelant via `skipped`.
  */
-export function buildBulkIntents(prestataires: Prestataire[]): {
+export function buildBulkIntents(prestataires: Prestataire[], suppressedEmails?: Set<string>): {
   intents: BulkIntent[];
   skipped: Array<{ id: string; nomCommercial: string; reason: BulkIneligibilityReason }>;
 } {
   const intents: BulkIntent[] = [];
   const skipped: Array<{ id: string; nomCommercial: string; reason: BulkIneligibilityReason }> = [];
   for (const p of prestataires) {
-    const reason = getIneligibilityReason(p);
+    const reason = getIneligibilityReason(p, suppressedEmails);
     if (reason) {
       skipped.push({ id: p.id, nomCommercial: p.nom_commercial, reason });
       continue;
