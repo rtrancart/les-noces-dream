@@ -1523,6 +1523,8 @@ export default function Prestataires() {
             <AlertDialogTitle>Valider & inviter {selectedCount} fiche{selectedCount > 1 ? "s" : ""} ?</AlertDialogTitle>
             <AlertDialogDescription>
               Pour chaque fiche sélectionnée : passage au statut <strong>validée</strong> (chemin identique à la validation manuelle) puis envoi d'une invitation d'activation via le lien longue durée (60 jours, réservé aux fiches issues de la migration). Le traitement continue même si certaines fiches échouent ; un rapport détaillé s'affichera à la fin.
+              <br /><br />
+              Envoi <strong>progressif</strong> : lots de {BULK_CHUNK_SIZE} fiches espacés de {BULK_CHUNK_DELAY_MS / 1000} s, plafonné à {BULK_MAX_PER_RUN} fiches par lancement. Gardez cet onglet ouvert pendant le run ; vous pouvez l'arrêter entre deux lots.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
