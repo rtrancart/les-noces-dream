@@ -182,6 +182,7 @@ export default function Emails() {
           {items.map((it) => {
             const isCustom = it.source === "db";
             const showPreview = previewFor === it.templateName;
+            const showCode = codeFor === it.templateName;
             return (
               <Card key={it.templateName} className="border-border">
                 <CardHeader>
