@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Mail, Save, Variable, RotateCcw, Eye } from "lucide-react";
+import { Mail, Save, Variable, RotateCcw, Eye, Code2 } from "lucide-react";
 import { logAdmin } from "@/lib/logAdmin";
 
 interface Item {
@@ -38,6 +38,8 @@ export default function Emails() {
   const [saving, setSaving] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [previewFor, setPreviewFor] = useState<string | null>(null);
+  const [codeFor, setCodeFor] = useState<string | null>(null);
+
 
   const load = async () => {
     setLoading(true);
@@ -180,6 +182,7 @@ export default function Emails() {
           {items.map((it) => {
             const isCustom = it.source === "db";
             const showPreview = previewFor === it.templateName;
+            const showCode = codeFor === it.templateName;
             return (
               <Card key={it.templateName} className="border-border">
                 <CardHeader>
@@ -264,6 +267,33 @@ export default function Emails() {
                     </div>
                   )}
 
+                  {showCode && (
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor={`head-${it.templateName}`}>Code HTML du header (commun, lecture seule)</Label>
+                        <Textarea
+                          id={`head-${it.templateName}`}
+                          readOnly
+                          value={it.shellHead ?? "(non disponible)"}
+                          className="mt-1.5 min-h-[160px] font-mono text-xs bg-muted/40"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`foot-${it.templateName}`}>Code HTML du footer (commun, lecture seule)</Label>
+                        <Textarea
+                          id={`foot-${it.templateName}`}
+                          readOnly
+                          value={it.shellFoot ?? "(non disponible)"}
+                          className="mt-1.5 min-h-[160px] font-mono text-xs bg-muted/40"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Cette coquille est partagée par tous les emails et se modifie dans le code
+                        (<code className="bg-muted px-1 py-0.5 rounded">_shared/email-shell.ts</code>).
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex flex-wrap justify-between gap-2 pt-2">
                     <div className="flex gap-2">
                       <Button
@@ -274,6 +304,15 @@ export default function Emails() {
                         <Eye className="h-4 w-4" />
                         {showPreview ? "Masquer" : "Aperçu"}
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCodeFor(showCode ? null : it.templateName)}
+                      >
+                        <Code2 className="h-4 w-4" />
+                        {showCode ? "Masquer le code coquille" : "Code header/footer"}
+                      </Button>
+
                       <Button
                         variant="outline"
                         size="sm"
