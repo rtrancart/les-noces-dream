@@ -22,13 +22,35 @@ import type { Database } from "@/integrations/supabase/types";
 type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
 type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
 
+/**
+ * Garde-fous de campagne — envoi de masse ponctuel (parc migré).
+ * Le débit de livraison réel reste piloté par `email_send_state`
+ * (batch_size / send_delay_ms) côté worker `process-email-queue` ;
+ * ces constantes bornent seulement l'alimentation de la file.
+ */
+export const BULK_MAX_PER_RUN = 200;
+export const BULK_CHUNK_SIZE = 10;
+export const BULK_CHUNK_DELAY_MS = 3000;
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 export type BulkIneligibilityReason =
   | "email_manquant"
+  | "email_supprime"
   | "statut_non_eligible"
   | "origine_non_migration";
 
-export function getIneligibilityReason(p: Prestataire): BulkIneligibilityReason | null {
+/**
+ * @param suppressedEmails ensemble (minuscules) des adresses présentes dans
+ * `suppressed_emails` — bounce, plainte ou désinscription. Une adresse morte
+ * n'est plus re-sollicitée.
+ */
+export function getIneligibilityReason(
+  p: Prestataire,
+  suppressedEmails?: Set<string>,
+): BulkIneligibilityReason | null {
   if (!p.email_contact || !p.email_contact.trim()) return "email_manquant";
+  if (suppressedEmails?.has(p.email_contact.trim().toLowerCase())) return "email_supprime";
   if (p.statut === "actif" || p.statut === "archive" || p.statut === "resilie_expire") {
     return "statut_non_eligible";
   }
@@ -39,10 +61,12 @@ export function getIneligibilityReason(p: Prestataire): BulkIneligibilityReason 
 export function ineligibilityLabel(r: BulkIneligibilityReason): string {
   switch (r) {
     case "email_manquant": return "email de contact manquant";
+    case "email_supprime": return "email rejeté (bounce, plainte ou désinscription) — adresse mise de côté";
     case "statut_non_eligible": return "statut non éligible (déjà actif, archivé ou résilié)";
     case "origine_non_migration": return "fiche non issue de la migration (invitation longue durée réservée à la campagne)";
   }
 }
+
 
 // ---------- Intention ----------
 
