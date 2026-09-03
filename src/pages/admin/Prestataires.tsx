@@ -762,6 +762,10 @@ export default function Prestataires() {
 
   const filteredData = useMemo(() => {
     return data.filter((p: any) => {
+      if (filterEmailRejete) {
+        const em = (p.email_contact ?? "").trim().toLowerCase();
+        if (!em || !suppressedSet.has(em)) return false;
+      }
       if (filterSousSeuil) {
         if (p.taux_reponse == null || Number(p.taux_reponse) >= 70) return false;
       }
