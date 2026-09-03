@@ -119,8 +119,13 @@ export interface BulkItemResult {
 }
 
 export interface BulkReport {
+  /** Identifiant du run, repris dans logs_admin pour la trace de cadence. */
+  runId?: string;
+  /** Run interrompu par l'admin entre deux sous-lots. */
+  cancelled?: boolean;
+  /** Fiches éligibles non traitées (run annulé). */
+  notProcessed?: number;
   results: BulkItemResult[];
-  skipped: Array<{ id: string; nomCommercial: string; reason: BulkIneligibilityReason }>;
   totals: {
     total: number;
     fullSuccess: number;
