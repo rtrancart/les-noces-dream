@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Mail, Save, Variable, RotateCcw, Eye } from "lucide-react";
+import { Mail, Save, Variable, RotateCcw, Eye, Code2 } from "lucide-react";
 import { logAdmin } from "@/lib/logAdmin";
 
 interface Item {
