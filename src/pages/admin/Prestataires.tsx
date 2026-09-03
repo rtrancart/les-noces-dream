@@ -812,16 +812,27 @@ export default function Prestataires() {
   ];
 
   // Éligibilité + sélection groupée
-  const eligibleInFiltered = useMemo(() => filteredData.filter((p) => !getIneligibilityReason(p)), [filteredData]);
+  const eligibleInFiltered = useMemo(
+    () => filteredData.filter((p) => !getIneligibilityReason(p, suppressedSet)),
+    [filteredData, suppressedSet],
+  );
   const eligibleIds = useMemo(() => new Set(eligibleInFiltered.map((p) => p.id)), [eligibleInFiltered]);
   const selectedCount = selectedIds.size;
+  const overCap = selectedCount > BULK_MAX_PER_RUN;
   const allEligibleSelected = eligibleInFiltered.length > 0 && eligibleInFiltered.every((p) => selectedIds.has(p.id));
   const someEligibleSelected = selectedCount > 0 && !allEligibleSelected;
 
   const toggleOne = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else {
+        if (next.size >= BULK_MAX_PER_RUN) {
+          toast.warning(`Plafond de sécurité : ${BULK_MAX_PER_RUN} fiches maximum par lancement.`);
+          return prev;
+        }
+        next.add(id);
+      }
       return next;
     });
   };
@@ -834,7 +845,14 @@ export default function Prestataires() {
         return next;
       }
       const next = new Set(prev);
-      eligibleInFiltered.forEach((p) => next.add(p.id));
+      let capped = false;
+      for (const p of eligibleInFiltered) {
+        if (next.size >= BULK_MAX_PER_RUN && !next.has(p.id)) { capped = true; break; }
+        next.add(p.id);
+      }
+      if (capped) {
+        toast.warning(`Sélection limitée à ${BULK_MAX_PER_RUN} fiches (plafond de sécurité par lancement).`);
+      }
       return next;
     });
   };
@@ -843,20 +861,26 @@ export default function Prestataires() {
   const runBulkAction = async () => {
     const targets = data.filter((p) => selectedIds.has(p.id));
     setBulkConfirmOpen(false);
+    bulkCancelRef.current = false;
     setBulkRunning(true);
-    setBulkProgress({ done: 0, total: targets.filter((p) => !getIneligibilityReason(p)).length });
+    setBulkProgress({ done: 0, total: targets.filter((p) => !getIneligibilityReason(p, suppressedSet)).length });
     try {
       const report = await runBulkValidateInvite({
         prestataires: targets,
+        suppressedEmails: suppressedSet,
         onProgress: (done, total) => setBulkProgress({ done, total }),
+        shouldCancel: () => bulkCancelRef.current,
       });
       setBulkReport(report);
       clearSelection();
       fetchData();
       fetchGlobalCounts();
+      fetchSuppressed();
     } catch (e: any) {
-      toast.error("Erreur pendant l'action groupée : " + (e?.message ?? String(e)));
+      if (e instanceof BulkCapExceededError) toast.error(e.message);
+      else toast.error("Erreur pendant l'action groupée : " + (e?.message ?? String(e)));
     } finally {
+      bulkCancelRef.current = false;
       setBulkRunning(false);
       setBulkProgress(null);
     }
