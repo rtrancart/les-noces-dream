@@ -963,6 +963,15 @@ export default function Prestataires() {
               />
               Taux de réponse &lt; 70% (Charte)
             </label>
+            <label className="flex items-center gap-2 font-sans text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={filterEmailRejete}
+                onChange={(e) => setFilterEmailRejete(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Email rejeté
+            </label>
           </div>
           <p className="mt-3 font-sans text-xs text-muted-foreground">
             {loading ? "Chargement…" : `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`}
@@ -970,28 +979,48 @@ export default function Prestataires() {
         </CardHeader>
         {selectedCount > 0 && (
           <div className="sticky top-0 z-10 mx-4 mb-3 flex flex-wrap items-center justify-between gap-3 rounded border border-or/40 bg-or/10 px-4 py-2.5">
-            <span className="font-sans text-sm text-foreground">
+            <div className="font-sans text-sm text-foreground">
               {selectedCount} fiche{selectedCount > 1 ? "s" : ""} sélectionnée{selectedCount > 1 ? "s" : ""}
-            </span>
+              <span className="ml-2 text-xs text-muted-foreground">
+                (plafond {BULK_MAX_PER_RUN} par lancement — envoi par lots de {BULK_CHUNK_SIZE} espacés de {BULK_CHUNK_DELAY_MS / 1000}s)
+              </span>
+              {bulkRunning && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Envoi progressif en cours — gardez cet onglet ouvert.
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="font-sans text-xs"
-                onClick={clearSelection}
-                disabled={bulkRunning}
-              >
-                Tout désélectionner
-              </Button>
+              {bulkRunning ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-sans text-xs"
+                  onClick={() => { bulkCancelRef.current = true; toast.info("Arrêt demandé — le run s'arrêtera après le lot en cours."); }}
+                >
+                  Arrêter après le lot en cours
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="font-sans text-xs"
+                  onClick={clearSelection}
+                >
+                  Tout désélectionner
+                </Button>
+              )}
               <Button
                 size="sm"
                 className="font-sans text-xs"
                 onClick={() => setBulkConfirmOpen(true)}
-                disabled={bulkRunning}
+                disabled={bulkRunning || overCap}
               >
                 {bulkRunning
                   ? `Traitement… ${bulkProgress?.done ?? 0} / ${bulkProgress?.total ?? 0}`
-                  : "Valider & inviter"}
+                  : overCap
+                    ? `Plafond dépassé (${BULK_MAX_PER_RUN} max)`
+                    : "Valider & inviter"}
               </Button>
             </div>
           </div>
