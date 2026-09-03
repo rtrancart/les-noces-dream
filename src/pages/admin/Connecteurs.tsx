@@ -23,6 +23,9 @@ export default function AdminConnecteurs() {
 
       <PrerenderSnapshotsPanel />
 
+      <CampagneInvitationsPanel />
+
+
     </div>
   );
 }
