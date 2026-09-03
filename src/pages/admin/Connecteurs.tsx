@@ -1,4 +1,5 @@
 import { BrevoConnectionPanel } from "@/components/admin/BrevoConnectionPanel";
+import { CampagneInvitationsPanel } from "@/components/admin/CampagneInvitationsPanel";
 import { MigratePhotosBatchPanel } from "@/components/admin/MigratePhotosBatchPanel";
 import { PennylaneConnectionPanel } from "@/components/admin/PennylaneConnectionPanel";
 import { PrerenderSnapshotsPanel } from "@/components/admin/PrerenderSnapshotsPanel";
