@@ -261,19 +261,63 @@ export async function executeIntent(intent: BulkIntent): Promise<BulkItemResult>
   return result;
 }
 
+/** Erreur levée quand la sélection dépasse le plafond de sécurité par run. */
+export class BulkCapExceededError extends Error {
+  constructor(public readonly selected: number) {
+    super(
+      `Sélection de ${selected} fiches — maximum ${BULK_MAX_PER_RUN} par lancement. ` +
+      `Procédez par lots de ${BULK_MAX_PER_RUN} au maximum.`,
+    );
+    this.name = "BulkCapExceededError";
+  }
+}
+
 /**
- * Orchestre le traitement d'une liste d'intentions. Séquentiel (une fiche
- * à la fois) pour préserver la lisibilité du rapport et éviter de saturer
- * le back-office pendant un run manuel. Un run par lots est de toute façon
- * borné par la taille de la page courante.
+ * Orchestre le traitement d'une liste d'intentions.
+ *
+ * Garde-fous campagne :
+ *  - plafond dur `BULK_MAX_PER_RUN` : au-delà, refus explicite (jamais de
+ *    troncature silencieuse) ;
+ *  - lissage : sous-lots de `BULK_CHUNK_SIZE` fiches séparés par
+ *    `BULK_CHUNK_DELAY_MS`, pour alimenter la file pgmq progressivement ;
+ *  - annulation possible entre deux sous-lots via `shouldCancel()` ;
+ *  - journalisation de cadence dans `logs_admin` (volumes, durée, débit,
+ *    paramètres `email_send_state` en vigueur au démarrage du run).
  */
 export async function runBulkValidateInvite(opts: {
   prestataires: Prestataire[];
+  suppressedEmails?: Set<string>;
   onProgress?: (done: number, total: number, last: BulkItemResult) => void;
+  shouldCancel?: () => boolean;
 }): Promise<BulkReport> {
-  const { intents, skipped } = buildBulkIntents(opts.prestataires);
+  const selected = opts.prestataires.length;
+  if (selected > BULK_MAX_PER_RUN) throw new BulkCapExceededError(selected);
+
+  const { intents, skipped } = buildBulkIntents(opts.prestataires, opts.suppressedEmails);
+
+  // Paramètres de débit en vigueur (lecture seule, pour la trace de cadence).
+  let sendState: { batch_size: number | null; send_delay_ms: number | null } | null = null;
+  try {
+    const { data } = await supabase
+      .from("email_send_state")
+      .select("batch_size, send_delay_ms")
+      .maybeSingle();
+    sendState = data ?? null;
+  } catch {
+    // Trace best-effort — ne doit jamais bloquer l'envoi.
+  }
+
+  const runId = crypto.randomUUID();
+  const startedAt = new Date();
   const results: BulkItemResult[] = [];
+  let cancelled = false;
+
   for (let i = 0; i < intents.length; i++) {
+    if (i > 0 && i % BULK_CHUNK_SIZE === 0) {
+      if (opts.shouldCancel?.()) { cancelled = true; break; }
+      await sleep(BULK_CHUNK_DELAY_MS);
+      if (opts.shouldCancel?.()) { cancelled = true; break; }
+    }
     const r = await executeIntent(intents[i]);
     results.push(r);
     opts.onProgress?.(i + 1, intents.length, r);
@@ -286,11 +330,16 @@ export async function runBulkValidateInvite(opts: {
     else failed++;
   }
 
+  const notProcessed = intents.length - results.length;
+
   const report: BulkReport = {
+    runId,
+    cancelled,
+    notProcessed,
     results,
     skipped,
     totals: {
-      total: intents.length + skipped.length,
+      total: results.length + skipped.length,
       fullSuccess,
       partialSuccess,
       failed,
@@ -298,7 +347,28 @@ export async function runBulkValidateInvite(opts: {
     },
   };
 
+  const finishedAt = new Date();
+  const dureeMs = finishedAt.getTime() - startedAt.getTime();
+  const invitationsEnvoyees = fullSuccess;
+
   await logAdmin("bulk_validate_invite", "prestataires", undefined, {
+    run_id: runId,
+    demarre_le: startedAt.toISOString(),
+    termine_le: finishedAt.toISOString(),
+    duree_ms: dureeMs,
+    selection: selected,
+    traitees: results.length,
+    non_traitees: notProcessed,
+    invitations_envoyees: invitationsEnvoyees,
+    debit_invitations_par_min: dureeMs > 0
+      ? Math.round((invitationsEnvoyees / dureeMs) * 60000 * 10) / 10
+      : null,
+    chunk_size: BULK_CHUNK_SIZE,
+    chunk_delay_ms: BULK_CHUNK_DELAY_MS,
+    max_per_run: BULK_MAX_PER_RUN,
+    email_send_batch_size: sendState?.batch_size ?? null,
+    email_send_delay_ms: sendState?.send_delay_ms ?? null,
+    annule: cancelled,
     total: report.totals.total,
     full_success: report.totals.fullSuccess,
     partial_success: report.totals.partialSuccess,
