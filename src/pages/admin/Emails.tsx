@@ -38,6 +38,8 @@ export default function Emails() {
   const [saving, setSaving] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [previewFor, setPreviewFor] = useState<string | null>(null);
+  const [codeFor, setCodeFor] = useState<string | null>(null);
+
 
   const load = async () => {
     setLoading(true);
