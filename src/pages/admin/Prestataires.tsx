@@ -786,7 +786,7 @@ export default function Prestataires() {
       const zones: string[] = p.zones_intervention ?? [];
       return zones.some((z) => locationZones.includes(z));
     });
-  }, [data, locationZones, citySearch, filterSousSeuil]);
+  }, [data, locationZones, citySearch, filterSousSeuil, filterEmailRejete, suppressedSet]);
 
 
 
