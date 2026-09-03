@@ -24,8 +24,28 @@ Pas de nouvelle table de campagne ni de worker dédié : la file pgmq + `email_s
 
 - Traitement par sous-lots dans `runBulkValidateInvite` : `BULK_CHUNK_SIZE = 10` fiches, puis pause `BULK_CHUNK_DELAY_MS = 3000` entre sous-lots (ordre séquentiel conservé à l'intérieur).
 - Un run plein (200 fiches) s'étale ainsi sur ~1 min d'alimentation, la livraison réelle restant cadencée par `email_send_state`.
-- Pour la campagne, la cadence de livraison se règle **sans code** en abaissant `batch_size` / augmentant `send_delay_ms` dans `email_send_state` — je documenterai les valeurs recommandées pour le jour J.
+- Pour la campagne, la cadence de livraison se règle **sans code** en abaissant `batch_size` / augmentant `send_delay_ms` dans `email_send_state` (valeurs recommandées documentées, section suivante).
 - La barre de progression existante continue de refléter l'avancement ; annulation possible entre deux sous-lots (le run s'arrête proprement et le rapport porte sur les fiches déjà traitées).
+
+### 2 bis. Valeurs `email_send_state` recommandées pour le jour J
+
+Consignées dans un document dédié `docs/campagne-invitations-migration.md` (paramètres, procédure de bascule, checklist avant/après), pas seulement dans un commentaire de code :
+
+| Phase | `batch_size` | `send_delay_ms` | Débit approx. | Usage |
+|---|---|---|---|---|
+| Rodage (2 premiers runs) | 5 | 2000 | ~50 emails/min | Vérifier le taux de rejet sur un petit volume |
+| Campagne | 10 | 1000 | ~120 emails/min | Rythme nominal du parc migré |
+| Repli si rejets élevés ou `429` | 5 | 5000 | ~30 emails/min | Protection réputation |
+| Retour à la normale (après campagne) | 10 | 200 | — | Valeurs actuelles à restaurer |
+
+Le document précise aussi la requête de bascule (`update public.email_send_state set batch_size = …, send_delay_ms = …`) et le seuil d'alerte : suspendre la campagne au-delà de 3 % de rejets sur un run.
+
+### 2 ter. Journal de cadence réelle
+
+- Chaque exécution écrit déjà une ligne `logs_admin` (`action = 'bulk_validate_invite'`). On enrichit `details` avec : `run_id` (uuid généré côté client), `demarre_le`, `termine_le`, `duree_ms`, `invitations_envoyees`, `chunk_size`, `chunk_delay_ms`, `batch_size` et `send_delay_ms` lus dans `email_send_state` au démarrage du run, `annule` (booléen).
+- Un panneau lecture seule **« Campagne invitations »** dans `/admin/connecteurs` agrège ces lignes : liste des runs (date, volume, durée, débit effectif en invitations/min, succès/échecs/ignorés) et cumul depuis le début de la campagne (nombre de runs, total invité, restant estimé sur les fiches migrées éligibles).
+- Cela donne la trace de cadence réelle demandée, sans nouvelle table : `logs_admin` suffit.
+
 
 ### 3. Remontée des rejets sur la fiche
 
@@ -49,6 +69,8 @@ Pas de nouvelle table de campagne ni de worker dédié : la file pgmq + `email_s
 
 ## Détails techniques
 
-- `src/lib/admin/bulkValidateInvite.ts` : constantes de plafond/lot/délai, `sleep` entre sous-lots, `BulkIneligibilityReason` étendu à `email_supprime`, `getIneligibilityReason` prend en paramètre optionnel l'ensemble des emails supprimés, garde de plafond en tête de `runBulkValidateInvite`, signal d'annulation optionnel.
+- `src/lib/admin/bulkValidateInvite.ts` : constantes de plafond/lot/délai, `sleep` entre sous-lots, `BulkIneligibilityReason` étendu à `email_supprime`, `getIneligibilityReason` prend en paramètre optionnel l'ensemble des emails supprimés, garde de plafond en tête de `runBulkValidateInvite`, signal d'annulation optionnel, lecture de `email_send_state` au démarrage et `logAdmin` enrichi (run_id, horodatages, volumes, cadence).
 - `src/pages/admin/Prestataires.tsx` : chargement des `suppressed_emails` (select `email, reason`), badge et filtre, passage de l'ensemble aux helpers d'éligibilité, mention du plafond dans la confirmation, bouton d'annulation pendant le run.
+- Nouveau `src/components/admin/CampagneInvitationsPanel.tsx` monté dans `src/pages/admin/Connecteurs.tsx` (lecture de `logs_admin`, aucun écrit).
+- Nouveau `docs/campagne-invitations-migration.md` : valeurs `email_send_state` par phase, procédure de bascule, seuils d'alerte, checklist.
 - Aucune migration de base, aucune Edge Function modifiée, aucun déploiement backend.
