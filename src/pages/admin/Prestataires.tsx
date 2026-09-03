@@ -1058,8 +1058,11 @@ export default function Prestataires() {
                 <TableRow><TableCell colSpan={11} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
               ) : (
                 filteredData.map((p) => {
-                  const ineligibility = getIneligibilityReason(p);
+                  const ineligibility = getIneligibilityReason(p, suppressedSet);
                   const isSelected = selectedIds.has(p.id);
+                  const suppressedReason = p.email_contact
+                    ? suppressed.get(p.email_contact.trim().toLowerCase())
+                    : undefined;
                   return (
                   <TableRow key={p.id} className={isSelected ? "bg-or/5" : undefined}>
                     <TableCell>
@@ -1072,7 +1075,20 @@ export default function Prestataires() {
                       />
                     </TableCell>
                     <TableCell className="font-sans text-sm font-medium">{p.nom_commercial}</TableCell>
-                    <TableCell className="font-sans text-sm text-muted-foreground">{p.email_contact || "—"}</TableCell>
+                    <TableCell className="font-sans text-sm text-muted-foreground">
+                      <div className="flex flex-col gap-0.5">
+                        <span>{p.email_contact || "—"}</span>
+                        {suppressedReason && (
+                          <Badge
+                            variant="outline"
+                            className="w-fit border-destructive/40 bg-destructive/10 font-sans text-[10px] font-normal text-destructive"
+                            title={`Adresse mise de côté (${suppressedReason}) — plus aucun email ne lui est envoyé`}
+                          >
+                            Email rejeté · {suppressedReason}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.telephone || "—"}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{getCatName(p.categorie_mere_id)}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.ville}</TableCell>
