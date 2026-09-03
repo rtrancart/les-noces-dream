@@ -36,6 +36,10 @@ import {
   ineligibilityLabel,
   runBulkValidateInvite,
   formatReportAsText,
+  BulkCapExceededError,
+  BULK_MAX_PER_RUN,
+  BULK_CHUNK_SIZE,
+  BULK_CHUNK_DELAY_MS,
   type BulkReport,
   type BulkItemResult,
 } from "@/lib/admin/bulkValidateInvite";
@@ -336,6 +340,13 @@ export default function Prestataires() {
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [bulkReport, setBulkReport] = useState<BulkReport | null>(null);
+  const bulkCancelRef = useRef(false);
+
+  // Adresses mises de côté (bounce / plainte / désinscription) — lecture de
+  // suppressed_emails, source de vérité déjà alimentée par le webhook.
+  const [suppressed, setSuppressed] = useState<Map<string, string>>(new Map());
+  const [filterEmailRejete, setFilterEmailRejete] = useState(false);
+  const suppressedSet = useMemo(() => new Set(suppressed.keys()), [suppressed]);
 
   const handleChangePassword = async () => {
     if (!editItem?.user_id) return;
@@ -425,9 +436,22 @@ export default function Prestataires() {
     setLoading(false);
   };
 
+  // Adresses rejetées — chargées une fois, indépendamment des filtres.
+  const fetchSuppressed = async () => {
+    const { data: rows, error } = await supabase
+      .from("suppressed_emails")
+      .select("email, reason")
+      .limit(5000);
+    if (error) return; // non bloquant : la liste reste utilisable
+    const map = new Map<string, string>();
+    for (const r of rows ?? []) map.set(r.email.toLowerCase(), r.reason);
+    setSuppressed(map);
+  };
+
   useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
+  useEffect(() => { fetchSuppressed(); }, []);
   // Reset selection whenever filters/search change (evite d'agir sur des fiches invisibles)
-  useEffect(() => { setSelectedIds(new Set()); }, [filterStatut, filterCategorie, search, filterSousSeuil, locationZones, citySearch]);
+  useEffect(() => { setSelectedIds(new Set()); }, [filterStatut, filterCategorie, search, filterSousSeuil, locationZones, citySearch, filterEmailRejete]);
 
   // Compteurs globaux par statut (indépendants des filtres)
   const [globalCounts, setGlobalCounts] = useState<Record<string, number>>({});
@@ -738,6 +762,10 @@ export default function Prestataires() {
 
   const filteredData = useMemo(() => {
     return data.filter((p: any) => {
+      if (filterEmailRejete) {
+        const em = (p.email_contact ?? "").trim().toLowerCase();
+        if (!em || !suppressedSet.has(em)) return false;
+      }
       if (filterSousSeuil) {
         if (p.taux_reponse == null || Number(p.taux_reponse) >= 70) return false;
       }
@@ -758,7 +786,7 @@ export default function Prestataires() {
       const zones: string[] = p.zones_intervention ?? [];
       return zones.some((z) => locationZones.includes(z));
     });
-  }, [data, locationZones, citySearch, filterSousSeuil]);
+  }, [data, locationZones, citySearch, filterSousSeuil, filterEmailRejete, suppressedSet]);
 
 
 
@@ -784,16 +812,27 @@ export default function Prestataires() {
   ];
 
   // Éligibilité + sélection groupée
-  const eligibleInFiltered = useMemo(() => filteredData.filter((p) => !getIneligibilityReason(p)), [filteredData]);
+  const eligibleInFiltered = useMemo(
+    () => filteredData.filter((p) => !getIneligibilityReason(p, suppressedSet)),
+    [filteredData, suppressedSet],
+  );
   const eligibleIds = useMemo(() => new Set(eligibleInFiltered.map((p) => p.id)), [eligibleInFiltered]);
   const selectedCount = selectedIds.size;
+  const overCap = selectedCount > BULK_MAX_PER_RUN;
   const allEligibleSelected = eligibleInFiltered.length > 0 && eligibleInFiltered.every((p) => selectedIds.has(p.id));
   const someEligibleSelected = selectedCount > 0 && !allEligibleSelected;
 
   const toggleOne = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else {
+        if (next.size >= BULK_MAX_PER_RUN) {
+          toast.warning(`Plafond de sécurité : ${BULK_MAX_PER_RUN} fiches maximum par lancement.`);
+          return prev;
+        }
+        next.add(id);
+      }
       return next;
     });
   };
@@ -806,7 +845,14 @@ export default function Prestataires() {
         return next;
       }
       const next = new Set(prev);
-      eligibleInFiltered.forEach((p) => next.add(p.id));
+      let capped = false;
+      for (const p of eligibleInFiltered) {
+        if (next.size >= BULK_MAX_PER_RUN && !next.has(p.id)) { capped = true; break; }
+        next.add(p.id);
+      }
+      if (capped) {
+        toast.warning(`Sélection limitée à ${BULK_MAX_PER_RUN} fiches (plafond de sécurité par lancement).`);
+      }
       return next;
     });
   };
@@ -815,20 +861,26 @@ export default function Prestataires() {
   const runBulkAction = async () => {
     const targets = data.filter((p) => selectedIds.has(p.id));
     setBulkConfirmOpen(false);
+    bulkCancelRef.current = false;
     setBulkRunning(true);
-    setBulkProgress({ done: 0, total: targets.filter((p) => !getIneligibilityReason(p)).length });
+    setBulkProgress({ done: 0, total: targets.filter((p) => !getIneligibilityReason(p, suppressedSet)).length });
     try {
       const report = await runBulkValidateInvite({
         prestataires: targets,
+        suppressedEmails: suppressedSet,
         onProgress: (done, total) => setBulkProgress({ done, total }),
+        shouldCancel: () => bulkCancelRef.current,
       });
       setBulkReport(report);
       clearSelection();
       fetchData();
       fetchGlobalCounts();
+      fetchSuppressed();
     } catch (e: any) {
-      toast.error("Erreur pendant l'action groupée : " + (e?.message ?? String(e)));
+      if (e instanceof BulkCapExceededError) toast.error(e.message);
+      else toast.error("Erreur pendant l'action groupée : " + (e?.message ?? String(e)));
     } finally {
+      bulkCancelRef.current = false;
       setBulkRunning(false);
       setBulkProgress(null);
     }
@@ -911,6 +963,15 @@ export default function Prestataires() {
               />
               Taux de réponse &lt; 70% (Charte)
             </label>
+            <label className="flex items-center gap-2 font-sans text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={filterEmailRejete}
+                onChange={(e) => setFilterEmailRejete(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Email rejeté
+            </label>
           </div>
           <p className="mt-3 font-sans text-xs text-muted-foreground">
             {loading ? "Chargement…" : `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`}
@@ -918,28 +979,48 @@ export default function Prestataires() {
         </CardHeader>
         {selectedCount > 0 && (
           <div className="sticky top-0 z-10 mx-4 mb-3 flex flex-wrap items-center justify-between gap-3 rounded border border-or/40 bg-or/10 px-4 py-2.5">
-            <span className="font-sans text-sm text-foreground">
+            <div className="font-sans text-sm text-foreground">
               {selectedCount} fiche{selectedCount > 1 ? "s" : ""} sélectionnée{selectedCount > 1 ? "s" : ""}
-            </span>
+              <span className="ml-2 text-xs text-muted-foreground">
+                (plafond {BULK_MAX_PER_RUN} par lancement — envoi par lots de {BULK_CHUNK_SIZE} espacés de {BULK_CHUNK_DELAY_MS / 1000}s)
+              </span>
+              {bulkRunning && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Envoi progressif en cours — gardez cet onglet ouvert.
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="font-sans text-xs"
-                onClick={clearSelection}
-                disabled={bulkRunning}
-              >
-                Tout désélectionner
-              </Button>
+              {bulkRunning ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-sans text-xs"
+                  onClick={() => { bulkCancelRef.current = true; toast.info("Arrêt demandé — le run s'arrêtera après le lot en cours."); }}
+                >
+                  Arrêter après le lot en cours
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="font-sans text-xs"
+                  onClick={clearSelection}
+                >
+                  Tout désélectionner
+                </Button>
+              )}
               <Button
                 size="sm"
                 className="font-sans text-xs"
                 onClick={() => setBulkConfirmOpen(true)}
-                disabled={bulkRunning}
+                disabled={bulkRunning || overCap}
               >
                 {bulkRunning
                   ? `Traitement… ${bulkProgress?.done ?? 0} / ${bulkProgress?.total ?? 0}`
-                  : "Valider & inviter"}
+                  : overCap
+                    ? `Plafond dépassé (${BULK_MAX_PER_RUN} max)`
+                    : "Valider & inviter"}
               </Button>
             </div>
           </div>
@@ -977,8 +1058,11 @@ export default function Prestataires() {
                 <TableRow><TableCell colSpan={11} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
               ) : (
                 filteredData.map((p) => {
-                  const ineligibility = getIneligibilityReason(p);
+                  const ineligibility = getIneligibilityReason(p, suppressedSet);
                   const isSelected = selectedIds.has(p.id);
+                  const suppressedReason = p.email_contact
+                    ? suppressed.get(p.email_contact.trim().toLowerCase())
+                    : undefined;
                   return (
                   <TableRow key={p.id} className={isSelected ? "bg-or/5" : undefined}>
                     <TableCell>
@@ -991,7 +1075,20 @@ export default function Prestataires() {
                       />
                     </TableCell>
                     <TableCell className="font-sans text-sm font-medium">{p.nom_commercial}</TableCell>
-                    <TableCell className="font-sans text-sm text-muted-foreground">{p.email_contact || "—"}</TableCell>
+                    <TableCell className="font-sans text-sm text-muted-foreground">
+                      <div className="flex flex-col gap-0.5">
+                        <span>{p.email_contact || "—"}</span>
+                        {suppressedReason && (
+                          <Badge
+                            variant="outline"
+                            className="w-fit border-destructive/40 bg-destructive/10 font-sans text-[10px] font-normal text-destructive"
+                            title={`Adresse mise de côté (${suppressedReason}) — plus aucun email ne lui est envoyé`}
+                          >
+                            Email rejeté · {suppressedReason}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.telephone || "—"}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{getCatName(p.categorie_mere_id)}</TableCell>
                     <TableCell className="font-sans text-sm text-muted-foreground">{p.ville}</TableCell>
@@ -1426,6 +1523,8 @@ export default function Prestataires() {
             <AlertDialogTitle>Valider & inviter {selectedCount} fiche{selectedCount > 1 ? "s" : ""} ?</AlertDialogTitle>
             <AlertDialogDescription>
               Pour chaque fiche sélectionnée : passage au statut <strong>validée</strong> (chemin identique à la validation manuelle) puis envoi d'une invitation d'activation via le lien longue durée (60 jours, réservé aux fiches issues de la migration). Le traitement continue même si certaines fiches échouent ; un rapport détaillé s'affichera à la fin.
+              <br /><br />
+              Envoi <strong>progressif</strong> : lots de {BULK_CHUNK_SIZE} fiches espacés de {BULK_CHUNK_DELAY_MS / 1000} s, plafonné à {BULK_MAX_PER_RUN} fiches par lancement. Gardez cet onglet ouvert pendant le run ; vous pouvez l'arrêter entre deux lots.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1449,6 +1548,11 @@ export default function Prestataires() {
                 <div className="text-amber-700">⚠ Validée mais invitation échouée : {bulkReport.totals.partialSuccess}</div>
                 <div className="text-destructive">✗ Échecs de validation : {bulkReport.totals.failed}</div>
                 <div className="text-muted-foreground">⊘ Ignorées (non éligibles) : {bulkReport.totals.skipped}</div>
+                {bulkReport.cancelled && (
+                  <div className="mt-2 text-amber-700">
+                    Run interrompu — {bulkReport.notProcessed ?? 0} fiche{(bulkReport.notProcessed ?? 0) > 1 ? "s" : ""} éligible{(bulkReport.notProcessed ?? 0) > 1 ? "s" : ""} non traitée{(bulkReport.notProcessed ?? 0) > 1 ? "s" : ""}.
+                  </div>
+                )}
               </div>
               <ScrollArea className="max-h-[45vh]">
                 <ul className="space-y-1.5 font-sans text-sm">
