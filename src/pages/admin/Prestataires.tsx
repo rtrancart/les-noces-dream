@@ -436,9 +436,22 @@ export default function Prestataires() {
     setLoading(false);
   };
 
+  // Adresses rejetées — chargées une fois, indépendamment des filtres.
+  const fetchSuppressed = async () => {
+    const { data: rows, error } = await supabase
+      .from("suppressed_emails")
+      .select("email, reason")
+      .limit(5000);
+    if (error) return; // non bloquant : la liste reste utilisable
+    const map = new Map<string, string>();
+    for (const r of rows ?? []) map.set(r.email.toLowerCase(), r.reason);
+    setSuppressed(map);
+  };
+
   useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
+  useEffect(() => { fetchSuppressed(); }, []);
   // Reset selection whenever filters/search change (evite d'agir sur des fiches invisibles)
-  useEffect(() => { setSelectedIds(new Set()); }, [filterStatut, filterCategorie, search, filterSousSeuil, locationZones, citySearch]);
+  useEffect(() => { setSelectedIds(new Set()); }, [filterStatut, filterCategorie, search, filterSousSeuil, locationZones, citySearch, filterEmailRejete]);
 
   // Compteurs globaux par statut (indépendants des filtres)
   const [globalCounts, setGlobalCounts] = useState<Record<string, number>>({});
