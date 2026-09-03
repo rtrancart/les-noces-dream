@@ -336,6 +336,13 @@ export default function Prestataires() {
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [bulkReport, setBulkReport] = useState<BulkReport | null>(null);
+  const bulkCancelRef = useRef(false);
+
+  // Adresses mises de côté (bounce / plainte / désinscription) — lecture de
+  // suppressed_emails, source de vérité déjà alimentée par le webhook.
+  const [suppressed, setSuppressed] = useState<Map<string, string>>(new Map());
+  const [filterEmailRejete, setFilterEmailRejete] = useState(false);
+  const suppressedSet = useMemo(() => new Set(suppressed.keys()), [suppressed]);
 
   const handleChangePassword = async () => {
     if (!editItem?.user_id) return;
