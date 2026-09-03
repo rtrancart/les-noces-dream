@@ -69,6 +69,8 @@ Le document précise aussi la requête de bascule (`update public.email_send_sta
 
 ## Détails techniques
 
-- `src/lib/admin/bulkValidateInvite.ts` : constantes de plafond/lot/délai, `sleep` entre sous-lots, `BulkIneligibilityReason` étendu à `email_supprime`, `getIneligibilityReason` prend en paramètre optionnel l'ensemble des emails supprimés, garde de plafond en tête de `runBulkValidateInvite`, signal d'annulation optionnel.
+- `src/lib/admin/bulkValidateInvite.ts` : constantes de plafond/lot/délai, `sleep` entre sous-lots, `BulkIneligibilityReason` étendu à `email_supprime`, `getIneligibilityReason` prend en paramètre optionnel l'ensemble des emails supprimés, garde de plafond en tête de `runBulkValidateInvite`, signal d'annulation optionnel, lecture de `email_send_state` au démarrage et `logAdmin` enrichi (run_id, horodatages, volumes, cadence).
 - `src/pages/admin/Prestataires.tsx` : chargement des `suppressed_emails` (select `email, reason`), badge et filtre, passage de l'ensemble aux helpers d'éligibilité, mention du plafond dans la confirmation, bouton d'annulation pendant le run.
+- Nouveau `src/components/admin/CampagneInvitationsPanel.tsx` monté dans `src/pages/admin/Connecteurs.tsx` (lecture de `logs_admin`, aucun écrit).
+- Nouveau `docs/campagne-invitations-migration.md` : valeurs `email_send_state` par phase, procédure de bascule, seuils d'alerte, checklist.
 - Aucune migration de base, aucune Edge Function modifiée, aucun déploiement backend.
