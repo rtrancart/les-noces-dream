@@ -1548,6 +1548,11 @@ export default function Prestataires() {
                 <div className="text-amber-700">⚠ Validée mais invitation échouée : {bulkReport.totals.partialSuccess}</div>
                 <div className="text-destructive">✗ Échecs de validation : {bulkReport.totals.failed}</div>
                 <div className="text-muted-foreground">⊘ Ignorées (non éligibles) : {bulkReport.totals.skipped}</div>
+                {bulkReport.cancelled && (
+                  <div className="mt-2 text-amber-700">
+                    Run interrompu — {bulkReport.notProcessed ?? 0} fiche{(bulkReport.notProcessed ?? 0) > 1 ? "s" : ""} éligible{(bulkReport.notProcessed ?? 0) > 1 ? "s" : ""} non traitée{(bulkReport.notProcessed ?? 0) > 1 ? "s" : ""}.
+                  </div>
+                )}
               </div>
               <ScrollArea className="max-h-[45vh]">
                 <ul className="space-y-1.5 font-sans text-sm">
