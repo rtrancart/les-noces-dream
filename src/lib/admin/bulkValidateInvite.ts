@@ -126,6 +126,7 @@ export interface BulkReport {
   /** Fiches éligibles non traitées (run annulé). */
   notProcessed?: number;
   results: BulkItemResult[];
+  skipped: Array<{ id: string; nomCommercial: string; reason: BulkIneligibilityReason }>;
   totals: {
     total: number;
     fullSuccess: number;
