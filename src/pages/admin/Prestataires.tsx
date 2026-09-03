@@ -36,6 +36,10 @@ import {
   ineligibilityLabel,
   runBulkValidateInvite,
   formatReportAsText,
+  BulkCapExceededError,
+  BULK_MAX_PER_RUN,
+  BULK_CHUNK_SIZE,
+  BULK_CHUNK_DELAY_MS,
   type BulkReport,
   type BulkItemResult,
 } from "@/lib/admin/bulkValidateInvite";
