@@ -163,6 +163,25 @@ export default function FichePrestataireView({
   };
 
   const champsSpec = presta.champs_specifiques as Record<string, unknown> | null;
+
+  // Regroupement des réponses renseignées par groupe, dans l'ordre de saisie.
+  const groupesChamps: { groupe: string | null; champs: ChampCategorie[] }[] = [];
+  if (champsSpec) {
+    for (const ch of champsCategorie) {
+      const val = champsSpec[ch.cle];
+      const rempli =
+        ch.type_champ === "booleen"
+          ? val === true
+          : Array.isArray(val)
+            ? val.length > 0
+            : val != null && val !== "";
+      if (!rempli) continue;
+      const g = ch.groupe || null;
+      const last = groupesChamps.find((x) => x.groupe === g);
+      if (last) last.champs.push(ch);
+      else groupesChamps.push({ groupe: g, champs: [ch] });
+    }
+  }
   const statutLabel = presta.statut ? STATUT_LABELS[presta.statut] ?? presta.statut : null;
 
   return (
