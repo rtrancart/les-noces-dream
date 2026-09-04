@@ -7,8 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Save, Loader2, ClipboardList } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
 import ZonesInterventionPicker from "@/components/prestataire/ZonesInterventionPicker";
+import ChampsSpecifiquesForm, {
+  buildChampsPayload,
+  type ChampCategorie,
+  type ChampsValues,
+} from "@/components/prestataire/ChampsSpecifiquesForm";
 
 function normalizeZones(zones: string[]): string[] {
   const regionMap = new Map(REGIONS.map((r) => [r.value, r.departements.map((d) => d.value)]));
@@ -31,6 +36,8 @@ export default function PrestatairePrestation() {
     prix_depart: "",
     prix_max: "",
   });
+  const [champsValues, setChampsValues] = useState<ChampsValues>({});
+  const [champs, setChamps] = useState<ChampCategorie[]>([]);
 
   useEffect(() => {
     if (prestataire) {
@@ -39,6 +46,9 @@ export default function PrestatairePrestation() {
         prix_depart: prestataire.prix_depart?.toString() ?? "",
         prix_max: prestataire.prix_max?.toString() ?? "",
       });
+      setChampsValues(
+        (prestataire.champs_specifiques as ChampsValues | null) ?? {},
+      );
     }
   }, [prestataire]);
 
@@ -52,6 +62,11 @@ export default function PrestatairePrestation() {
         zones_intervention: form.zones_intervention.length > 0 ? form.zones_intervention : null,
         prix_depart: form.prix_depart ? parseInt(form.prix_depart) : null,
         prix_max: form.prix_max ? parseInt(form.prix_max) : null,
+        champs_specifiques: buildChampsPayload(
+          champs,
+          champsValues,
+          (prestataire.champs_specifiques as ChampsValues | null) ?? {},
+        ),
       })
       .eq("id", prestataire.id);
 
@@ -126,22 +141,29 @@ export default function PrestatairePrestation() {
         </CardContent>
       </Card>
 
-      {/* Champs spécifiques - coming soon */}
+      {/* Champs spécifiques */}
       <Card>
         <CardHeader>
           <CardTitle className="font-sans text-lg">Détails de la prestation</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-12 h-12 bg-secondary/30 rounded-full flex items-center justify-center mb-3">
-              <ClipboardList className="w-6 h-6 text-muted-foreground" />
-            </div>
-            <p className="font-sans text-sm text-muted-foreground max-w-md">
-              Les champs spécifiques à votre catégorie seront bientôt disponibles ici.
-            </p>
-          </div>
+          <ChampsSpecifiquesForm
+            categorieMereId={prestataire.categorie_mere_id}
+            categorieFilleId={prestataire.categorie_fille_id}
+            values={champsValues}
+            onChange={setChampsValues}
+            onChampsLoaded={setChamps}
+          />
         </CardContent>
       </Card>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={saving} className="gap-2 w-full sm:w-auto">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Enregistrer
+        </Button>
+      </div>
+
     </div>
   );
 }
