@@ -14,6 +14,7 @@ import FichePrestataireView, {
 } from "@/components/fiche/FichePrestataireView";
 import type { ProviderCardData } from "@/components/search/ProviderCard";
 import { usePrerenderStatus } from "@/contexts/PrerenderContext";
+import { champsCategoriesFilter } from "@/lib/champsCategories";
 
 /**
  * Page publique de la fiche prestataire. Charge une fiche `statut='actif'`
