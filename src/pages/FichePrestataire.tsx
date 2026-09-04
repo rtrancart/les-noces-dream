@@ -74,14 +74,7 @@ export default function FichePrestataire() {
       supabase
         .from("champs_categories")
         .select("label, cle, type_champ, groupe")
-        .or(
-          [
-            "categorie_id.is.null",
-            `categorie_id.in.(${[p.categorie_mere_id, p.categorie_fille_id]
-              .filter(Boolean)
-              .join(",")})`,
-          ].join(","),
-        )
+        .or(champsCategoriesFilter(p.categorie_mere_id, p.categorie_fille_id))
         .eq("visible_public", true)
         .order("ordre_affichage"),
       supabase
