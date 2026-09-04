@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { REGIONS } from "@/lib/zonesIntervention";
 import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,7 +67,7 @@ export default function PrestatairePrestation() {
           champs,
           champsValues,
           (prestataire.champs_specifiques as ChampsValues | null) ?? {},
-        ),
+        ) as unknown as Json,
       })
       .eq("id", prestataire.id);
 
