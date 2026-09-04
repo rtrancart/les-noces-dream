@@ -8,6 +8,7 @@ import {
   Shield,
   ChevronRight,
   Eye,
+  Check,
 } from "lucide-react";
 import {
   Tooltip,
@@ -88,7 +89,12 @@ export type Avis = {
   reponse_prestataire: string | null;
 };
 
-export type ChampCategorie = { label: string; cle: string; type_champ: string };
+export type ChampCategorie = {
+  label: string;
+  cle: string;
+  type_champ: string;
+  groupe?: string | null;
+};
 
 function formatPrice(prix: number | null) {
   if (!prix) return null;
