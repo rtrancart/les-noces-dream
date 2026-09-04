@@ -113,7 +113,7 @@ function footerBlock() {
   <tr><td align="center" style="padding:34px 40px 30px;font-family:${SANS};color:#b7b1a6">
     <img src="${BRAND_ASSETS.wordmarkWhite}" width="140" alt="LesNoces.net" style="display:block;margin:0 auto 14px;height:auto;border:0" />
     <div style="font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:${C.champagne};margin:0 0 18px">Prestataires sélectionnés à la main</div>
-    <div style="font-size:12.5px;color:#cbc5ba;line-height:1.8">📞 02 96 01 00 17 — du lundi au vendredi, 10h à 13h<br />📧 <a href="mailto:contact@lesnoces.net" style="color:#cbc5ba;text-decoration:none">contact@lesnoces.net</a></div>
+    <div style="font-size:12.5px;color:#cbc5ba;line-height:1.8">📞 02 96 01 00 17 — du lundi au jeudi, 9h à 13h<br />📧 <a href="mailto:contact@lesnoces.net" style="color:#cbc5ba;text-decoration:none">contact@lesnoces.net</a></div>
     <div style="height:1px;background:rgba(255,255,255,.08);margin:20px 0"></div>
     <div style="font-size:10.5px;color:#6f6a62;line-height:1.7">
       LesNoces.net — Marketplace de prestataires haut de gamme.<br />
