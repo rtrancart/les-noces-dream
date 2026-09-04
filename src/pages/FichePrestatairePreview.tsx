@@ -10,6 +10,7 @@ import FichePrestataireView, {
   type Avis,
   type ChampCategorie,
 } from "@/components/fiche/FichePrestataireView";
+import { champsCategoriesFilter } from "@/lib/champsCategories";
 
 type FetchState =
   | { kind: "loading" }
@@ -85,14 +86,13 @@ export default function FichePrestatairePreview() {
         .eq("prestataire_id", row.id)
         .eq("statut", "valide")
         .order("created_at", { ascending: false }),
-      row.categorie_mere_id
-        ? supabase
-            .from("champs_categories")
-            .select("label, cle, type_champ")
-            .eq("categorie_id", row.categorie_mere_id)
-            .eq("visible_public", true)
-            .order("ordre_affichage")
-        : Promise.resolve({ data: [] }),
+      // Champs communs + catégorie mère + catégorie fille.
+      supabase
+        .from("champs_categories")
+        .select("label, cle, type_champ, groupe")
+        .or(champsCategoriesFilter(row.categorie_mere_id, row.categorie_fille_id))
+        .eq("visible_public", true)
+        .order("ordre_affichage"),
     ]);
 
     setCatMere((catMereRes.data as Categorie | null) ?? null);
