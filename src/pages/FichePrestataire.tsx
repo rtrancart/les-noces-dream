@@ -69,10 +69,19 @@ export default function FichePrestataire() {
         .eq("prestataire_id", p.id)
         .eq("statut", "valide")
         .order("created_at", { ascending: false }),
+      // Trois périmètres : champs communs (categorie_id NULL), catégorie mère,
+      // catégorie fille — sinon les deux premiers ne s'affichent jamais.
       supabase
         .from("champs_categories")
-        .select("label, cle, type_champ")
-        .eq("categorie_id", p.categorie_mere_id)
+        .select("label, cle, type_champ, groupe")
+        .or(
+          [
+            "categorie_id.is.null",
+            `categorie_id.in.(${[p.categorie_mere_id, p.categorie_fille_id]
+              .filter(Boolean)
+              .join(",")})`,
+          ].join(","),
+        )
         .eq("visible_public", true)
         .order("ordre_affichage"),
       supabase
