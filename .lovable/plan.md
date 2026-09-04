@@ -14,7 +14,6 @@ Dans `src/components/prestataire/ChartePendingBanner.tsx` :
 
 1. Lire `prestataire.origine` depuis le contexte.
 2. Lorsque `isFirstSignature` est vrai **et** `prestataire.origine === 'migration'`, afficher :
-   - Titre : "Votre fiche n'est pas encore publiée." (inchangé)
    - Sous-titre : "Signez la Charte Qualité pour rester visible sur LesNoces.net"
 3. Pour les autres premières signatures (non migrés), corriger le sous-titre en : "Signez la Charte Qualité pour rendre votre profil visible sur LesNoces.net"
 4. Laisser le cas resignature inchangé.
