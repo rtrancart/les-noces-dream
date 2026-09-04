@@ -6,7 +6,57 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Upload, Trash2, ImageIcon, Loader2, Star } from "lucide-react";
+import { Upload, Trash2, ImageIcon, Loader2, Star, Info } from "lucide-react";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 Mo
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MIN_WIDTH = 800;
+const MIN_HEIGHT = 600;
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
+async function validateImage(file: File): Promise<ValidationResult> {
+  const errors: string[] = [];
+
+  if (!ACCEPTED_TYPES.includes(file.type)) {
+    errors.push("format non accepté (JPG, PNG, WebP uniquement)");
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    errors.push("dépasse 5 Mo");
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const dimensionErrors: string[] = [];
+      if (img.width < MIN_WIDTH) {
+        dimensionErrors.push(`largeur insuffisante (${img.width}px, minimum ${MIN_WIDTH}px)`);
+      }
+      if (img.height < MIN_HEIGHT) {
+        dimensionErrors.push(`hauteur insuffisante (${img.height}px, minimum ${MIN_HEIGHT}px)`);
+      }
+      resolve({ valid: dimensionErrors.length === 0, errors: dimensionErrors });
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve({ valid: false, errors: ["impossible de lire l'image"] });
+    };
+
+    img.src = url;
+  });
+}
 
 export default function PrestataireGalerie() {
   const { prestataire, loading, refetch } = useSharedPrestataire();
@@ -28,9 +78,29 @@ export default function PrestataireGalerie() {
     if (!prestataire || !e.target.files?.length) return;
     setUploading(true);
 
+    const files = Array.from(e.target.files);
+    const validationResults = await Promise.all(files.map((file) => validateImage(file)));
+    const rejected: string[] = [];
+    const validFiles: File[] = [];
+
+    files.forEach((file, index) => {
+      const result = validationResults[index];
+      if (result.valid) {
+        validFiles.push(file);
+      } else {
+        rejected.push(`${file.name} : ${result.errors.join(", ")}`);
+      }
+    });
+
+    if (rejected.length > 0) {
+      toast.error(`${rejected.length} fichier${rejected.length > 1 ? "s" : ""} rejeté${rejected.length > 1 ? "s" : ""}`, {
+        description: rejected.join(" ; "),
+      });
+    }
+
     const newUrls: string[] = [];
 
-    for (const file of Array.from(e.target.files)) {
+    for (const file of validFiles) {
       const ext = file.name.split(".").pop();
       const path = `${prestataire.id}/${crypto.randomUUID()}.${ext}`;
 
@@ -114,8 +184,17 @@ export default function PrestataireGalerie() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-serif text-2xl text-foreground">Photos & galerie</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="font-serif text-2xl text-foreground">Photos & galerie</h1>
+          <p className="font-sans text-sm text-muted-foreground flex items-start gap-1.5">
+            <Info className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>
+              Photos en format paysage recommandé : 1200 × 800 px minimum, 5 Mo maximum.
+              Formats acceptés : JPG, PNG, WebP.
+            </span>
+          </p>
+        </div>
         <div>
           <Label htmlFor="photo-upload" className="cursor-pointer">
             <Button asChild disabled={uploading} className="gap-2">
