@@ -568,39 +568,54 @@ export type Database = {
       }
       champs_categories: {
         Row: {
-          categorie_id: string
+          categorie_id: string | null
           cle: string
+          condition_cle: string | null
+          condition_valeur: string | null
           created_at: string
+          filtrable: boolean
+          groupe: string | null
           id: string
           label: string
           obligatoire: boolean | null
           options_liste: string[] | null
           ordre_affichage: number | null
           type_champ: Database["public"]["Enums"]["type_champ"]
+          updated_at: string
           visible_public: boolean | null
         }
         Insert: {
-          categorie_id: string
+          categorie_id?: string | null
           cle: string
+          condition_cle?: string | null
+          condition_valeur?: string | null
           created_at?: string
+          filtrable?: boolean
+          groupe?: string | null
           id?: string
           label: string
           obligatoire?: boolean | null
           options_liste?: string[] | null
           ordre_affichage?: number | null
           type_champ?: Database["public"]["Enums"]["type_champ"]
+          updated_at?: string
           visible_public?: boolean | null
         }
         Update: {
-          categorie_id?: string
+          categorie_id?: string | null
           cle?: string
+          condition_cle?: string | null
+          condition_valeur?: string | null
           created_at?: string
+          filtrable?: boolean
+          groupe?: string | null
           id?: string
           label?: string
           obligatoire?: boolean | null
           options_liste?: string[] | null
           ordre_affichage?: number | null
           type_champ?: Database["public"]["Enums"]["type_champ"]
+          updated_at?: string
           visible_public?: boolean | null
         }
         Relationships: [
@@ -2958,7 +2973,13 @@ export type Database = {
         | "a_completer"
         | "validee"
         | "resilie_expire"
-      type_champ: "texte" | "nombre" | "booleen" | "liste" | "date"
+      type_champ:
+        | "texte"
+        | "nombre"
+        | "booleen"
+        | "liste"
+        | "date"
+        | "multi_choix"
       type_notification:
         | "nouvelle_demande"
         | "nouveau_message"
@@ -3155,7 +3176,14 @@ export const Constants = {
         "validee",
         "resilie_expire",
       ],
-      type_champ: ["texte", "nombre", "booleen", "liste", "date"],
+      type_champ: [
+        "texte",
+        "nombre",
+        "booleen",
+        "liste",
+        "date",
+        "multi_choix",
+      ],
       type_notification: [
         "nouvelle_demande",
         "nouveau_message",
