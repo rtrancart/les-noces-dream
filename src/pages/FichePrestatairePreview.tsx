@@ -10,6 +10,7 @@ import FichePrestataireView, {
   type Avis,
   type ChampCategorie,
 } from "@/components/fiche/FichePrestataireView";
+import { champsCategoriesFilter } from "@/lib/champsCategories";
 
 type FetchState =
   | { kind: "loading" }
