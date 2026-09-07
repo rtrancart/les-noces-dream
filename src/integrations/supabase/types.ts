@@ -2676,6 +2676,10 @@ export type Database = {
         Args: { p_path: string }
         Returns: boolean
       }
+      can_write_prestataire_video: {
+        Args: { p_path: string }
+        Returns: boolean
+      }
       charte_ok_pour_publication: {
         Args: { p_charte_exemptee_jusqua: string; p_charte_signee_le: string }
         Returns: boolean
