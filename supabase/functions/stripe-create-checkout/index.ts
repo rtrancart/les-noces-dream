@@ -202,13 +202,20 @@ Deno.serve(async (req) => {
         const currentInterval = currentItem?.price?.recurring?.interval ?? null;
         const targetInterval = periodicite === "annuel" ? "year" : "month";
         const intervalChange = currentInterval !== null && currentInterval !== targetInterval;
+        // Essai en cours : on le clôture immédiatement, la facturation démarre maintenant.
+        const enEssai = primary.status === "trialing";
 
         await stripe.subscriptions.update(primary.id, {
           items: [{ id: currentItem.id, price: priceId }],
           proration_behavior: decision.prorationBehavior,
           payment_behavior: "error_if_incomplete",
-          ...(intervalChange ? {} : { billing_cycle_anchor: "unchanged" as const }),
+          ...(enEssai
+            ? { trial_end: "now" as const }
+            : intervalChange
+              ? {}
+              : { billing_cycle_anchor: "unchanged" as const }),
           cancel_at_period_end: false,
+
           metadata: {
             prestataire_id: prestataire.id,
             user_id: userId,
