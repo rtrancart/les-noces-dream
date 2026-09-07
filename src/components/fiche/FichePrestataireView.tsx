@@ -518,6 +518,17 @@ export default function FichePrestataireView({
               </div>
             )}
 
+            {/* Réseaux sociaux */}
+            <FicheReseauxSociaux
+              nom={presta.nom_commercial}
+              liens={{
+                tiktok: presta.url_tiktok,
+                instagram: presta.url_instagram,
+                facebook: presta.url_facebook,
+                pinterest: presta.url_pinterest,
+              }}
+            />
+
             {/* Carte */}
             <div>
               <h2 className="font-serif text-xl font-semibold text-foreground mb-3">
