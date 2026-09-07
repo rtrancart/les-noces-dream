@@ -2482,6 +2482,10 @@ export type Database = {
           tags: string[] | null
           telephone: string | null
           updated_at: string | null
+          url_facebook: string | null
+          url_instagram: string | null
+          url_pinterest: string | null
+          url_tiktok: string | null
           urls_galerie: string[] | null
           user_id: string | null
           video_url: string | null
@@ -2529,6 +2533,10 @@ export type Database = {
           tags?: string[] | null
           telephone?: string | null
           updated_at?: string | null
+          url_facebook?: string | null
+          url_instagram?: string | null
+          url_pinterest?: string | null
+          url_tiktok?: string | null
           urls_galerie?: string[] | null
           user_id?: string | null
           video_url?: string | null
@@ -2576,6 +2584,10 @@ export type Database = {
           tags?: string[] | null
           telephone?: string | null
           updated_at?: string | null
+          url_facebook?: string | null
+          url_instagram?: string | null
+          url_pinterest?: string | null
+          url_tiktok?: string | null
           urls_galerie?: string[] | null
           user_id?: string | null
           video_url?: string | null
@@ -2782,6 +2794,10 @@ export type Database = {
           tags: string[] | null
           telephone: string | null
           updated_at: string | null
+          url_facebook: string | null
+          url_instagram: string | null
+          url_pinterest: string | null
+          url_tiktok: string | null
           urls_galerie: string[] | null
           user_id: string | null
           video_url: string | null
@@ -2838,6 +2854,10 @@ export type Database = {
           tags: string[] | null
           telephone: string | null
           updated_at: string | null
+          url_facebook: string | null
+          url_instagram: string | null
+          url_pinterest: string | null
+          url_tiktok: string | null
           urls_galerie: string[] | null
           user_id: string | null
           video_url: string | null
