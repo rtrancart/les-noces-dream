@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CreditCard, Check, X, Loader2, ChevronDown, ChevronUp, FileText, AlertTriangle, Clock, ExternalLink, Minus } from "lucide-react";
+import { CreditCard, Check, Loader2, ChevronDown, ChevronUp, FileText, AlertTriangle, Clock, ExternalLink, Minus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { toast } from "@/hooks/use-toast";
@@ -634,8 +634,8 @@ function ComparatifFormules() {
         </thead>
         <tbody>
           {COMPARATIF.map((groupe) => (
-            <>
-              <tr key={groupe.titre} className="bg-muted/20">
+            <Fragment key={groupe.titre}>
+              <tr className="bg-muted/20">
                 <th
                   scope="colgroup"
                   colSpan={3}
@@ -657,7 +657,7 @@ function ComparatifFormules() {
                   </td>
                 </tr>
               ))}
-            </>
+            </Fragment>
           ))}
         </tbody>
       </table>
