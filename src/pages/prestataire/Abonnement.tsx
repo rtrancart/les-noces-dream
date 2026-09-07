@@ -12,6 +12,8 @@ type Formule = "standard" | "premium" | "annuel";
 interface Abonnement {
   id: string;
   plan: string;
+  formule: string | null;
+  periodicite: string | null;
   statut: string;
   montant_cents: number | null;
   fin_essai_le: string | null;
