@@ -69,6 +69,10 @@ export type Prestataire = {
   champs_specifiques: Record<string, unknown> | null;
   zones_intervention: string[] | null;
   tags: string[] | null;
+  url_tiktok?: string | null;
+  url_instagram?: string | null;
+  url_facebook?: string | null;
+  url_pinterest?: string | null;
   user_id: string | null;
   updated_at: string | null;
   statut?: string | null;
