@@ -52,15 +52,30 @@ Deno.serve(async (req) => {
       .not("stripe_subscription_id", "is", null);
     if (error) throw error;
 
-    const resultats: Array<{ id: string; sub: string; ok: boolean; message?: string }> = [];
+    const resultats: Array<{ id: string; sub: string; ok: boolean; statut?: string; message?: string }> = [];
     for (const abo of abos ?? []) {
       const subId = abo.stripe_subscription_id as string;
       try {
-        await stripe.subscriptions.update(subId, {
+        const sub = await stripe.subscriptions.update(subId, {
           trial_end: "now",
           proration_behavior: "none",
         });
-        resultats.push({ id: abo.id, sub: subId, ok: true });
+        const item = sub.items.data[0];
+        const periodEnd = (item?.current_period_end ?? null) as number | null;
+        const statut = sub.status === "active" ? "actif"
+          : sub.status === "trialing" ? "trialing"
+          : sub.status === "past_due" || sub.status === "unpaid" ? "en_retard"
+          : sub.status === "canceled" ? "resilie"
+          : "actif";
+        await admin
+          .from("abonnements")
+          .update({
+            statut,
+            fin_essai_le: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+            fin_periode_le: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+          })
+          .eq("id", abo.id);
+        resultats.push({ id: abo.id, sub: subId, ok: true, statut });
       } catch (e) {
         resultats.push({
           id: abo.id,
@@ -70,6 +85,7 @@ Deno.serve(async (req) => {
         });
       }
     }
+
 
     return json({ traites: resultats.length, resultats });
   } catch (e) {
