@@ -28,7 +28,7 @@ import FicheCarte from "@/components/fiche/FicheCarte";
 import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
 import { getCondensedZoneNames } from "@/lib/zonesIntervention";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, startFicheSession } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
 import { regionNomToSlug } from "@/lib/regions";
 import SeoHead from "@/components/SeoHead";
@@ -153,6 +153,12 @@ export default function FichePrestataireView({
   const [phoneRevealed, setPhoneRevealed] = useState(false);
   const [devisOpen, setDevisOpen] = useState(false);
   const { trackRevealPhone } = useTracking();
+
+  // Mesure silencieuse du temps de consultation (aucun affichage utilisateur).
+  useEffect(() => {
+    if (previewMode) return;
+    return startFicheSession(presta.id);
+  }, [previewMode, presta.id]);
 
   const revealPhone = () => {
     setPhoneRevealed(true);
