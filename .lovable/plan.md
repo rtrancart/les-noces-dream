@@ -1,4 +1,32 @@
-# Validation du plan de refonte Premium (audit, aucune modification)
+# Étape 1 — Supprimer les 4 comptes avec abonnement actif
+
+## Comptes concernés
+| Prestataire | Email | Abonnement | Souscription Stripe |
+|---|---|---|---|
+| Test presta | testprestalesnoces@gmail.com | Standard mensuel | oui |
+| Camille Thuille | camille.thuille@gmail.com | Standard mensuel | oui |
+| Atelier Test Migration 2 | rodolphe.trancart+testmigration2@gmail.com | Standard mensuel | oui |
+| Robe Atelier Marie | rdv@ateliermarie.fr | Premium mensuel | non (créé à la main) |
+
+Suppression complète et irréversible : compte utilisateur, fiche prestataire, abonnement, avis, demandes, favoris et historique liés.
+
+## Déroulé
+1. Annulation immédiate des 3 souscriptions Stripe (et de leur client Stripe), via une fonction d'administration à usage unique protégée par le rôle super admin — les identifiants Stripe ne sont accessibles que côté serveur.
+2. Vérification que les 3 souscriptions sont bien passées à « annulée » dans Stripe avant toute suppression en base.
+3. Suppression des 4 comptes via le mécanisme d'administration existant (nettoyage en cascade puis suppression du compte de connexion), un par un, avec contrôle du résultat.
+4. Contrôle final : plus aucune ligne d'abonnement en statut actif, plus aucune fiche ni compte pour ces 4 adresses.
+5. Suppression de la fonction d'administration à usage unique.
+
+## Points d'attention
+- Les fiches « Camille Thuille » et « Robe Atelier Marie » ressemblent à de vrais prestataires : leur suppression efface aussi leurs demandes de devis et avis reçus.
+- Les factures déjà émises restent conservées côté Stripe et côté comptabilité ; aucun remboursement n'est effectué (à demander explicitement si souhaité).
+- Deux de ces fiches sont publiées : leurs pages publiques disparaîtront et les instantanés de pré-rendu correspondants seront nettoyés au passage nocturne.
+
+---
+
+# Étape 2 — Validation du plan de refonte Premium (audit, aucune modification)
+
+
 
 ## Verdict global
 Le plan est faisable. Trois points doivent être corrigés avant implémentation : la valeur `annuel` (P1), la dépendance `est_premium` ↔ pré-rendu (P2/Q6), et l'absence totale de tests automatisés sur les fonctions Stripe (Q4).
