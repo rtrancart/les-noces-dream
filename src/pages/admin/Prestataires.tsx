@@ -1327,38 +1327,12 @@ export default function Prestataires() {
                   </p>
                 )}
               </Field>
-              <Field label="Fin Premium (laisser vide = non premium)">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal font-sans text-sm", !form.fin_premium && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.fin_premium ? new Date(form.fin_premium).toLocaleDateString("fr-FR") : "Aucune date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={form.fin_premium ? new Date(form.fin_premium + "T12:00:00") : undefined}
-                      onSelect={(d) => {
-                        if (d) {
-                          const yyyy = d.getFullYear();
-                          const mm = String(d.getMonth() + 1).padStart(2, "0");
-                          const dd2 = String(d.getDate()).padStart(2, "0");
-                          setForm({ ...form, fin_premium: `${yyyy}-${mm}-${dd2}` });
-                        } else {
-                          setForm({ ...form, fin_premium: "" });
-                        }
-                      }}
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {form.fin_premium && (
-                  <Button variant="ghost" size="sm" className="mt-1 text-xs text-muted-foreground" onClick={() => setForm({ ...form, fin_premium: "" })}>
-                    Retirer le premium
-                  </Button>
-                )}
+              <Field label="Statut Premium">
+                <p className="font-sans text-xs text-muted-foreground">
+                  Le statut Premium est désormais calculé automatiquement à partir de l'abonnement en cours : une fiche est Premium tant qu'elle a un abonnement Premium actif. Il n'est plus modifiable manuellement.
+                </p>
               </Field>
+
               <Field label="Notes admin (interne)">
                 <Textarea value={form.notes_admin} onChange={(e) => setForm({ ...form, notes_admin: e.target.value })} rows={3} />
               </Field>
