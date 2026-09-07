@@ -107,7 +107,7 @@ const emptyForm = {
   prix_depart: "",
   prix_max: "",
   statut: "brouillon" as StatutPrestataire,
-  fin_premium: "",
+  
   notes_admin: "",
   cree_par_admin: true,
   zones_intervention: [] as string[],
@@ -554,7 +554,7 @@ export default function Prestataires() {
       prix_depart: p.prix_depart?.toString() ?? "",
       prix_max: p.prix_max?.toString() ?? "",
       statut: p.statut,
-      fin_premium: (p as any).fin_premium ? (p as any).fin_premium.slice(0, 10) : "",
+      
       notes_admin: p.notes_admin ?? "",
       cree_par_admin: p.cree_par_admin ?? false,
       zones_intervention: (p as any).zones_intervention ?? [],
@@ -634,7 +634,7 @@ export default function Prestataires() {
       prix_depart: form.prix_depart ? parseInt(form.prix_depart) : null,
       prix_max: form.prix_max ? parseInt(form.prix_max) : null,
       statut: form.statut,
-      fin_premium: form.fin_premium ? `${form.fin_premium}T23:59:59` : null,
+      
       notes_admin: form.notes_admin || null,
       notes_pre_inscription: form.notes_pre_inscription || null,
       cree_par_admin: form.cree_par_admin,
