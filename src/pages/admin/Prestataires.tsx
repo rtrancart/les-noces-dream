@@ -107,7 +107,7 @@ const emptyForm = {
   prix_depart: "",
   prix_max: "",
   statut: "brouillon" as StatutPrestataire,
-  fin_premium: "",
+  
   notes_admin: "",
   cree_par_admin: true,
   zones_intervention: [] as string[],
@@ -554,7 +554,7 @@ export default function Prestataires() {
       prix_depart: p.prix_depart?.toString() ?? "",
       prix_max: p.prix_max?.toString() ?? "",
       statut: p.statut,
-      fin_premium: (p as any).fin_premium ? (p as any).fin_premium.slice(0, 10) : "",
+      
       notes_admin: p.notes_admin ?? "",
       cree_par_admin: p.cree_par_admin ?? false,
       zones_intervention: (p as any).zones_intervention ?? [],
@@ -634,7 +634,7 @@ export default function Prestataires() {
       prix_depart: form.prix_depart ? parseInt(form.prix_depart) : null,
       prix_max: form.prix_max ? parseInt(form.prix_max) : null,
       statut: form.statut,
-      fin_premium: form.fin_premium ? `${form.fin_premium}T23:59:59` : null,
+      
       notes_admin: form.notes_admin || null,
       notes_pre_inscription: form.notes_pre_inscription || null,
       cree_par_admin: form.cree_par_admin,
@@ -1327,38 +1327,12 @@ export default function Prestataires() {
                   </p>
                 )}
               </Field>
-              <Field label="Fin Premium (laisser vide = non premium)">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal font-sans text-sm", !form.fin_premium && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.fin_premium ? new Date(form.fin_premium).toLocaleDateString("fr-FR") : "Aucune date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={form.fin_premium ? new Date(form.fin_premium + "T12:00:00") : undefined}
-                      onSelect={(d) => {
-                        if (d) {
-                          const yyyy = d.getFullYear();
-                          const mm = String(d.getMonth() + 1).padStart(2, "0");
-                          const dd2 = String(d.getDate()).padStart(2, "0");
-                          setForm({ ...form, fin_premium: `${yyyy}-${mm}-${dd2}` });
-                        } else {
-                          setForm({ ...form, fin_premium: "" });
-                        }
-                      }}
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {form.fin_premium && (
-                  <Button variant="ghost" size="sm" className="mt-1 text-xs text-muted-foreground" onClick={() => setForm({ ...form, fin_premium: "" })}>
-                    Retirer le premium
-                  </Button>
-                )}
+              <Field label="Statut Premium">
+                <p className="font-sans text-xs text-muted-foreground">
+                  Le statut Premium est désormais calculé automatiquement à partir de l'abonnement en cours : une fiche est Premium tant qu'elle a un abonnement Premium actif. Il n'est plus modifiable manuellement.
+                </p>
               </Field>
+
               <Field label="Notes admin (interne)">
                 <Textarea value={form.notes_admin} onChange={(e) => setForm({ ...form, notes_admin: e.target.value })} rows={3} />
               </Field>
