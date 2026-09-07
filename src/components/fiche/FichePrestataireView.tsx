@@ -308,7 +308,7 @@ export default function FichePrestataireView({
                       <Badge variant="secondary" className="font-sans">{catMere.nom}</Badge>
                     )}
                     {presta.est_premium && (
-                      <Badge className="bg-primary/10 text-primary border-primary/20 font-sans">Premium</Badge>
+                      <Badge className="bg-or-riche/10 text-or-riche border-or-riche/30 font-sans">Premium</Badge>
                     )}
                     {presta.est_verifie && (
                       <Badge variant="outline" className="gap-1 font-sans">
