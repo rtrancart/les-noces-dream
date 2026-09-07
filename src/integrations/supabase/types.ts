@@ -2951,6 +2951,8 @@ export type Database = {
         | "annuel"
         | "standard_mensuel"
         | "premium_mensuel"
+        | "standard_annuel"
+        | "premium_annuel"
       source_boost: "prestataire" | "admin"
       statut_abonnement:
         | "trialing"
@@ -3152,6 +3154,8 @@ export const Constants = {
         "annuel",
         "standard_mensuel",
         "premium_mensuel",
+        "standard_annuel",
+        "premium_annuel",
       ],
       source_boost: ["prestataire", "admin"],
       statut_abonnement: [
