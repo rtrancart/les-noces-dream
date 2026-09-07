@@ -415,7 +415,14 @@ export default function FichePrestataireView({
               photoUrl={presta.photo_principale_url}
               galerie={presta.urls_galerie ?? []}
               nom={presta.nom_commercial}
+              maxPhotos={presta.est_premium ? undefined : 10}
             />
+
+            {/* Vidéos (Premium) */}
+            {presta.est_premium && (
+              <FicheVideos prestataireId={presta.id} nom={presta.nom_commercial} />
+            )}
+
 
             <Separator />
 
