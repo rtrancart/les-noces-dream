@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CreditCard, Check, X, Loader2, ChevronDown, ChevronUp, FileText, AlertTriangle, Clock, ExternalLink } from "lucide-react";
+import { CreditCard, Check, Loader2, ChevronDown, ChevronUp, FileText, AlertTriangle, Clock, ExternalLink, Minus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import FacturesList from "@/components/facturation/FacturesList";
 
-type Formule = "standard" | "premium" | "annuel";
+type Formule = "standard" | "premium";
+type Periodicite = "mensuel" | "annuel";
+type PlanKey = "standard_mensuel" | "standard_annuel" | "premium_mensuel" | "premium_annuel";
 
 interface Abonnement {
   id: string;
@@ -38,59 +40,115 @@ function formatCarte(brand: string | null, last4: string | null): string | null 
   return `${label} •••• ${last4}`;
 }
 
-const FORMULES: Record<Formule, { label: string; prix: string; periode: string; premium?: boolean }> = {
-  standard: { label: "Standard", prix: "89€", periode: "par mois" },
-  premium: { label: "Premium", prix: "149€", periode: "par mois", premium: true },
-  annuel: { label: "Annuel", prix: "948€", periode: "par an (soit 79€/mois)" },
+interface PlanInfo {
+  key: PlanKey;
+  formule: Formule;
+  periodicite: Periodicite;
+  label: string;
+  prix: string;
+  periode: string;
+  equivalent?: string;
+  economie?: string;
+}
+
+const PLANS: Record<PlanKey, PlanInfo> = {
+  standard_mensuel: {
+    key: "standard_mensuel", formule: "standard", periodicite: "mensuel",
+    label: "Standard", prix: "89€", periode: "par mois",
+  },
+  standard_annuel: {
+    key: "standard_annuel", formule: "standard", periodicite: "annuel",
+    label: "Standard", prix: "948€", periode: "par an",
+    equivalent: "soit 79€ / mois", economie: "2 mois offerts",
+  },
+  premium_mensuel: {
+    key: "premium_mensuel", formule: "premium", periodicite: "mensuel",
+    label: "Premium", prix: "149€", periode: "par mois",
+  },
+  premium_annuel: {
+    key: "premium_annuel", formule: "premium", periodicite: "annuel",
+    label: "Premium", prix: "1 590€", periode: "par an",
+    equivalent: "soit 132,50€ / mois", economie: "2 mois offerts",
+  },
 };
 
-/** Traduit le `plan` stocké en base (ex: "standard_mensuel") vers la clé UI (ex: "standard"). */
-const PLAN_TO_FORMULE: Record<string, Formule> = {
-  standard_mensuel: "standard",
-  premium_mensuel: "premium",
-  standard_annuel: "annuel",
-  premium_annuel: "premium",
-  annuel: "annuel",
-};
-function planToFormule(plan: string | null | undefined): Formule | null {
+function planKeyOf(formule: Formule, periodicite: Periodicite): PlanKey {
+  return `${formule}_${periodicite}` as PlanKey;
+}
+
+/** Traduit le `plan` stocké en base (valeurs historiques comprises) vers une clé de plan. */
+function planToKey(plan: string | null | undefined): PlanKey | null {
   if (!plan) return null;
-  if (plan in PLAN_TO_FORMULE) return PLAN_TO_FORMULE[plan];
-  if (plan in FORMULES) return plan as Formule;
+  if (plan in PLANS) return plan as PlanKey;
+  if (plan === "annuel") return "standard_annuel";
+  if (plan === "mensuel" || plan === "essai") return "standard_mensuel";
   return null;
 }
 
-/** Paramètres envoyés au back pour chaque carte de la grille actuelle. */
-const CIBLE_PAR_FORMULE: Record<Formule, { formule: "standard" | "premium"; periodicite: "mensuel" | "annuel" }> = {
-  standard: { formule: "standard", periodicite: "mensuel" },
-  premium: { formule: "premium", periodicite: "mensuel" },
-  annuel: { formule: "standard", periodicite: "annuel" },
-};
-
-/** Clé UI dérivée en priorité des nouvelles colonnes formule + periodicite. */
-function aboFormuleKey(abo: Abonnement): Formule | null {
-  if (abo.formule === "premium") return "premium";
-  if (abo.formule === "standard") return abo.periodicite === "annuel" ? "annuel" : "standard";
-  return planToFormule(abo.plan);
+/** Clé de plan dérivée en priorité des colonnes formule + periodicite. */
+function aboPlanKey(abo: Abonnement): PlanKey | null {
+  if (abo.formule === "standard" || abo.formule === "premium") {
+    const per: Periodicite = abo.periodicite === "annuel" ? "annuel" : "mensuel";
+    return planKeyOf(abo.formule, per);
+  }
+  return planToKey(abo.plan);
 }
 
+function planLabelComplet(key: PlanKey): string {
+  const p = PLANS[key];
+  return `${p.label} ${p.periodicite === "annuel" ? "annuel" : "mensuel"}`;
+}
 
-
-
+/* ---------- Tableau comparatif ---------- */
+type Cell = boolean | string;
+const COMPARATIF: { titre: string; lignes: { label: string; standard: Cell; premium: Cell }[] }[] = [
+  {
+    titre: "Votre visibilité",
+    lignes: [
+      { label: "Fiche prestataire complète", standard: true, premium: true },
+      { label: "Présence dans la recherche et les pages régions", standard: true, premium: true },
+      { label: "Badge Premium sur votre fiche et vos résultats", standard: false, premium: true },
+      { label: "Position prioritaire dans les résultats", standard: false, premium: true },
+      { label: "Mise en avant dans les coups de cœur régionaux", standard: false, premium: true },
+    ],
+  },
+  {
+    titre: "Votre vitrine",
+    lignes: [
+      { label: "Galerie photos", standard: true, premium: true },
+      { label: "Description détaillée et services", standard: true, premium: true },
+      { label: "Zones d'intervention multiples", standard: true, premium: true },
+    ],
+  },
+  {
+    titre: "Vos contacts",
+    lignes: [
+      { label: "Demandes de devis illimitées", standard: true, premium: true },
+      { label: "Messagerie intégrée", standard: true, premium: true },
+      { label: "Avis clients vérifiés", standard: true, premium: true },
+    ],
+  },
+  {
+    titre: "Suivi et accompagnement",
+    lignes: [
+      { label: "Statistiques de consultation", standard: "Basiques", premium: "Avancées" },
+      { label: "Support", standard: "Standard", premium: "Prioritaire" },
+    ],
+  },
+];
 
 function formatDate(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 }
 
-function formatMontant(cents: number | null, plan: string): string {
+function formatMontant(cents: number | null, key: PlanKey | null): string {
   if (cents != null) {
     const eur = cents / 100;
     return eur % 1 === 0 ? `${eur}€` : `${eur.toFixed(2)}€`;
   }
-  const key = planToFormule(plan);
-  return key ? FORMULES[key].prix : "";
+  return key ? PLANS[key].prix : "";
 }
-
 
 /** Dérive l'état visuel du bloc abonnement */
 function deriveEtat(abo: Abonnement): {
@@ -169,12 +227,23 @@ function deriveEtat(abo: Abonnement): {
   };
 }
 
+/** Champs qui bougent après un changement d'abonnement (webhook Stripe). */
+function signature(a: Abonnement | null): string {
+  if (!a) return "none";
+  return [
+    a.plan, a.formule, a.periodicite, a.statut, a.montant_cents,
+    a.plan_pending, a.plan_pending_le, a.stripe_schedule_id,
+    a.cancel_at_period_end, a.fin_periode_le, a.carte_last4, a.stripe_payment_method_id,
+  ].join("|");
+}
+
 export default function PrestataireAbonnement() {
-  const { prestataire } = useSharedPrestataire();
+  const { prestataire, refetch: refetchPrestataire } = useSharedPrestataire();
   const [abo, setAbo] = useState<Abonnement | null>(null);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState<Formule | null>(null);
-  const [manualRedirect, setManualRedirect] = useState<{ url: string; mode: "checkout" | "portal"; formule?: Formule } | null>(null);
+  const [submitting, setSubmitting] = useState<PlanKey | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [manualRedirect, setManualRedirect] = useState<{ url: string; mode: "checkout" | "portal"; planKey?: PlanKey } | null>(null);
   const [showChange, setShowChange] = useState(false);
   const [cancellingSchedule, setCancellingSchedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -190,6 +259,27 @@ export default function PrestataireAbonnement() {
     setAbo(next);
     return next;
   }, [prestataire?.id]);
+
+  /**
+   * Recharge l'abonnement jusqu'à ce que le webhook Stripe ait écrit les
+   * nouvelles valeurs (jusqu'à ~20s), puis rafraîchit la fiche prestataire
+   * (badge Premium dérivé en base).
+   */
+  const refreshAfterChange = useCallback(async (before: Abonnement | null) => {
+    const ref = signature(before);
+    setSyncing(true);
+    const delays = [0, 1500, 3000, 5000, 10000];
+    try {
+      for (const d of delays) {
+        if (d) await new Promise((r) => setTimeout(r, d));
+        const next = await fetchAbo();
+        if (signature(next) !== ref) break;
+      }
+      await refetchPrestataire();
+    } finally {
+      setSyncing(false);
+    }
+  }, [fetchAbo, refetchPrestataire]);
 
   useEffect(() => {
     const nextParams = new URLSearchParams(searchParams);
@@ -212,6 +302,15 @@ export default function PrestataireAbonnement() {
     }
   }, [searchParams, setSearchParams]);
 
+  // Au retour de Stripe Checkout, on attend l'écriture du webhook.
+  const retourCheckout = searchParams.get("statut") === "succes";
+  const retourTraiteRef = useRef(false);
+  useEffect(() => {
+    if (!retourCheckout || retourTraiteRef.current || !prestataire?.id) return;
+    retourTraiteRef.current = true;
+    refreshAfterChange(null);
+  }, [retourCheckout, prestataire?.id, refreshAfterChange]);
+
   useEffect(() => {
     if (!prestataire?.id) return;
     (async () => {
@@ -220,7 +319,9 @@ export default function PrestataireAbonnement() {
     })();
   }, [prestataire?.id, fetchAbo]);
 
-  async function subscribe(formule: Formule) {
+  async function subscribe(key: PlanKey) {
+    const plan = PLANS[key];
+
     // Blocage impayé côté UI (le back renforce)
     if (abo?.statut === "en_retard") {
       toast({
@@ -231,11 +332,12 @@ export default function PrestataireAbonnement() {
       return;
     }
 
-    setSubmitting(formule);
+    const before = abo;
+    setSubmitting(key);
     setManualRedirect(null);
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-checkout", {
-        body: CIBLE_PAR_FORMULE[formule],
+        body: { formule: plan.formule, periodicite: plan.periodicite },
       });
       if (error) throw error;
 
@@ -249,20 +351,22 @@ export default function PrestataireAbonnement() {
       }
 
       if (data?.changed === true) {
-        if (data.mode === "downgrade") {
+        const mode = data.mode as string | undefined;
+        if (mode === "downgrade_scheduled" || mode === "periodicite_scheduled" || mode === "downgrade") {
           const dateStr = data.plan_pending_le
             ? new Date(data.plan_pending_le).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })
             : "la fin de la période en cours";
           toast({
             title: "Changement programmé",
-            description: `La bascule vers ${FORMULES[formule].label} s'effectuera le ${dateStr}, sans avoir.`,
+            description: `La bascule vers ${planLabelComplet(key)} s'effectuera le ${dateStr}, sans avoir.`,
           });
-        } else if (data.mode === "schedule_cancelled") {
+        } else if (mode === "schedule_cancelled") {
           toast({ title: "Changement annulé", description: "Le changement de formule programmé a été annulé." });
         } else {
           toast({ title: "Formule mise à jour", description: "Votre abonnement a été modifié avec proration immédiate." });
         }
-        await fetchAbo();
+        setSubmitting(null);
+        await refreshAfterChange(before);
         return;
       }
       if (data?.changed === false) {
@@ -274,7 +378,7 @@ export default function PrestataireAbonnement() {
       const stripeUrl = data?.url as string | undefined;
       if (!stripeUrl) throw new Error("URL de paiement introuvable");
 
-      setManualRedirect({ url: stripeUrl, mode: "checkout", formule });
+      setManualRedirect({ url: stripeUrl, mode: "checkout", planKey: key });
 
       try {
         if (window.top && window.top !== window.self) {
@@ -305,18 +409,9 @@ export default function PrestataireAbonnement() {
   // détecter un changement sur les champs qui bougent après une action portail.
   const armPortalWatch = useCallback(() => {
     if (!abo) return;
-    // Nettoyer un éventuel watcher précédent
     portalWatchRef.current?.cleanup();
 
-    const snapshot = {
-      stripe_payment_method_id: abo.stripe_payment_method_id,
-      cancel_at_period_end: abo.cancel_at_period_end,
-      plan: abo.plan,
-      montant_cents: abo.montant_cents,
-      carte_last4: abo.carte_last4,
-      plan_pending: abo.plan_pending,
-      statut: abo.statut,
-    };
+    const ref = signature(abo);
     let attempts = 0;
     let disposed = false;
     let scheduled: ReturnType<typeof setTimeout> | null = null;
@@ -330,23 +425,11 @@ export default function PrestataireAbonnement() {
       portalWatchRef.current = null;
     };
 
-    const diffed = (a: Abonnement | null): boolean => {
-      if (!a) return false;
-      return (
-        a.stripe_payment_method_id !== snapshot.stripe_payment_method_id ||
-        a.cancel_at_period_end !== snapshot.cancel_at_period_end ||
-        a.plan !== snapshot.plan ||
-        a.montant_cents !== snapshot.montant_cents ||
-        a.carte_last4 !== snapshot.carte_last4 ||
-        a.plan_pending !== snapshot.plan_pending ||
-        a.statut !== snapshot.statut
-      );
-    };
-
     const tick = async () => {
       const next = await fetchAbo();
-      if (diffed(next)) {
+      if (signature(next) !== ref) {
         toast({ title: "Abonnement mis à jour", description: "Vos changements Stripe sont pris en compte." });
+        await refetchPrestataire();
         disarm();
         return;
       }
@@ -355,15 +438,13 @@ export default function PrestataireAbonnement() {
         disarm();
         return;
       }
-      // Fenêtre webhook : 4s puis 10s après le 1er tick
       const delay = attempts === 1 ? 4000 : 10000;
       scheduled = setTimeout(tick, delay);
     };
 
     const onVisible = () => {
       if (document.visibilityState !== "visible" && !document.hasFocus()) return;
-      if (attempts > 0) return; // déjà déclenché
-      // Premier retour → premier tick immédiat
+      if (attempts > 0) return;
       tick();
     };
 
@@ -371,9 +452,8 @@ export default function PrestataireAbonnement() {
     window.addEventListener("focus", onVisible);
     portalWatchRef.current = { cleanup: disarm };
 
-    // Sécurité : auto-cleanup au bout de 60s si l'utilisateur ne revient jamais
     setTimeout(() => disarm(), 60000);
-  }, [abo, fetchAbo]);
+  }, [abo, fetchAbo, refetchPrestataire]);
 
   useEffect(() => () => portalWatchRef.current?.cleanup(), []);
 
@@ -382,9 +462,6 @@ export default function PrestataireAbonnement() {
     setOpeningPortal(true);
     setManualRedirect(null);
 
-    // 1. Pré-ouverture SYNCHRONE de l'onglet (évite le popup blocker).
-    // NB: ne pas passer "noopener" ici — sinon window.open renvoie null et on perd la référence.
-    // On neutralise `opener` manuellement après avoir posé l'URL pour garder l'isolation.
     const newTab = window.open("about:blank", "_blank");
 
     try {
@@ -402,7 +479,6 @@ export default function PrestataireAbonnement() {
         });
         armPortalWatch();
       } else {
-        // Popup bloquée → bannière de secours
         setManualRedirect({ url: portalUrl, mode: "portal" });
       }
     } catch (e) {
@@ -418,12 +494,13 @@ export default function PrestataireAbonnement() {
 
   async function cancelScheduledChange() {
     if (cancellingSchedule) return;
+    const before = abo;
     setCancellingSchedule(true);
     try {
       const { error } = await supabase.functions.invoke("stripe-cancel-scheduled-change");
       if (error) throw error;
       toast({ title: "Changement annulé", description: "Votre formule actuelle est conservée." });
-      await fetchAbo();
+      await refreshAfterChange(before);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Impossible d'annuler le changement programmé";
       toast({ title: "Erreur", description: message, variant: "destructive" });
@@ -439,10 +516,11 @@ export default function PrestataireAbonnement() {
     return <div className="bg-muted rounded-lg p-5 h-40 animate-pulse" />;
   }
 
-  if (hasSubscription && abo) {
-    return (
-      <>
-        {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} mode={manualRedirect.mode} formule={manualRedirect.formule} />}
+  return (
+    <>
+      {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} mode={manualRedirect.mode} planKey={manualRedirect.planKey} />}
+      {syncing && <SyncingNotice />}
+      {hasSubscription && abo ? (
         <GestionAbonnement
           abo={abo}
           showChange={showChange}
@@ -454,26 +532,32 @@ export default function PrestataireAbonnement() {
           openingPortal={openingPortal}
           cancelScheduledChange={cancelScheduledChange}
           cancellingSchedule={cancellingSchedule}
+          busy={syncing}
         />
-      </>
-    );
-  }
-
-  return (
-    <>
-      {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} mode={manualRedirect.mode} formule={manualRedirect.formule} />}
-      <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} />
+      ) : (
+        <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} busy={syncing} />
+      )}
     </>
   );
 }
 
+function SyncingNotice() {
+  return (
+    <div className="mb-5 flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+      <p className="font-sans text-sm text-foreground">
+        Mise à jour de votre abonnement en cours…
+      </p>
+    </div>
+  );
+}
 
-function StripeRedirectNotice({ url, mode, formule }: { url: string; mode: "checkout" | "portal"; formule?: Formule }) {
+function StripeRedirectNotice({ url, mode, planKey }: { url: string; mode: "checkout" | "portal"; planKey?: PlanKey }) {
   const isPortal = mode === "portal";
   const title = isPortal ? "Portail Stripe prêt" : "Redirection Stripe prête";
   const desc = isPortal
     ? "Votre navigateur a bloqué l'ouverture automatique. Cliquez ci-contre pour ouvrir le portail."
-    : `Continuez vers Stripe pour passer à la formule ${formule ? FORMULES[formule].label : ""}.`;
+    : `Continuez vers Stripe pour passer à la formule ${planKey ? planLabelComplet(planKey) : ""}.`;
   return (
     <div className="mb-5 rounded-lg border border-primary/30 bg-primary/5 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -495,37 +579,236 @@ function StripeRedirectNotice({ url, mode, formule }: { url: string; mode: "chec
   );
 }
 
+/* ============================================================
+   SÉLECTEUR MENSUEL / ANNUEL
+   ============================================================ */
+function PeriodiciteToggle({ value, onChange }: { value: Periodicite; onChange: (p: Periodicite) => void }) {
+  return (
+    <div className="flex justify-center">
+      <div className="inline-flex items-center rounded-full border border-border bg-card p-1">
+        {(["mensuel", "annuel"] as Periodicite[]).map((p) => (
+          <button
+            key={p}
+            onClick={() => onChange(p)}
+            aria-pressed={value === p}
+            className={cn(
+              "rounded-full px-4 py-1.5 font-sans text-xs font-semibold transition-colors",
+              value === p ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {p === "mensuel" ? "Mensuel" : "Annuel"}
+            {p === "annuel" && (
+              <span className={cn("ml-1.5 text-[10px] uppercase tracking-wider", value === p ? "text-primary-foreground/80" : "text-primary")}>
+                −2 mois
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   TABLEAU COMPARATIF
+   ============================================================ */
+function CellValue({ value, accent }: { value: Cell; accent?: boolean }) {
+  if (value === true) return <Check size={18} className={cn("mx-auto", accent ? "text-primary" : "text-sauge")} aria-label="Inclus" />;
+  if (value === false) return <Minus size={16} className="mx-auto text-border" aria-label="Non inclus" />;
+  return <span className="font-sans text-xs text-foreground">{value}</span>;
+}
+
+function ComparatifFormules() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <table className="w-full border-collapse">
+        <caption className="sr-only">Comparaison des formules Standard et Premium</caption>
+        <thead>
+          <tr className="border-b border-border bg-muted/40">
+            <th scope="col" className="px-4 py-3 text-left font-sans text-xs uppercase tracking-wider text-muted-foreground">
+              Ce qui est inclus
+            </th>
+            <th scope="col" className="w-24 px-2 py-3 text-center font-serif text-base text-foreground sm:w-32">Standard</th>
+            <th scope="col" className="w-24 px-2 py-3 text-center font-serif text-base text-primary sm:w-32">Premium</th>
+          </tr>
+        </thead>
+        <tbody>
+          {COMPARATIF.map((groupe) => (
+            <Fragment key={groupe.titre}>
+              <tr className="bg-muted/20">
+                <th
+                  scope="colgroup"
+                  colSpan={3}
+                  className="px-4 py-2 text-left font-sans text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                >
+                  {groupe.titre}
+                </th>
+              </tr>
+              {groupe.lignes.map((l) => (
+                <tr key={l.label} className="border-t border-border/60">
+                  <th scope="row" className="px-4 py-3 text-left font-sans text-sm font-normal text-foreground">
+                    {l.label}
+                  </th>
+                  <td className="px-2 py-3 text-center">
+                    <CellValue value={l.standard} />
+                  </td>
+                  <td className="bg-primary/5 px-2 py-3 text-center">
+                    <CellValue value={l.premium} accent />
+                  </td>
+                </tr>
+              ))}
+            </Fragment>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ============================================================
+   GRILLE 2 FORMULES + SÉLECTEUR
+   ============================================================ */
+function GrilleFormules({
+  periodicite, setPeriodicite, currentKey, pendingKey, submitting, disabled, subscribe, compact,
+}: {
+  periodicite: Periodicite;
+  setPeriodicite: (p: Periodicite) => void;
+  currentKey: PlanKey | null;
+  pendingKey: PlanKey | null;
+  submitting: PlanKey | null;
+  disabled: boolean;
+  subscribe: (k: PlanKey) => void;
+  compact?: boolean;
+}) {
+  const keys: PlanKey[] = [planKeyOf("standard", periodicite), planKeyOf("premium", periodicite)];
+  return (
+    <div className="space-y-5">
+      <PeriodiciteToggle value={periodicite} onChange={setPeriodicite} />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {keys.map((k) => (
+          <PlanCard
+            key={k}
+            plan={PLANS[k]}
+            isCurrent={currentKey === k}
+            isPending={pendingKey === k}
+            loading={submitting === k}
+            disabled={disabled}
+            onClick={() => subscribe(k)}
+            compact={compact}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, compact }: {
+  plan: PlanInfo;
+  isCurrent: boolean;
+  isPending: boolean;
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+  compact?: boolean;
+}) {
+  const isPremium = plan.formule === "premium";
+  return (
+    <div className={cn(
+      "relative flex flex-col rounded-xl border p-5 transition-all",
+      compact ? "p-5" : "p-6",
+      isCurrent ? "border-primary bg-primary/5" : isPremium ? "border-primary/40 bg-card shadow-sm" : "border-border bg-card",
+      isPending && !isCurrent && "border-primary/60 bg-primary/5",
+    )}>
+      {isPremium && !isCurrent && !isPending && (
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
+          Recommandé
+        </span>
+      )}
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <h3 className={cn("font-serif text-xl", isPremium && "text-primary")}>{plan.label}</h3>
+        {isCurrent && (
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-primary">
+            Actuelle
+          </span>
+        )}
+        {isPending && !isCurrent && (
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 font-sans text-[10px] font-semibold uppercase tracking-wider text-primary">
+            Programmée
+          </span>
+        )}
+      </div>
+
+      <div className="mb-1 flex items-baseline gap-1.5">
+        <span className="font-serif text-3xl text-foreground">{plan.prix}</span>
+        <span className="font-sans text-xs text-muted-foreground">{plan.periode}</span>
+      </div>
+      <p className="mb-4 font-sans text-xs text-muted-foreground">
+        {plan.equivalent ? `${plan.equivalent} · ${plan.economie}` : "TTC, sans engagement"}
+      </p>
+
+      <ul className="mb-5 space-y-2">
+        {(isPremium
+          ? ["Tout ce que contient Standard", "Badge Premium et position prioritaire", "Mise en avant régionale", "Statistiques avancées", "Support prioritaire"]
+          : ["Fiche complète et galerie photos", "Demandes de devis illimitées", "Messagerie et avis clients", "Statistiques de consultation"]
+        ).map((t) => (
+          <li key={t} className="flex items-start gap-2">
+            <Check size={16} className={cn("mt-0.5 flex-shrink-0", isPremium ? "text-primary" : "text-sauge")} />
+            <span className="font-sans text-sm text-foreground">{t}</span>
+          </li>
+        ))}
+      </ul>
+
+      <button
+        onClick={onClick}
+        disabled={disabled || isCurrent || isPending || loading}
+        className={cn(
+          "mt-auto inline-flex w-full items-center justify-center gap-2 rounded-lg py-2.5 font-sans text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-60",
+          isCurrent || isPending
+            ? "bg-muted text-muted-foreground"
+            : isPremium
+              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+              : "border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground",
+        )}
+      >
+        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {isCurrent ? "Formule actuelle" : isPending ? "Programmée" : `Choisir ${plan.label}`}
+      </button>
+    </div>
+  );
+}
 
 /* ============================================================
    MODE GESTION — un abonnement existe
    ============================================================ */
 function GestionAbonnement({
   abo, showChange, setShowChange, subscribe, submitting, openStripePortal,
-  portalDisabled, openingPortal, cancelScheduledChange, cancellingSchedule,
+  portalDisabled, openingPortal, cancelScheduledChange, cancellingSchedule, busy,
 }: {
   abo: Abonnement;
   showChange: boolean;
   setShowChange: (v: boolean) => void;
-  subscribe: (f: Formule) => void;
-  submitting: Formule | null;
+  subscribe: (k: PlanKey) => void;
+  submitting: PlanKey | null;
   openStripePortal: () => void;
   portalDisabled: boolean;
   openingPortal: boolean;
   cancelScheduledChange: () => void;
   cancellingSchedule: boolean;
+  busy: boolean;
 }) {
   const { prestataire } = useSharedPrestataire();
   const etat = deriveEtat(abo);
-  const formuleKey = aboFormuleKey(abo);
-  const formule = formuleKey ? FORMULES[formuleKey] : null;
+  const currentKey = aboPlanKey(abo);
+  const plan = currentKey ? PLANS[currentKey] : null;
   const isEchec = etat.key === "echec";
 
-  // Downgrade programmé ?
-  const pendingFormule = planToFormule(abo.plan_pending);
-  const hasPendingChange = !!pendingFormule && !!abo.plan_pending_le;
+  const pendingKey = planToKey(abo.plan_pending);
+  const hasPendingChange = !!pendingKey && !!abo.plan_pending_le;
 
-  // Blocage du changement de formule pendant un impayé
   const changeBlocked = abo.statut === "en_retard";
+  const [periodicite, setPeriodicite] = useState<Periodicite>(
+    currentKey ? PLANS[currentKey].periodicite : "mensuel",
+  );
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -544,16 +827,16 @@ function GestionAbonnement({
               Votre abonnement
             </p>
             <h2 className="font-serif text-3xl md:text-4xl text-foreground leading-tight">
-              {formule?.label ?? abo.plan}
+              {currentKey ? planLabelComplet(currentKey) : abo.plan}
             </h2>
           </div>
 
           <div className="flex items-baseline gap-2">
             <span className="font-serif text-4xl md:text-5xl text-foreground">
-              {formatMontant(abo.montant_cents, abo.plan)}
+              {formatMontant(abo.montant_cents, currentKey)}
             </span>
             <span className="font-sans text-sm text-muted-foreground">
-              {formule?.periode}
+              {plan?.periode}
             </span>
             <span className="font-sans text-xs text-muted-foreground ml-1">TTC</span>
           </div>
@@ -580,7 +863,7 @@ function GestionAbonnement({
                   Changement de formule programmé
                 </p>
                 <p className="font-sans text-sm text-muted-foreground">
-                  Passage à la formule <strong>{FORMULES[pendingFormule!].label}</strong> le {formatDate(abo.plan_pending_le)}.
+                  Passage à la formule <strong>{planLabelComplet(pendingKey!)}</strong> le {formatDate(abo.plan_pending_le)}.
                 </p>
                 <button
                   onClick={cancelScheduledChange}
@@ -657,7 +940,7 @@ function GestionAbonnement({
           <div>
             <h3 className="font-serif text-lg text-foreground">Changer de formule</h3>
             <p className="font-sans text-xs text-muted-foreground mt-0.5">
-              Comparer les autres formules et faire évoluer votre abonnement.
+              Comparer Standard et Premium, et choisir un paiement mensuel ou annuel.
             </p>
           </div>
           {showChange
@@ -666,9 +949,9 @@ function GestionAbonnement({
         </button>
 
         {showChange && (
-          <>
+          <div className="mt-5 space-y-6">
             {changeBlocked && (
-              <div className="mt-4 rounded-lg border border-terracotta/40 bg-terracotta/5 p-4">
+              <div className="rounded-lg border border-terracotta/40 bg-terracotta/5 p-4">
                 <p className="font-sans text-sm font-semibold text-foreground mb-1">
                   Régularisez votre paiement avant de changer de formule
                 </p>
@@ -677,20 +960,22 @@ function GestionAbonnement({
                 </p>
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
-              {(Object.keys(FORMULES) as Formule[]).map((f) => (
-                <MiniPlanCard
-                  key={f}
-                  formule={f}
-                  isCurrent={formuleKey === f}
-                  isPending={pendingFormule === f}
-                  loading={submitting === f}
-                  disabled={submitting !== null || changeBlocked}
-                  onClick={() => subscribe(f)}
-                />
-              ))}
-            </div>
-          </>
+            <GrilleFormules
+              periodicite={periodicite}
+              setPeriodicite={setPeriodicite}
+              currentKey={currentKey}
+              pendingKey={pendingKey}
+              submitting={submitting}
+              disabled={submitting !== null || changeBlocked || busy}
+              subscribe={subscribe}
+              compact
+            />
+            <p className="font-sans text-xs text-muted-foreground">
+              Passage à Premium ou à l'annuel : effectif immédiatement, avec ajustement au prorata.
+              Retour à Standard ou au mensuel : effectif à la fin de la période déjà payée.
+            </p>
+            <ComparatifFormules />
+          </div>
         )}
       </section>
 
@@ -731,114 +1016,40 @@ function ActionButton({ onClick, icon, label, highlight, disabled, loading }: { 
   );
 }
 
-function MiniPlanCard({ formule, isCurrent, isPending, loading, disabled, onClick }: {
-  formule: Formule; isCurrent: boolean; isPending?: boolean; loading: boolean; disabled: boolean; onClick: () => void;
-}) {
-  const f = FORMULES[formule];
-  const isPremium = formule === "premium";
-  return (
-    <div className={cn(
-      "rounded-xl border p-5 flex flex-col",
-      isCurrent ? "border-primary bg-primary/5" : "border-border bg-card",
-      isPremium && !isCurrent && "border-primary/30",
-      isPending && "border-primary/60 bg-primary/5",
-    )}>
-      <div className="flex items-start justify-between mb-3">
-        <h4 className={cn(
-          "font-serif text-xl",
-          isPremium && !isCurrent && "text-primary",
-        )}>{f.label}</h4>
-        {isCurrent && (
-          <span className="font-sans text-[10px] uppercase tracking-wider font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-            Actuelle
-          </span>
-        )}
-        {isPending && !isCurrent && (
-          <span className="font-sans text-[10px] uppercase tracking-wider font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-            Programmée
-          </span>
-        )}
-      </div>
-      <div className="mb-4">
-        <span className="font-serif text-2xl text-foreground">{f.prix}</span>
-        <span className="font-sans text-xs text-muted-foreground ml-1">{f.periode}</span>
-      </div>
-      <button
-        onClick={onClick}
-        disabled={disabled || isCurrent || isPending}
-        className={cn(
-          "mt-auto w-full py-2 rounded-lg font-sans text-xs font-semibold transition-all inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed",
-          isCurrent || isPending
-            ? "bg-muted text-muted-foreground"
-            : "border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground",
-        )}
-      >
-        {loading && <Loader2 className="h-3 w-3 animate-spin" />}
-        {isCurrent ? "Formule actuelle" : isPending ? "Programmée" : "Passer à cette formule"}
-      </button>
-    </div>
-  );
-}
-
 /* ============================================================
-   MODE VENTE — aucun abonnement Stripe (comportement existant)
+   MODE VENTE — aucun abonnement Stripe
    ============================================================ */
-function VenteAbonnement({ abo, subscribe, submitting }: {
+function VenteAbonnement({ abo, subscribe, submitting, busy }: {
   abo: Abonnement | null;
-  subscribe: (f: Formule) => void;
-  submitting: Formule | null;
+  subscribe: (k: PlanKey) => void;
+  submitting: PlanKey | null;
+  busy: boolean;
 }) {
+  const [periodicite, setPeriodicite] = useState<Periodicite>("mensuel");
   return (
     <div className="space-y-8">
       <StatusBanner abo={abo} />
-      <div>
-        <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-1 text-center">
-          Choisissez votre formule
-        </h2>
-        <p className="font-sans text-sm text-muted-foreground mb-8 text-center">
-          Tarifs TTC. La carte est enregistrée dès maintenant, le premier prélèvement a lieu à la fin de votre période d'essai.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <PlanCard
-            titre="Standard" prix="89€" periode="par mois"
-            features={[
-              { included: true, text: "Profil professionnel complet" },
-              { included: true, text: "Galerie photo" },
-              { included: true, text: "Réception de demandes de devis" },
-              { included: true, text: "Statistiques basiques" },
-              { included: false, text: "Badge premium" },
-            ]}
-            cta="Choisir Standard"
-            onClick={() => subscribe("standard")}
-            loading={submitting === "standard"} disabled={submitting !== null}
-          />
-          <PlanCard
-            titre="Premium" prix="149€" periode="par mois" highlighted
-            features={[
-              { included: true, text: "Tout de l'offre Standard" },
-              { included: true, text: "Galerie photo illimitée" },
-              { included: true, text: "Badge Premium visible" },
-              { included: true, text: "Statistiques avancées" },
-              { included: true, text: "Support prioritaire" },
-            ]}
-            cta="Choisir Premium"
-            onClick={() => subscribe("premium")}
-            loading={submitting === "premium"} disabled={submitting !== null}
-          />
-          <PlanCard
-            titre="Annuel" prix="948€" periode="par an (soit 79€/mois)"
-            features={[
-              { included: true, text: "Toutes les fonctionnalités Premium" },
-              { included: true, text: "2 mois offerts" },
-              { included: true, text: "Facturation annuelle unique" },
-              { included: true, text: "Engagement 12 mois" },
-            ]}
-            cta="Choisir Annuel"
-            onClick={() => subscribe("annuel")}
-            loading={submitting === "annuel"} disabled={submitting !== null}
-          />
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-1">
+            Choisissez votre formule
+          </h2>
+          <p className="font-sans text-sm text-muted-foreground">
+            Tarifs TTC. La carte est enregistrée dès maintenant, le premier prélèvement a lieu à la fin de votre période d'essai.
+          </p>
         </div>
+
+        <GrilleFormules
+          periodicite={periodicite}
+          setPeriodicite={setPeriodicite}
+          currentKey={null}
+          pendingKey={null}
+          submitting={submitting}
+          disabled={submitting !== null || busy}
+          subscribe={subscribe}
+        />
+
+        <ComparatifFormules />
       </div>
 
       <div className="bg-background rounded-lg p-5 border border-border">
@@ -886,59 +1097,6 @@ function StatusBanner({ abo }: { abo: Abonnement | null }) {
           {sous && <p className="font-sans text-sm text-muted-foreground">{sous}</p>}
         </div>
       </div>
-    </div>
-  );
-}
-
-interface PlanCardProps {
-  titre: string; prix: string; periode: string;
-  features: { included: boolean; text: string }[];
-  cta: string; highlighted?: boolean;
-  loading: boolean; disabled: boolean; onClick: () => void;
-}
-
-function PlanCard({ titre, prix, periode, features, cta, highlighted, loading, disabled, onClick }: PlanCardProps) {
-  return (
-    <div className={cn(
-      "rounded-xl p-6 transition-all",
-      highlighted
-        ? "bg-gradient-to-br from-primary to-muted text-primary-foreground shadow-xl md:scale-105 relative"
-        : "bg-card border-2 border-border hover:shadow-md",
-    )}>
-      {highlighted && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-sauge text-white px-4 py-1 rounded-full">
-          <span className="font-sans text-xs font-bold uppercase tracking-wider">Recommandé</span>
-        </div>
-      )}
-      <div className="text-center mb-5 mt-3">
-        <h3 className={cn("font-serif text-xl mb-1", !highlighted && "text-foreground")}>{titre}</h3>
-        <div className={cn("font-serif", highlighted ? "text-4xl" : "text-3xl text-foreground")}>{prix}</div>
-        <p className={cn("font-sans text-xs", highlighted ? "text-primary-foreground/80" : "text-muted-foreground")}>{periode}</p>
-      </div>
-      <ul className="space-y-2.5 mb-6">
-        {features.map((f, i) => (
-          <li key={i} className="flex items-start gap-2.5">
-            {f.included
-              ? <Check size={18} className={cn("flex-shrink-0 mt-0.5", !highlighted && "text-sauge")} />
-              : <X size={18} className="text-border flex-shrink-0 mt-0.5" />}
-            <span className={cn("font-sans text-sm", highlighted ? "" : f.included ? "text-foreground" : "text-muted-foreground line-through")}>
-              {f.text}
-            </span>
-          </li>
-        ))}
-      </ul>
-      <button
-        onClick={onClick} disabled={disabled}
-        className={cn(
-          "w-full py-2.5 rounded-lg font-sans font-semibold text-sm transition-all inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed",
-          highlighted
-            ? "bg-card text-primary hover:bg-foreground hover:text-background"
-            : "border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground",
-        )}
-      >
-        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {cta}
-      </button>
     </div>
   );
 }
