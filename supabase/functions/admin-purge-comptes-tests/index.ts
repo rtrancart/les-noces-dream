@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
 
     // 2. Nettoyage cascade + suppression du compte auth
     try {
-      const { error: rpcErr } = await admin.rpc("admin_delete_user_cascade", {
+      const { error: rpcErr } = await caller.rpc("admin_delete_user_cascade", {
         p_user_id: cible.user_id,
       });
       if (rpcErr) throw rpcErr;
