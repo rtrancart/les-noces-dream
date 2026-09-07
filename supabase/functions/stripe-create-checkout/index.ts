@@ -283,12 +283,8 @@ Deno.serve(async (req) => {
     }
 
     // 3. Aucun abonnement actif → nouveau Checkout (1re souscription)
-    const finEssai = abo?.fin_essai_le ? new Date(abo.fin_essai_le) : null;
-    const nowSec = Math.floor(Date.now() / 1000);
-    const trialEndSec = finEssai && finEssai.getTime() > Date.now()
-      ? Math.floor(finEssai.getTime() / 1000)
-      : null;
-
+    // L'essai gratuit prend fin à la souscription : aucun trial_end n'est transmis,
+    // la facturation démarre immédiatement.
     const origin = req.headers.get("origin") ?? Deno.env.get("PUBLIC_SITE_URL") ?? "";
 
     const session = await stripe.checkout.sessions.create({
@@ -297,7 +293,7 @@ Deno.serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       payment_method_collection: "always",
       subscription_data: {
-        ...(trialEndSec && trialEndSec > nowSec ? { trial_end: trialEndSec } : {}),
+
         metadata: {
           prestataire_id: prestataire.id,
           user_id: userId,
