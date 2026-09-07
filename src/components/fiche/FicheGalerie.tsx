@@ -7,10 +7,13 @@ interface Props {
   photoUrl: string | null;
   galerie: string[];
   nom: string;
+  /** Nombre maximum de photos affichées (formule Standard). */
+  maxPhotos?: number;
 }
 
-export default function FicheGalerie({ photoUrl, galerie, nom }: Props) {
-  const rawImages = [photoUrl, ...galerie].filter(Boolean) as string[];
+export default function FicheGalerie({ photoUrl, galerie, nom, maxPhotos }: Props) {
+  const dedup = Array.from(new Set([photoUrl, ...galerie].filter(Boolean) as string[]));
+  const rawImages = maxPhotos ? dedup.slice(0, maxPhotos) : dedup;
   // Premier visuel = LCP (preset cover), les suivants en thumb
   const images = rawImages.map((img, i) => getImageUrl(img, i === 0 ? "cover" : "thumb"));
   // URLs pleine résolution pour la lightbox
