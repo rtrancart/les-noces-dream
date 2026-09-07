@@ -25,9 +25,11 @@ export type Database = {
           derniere_facture_id: string | null
           fin_essai_le: string | null
           fin_periode_le: string | null
+          formule: Database["public"]["Enums"]["formule_abonnement"]
           id: string
           montant_cents: number | null
           nb_echecs_paiement: number | null
+          periodicite: Database["public"]["Enums"]["periodicite_abonnement"]
           plan: Database["public"]["Enums"]["plan_abonnement"]
           plan_pending: Database["public"]["Enums"]["plan_abonnement"] | null
           plan_pending_le: string | null
@@ -53,9 +55,11 @@ export type Database = {
           derniere_facture_id?: string | null
           fin_essai_le?: string | null
           fin_periode_le?: string | null
+          formule?: Database["public"]["Enums"]["formule_abonnement"]
           id?: string
           montant_cents?: number | null
           nb_echecs_paiement?: number | null
+          periodicite?: Database["public"]["Enums"]["periodicite_abonnement"]
           plan?: Database["public"]["Enums"]["plan_abonnement"]
           plan_pending?: Database["public"]["Enums"]["plan_abonnement"] | null
           plan_pending_le?: string | null
@@ -81,9 +85,11 @@ export type Database = {
           derniere_facture_id?: string | null
           fin_essai_le?: string | null
           fin_periode_le?: string | null
+          formule?: Database["public"]["Enums"]["formule_abonnement"]
           id?: string
           montant_cents?: number | null
           nb_echecs_paiement?: number | null
+          periodicite?: Database["public"]["Enums"]["periodicite_abonnement"]
           plan?: Database["public"]["Enums"]["plan_abonnement"]
           plan_pending?: Database["public"]["Enums"]["plan_abonnement"] | null
           plan_pending_le?: string | null
@@ -2925,6 +2931,7 @@ export type Database = {
         | "listing_sidebar"
         | "accueil_coups_de_coeur"
       expediteur_type: "prestataire" | "visiteur"
+      formule_abonnement: "standard" | "premium"
       motif_suspension_enum:
         | "non_paiement"
         | "admin"
@@ -2937,6 +2944,7 @@ export type Database = {
         | "auto_inscription"
         | "migration"
       pack_boost: "5j_5eur" | "15j_12eur" | "30j_20eur"
+      periodicite_abonnement: "mensuel" | "annuel"
       plan_abonnement:
         | "essai"
         | "mensuel"
@@ -3122,6 +3130,7 @@ export const Constants = {
         "accueil_coups_de_coeur",
       ],
       expediteur_type: ["prestataire", "visiteur"],
+      formule_abonnement: ["standard", "premium"],
       motif_suspension_enum: [
         "non_paiement",
         "admin",
@@ -3136,6 +3145,7 @@ export const Constants = {
         "migration",
       ],
       pack_boost: ["5j_5eur", "15j_12eur", "30j_20eur"],
+      periodicite_abonnement: ["mensuel", "annuel"],
       plan_abonnement: [
         "essai",
         "mensuel",
