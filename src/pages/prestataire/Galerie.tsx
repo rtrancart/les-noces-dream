@@ -62,7 +62,7 @@ async function validateImage(file: File): Promise<ValidationResult> {
 }
 
 export default function PrestataireGalerie() {
-  const { prestataire, loading, refetch } = useSharedPrestataire();
+  const { prestataire, estPremium, loading, refetch } = useSharedPrestataire();
   const [uploading, setUploading] = useState(false);
 
   const galerieUrls = prestataire?.urls_galerie ?? [];
