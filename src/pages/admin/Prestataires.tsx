@@ -31,6 +31,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { logAdmin } from "@/lib/logAdmin";
 import { REGIONS, DOM, PAYS_LIMITROPHES, getZoneLabel, getDepartementsByRegion, regionFieldToZoneValue } from "@/lib/zonesIntervention";
 import { REGIONS as REGIONS_FR } from "@/lib/regions";
+import CityAutocomplete from "@/components/admin/CityAutocomplete";
 import {
   getIneligibilityReason,
   ineligibilityLabel,
@@ -1260,7 +1261,17 @@ export default function Prestataires() {
             <TabsContent value="coordonnees" className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Ville *">
-                  <Input value={form.ville} onChange={(e) => setForm({ ...form, ville: e.target.value })} />
+                  <CityAutocomplete
+                    value={form.ville}
+                    onChange={(ville, details) =>
+                      setForm((f) => ({
+                        ...f,
+                        ville,
+                        code_postal: details?.code_postal ?? f.code_postal,
+                        region: details?.region ?? f.region,
+                      }))
+                    }
+                  />
                 </Field>
                 <Field label="Région *">
                   <Select value={form.region || undefined} onValueChange={(v) => setForm({ ...form, region: v })}>
