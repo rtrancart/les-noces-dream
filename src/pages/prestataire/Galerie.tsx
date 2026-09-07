@@ -7,7 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Upload, Trash2, ImageIcon, Loader2, Star, Info } from "lucide-react";
+import PremiumBanner from "@/components/prestataire/PremiumBanner";
+import PrestataireVideosSection from "@/components/prestataire/PrestataireVideosSection";
 
+const MAX_PHOTOS_STANDARD = 10;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 Mo
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MIN_WIDTH = 800;
