@@ -210,10 +210,15 @@ export default function PrestataireGalerie() {
               Formats acceptés : JPG, PNG, WebP.
             </span>
           </p>
+          {!estPremium && (
+            <p className="font-sans text-sm text-muted-foreground">
+              {photos.length} / {MAX_PHOTOS_STANDARD} photos
+            </p>
+          )}
         </div>
         <div>
           <Label htmlFor="photo-upload" className="cursor-pointer">
-            <Button asChild disabled={uploading} className="gap-2">
+            <Button asChild disabled={uploading || limiteAtteinte} className="gap-2">
               <span>
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 Ajouter des photos
@@ -226,10 +231,27 @@ export default function PrestataireGalerie() {
             accept="image/*"
             multiple
             className="hidden"
+            disabled={uploading || limiteAtteinte}
             onChange={handleUpload}
           />
         </div>
       </div>
+
+      {enTrop > 0 ? (
+        <PremiumBanner
+          ton="alerte"
+          titre={`${enTrop} photo${enTrop > 1 ? "s" : ""} n'${enTrop > 1 ? "apparaissent" : "apparaît"} plus sur votre fiche publique`}
+          description={`La formule Standard affiche les ${MAX_PHOTOS_STANDARD} premières photos. Rien n'a été supprimé : tout redevient visible en Premium.`}
+        />
+      ) : (
+        limiteAtteinte && (
+          <PremiumBanner
+            titre={`Vous avez atteint les ${MAX_PHOTOS_STANDARD} photos de la formule Standard`}
+            description="Passez en Premium pour publier un nombre illimité de photos et ajouter des vidéos."
+          />
+        )
+      )}
+
 
       {photos.length === 0 ? (
         <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
