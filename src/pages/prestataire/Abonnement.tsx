@@ -48,6 +48,8 @@ const FORMULES: Record<Formule, { label: string; prix: string; periode: string; 
 const PLAN_TO_FORMULE: Record<string, Formule> = {
   standard_mensuel: "standard",
   premium_mensuel: "premium",
+  standard_annuel: "annuel",
+  premium_annuel: "premium",
   annuel: "annuel",
 };
 function planToFormule(plan: string | null | undefined): Formule | null {
@@ -56,6 +58,21 @@ function planToFormule(plan: string | null | undefined): Formule | null {
   if (plan in FORMULES) return plan as Formule;
   return null;
 }
+
+/** Paramètres envoyés au back pour chaque carte de la grille actuelle. */
+const CIBLE_PAR_FORMULE: Record<Formule, { formule: "standard" | "premium"; periodicite: "mensuel" | "annuel" }> = {
+  standard: { formule: "standard", periodicite: "mensuel" },
+  premium: { formule: "premium", periodicite: "mensuel" },
+  annuel: { formule: "standard", periodicite: "annuel" },
+};
+
+/** Clé UI dérivée en priorité des nouvelles colonnes formule + periodicite. */
+function aboFormuleKey(abo: Abonnement): Formule | null {
+  if (abo.formule === "premium") return "premium";
+  if (abo.formule === "standard") return abo.periodicite === "annuel" ? "annuel" : "standard";
+  return planToFormule(abo.plan);
+}
+
 
 
 
