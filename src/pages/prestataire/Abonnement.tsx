@@ -286,9 +286,10 @@ export default function PrestataireAbonnement() {
     const statut = searchParams.get("statut");
     if (statut === "succes") {
       toast({
-        title: "Abonnement enregistré",
-        description: "Votre carte a été enregistrée. La facturation démarrera à la fin de votre période d'essai.",
+        title: "Abonnement activé",
+        description: "Votre abonnement démarre dès aujourd'hui.",
       });
+
       nextParams.delete("statut");
       hasChanged = true;
     } else if (statut === "annule") {
