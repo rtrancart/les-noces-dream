@@ -299,6 +299,10 @@ export default function PrestataireGalerie() {
           ))}
         </div>
       )}
+
+      <div className="pt-4 border-t border-border">
+        <PrestataireVideosSection prestataireId={prestataire.id} estPremium={estPremium} />
+      </div>
     </div>
   );
 }
