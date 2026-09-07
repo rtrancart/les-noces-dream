@@ -109,18 +109,23 @@ Deno.serve(async (req) => {
 
         const cardPatch = await resolveCardPatchFromSubscription(sub);
 
+        const periodEnd = getPeriodEnd(sub);
+        const updatePatch: Record<string, unknown> = {
+          statut: "actif",
+          derniere_facture_id: invoice.id,
+          nb_echecs_paiement: 0,
+          premier_echec_le: null,
+          rappel_impaye_envoye_le: null,
+          suspendu_pour_impaye_le: null,
+          ...cardPatch,
+        };
+        if (periodEnd !== undefined) {
+          updatePatch.fin_periode_le = new Date(periodEnd * 1000).toISOString();
+        }
+
         await supabase
           .from("abonnements")
-          .update({
-            statut: "actif",
-            fin_periode_le: new Date(sub.current_period_end * 1000).toISOString(),
-            derniere_facture_id: invoice.id,
-            nb_echecs_paiement: 0,
-            premier_echec_le: null,
-            rappel_impaye_envoye_le: null,
-            suspendu_pour_impaye_le: null,
-            ...cardPatch,
-          })
+          .update(updatePatch)
           .eq("prestataire_id", prestataireId);
 
         // Réactivation auto si suspendu pour impayé
@@ -387,6 +392,34 @@ async function updateCardByCustomer(customerId: string, pm: Stripe.PaymentMethod
     .eq("stripe_customer_id", customerId);
 }
 
+// -- Helpers de résolution des périodes Stripe (compatibilité 2024-11 / 2025 Basil) --
+
+function getPeriodEnd(sub: Stripe.Subscription): number | undefined {
+  const fromRoot = (sub as unknown as Record<string, unknown>).current_period_end;
+  const fromItem = sub.items.data[0]?.current_period_end;
+  const value = fromRoot ?? fromItem;
+  if (value === undefined) {
+    console.warn(
+      "[stripe-webhook] getPeriodEnd: current_period_end introuvable à la racine et dans items.data[0] — nouvelle version d'API Stripe à investiguer",
+      sub.id,
+    );
+  }
+  return value as number | undefined;
+}
+
+function getPeriodStart(sub: Stripe.Subscription): number | undefined {
+  const fromRoot = (sub as unknown as Record<string, unknown>).current_period_start;
+  const fromItem = sub.items.data[0]?.current_period_start;
+  const value = fromRoot ?? fromItem;
+  if (value === undefined) {
+    console.warn(
+      "[stripe-webhook] getPeriodStart: current_period_start introuvable à la racine et dans items.data[0] — nouvelle version d'API Stripe à investiguer",
+      sub.id,
+    );
+  }
+  return value as number | undefined;
+}
+
 async function syncSubscription(sub: Stripe.Subscription) {
   const prestataireId = await resolvePrestataireId(sub);
   if (!prestataireId) return;
@@ -415,15 +448,21 @@ async function syncSubscription(sub: Stripe.Subscription) {
   else if (sub.status === "canceled") statut = "expire";
   else if (sub.status === "paused") statut = "en_pause";
 
+  const periodEnd = getPeriodEnd(sub);
+
   const patch: Record<string, unknown> = {
     stripe_customer_id: customerId,
     stripe_subscription_id: sub.id,
     statut,
     cancel_at_period_end: sub.cancel_at_period_end,
-    fin_periode_le: new Date(sub.current_period_end * 1000).toISOString(),
-    debut_le: new Date(sub.start_date * 1000).toISOString(),
     fin_essai_le: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
   };
+  if (periodEnd !== undefined) {
+    patch.fin_periode_le = new Date(periodEnd * 1000).toISOString();
+  }
+  if (sub.start_date !== undefined) {
+    patch.debut_le = new Date(sub.start_date * 1000).toISOString();
+  }
   if (formule) patch.formule = formule;
   if (periodicite) patch.periodicite = periodicite;
   if (plan) patch.plan = plan; // double écriture transitoire (colonne legacy)
