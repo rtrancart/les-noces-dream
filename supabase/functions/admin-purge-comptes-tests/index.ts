@@ -68,12 +68,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Nettoyage cascade + suppression du compte auth
+    // 2. Suppression du compte de connexion (le nettoyage public est déjà fait)
     try {
-      const { error: rpcErr } = await caller.rpc("admin_delete_user_cascade", {
-        p_user_id: cible.user_id,
-      });
-      if (rpcErr) throw rpcErr;
       const { error: delErr } = await admin.auth.admin.deleteUser(cible.user_id);
       if (delErr) throw delErr;
       ligne.compte = "supprimé";
