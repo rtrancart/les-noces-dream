@@ -6,7 +6,8 @@
 
 - [ ] `STRIPE_SECRET_KEY` remplacée par la clé **live** (sk_live_…).
 - [ ] `STRIPE_WEBHOOK_SECRET` remplacé par le secret du **endpoint webhook live**.
-- [ ] `STRIPE_PRICE_STANDARD`, `STRIPE_PRICE_PREMIUM`, `STRIPE_PRICE_ANNUEL` pointent vers des prix **live** (pas test).
+- [ ] `STRIPE_MODE` = `live` et les 4 prix live renseignés : `STRIPE_PRICE_STANDARD_MENSUEL_LIVE`, `STRIPE_PRICE_STANDARD_ANNUEL_LIVE`, `STRIPE_PRICE_PREMIUM_MENSUEL_LIVE`, `STRIPE_PRICE_PREMIUM_ANNUEL_LIVE`.
+- [ ] Anciens secrets `STRIPE_PRICE_STANDARD`, `STRIPE_PRICE_PREMIUM`, `STRIPE_PRICE_ANNUEL` supprimés (devenus inutilisés).
 - [ ] Endpoint webhook live créé dans Stripe et abonné aux mêmes événements que le test : `checkout.session.completed`, `customer.subscription.created|updated|deleted`, `invoice.payment_succeeded|failed`, `payment_method.attached|detached`, `customer.updated`, `subscription_schedule.updated|released|canceled`.
 - [ ] Smart Retries activé en mode live (Settings → Subscriptions → Manage failed payments).
 - [ ] Comportement de fin de retries : **Cancel subscription** avec `cancellation_details.reason = payment_failed` (indispensable pour déclencher `impaye_suspension`).
