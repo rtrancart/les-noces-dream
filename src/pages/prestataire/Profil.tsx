@@ -10,11 +10,14 @@ import { toast } from "sonner";
 import { Save, Loader2, Send, CheckCircle2, AlertCircle } from "lucide-react";
 import AddressAutocomplete from "@/components/prestataire/AddressAutocomplete";
 import RaisonSocialeField from "@/components/prestataire/RaisonSocialeField";
+import SocialLinkInput from "@/components/prestataire/SocialLinkInput";
+import PremiumBanner from "@/components/prestataire/PremiumBanner";
+import { RESEAUX } from "@/lib/socialLinks";
 
 const MAX_DESC_COURTE = 160;
 
 export default function PrestataireProfil() {
-  const { prestataire, loading, refetch } = useSharedPrestataire();
+  const { prestataire, estPremium, loading, refetch } = useSharedPrestataire();
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -31,6 +34,10 @@ export default function PrestataireProfil() {
     site_web: "",
     latitude: null as number | null,
     longitude: null as number | null,
+    url_tiktok: "",
+    url_instagram: "",
+    url_facebook: "",
+    url_pinterest: "",
   });
 
   useEffect(() => {
@@ -49,6 +56,10 @@ export default function PrestataireProfil() {
         site_web: prestataire.site_web ?? "",
         latitude: prestataire.latitude,
         longitude: prestataire.longitude,
+        url_tiktok: prestataire.url_tiktok ?? "",
+        url_instagram: prestataire.url_instagram ?? "",
+        url_facebook: prestataire.url_facebook ?? "",
+        url_pinterest: prestataire.url_pinterest ?? "",
       });
     }
   }, [prestataire]);
@@ -92,6 +103,10 @@ export default function PrestataireProfil() {
         site_web: form.site_web,
         latitude: form.latitude,
         longitude: form.longitude,
+        url_tiktok: form.url_tiktok || null,
+        url_instagram: form.url_instagram || null,
+        url_facebook: form.url_facebook || null,
+        url_pinterest: form.url_pinterest || null,
       })
       .eq("id", prestataire.id);
 
@@ -278,6 +293,31 @@ export default function PrestataireProfil() {
           {field("Email de contact", "email_contact", { type: "email" })}
           <div className="md:col-span-2">
             {field("Site web", "site_web", { placeholder: "https://…" })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Réseaux sociaux */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-sans text-lg">Réseaux sociaux</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!estPremium && (
+            <PremiumBanner
+              titre="Vos réseaux sociaux s'affichent avec la formule Premium"
+              description="Vous pouvez les enregistrer dès maintenant : ils apparaîtront sur votre fiche publique dès votre passage en Premium."
+            />
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {RESEAUX.map((reseau) => (
+              <SocialLinkInput
+                key={reseau}
+                reseau={reseau}
+                value={form[`url_${reseau}` as const]}
+                onChange={(value) => setForm((f) => ({ ...f, [`url_${reseau}`]: value }))}
+              />
+            ))}
           </div>
         </CardContent>
       </Card>

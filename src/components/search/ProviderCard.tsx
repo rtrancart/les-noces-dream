@@ -52,7 +52,7 @@ export default function ProviderCard({ provider }: { provider: ProviderCardData 
           )}
           {provider.est_premium && (
             <div className="absolute top-3 left-3 px-3 py-1 bg-card rounded-full shadow-soft">
-              <span className="font-sans text-xs font-semibold text-sauge">Premium</span>
+              <span className="font-sans text-xs font-semibold text-or-riche">Premium</span>
             </div>
           )}
           <FavoriButton

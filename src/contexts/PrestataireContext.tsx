@@ -1,11 +1,13 @@
 import { createContext, useContext, ReactNode } from "react";
-import { usePrestataire } from "@/hooks/usePrestataire";
+import { usePrestataire, type AbonnementResume } from "@/hooks/usePrestataire";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Prestataire = Tables<"prestataires">;
 
 interface PrestataireContextType {
   prestataire: Prestataire | null;
+  abonnement: AbonnementResume | null;
+  estPremium: boolean;
   loading: boolean;
   refetch: () => Promise<void>;
 }

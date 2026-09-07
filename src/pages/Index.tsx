@@ -320,7 +320,7 @@ function ProviderCard({ provider }: { provider: ProviderData }) {
           </div>
         )}
         {provider.est_premium && (
-          <span className="absolute top-4 right-4 bg-primary text-primary-foreground text-xs uppercase tracking-wider px-3 py-1.5 rounded-md font-sans font-medium">
+          <span className="absolute top-4 right-4 bg-or-riche text-card text-xs uppercase tracking-wider px-3 py-1.5 rounded-md font-sans font-medium">
             Premium
           </span>
         )}

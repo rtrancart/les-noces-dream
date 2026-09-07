@@ -7,7 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Upload, Trash2, ImageIcon, Loader2, Star, Info } from "lucide-react";
+import PremiumBanner from "@/components/prestataire/PremiumBanner";
+import PrestataireVideosSection from "@/components/prestataire/PrestataireVideosSection";
 
+const MAX_PHOTOS_STANDARD = 10;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 Mo
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MIN_WIDTH = 800;
@@ -59,7 +62,7 @@ async function validateImage(file: File): Promise<ValidationResult> {
 }
 
 export default function PrestataireGalerie() {
-  const { prestataire, loading, refetch } = useSharedPrestataire();
+  const { prestataire, estPremium, loading, refetch } = useSharedPrestataire();
   const [uploading, setUploading] = useState(false);
 
   const galerieUrls = prestataire?.urls_galerie ?? [];
@@ -74,8 +77,21 @@ export default function PrestataireGalerie() {
     return all;
   }, [galerieUrls, photoMain]);
 
+  // Limite de 10 photos hors Premium (également garantie en base)
+  const limiteAtteinte = !estPremium && photos.length >= MAX_PHOTOS_STANDARD;
+  const enTrop = !estPremium ? Math.max(0, photos.length - MAX_PHOTOS_STANDARD) : 0;
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!prestataire || !e.target.files?.length) return;
+
+    if (!estPremium && photos.length + e.target.files.length > MAX_PHOTOS_STANDARD) {
+      toast.error(
+        `Vous pouvez publier ${MAX_PHOTOS_STANDARD} photos avec la formule Standard. Passez en Premium pour en ajouter davantage.`,
+      );
+      e.target.value = "";
+      return;
+    }
+
     setUploading(true);
 
     const files = Array.from(e.target.files);
@@ -194,10 +210,15 @@ export default function PrestataireGalerie() {
               Formats acceptés : JPG, PNG, WebP.
             </span>
           </p>
+          {!estPremium && (
+            <p className="font-sans text-sm text-muted-foreground">
+              {photos.length} / {MAX_PHOTOS_STANDARD} photos
+            </p>
+          )}
         </div>
         <div>
           <Label htmlFor="photo-upload" className="cursor-pointer">
-            <Button asChild disabled={uploading} className="gap-2">
+            <Button asChild disabled={uploading || limiteAtteinte} className="gap-2">
               <span>
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 Ajouter des photos
@@ -210,10 +231,27 @@ export default function PrestataireGalerie() {
             accept="image/*"
             multiple
             className="hidden"
+            disabled={uploading || limiteAtteinte}
             onChange={handleUpload}
           />
         </div>
       </div>
+
+      {enTrop > 0 ? (
+        <PremiumBanner
+          ton="alerte"
+          titre={`${enTrop} photo${enTrop > 1 ? "s" : ""} n'${enTrop > 1 ? "apparaissent" : "apparaît"} plus sur votre fiche publique`}
+          description={`La formule Standard affiche les ${MAX_PHOTOS_STANDARD} premières photos. Rien n'a été supprimé : tout redevient visible en Premium.`}
+        />
+      ) : (
+        limiteAtteinte && (
+          <PremiumBanner
+            titre={`Vous avez atteint les ${MAX_PHOTOS_STANDARD} photos de la formule Standard`}
+            description="Passez en Premium pour publier un nombre illimité de photos et ajouter des vidéos."
+          />
+        )
+      )}
+
 
       {photos.length === 0 ? (
         <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
@@ -261,6 +299,10 @@ export default function PrestataireGalerie() {
           ))}
         </div>
       )}
+
+      <div className="pt-4 border-t border-border">
+        <PrestataireVideosSection prestataireId={prestataire.id} estPremium={estPremium} />
+      </div>
     </div>
   );
 }

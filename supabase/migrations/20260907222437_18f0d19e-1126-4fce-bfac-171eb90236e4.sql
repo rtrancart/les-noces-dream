@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.check_limite_photos_selon_formule() FROM PUBLIC, anon, authenticated;

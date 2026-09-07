@@ -25,6 +25,8 @@ import FicheAvis from "@/components/fiche/FicheAvis";
 import FicheDevisDialog from "@/components/fiche/FicheDevisDialog";
 import FicheDevisSidebar from "@/components/fiche/FicheDevisSidebar";
 import FicheCarte from "@/components/fiche/FicheCarte";
+import FicheVideos from "@/components/fiche/FicheVideos";
+import FicheReseauxSociaux from "@/components/fiche/FicheReseauxSociaux";
 import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
 import { getCondensedZoneNames } from "@/lib/zonesIntervention";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
@@ -69,6 +71,10 @@ export type Prestataire = {
   champs_specifiques: Record<string, unknown> | null;
   zones_intervention: string[] | null;
   tags: string[] | null;
+  url_tiktok?: string | null;
+  url_instagram?: string | null;
+  url_facebook?: string | null;
+  url_pinterest?: string | null;
   user_id: string | null;
   updated_at: string | null;
   statut?: string | null;
@@ -302,7 +308,7 @@ export default function FichePrestataireView({
                       <Badge variant="secondary" className="font-sans">{catMere.nom}</Badge>
                     )}
                     {presta.est_premium && (
-                      <Badge className="bg-primary/10 text-primary border-primary/20 font-sans">Premium</Badge>
+                      <Badge className="bg-or-riche/10 text-or-riche border-or-riche/30 font-sans">Premium</Badge>
                     )}
                     {presta.est_verifie && (
                       <Badge variant="outline" className="gap-1 font-sans">
@@ -409,7 +415,14 @@ export default function FichePrestataireView({
               photoUrl={presta.photo_principale_url}
               galerie={presta.urls_galerie ?? []}
               nom={presta.nom_commercial}
+              maxPhotos={presta.est_premium ? undefined : 10}
             />
+
+            {/* Vidéos (Premium) */}
+            {presta.est_premium && (
+              <FicheVideos prestataireId={presta.id} nom={presta.nom_commercial} />
+            )}
+
 
             <Separator />
 
@@ -504,6 +517,17 @@ export default function FichePrestataireView({
                 </div>
               </div>
             )}
+
+            {/* Réseaux sociaux */}
+            <FicheReseauxSociaux
+              nom={presta.nom_commercial}
+              liens={{
+                tiktok: presta.url_tiktok,
+                instagram: presta.url_instagram,
+                facebook: presta.url_facebook,
+                pinterest: presta.url_pinterest,
+              }}
+            />
 
             {/* Carte */}
             <div>
