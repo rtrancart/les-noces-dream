@@ -72,6 +72,8 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = false
   [functions.prerender-serve]
     verify_jwt = false
+  [functions.insert-session-fiche]
+    verify_jwt = false
 
 
 

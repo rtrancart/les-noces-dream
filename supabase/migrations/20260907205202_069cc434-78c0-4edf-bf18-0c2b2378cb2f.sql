@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.check_limite_videos_selon_formule() FROM PUBLIC, anon, authenticated;

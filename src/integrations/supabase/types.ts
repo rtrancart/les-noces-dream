@@ -1963,6 +1963,64 @@ export type Database = {
           },
         ]
       }
+      prestataires_videos: {
+        Row: {
+          created_at: string
+          duree_seconds: number | null
+          id: string
+          ordre_affichage: number
+          prestataire_id: string
+          taille_bytes: number | null
+          updated_at: string
+          url_thumbnail: string | null
+          url_video: string
+        }
+        Insert: {
+          created_at?: string
+          duree_seconds?: number | null
+          id?: string
+          ordre_affichage?: number
+          prestataire_id: string
+          taille_bytes?: number | null
+          updated_at?: string
+          url_thumbnail?: string | null
+          url_video: string
+        }
+        Update: {
+          created_at?: string
+          duree_seconds?: number | null
+          id?: string
+          ordre_affichage?: number
+          prestataire_id?: string
+          taille_bytes?: number | null
+          updated_at?: string
+          url_thumbnail?: string | null
+          url_video?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prestataires_videos_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prestataires_videos_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prestataires_videos_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public_all"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -2019,6 +2077,67 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sessions_fiche: {
+        Row: {
+          created_at: string
+          duree_seconds: number | null
+          ended_at: string | null
+          id: string
+          prestataire_id: string
+          rebond: boolean | null
+          referrer: string | null
+          session_id: string
+          started_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          duree_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          prestataire_id: string
+          rebond?: boolean | null
+          referrer?: string | null
+          session_id: string
+          started_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          duree_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          prestataire_id?: string
+          rebond?: boolean | null
+          referrer?: string | null
+          session_id?: string
+          started_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_fiche_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_fiche_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_fiche_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public_all"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       signatures_charte: {
         Row: {
@@ -2286,110 +2405,9 @@ export type Database = {
           urls_galerie: string[] | null
           user_id: string | null
           video_url: string | null
+          videos_json: Json | null
           ville: string | null
           zones_intervention: string[] | null
-        }
-        Insert: {
-          adresse?: string | null
-          categorie_fille_id?: string | null
-          categorie_mere_id?: string | null
-          champs_specifiques?: Json | null
-          charte_version_signee?: string | null
-          code_postal?: string | null
-          created_at?: string | null
-          cree_par_admin?: boolean | null
-          date_premiere_publication?: string | null
-          demande_reactivation_le?: string | null
-          description?: string | null
-          description_courte?: string | null
-          email_contact?: string | null
-          est_premium?: boolean | null
-          est_verifie?: boolean | null
-          fin_premium?: string | null
-          fin_visibilite_boost?: string | null
-          id?: string | null
-          latitude?: number | null
-          longitude?: number | null
-          metadonnees_seo?: Json | null
-          nom_commercial?: string | null
-          nombre_avis?: number | null
-          nombre_demandes?: number | null
-          note_flexibilite?: number | null
-          note_moyenne?: number | null
-          note_professionnalisme?: number | null
-          note_qualite_prestation?: number | null
-          note_rapport_qualite_prix?: number | null
-          photo_principale_url?: string | null
-          premier_login_le?: string | null
-          prix_depart?: number | null
-          prix_max?: number | null
-          region?: string | null
-          site_web?: string | null
-          slug?: string | null
-          statut?: Database["public"]["Enums"]["statut_prestataire"] | null
-          tags?: string[] | null
-          telephone?: string | null
-          updated_at?: string | null
-          url_facebook?: string | null
-          url_instagram?: string | null
-          url_pinterest?: string | null
-          url_tiktok?: string | null
-          urls_galerie?: string[] | null
-          user_id?: string | null
-          video_url?: string | null
-          ville?: string | null
-          zones_intervention?: string[] | null
-        }
-        Update: {
-          adresse?: string | null
-          categorie_fille_id?: string | null
-          categorie_mere_id?: string | null
-          champs_specifiques?: Json | null
-          charte_version_signee?: string | null
-          code_postal?: string | null
-          created_at?: string | null
-          cree_par_admin?: boolean | null
-          date_premiere_publication?: string | null
-          demande_reactivation_le?: string | null
-          description?: string | null
-          description_courte?: string | null
-          email_contact?: string | null
-          est_premium?: boolean | null
-          est_verifie?: boolean | null
-          fin_premium?: string | null
-          fin_visibilite_boost?: string | null
-          id?: string | null
-          latitude?: number | null
-          longitude?: number | null
-          metadonnees_seo?: Json | null
-          nom_commercial?: string | null
-          nombre_avis?: number | null
-          nombre_demandes?: number | null
-          note_flexibilite?: number | null
-          note_moyenne?: number | null
-          note_professionnalisme?: number | null
-          note_qualite_prestation?: number | null
-          note_rapport_qualite_prix?: number | null
-          photo_principale_url?: string | null
-          premier_login_le?: string | null
-          prix_depart?: number | null
-          prix_max?: number | null
-          region?: string | null
-          site_web?: string | null
-          slug?: string | null
-          statut?: Database["public"]["Enums"]["statut_prestataire"] | null
-          tags?: string[] | null
-          telephone?: string | null
-          updated_at?: string | null
-          url_facebook?: string | null
-          url_instagram?: string | null
-          url_pinterest?: string | null
-          url_tiktok?: string | null
-          urls_galerie?: string[] | null
-          user_id?: string | null
-          video_url?: string | null
-          ville?: string | null
-          zones_intervention?: string[] | null
         }
         Relationships: [
           {
@@ -2676,6 +2694,10 @@ export type Database = {
         Args: { p_path: string }
         Returns: boolean
       }
+      can_write_prestataire_video: {
+        Args: { p_path: string }
+        Returns: boolean
+      }
       charte_ok_pour_publication: {
         Args: { p_charte_exemptee_jusqua: string; p_charte_signee_le: string }
         Returns: boolean
@@ -2888,6 +2910,7 @@ export type Database = {
           total_orphelins: number
         }[]
       }
+      purge_sessions_fiche_expirees: { Args: never; Returns: number }
       purger_historique_navigation: { Args: never; Returns: number }
       reactiver_prestataire_paiement: {
         Args: { p_prestataire_id: string }
