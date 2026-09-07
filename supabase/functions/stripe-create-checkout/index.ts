@@ -202,13 +202,20 @@ Deno.serve(async (req) => {
         const currentInterval = currentItem?.price?.recurring?.interval ?? null;
         const targetInterval = periodicite === "annuel" ? "year" : "month";
         const intervalChange = currentInterval !== null && currentInterval !== targetInterval;
+        // Essai en cours : on le clôture immédiatement, la facturation démarre maintenant.
+        const enEssai = primary.status === "trialing";
 
         await stripe.subscriptions.update(primary.id, {
           items: [{ id: currentItem.id, price: priceId }],
           proration_behavior: decision.prorationBehavior,
           payment_behavior: "error_if_incomplete",
-          ...(intervalChange ? {} : { billing_cycle_anchor: "unchanged" as const }),
+          ...(enEssai
+            ? { trial_end: "now" as const }
+            : intervalChange
+              ? {}
+              : { billing_cycle_anchor: "unchanged" as const }),
           cancel_at_period_end: false,
+
           metadata: {
             prestataire_id: prestataire.id,
             user_id: userId,
@@ -276,12 +283,8 @@ Deno.serve(async (req) => {
     }
 
     // 3. Aucun abonnement actif → nouveau Checkout (1re souscription)
-    const finEssai = abo?.fin_essai_le ? new Date(abo.fin_essai_le) : null;
-    const nowSec = Math.floor(Date.now() / 1000);
-    const trialEndSec = finEssai && finEssai.getTime() > Date.now()
-      ? Math.floor(finEssai.getTime() / 1000)
-      : null;
-
+    // L'essai gratuit prend fin à la souscription : aucun trial_end n'est transmis,
+    // la facturation démarre immédiatement.
     const origin = req.headers.get("origin") ?? Deno.env.get("PUBLIC_SITE_URL") ?? "";
 
     const session = await stripe.checkout.sessions.create({
@@ -290,7 +293,7 @@ Deno.serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       payment_method_collection: "always",
       subscription_data: {
-        ...(trialEndSec && trialEndSec > nowSec ? { trial_end: trialEndSec } : {}),
+
         metadata: {
           prestataire_id: prestataire.id,
           user_id: userId,

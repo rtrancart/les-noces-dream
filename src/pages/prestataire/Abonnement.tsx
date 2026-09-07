@@ -286,9 +286,10 @@ export default function PrestataireAbonnement() {
     const statut = searchParams.get("statut");
     if (statut === "succes") {
       toast({
-        title: "Abonnement enregistré",
-        description: "Votre carte a été enregistrée. La facturation démarrera à la fin de votre période d'essai.",
+        title: "Abonnement activé",
+        description: "Votre abonnement démarre dès aujourd'hui.",
       });
+
       nextParams.delete("statut");
       hasChanged = true;
     } else if (statut === "annule") {
@@ -1034,8 +1035,9 @@ function VenteAbonnement({ abo, subscribe, submitting, busy }: {
             Choisissez votre formule
           </h2>
           <p className="font-sans text-sm text-muted-foreground">
-            Tarifs TTC. La carte est enregistrée dès maintenant, le premier prélèvement a lieu à la fin de votre période d'essai.
+            Tarifs TTC. Votre période d'essai prend fin dès la souscription : la facturation démarre aujourd'hui.
           </p>
+
         </div>
 
         <GrilleFormules
@@ -1059,8 +1061,9 @@ function VenteAbonnement({ abo, subscribe, submitting, busy }: {
               Paiement sécurisé par Stripe
             </h4>
             <p className="font-sans text-xs text-muted-foreground">
-              Vos informations de paiement sont protégées et cryptées. Aucun débit pendant la période d'essai.
+              Vos informations de paiement sont protégées et cryptées. Le premier prélèvement a lieu à la souscription.
             </p>
+
           </div>
         </div>
       </div>
@@ -1080,7 +1083,7 @@ function StatusBanner({ abo }: { abo: Abonnement | null }) {
     if (enEssai) {
       color = "blue";
       titre = "Période d'essai en cours";
-      sous = `Fin de l'essai le ${formatDate(abo.fin_essai_le)}. Souscrivez dès maintenant pour éviter toute interruption.`;
+      sous = `Fin de l'essai le ${formatDate(abo.fin_essai_le)}. En souscrivant maintenant, votre essai prend fin immédiatement et la facturation démarre aujourd'hui.`;
     }
   }
 
