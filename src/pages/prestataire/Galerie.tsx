@@ -77,8 +77,21 @@ export default function PrestataireGalerie() {
     return all;
   }, [galerieUrls, photoMain]);
 
+  // Limite de 10 photos hors Premium (également garantie en base)
+  const limiteAtteinte = !estPremium && photos.length >= MAX_PHOTOS_STANDARD;
+  const enTrop = !estPremium ? Math.max(0, photos.length - MAX_PHOTOS_STANDARD) : 0;
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!prestataire || !e.target.files?.length) return;
+
+    if (!estPremium && photos.length + e.target.files.length > MAX_PHOTOS_STANDARD) {
+      toast.error(
+        `Vous pouvez publier ${MAX_PHOTOS_STANDARD} photos avec la formule Standard. Passez en Premium pour en ajouter davantage.`,
+      );
+      e.target.value = "";
+      return;
+    }
+
     setUploading(true);
 
     const files = Array.from(e.target.files);
