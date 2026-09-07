@@ -25,6 +25,8 @@ import FicheAvis from "@/components/fiche/FicheAvis";
 import FicheDevisDialog from "@/components/fiche/FicheDevisDialog";
 import FicheDevisSidebar from "@/components/fiche/FicheDevisSidebar";
 import FicheCarte from "@/components/fiche/FicheCarte";
+import FicheVideos from "@/components/fiche/FicheVideos";
+import FicheReseauxSociaux from "@/components/fiche/FicheReseauxSociaux";
 import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
 import { getCondensedZoneNames } from "@/lib/zonesIntervention";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
