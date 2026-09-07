@@ -20,17 +20,20 @@ Test unitaire des 16 combinaisons (Vitest, fichier `supabase/functions/_shared/s
 ## Étape 2 — Webhook Stripe
 `stripe-webhook/index.ts` : suppression de la correspondance en dur et de `planFromPriceId`, import du module partagé. À chaque synchronisation d'abonnement, l'identifiant de prix de la souscription donne formule + périodicité, qui sont écrites dans les nouvelles colonnes, plus l'ancienne colonne `plan` (double écriture transitoire). Les flux impayés, pauses et moyens de paiement restent strictement inchangés.
 
-**Décision sur l'ancienne colonne `plan`** : ajout de deux valeurs manquantes à la liste autorisée, `standard_annuel` et `premium_annuel`, via une migration de base. C'est plus propre que de réutiliser `annuel`, qui ne dit pas la formule. La valeur `annuel` reste acceptée pour l'historique. Correspondance retenue : standard/mensuel → `standard_mensuel`, standard/annuel → `standard_annuel`, premium/mensuel → `premium_mensuel`, premium/annuel → `premium_annuel`.
+**Décision sur l'ancienne colonne `plan`** : ajout de deux valeurs manquantes à la liste autorisée, `standard_annuel` et `premium_annuel`, via une migration de base. C'est plus propre que de réutiliser `annuel`, qui ne dit pas la formule. Aucune valeur existante n'est retirée : `essai`, `mensuel` et `annuel` restent acceptées pour l'historique et seront traitées dans un lot ultérieur. Correspondance retenue : standard/mensuel → `standard_mensuel`, standard/annuel → `standard_annuel`, premium/mensuel → `premium_mensuel`, premium/annuel → `premium_annuel`.
 
 ## Étape 3 — Création de checkout et changement de formule
 `stripe-create-checkout/index.ts` : l'entrée devient deux paramètres, formule et périodicité (l'ancien paramètre unique reste accepté un temps pour ne rien casser). Suppression des rangs 1/2/3.
 - Aucun abonnement en cours : session Checkout classique sur le prix résolu.
 - Abonnement en cours : décision par `computeChangeType`. Immédiat → mise à jour de la souscription avec facturation de la proration et `error_if_incomplete`. Programmé → planification Stripe en fin de période, avec écriture de `plan_pending`, `plan_pending_le` et de l'identifiant de planification.
-- Impayé en cours : refus avec message clair (comportement actuel conservé).
+- Impayé en cours : refus uniquement pour les changements qui engagent un nouveau paiement (passage immédiat de formule ou de périodicité), avec message clair. Les changements programmés en fin de période et surtout l'annulation d'un changement déjà programmé restent autorisés pendant un impayé.
 - Reclic sur la formule courante alors qu'un changement est programmé : annulation de ce changement (logique existante adaptée à la nouvelle matrice).
 
+## Point de contrôle entre l'étape 3 et l'étape 4
+Validation manuelle en environnement de test des six scénarios (deux souscriptions neuves, deux passages immédiats, deux bascules programmées) **avant** toute suppression. Si un scénario échoue, correction dans l'étape 3 et nouvelle validation avant de continuer.
+
 ## Étape 4 — Suppression du simulateur
-Suppression complète de `supabase/functions/stripe-webhook-simulate` (déployé sans authentification) et vérification qu'aucune référence ne subsiste dans le code.
+Une fois les six scénarios validés : suppression complète de `supabase/functions/stripe-webhook-simulate` (déployé sans authentification) et vérification qu'aucune référence ne subsiste dans le code.
 
 ## Étape 5 — Espace pro (appel uniquement)
 `src/pages/prestataire/Abonnement.tsx` : lecture des colonnes formule et périodicité en plus de l'ancienne, priorité aux nouvelles pour le libellé, et envoi des deux paramètres lors d'un changement. Aucun changement visuel, la grille à quatre formules reste pour un lot ultérieur.
