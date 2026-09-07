@@ -3,6 +3,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@17";
 import { syncStripeInvoiceToPennylane } from "../_shared/pennylane-sync.ts";
+import {
+  type Formule,
+  legacyPlanValue,
+  type Periodicite,
+  priceIdToPlan,
+} from "../_shared/stripe-config.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2024-11-20.acacia",
@@ -14,12 +20,6 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
-type Formule = "standard" | "premium" | "annuel";
-const PLAN_BY_FORMULE: Record<Formule, string> = {
-  standard: "standard_mensuel",
-  premium: "premium_mensuel",
-  annuel: "annuel",
-};
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
