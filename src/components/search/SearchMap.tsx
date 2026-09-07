@@ -21,7 +21,7 @@ const defaultIcon = L.divIcon({
 
 const premiumIcon = L.divIcon({
   className: "",
-  html: `<div style="width:28px;height:28px;background:hsl(var(--primary));border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;"><div style="width:8px;height:8px;background:white;border-radius:50%;"></div></div>`,
+  html: `<div style="width:28px;height:28px;background:hsl(var(--or-riche));border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;"><div style="width:8px;height:8px;background:white;border-radius:50%;"></div></div>`,
   iconSize: [28, 28],
   iconAnchor: [14, 14],
 });
@@ -133,7 +133,7 @@ export default function SearchMap({ providers, hoveredId, onHover }: SearchMapPr
             <span className="font-sans text-xs text-foreground">Standard</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="relative w-3.5 h-3.5 bg-primary rounded-full border-2 border-card shadow-sm">
+            <div className="relative w-3.5 h-3.5 bg-or-riche rounded-full border-2 border-card shadow-sm">
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-1.5 h-1.5 bg-card rounded-full" />
               </div>
