@@ -108,7 +108,6 @@ const COMPARATIF: { titre: string; lignes: { label: string; standard: Cell; prem
       { label: "Fiche prestataire complète", standard: true, premium: true },
       { label: "Présence dans la recherche et les pages régions", standard: true, premium: true },
       { label: "Badge Premium sur votre fiche et vos résultats", standard: false, premium: true },
-      { label: "Position prioritaire dans les résultats", standard: false, premium: true },
       { label: "Mise en avant dans les coups de cœur régionaux", standard: false, premium: true },
     ],
   },
