@@ -3,7 +3,7 @@
 Périmètre : uniquement la mécanique d'abonnement (configuration, webhook, création de checkout, appel depuis l'espace pro). Aucune nouvelle fonctionnalité Premium, aucune nouvelle grille tarifaire visible, aucune limitation, aucun prix en environnement réel.
 
 ## Préalables à fournir (secrets)
-Avant l'étape 1, cinq valeurs sont nécessaires : le mode (`test`) et les quatre identifiants de prix créés dans Stripe en test — Standard mensuel 89 €, Standard annuel 948 €, Premium mensuel 149 €, Premium annuel 1 609 €. Je les demanderai via la fenêtre de saisie sécurisée dès l'approbation.
+Avant l'étape 1, cinq valeurs sont nécessaires : le mode (`test`) et les quatre identifiants de prix créés dans Stripe en test — Standard mensuel 89 €, Standard annuel 948 €, Premium mensuel 149 €, Premium annuel 1 590 €. Je les demanderai via la fenêtre de saisie sécurisée dès l'approbation.
 
 ## Étape 1 — Module de configuration partagé
 Création de `supabase/functions/_shared/stripe-config.ts` : lecture du mode, table des quatre identifiants de prix (suffixe `_TEST` ou `_LIVE`), et trois utilitaires — `priceIdToPlan`, `planToPriceId`, `computeChangeType`.
