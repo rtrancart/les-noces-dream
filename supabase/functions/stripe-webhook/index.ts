@@ -3,6 +3,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@17";
 import { syncStripeInvoiceToPennylane } from "../_shared/pennylane-sync.ts";
+import {
+  type Formule,
+  legacyPlanValue,
+  type Periodicite,
+  priceIdToPlan,
+} from "../_shared/stripe-config.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2024-11-20.acacia",
@@ -14,12 +20,6 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
-type Formule = "standard" | "premium" | "annuel";
-const PLAN_BY_FORMULE: Record<Formule, string> = {
-  standard: "standard_mensuel",
-  premium: "premium_mensuel",
-  annuel: "annuel",
-};
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
@@ -391,16 +391,20 @@ async function syncSubscription(sub: Stripe.Subscription) {
   const prestataireId = await resolvePrestataireId(sub);
   if (!prestataireId) return;
 
-  const formule = (sub.metadata?.formule as Formule | undefined);
-  const planFromMeta = formule ? PLAN_BY_FORMULE[formule] : null;
   const item = sub.items.data[0];
   const montantCents = item?.price?.unit_amount ?? null;
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
-  // Plan actuel dérivé du price si les metadata ne l'indiquent pas
+  // Source de vérité : le price_id de la souscription. Les metadata ne servent
+  // que de secours si le price n'est pas reconnu (ancien price, mode différent).
   const currentPriceId = item?.price?.id ?? null;
-  const planFromPrice = planFromPriceId(currentPriceId);
-  const plan = planFromMeta ?? planFromPrice;
+  const resolved = priceIdToPlan(currentPriceId);
+  const metaFormule = sub.metadata?.formule === "premium" ? "premium" : null;
+  const metaPeriodicite = sub.metadata?.periodicite === "annuel" ? "annuel" : null;
+
+  const formule: Formule | null = resolved?.formule ?? metaFormule;
+  const periodicite: Periodicite | null = resolved?.periodicite ?? metaPeriodicite;
+  const plan = formule && periodicite ? legacyPlanValue(formule, periodicite) : null;
 
   let statut: string = "actif";
   if (sub.cancel_at_period_end) statut = "resilie";
@@ -420,7 +424,9 @@ async function syncSubscription(sub: Stripe.Subscription) {
     debut_le: new Date(sub.start_date * 1000).toISOString(),
     fin_essai_le: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
   };
-  if (plan) patch.plan = plan;
+  if (formule) patch.formule = formule;
+  if (periodicite) patch.periodicite = periodicite;
+  if (plan) patch.plan = plan; // double écriture transitoire (colonne legacy)
   if (montantCents != null) patch.montant_cents = montantCents;
   if (sub.cancel_at_period_end) {
     patch.resilie_le = new Date().toISOString();
@@ -451,18 +457,13 @@ async function syncSubscription(sub: Stripe.Subscription) {
     await supabase.from("abonnements").insert({
       prestataire_id: prestataireId,
       plan: plan ?? "mensuel",
+      formule: formule ?? "standard",
+      periodicite: periodicite ?? "mensuel",
       ...patch,
     });
   }
 }
 
-function planFromPriceId(priceId: string | null): string | null {
-  if (!priceId) return null;
-  if (priceId === Deno.env.get("STRIPE_PRICE_STANDARD")) return "standard_mensuel";
-  if (priceId === Deno.env.get("STRIPE_PRICE_PREMIUM")) return "premium_mensuel";
-  if (priceId === Deno.env.get("STRIPE_PRICE_ANNUEL")) return "annuel";
-  return null;
-}
 
 // -- Emails d'impayé --------------------------------------------------------
 

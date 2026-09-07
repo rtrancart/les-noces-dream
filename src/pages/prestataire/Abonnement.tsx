@@ -12,6 +12,8 @@ type Formule = "standard" | "premium" | "annuel";
 interface Abonnement {
   id: string;
   plan: string;
+  formule: string | null;
+  periodicite: string | null;
   statut: string;
   montant_cents: number | null;
   fin_essai_le: string | null;
@@ -46,6 +48,8 @@ const FORMULES: Record<Formule, { label: string; prix: string; periode: string; 
 const PLAN_TO_FORMULE: Record<string, Formule> = {
   standard_mensuel: "standard",
   premium_mensuel: "premium",
+  standard_annuel: "annuel",
+  premium_annuel: "premium",
   annuel: "annuel",
 };
 function planToFormule(plan: string | null | undefined): Formule | null {
@@ -54,6 +58,21 @@ function planToFormule(plan: string | null | undefined): Formule | null {
   if (plan in FORMULES) return plan as Formule;
   return null;
 }
+
+/** Paramètres envoyés au back pour chaque carte de la grille actuelle. */
+const CIBLE_PAR_FORMULE: Record<Formule, { formule: "standard" | "premium"; periodicite: "mensuel" | "annuel" }> = {
+  standard: { formule: "standard", periodicite: "mensuel" },
+  premium: { formule: "premium", periodicite: "mensuel" },
+  annuel: { formule: "standard", periodicite: "annuel" },
+};
+
+/** Clé UI dérivée en priorité des nouvelles colonnes formule + periodicite. */
+function aboFormuleKey(abo: Abonnement): Formule | null {
+  if (abo.formule === "premium") return "premium";
+  if (abo.formule === "standard") return abo.periodicite === "annuel" ? "annuel" : "standard";
+  return planToFormule(abo.plan);
+}
+
 
 
 
@@ -164,7 +183,7 @@ export default function PrestataireAbonnement() {
     if (!prestataire?.id) return null;
     const { data } = await supabase
       .from("abonnements")
-      .select("id, plan, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_customer_id, stripe_payment_method_id, carte_brand, carte_last4, plan_pending, plan_pending_le, stripe_schedule_id")
+      .select("id, plan, formule, periodicite, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_customer_id, stripe_payment_method_id, carte_brand, carte_last4, plan_pending, plan_pending_le, stripe_schedule_id")
       .eq("prestataire_id", prestataire.id)
       .maybeSingle();
     const next = (data as Abonnement | null) ?? null;
@@ -215,7 +234,9 @@ export default function PrestataireAbonnement() {
     setSubmitting(formule);
     setManualRedirect(null);
     try {
-      const { data, error } = await supabase.functions.invoke("stripe-create-checkout", { body: { formule } });
+      const { data, error } = await supabase.functions.invoke("stripe-create-checkout", {
+        body: CIBLE_PAR_FORMULE[formule],
+      });
       if (error) throw error;
 
       if (data?.error === "unpaid_subscription") {
@@ -495,7 +516,7 @@ function GestionAbonnement({
 }) {
   const { prestataire } = useSharedPrestataire();
   const etat = deriveEtat(abo);
-  const formuleKey = planToFormule(abo.plan);
+  const formuleKey = aboFormuleKey(abo);
   const formule = formuleKey ? FORMULES[formuleKey] : null;
   const isEchec = etat.key === "echec";
 
