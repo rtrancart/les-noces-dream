@@ -1,52 +1,31 @@
-# Offre de lancement : souscription immédiate et tarif remisé 12 mois
+# Deux ajustements dans l'administration
 
-Objectif : l'abonnement démarre et est facturé dès la souscription (plus d'attente de la fin de l'essai), et tout prestataire qui souscrit pendant sa période d'essai, jusqu'au 31 décembre, bénéficie d'un tarif remisé pendant 12 mois, puis bascule automatiquement au tarif normal.
+## Réponse à votre question sur la carte
 
-## Décisions retenues
-- Facturation immédiate à la souscription, dans tous les cas. L'essai restant est abandonné au moment où le prestataire souscrit.
-- Remise sur les quatre formules (Standard et Premium, mensuel et annuel). Standard mensuel : 49 € au lieu de 89 €.
-- Durée de la remise : 12 mois. Ensuite, passage automatique au tarif normal sans action du prestataire.
-- Éligibilité : être encore en période d'essai au moment de la souscription, et souscrire au plus tard le 31 décembre.
+Non, la carte ne compte pas seulement les prestataires actifs. Aujourd'hui elle prend **tous les statuts sauf « archivé » et « brouillon »** (donc en attente, à corriger, pré-inscrit, à compléter, validée, suspendu, actif, résilié). Le bouton « Publiés » filtre ensuite sur les seuls actifs, tandis que « Parc » affiche cet ensemble.
 
-## À fournir avant la mise en œuvre
-1. Les trois autres montants remisés : Standard annuel, Premium mensuel, Premium annuel.
-2. Quatre nouveaux prix créés dans Stripe (en test) pour ces montants — sur le même produit que les prix actuels, c'est le plus simple. Je demanderai les quatre identifiants via la fenêtre de saisie sécurisée.
+## 1. Recherche de ville dans la fenêtre de création d'un prestataire
 
-## Comment la remise sur 12 mois est appliquée
-Plutôt qu'un code promo, la souscription remisée est créée comme un abonnement en deux temps côté Stripe :
-- phase 1 : le prix remisé, pendant 12 mois (12 échéances en mensuel, 1 échéance en annuel) ;
-- phase 2 : le prix normal de la même formule, en continu.
+Le champ « Ville » de l'onglet Coordonnées est aujourd'hui une simple zone de texte libre : fautes de frappe, doublons et villes inexistantes possibles.
 
-Avantage : les montants sont exacts, la bascule est automatique et visible d'avance dans Stripe, et cela réutilise le mécanisme de planification déjà en place pour les changements de formule.
+Il devient un champ de recherche avec suggestions, sur le même service officiel des adresses françaises déjà utilisé ailleurs dans le site (recherche limitée aux communes) :
+- on tape les premières lettres, une liste de communes s'affiche avec le code postal et le département ;
+- en sélectionnant une commune, la ville, le code postal et la région se remplissent automatiquement, ainsi que les coordonnées géographiques (utile pour la carte de recherche) ;
+- la saisie libre reste possible si aucune suggestion ne convient.
 
-## Étapes
+Le même champ est utilisé en création et en modification, pour rester cohérent.
 
-### 1. Configuration
-Ajout dans `supabase/functions/_shared/stripe-config.ts` des quatre prix remisés (suffixes `_TEST` / `_LIVE`), d'une fonction qui donne le prix promo d'une formule, et de la date de fin de l'offre (31 décembre).
+Remarque : Google Maps est disponible sur le projet, mais pour des communes françaises le service officiel des adresses est plus précis, gratuit et déjà en place ; je pars donc là-dessus, sauf demande contraire.
 
-### 2. Souscription
-Dans `stripe-create-checkout` :
-- suppression de l'envoi de `trial_end` : la première facture est émise le jour de la souscription ;
-- calcul de l'éligibilité promo côté serveur uniquement (essai en cours + date du jour avant la fin de l'offre) ;
-- si éligible, la session Checkout crée un abonnement planifié : 12 mois au prix remisé puis retour au prix normal ; sinon, comportement actuel au prix normal.
+## 2. Ajouter les brouillons à la carte de France
 
-### 3. Enregistrement en base
-Le webhook Stripe reconnaît aussi les prix remisés comme appartenant à leur formule et périodicité, pour que le compte affiche bien « Standard mensuel » et le montant réellement payé. Ajout de deux informations sur l'abonnement : tarif promo en cours et date de fin de la remise.
-
-### 4. Page Abonnement
-- Affichage du tarif remisé barré/mis en avant sur les quatre cartes tant que le prestataire est éligible, avec la mention « pendant 12 mois, puis tarif normal » et la date limite du 31 décembre.
-- Un bandeau incitatif pendant l'essai : souscrire maintenant pour bénéficier de l'offre.
-- Une fois abonné au tarif remisé : rappel de la date de retour au tarif normal.
-- Précision claire avant confirmation : la souscription met fin à l'essai et déclenche le paiement immédiat.
-
-### 5. Changements de formule pendant la remise
-Un prestataire remisé qui change de formule reçoit le prix remisé de la nouvelle formule pour la durée restante des 12 mois, puis le tarif normal. Les règles actuelles (immédiat facturé vs programmé en fin de période) restent inchangées.
+- Les fiches en brouillon entrent dans le calcul de la carte (elles en sont exclues aujourd'hui).
+- Les fiches archivées restent exclues.
+- Le périmètre « Publiés » continue de n'afficher que les fiches actives : les brouillons n'apparaissent donc que dans le périmètre « Parc ».
+- La légende du périmètre « Parc » est précisée pour indiquer ce qu'il englobe (tous les statuts sauf archivés).
 
 ## Détails techniques
-- Nouveaux secrets : `STRIPE_PRICE_PROMO_{STANDARD|PREMIUM}_{MENSUEL|ANNUEL}_{TEST|LIVE}`.
-- Éligibilité jamais décidée par le navigateur : recalculée dans la fonction serveur avant création de la session.
-- Migration : deux colonnes sur `abonnements` (`promo_active`, `promo_fin_le`), alimentées par le webhook.
-- Suppression du simulateur de webhook restant du lot précédent laissée hors périmètre.
 
-## Hors périmètre
-Aucune nouvelle fonctionnalité Premium, aucune limitation d'accès, aucun passage en environnement réel : tout est validé en test avant bascule.
+- `src/pages/admin/Prestataires.tsx` : remplacement de l'`Input` ville par un nouveau composant `CityAutocomplete` (dérivé de `AddressAutocomplete`, appel `api-adresse.data.gouv.fr` avec `type=municipality`), qui remonte ville, code postal, région (via `zones_reference` / `REGIONS_FR`), latitude et longitude vers `form`.
+- Migration : `admin_stats_zones_categories()` — la clause `statut NOT IN ('archive','brouillon')` devient `statut <> 'archive'`. Aucune autre logique modifiée ; `admin_stats_zones_categories_json()` en hérite automatiquement.
+- `CarteRepartitionPanel.tsx` : aucun changement de logique, seulement le libellé d'aide du périmètre.
