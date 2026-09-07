@@ -13,7 +13,7 @@ Aujourd'hui, quand un prestataire encore en essai souscrit une formule payante, 
 
 1. **Première souscription** : la page de paiement ne reporte plus la fin d'essai. Le paiement est prélevé à la validation.
 2. **Changement de formule** pendant un essai en cours (cas rare, uniquement si une souscription payante existe déjà en essai) : l'essai est clôturé immédiatement et la facturation démarre au moment du changement.
-3. **Cas déjà en cours** : les abonnements déjà créés en essai reporté ne sont pas modifiés automatiquement. Ils resteront en essai jusqu'à leur date prévue, sauf demande explicite de votre part de les basculer un par un.
+3. **Cas déjà en cours** : les abonnements déjà créés en essai reporté doivent être basculés en payant. Leur essai est clôturé immédiatement et la facturation démarre à la bascule.
 4. Le retour d'information de la plateforme de paiement continue de faire foi pour le statut et la date de fin d'essai : rien à changer de ce côté.
 
 ## Détails techniques
