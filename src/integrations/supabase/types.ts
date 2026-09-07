@@ -2078,6 +2078,67 @@ export type Database = {
         }
         Relationships: []
       }
+      sessions_fiche: {
+        Row: {
+          created_at: string
+          duree_seconds: number | null
+          ended_at: string | null
+          id: string
+          prestataire_id: string
+          rebond: boolean | null
+          referrer: string | null
+          session_id: string
+          started_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          duree_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          prestataire_id: string
+          rebond?: boolean | null
+          referrer?: string | null
+          session_id: string
+          started_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          duree_seconds?: number | null
+          ended_at?: string | null
+          id?: string
+          prestataire_id?: string
+          rebond?: boolean | null
+          referrer?: string | null
+          session_id?: string
+          started_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_fiche_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_fiche_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_fiche_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public_all"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signatures_charte: {
         Row: {
           charte_hash: string
@@ -2849,6 +2910,7 @@ export type Database = {
           total_orphelins: number
         }[]
       }
+      purge_sessions_fiche_expirees: { Args: never; Returns: number }
       purger_historique_navigation: { Args: never; Returns: number }
       reactiver_prestataire_paiement: {
         Args: { p_prestataire_id: string }
