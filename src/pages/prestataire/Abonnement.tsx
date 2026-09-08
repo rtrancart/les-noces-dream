@@ -348,7 +348,7 @@ export default function PrestataireAbonnement() {
     setManualRedirect(null);
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-checkout", {
-        body: { formule: plan.formule, periodicite: plan.periodicite },
+        body: { formule: plan.formule, periodicite: plan.periodicite, use_promo: promoEligible },
       });
       if (error) throw error;
 
