@@ -28,7 +28,9 @@ function BooleanRow({ field }: { field: Field }) {
         <div
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
-            isYes ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+            isYes
+              ? "border border-primary/40 bg-primary/20 text-primary"
+              : "bg-muted text-muted-foreground",
           )}
         >
           {isYes ? (
@@ -62,18 +64,34 @@ function SelectRow({ field }: { field: Field }) {
 function MultiRow({ field }: { field: Field }) {
   const items = Array.isArray(field.value) ? (field.value as string[]) : [];
   if (items.length === 0) return null;
+  const selected = new Set(items);
+  const allOptions =
+    field.options && field.options.length > 0
+      ? field.options
+      : items;
   return (
     <div className="py-2.5">
       <p className="font-sans text-[13px] text-muted-foreground mb-2">{field.label}</p>
       <div className="flex flex-wrap gap-2">
-        {items.map((item) => (
-          <span
-            key={item}
-            className="rounded-full bg-secondary/60 px-3 py-1.5 font-sans text-xs text-foreground"
-          >
-            {item}
-          </span>
-        ))}
+        {allOptions.map((item) => {
+          const isChecked = selected.has(item);
+          return (
+            <span
+              key={item}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-sans text-xs",
+                isChecked
+                  ? "border border-primary/40 bg-primary/15 font-medium text-foreground"
+                  : "bg-muted/60 text-muted-foreground/70",
+              )}
+            >
+              {isChecked && (
+                <Check className="h-3 w-3 text-primary" strokeWidth={2.5} />
+              )}
+              {item}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
@@ -192,7 +210,7 @@ function MobileAccordion({ groups }: { groups: FieldGroup[] }) {
 
 function DesktopSections({ groups }: { groups: FieldGroup[] }) {
   return (
-    <div className="hidden md:grid md:grid-cols-2 md:gap-4">
+    <div className="hidden md:flex md:flex-col md:gap-4">
       {groups.map((group) => (
         <div
           key={group.id}

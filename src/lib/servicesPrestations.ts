@@ -8,6 +8,7 @@ export interface Field {
   label: string;
   type: FieldType;
   value: boolean | string | string[] | null;
+  options?: string[];
 }
 
 export interface FieldGroup {
@@ -23,6 +24,7 @@ export interface SourceChamp {
   cle: string;
   type_champ: string;
   groupe?: string | null;
+  options_liste?: string[] | null;
 }
 
 const GROUP_ORGANISATION = "Profil & prestation";
@@ -152,6 +154,9 @@ export function buildServicesGroups(
       type: toFieldType(ch.type_champ),
       value: toFieldValue(ch.type_champ, raw),
     };
+    if (ch.type_champ === "multi_choix" && Array.isArray(ch.options_liste)) {
+      field.options = ch.options_liste.map(String);
+    }
 
     const bucket = bucketFor(ch);
     buckets[bucket].push(field);

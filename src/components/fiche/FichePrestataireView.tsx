@@ -101,6 +101,7 @@ export type ChampCategorie = {
   cle: string;
   type_champ: string;
   groupe?: string | null;
+  options_liste?: string[] | null;
 };
 
 function formatPrice(prix: number | null) {
