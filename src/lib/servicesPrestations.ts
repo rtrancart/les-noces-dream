@@ -8,6 +8,7 @@ export interface Field {
   label: string;
   type: FieldType;
   value: boolean | string | string[] | null;
+  options?: string[];
 }
 
 export interface FieldGroup {
@@ -23,6 +24,7 @@ export interface SourceChamp {
   cle: string;
   type_champ: string;
   groupe?: string | null;
+  options_liste?: string[] | null;
 }
 
 const GROUP_ORGANISATION = "Profil & prestation";
