@@ -136,6 +136,7 @@ export default function PrestataireDashboard() {
 
   return (
     <div className="space-y-6">
+      <PromoLancementBanner prestataireId={prestataire.id} />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="font-serif text-2xl md:text-3xl text-foreground">
