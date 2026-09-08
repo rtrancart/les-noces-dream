@@ -60,7 +60,7 @@ function normalize(str: string): string {
 }
 
 function looksLikeLivraison(ch: SourceChamp): boolean {
-  const haystack = normalize(`${ch.cle} ${ch.label} ${ch.groupe ?? ""}`);
+  const haystack = normalize(`${ch.cle} ${ch.label}`);
   return LIVRAISON_KEYWORDS.some((kw) => haystack.includes(kw));
 }
 
