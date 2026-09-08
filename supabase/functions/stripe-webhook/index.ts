@@ -7,7 +7,9 @@ import {
   type Formule,
   legacyPlanValue,
   type Periodicite,
+  planToPriceId,
   priceIdToPlan,
+  PROMO_DUREE_MOIS,
 } from "../_shared/stripe-config.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
