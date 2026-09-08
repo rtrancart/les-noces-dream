@@ -556,6 +556,7 @@ export default function PrestataireAbonnement() {
           cancelScheduledChange={cancelScheduledChange}
           cancellingSchedule={cancellingSchedule}
           busy={syncing}
+          promo={promoTarifsEnCours}
         />
       ) : (
         <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} busy={syncing} promo={promo} />
