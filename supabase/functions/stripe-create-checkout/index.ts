@@ -233,6 +233,21 @@ Deno.serve(async (req) => {
           .eq("id", abo.id);
       }
 
+      // Le schedule promo est libéré avant tout changement : il sera recréé
+      // avec la durée restante de l'offre de lancement.
+      if (abo?.stripe_promo_schedule_id) {
+        try {
+          await stripe.subscriptionSchedules.release(abo.stripe_promo_schedule_id);
+        } catch (e) {
+          const code = (e as { code?: string })?.code;
+          if (code !== "resource_missing") console.warn("release promo schedule failed", e);
+        }
+        await supabaseAdmin
+          .from("abonnements")
+          .update({ stripe_promo_schedule_id: null })
+          .eq("id", abo.id);
+      }
+
       if (decision.immediate) {
         // Stripe refuse billing_cycle_anchor:"unchanged" quand l'intervalle change
         // (mensuel <-> annuel) : dans ce cas le cycle repart à la date du changement.
