@@ -255,6 +255,8 @@ export default function PrestataireAbonnement() {
   const [showChange, setShowChange] = useState(false);
   const [cancellingSchedule, setCancellingSchedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { promo } = usePromoLancement(prestataire?.id);
+  const promoEligible = promo?.eligible === true;
 
   const fetchAbo = useCallback(async () => {
     if (!prestataire?.id) return null;
