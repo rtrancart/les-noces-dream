@@ -144,7 +144,7 @@ function GroupHeader({
       <span className="flex-1 font-sans text-base font-medium text-foreground">
         {group.title}
       </span>
-      {group.summary && (
+      {group.summary && group.id !== "prestation" && (
         <span className="hidden max-w-[45%] truncate font-sans text-xs text-muted-foreground sm:block">
           {group.summary}
         </span>
@@ -191,7 +191,7 @@ function MobileAccordion({ groups }: { groups: FieldGroup[] }) {
                   {group.title}
                 </span>
               </div>
-              {group.summary && (
+              {group.summary && group.id !== "prestation" && (
                 <span className="mr-3 hidden max-w-[40%] truncate font-sans text-xs text-muted-foreground sm:inline">
                   {group.summary}
                 </span>
@@ -240,20 +240,6 @@ export default function ServicesPrestations({
 
       <MobileAccordion groups={groups} />
       <DesktopSections groups={groups} />
-
-      {!previewMode && onDevis && (
-        <div className="space-y-2 pt-2">
-          <Button
-            onClick={onDevis}
-            className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            Demander un devis
-          </Button>
-          <p className="text-center font-sans text-[11px] text-muted-foreground">
-            Réponse habituelle sous 24 h
-          </p>
-        </div>
-      )}
     </div>
   );
 }
