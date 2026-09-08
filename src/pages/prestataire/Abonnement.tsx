@@ -1042,16 +1042,19 @@ function ActionButton({ onClick, icon, label, highlight, disabled, loading }: { 
 /* ============================================================
    MODE VENTE — aucun abonnement Stripe
    ============================================================ */
-function VenteAbonnement({ abo, subscribe, submitting, busy }: {
+function VenteAbonnement({ abo, subscribe, submitting, busy, promo }: {
   abo: Abonnement | null;
   subscribe: (k: PlanKey) => void;
   submitting: PlanKey | null;
   busy: boolean;
+  promo?: PromoEligibilite | null;
 }) {
   const [periodicite, setPeriodicite] = useState<Periodicite>("mensuel");
+  const promoActive = promo?.eligible === true ? promo : null;
   return (
     <div className="space-y-8">
       <StatusBanner abo={abo} />
+      {promoActive && <PromoOffreBanner promo={promoActive} />}
       <div className="space-y-6">
         <div className="text-center">
           <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-1">
@@ -1071,6 +1074,7 @@ function VenteAbonnement({ abo, subscribe, submitting, busy }: {
           submitting={submitting}
           disabled={submitting !== null || busy}
           subscribe={subscribe}
+          promo={promoActive}
         />
 
         <ComparatifFormules />
