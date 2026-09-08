@@ -35,11 +35,14 @@ export type Database = {
           plan_pending_le: string | null
           premier_echec_le: string | null
           prestataire_id: string
+          promo_active: boolean
+          promo_fin_le: string | null
           rappel_impaye_envoye_le: string | null
           resilie_le: string | null
           statut: Database["public"]["Enums"]["statut_abonnement"]
           stripe_customer_id: string | null
           stripe_payment_method_id: string | null
+          stripe_promo_schedule_id: string | null
           stripe_schedule_id: string | null
           stripe_subscription_id: string | null
           suspendu_pour_impaye_le: string | null
@@ -65,11 +68,14 @@ export type Database = {
           plan_pending_le?: string | null
           premier_echec_le?: string | null
           prestataire_id: string
+          promo_active?: boolean
+          promo_fin_le?: string | null
           rappel_impaye_envoye_le?: string | null
           resilie_le?: string | null
           statut?: Database["public"]["Enums"]["statut_abonnement"]
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
+          stripe_promo_schedule_id?: string | null
           stripe_schedule_id?: string | null
           stripe_subscription_id?: string | null
           suspendu_pour_impaye_le?: string | null
@@ -95,11 +101,14 @@ export type Database = {
           plan_pending_le?: string | null
           premier_echec_le?: string | null
           prestataire_id?: string
+          promo_active?: boolean
+          promo_fin_le?: string | null
           rappel_impaye_envoye_le?: string | null
           resilie_le?: string | null
           statut?: Database["public"]["Enums"]["statut_abonnement"]
           stripe_customer_id?: string | null
           stripe_payment_method_id?: string | null
+          stripe_promo_schedule_id?: string | null
           stripe_schedule_id?: string | null
           stripe_subscription_id?: string | null
           suspendu_pour_impaye_le?: string | null
@@ -2870,6 +2879,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_promo_eligibility: {
+        Args: { p_prestataire_id: string }
+        Returns: Json
       }
       has_role: {
         Args: {
