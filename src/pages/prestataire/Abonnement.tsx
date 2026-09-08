@@ -692,7 +692,7 @@ function ComparatifFormules() {
    GRILLE 2 FORMULES + SÉLECTEUR
    ============================================================ */
 function GrilleFormules({
-  periodicite, setPeriodicite, currentKey, pendingKey, submitting, disabled, subscribe, compact,
+  periodicite, setPeriodicite, currentKey, pendingKey, submitting, disabled, subscribe, compact, promo,
 }: {
   periodicite: Periodicite;
   setPeriodicite: (p: Periodicite) => void;
@@ -702,6 +702,7 @@ function GrilleFormules({
   disabled: boolean;
   subscribe: (k: PlanKey) => void;
   compact?: boolean;
+  promo?: PromoEligibilite | null;
 }) {
   const keys: PlanKey[] = [planKeyOf("standard", periodicite), planKeyOf("premium", periodicite)];
   return (
@@ -718,6 +719,7 @@ function GrilleFormules({
             disabled={disabled}
             onClick={() => subscribe(k)}
             compact={compact}
+            prixPromo={promo?.eligible ? promo.prix_promo?.[k] : undefined}
           />
         ))}
       </div>
@@ -725,7 +727,41 @@ function GrilleFormules({
   );
 }
 
-function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, compact }: {
+/* ---------- Bandeaux de l'offre de lancement ---------- */
+function PromoOffreBanner({ promo }: { promo: PromoEligibilite }) {
+  const jours = promo.jours_restants ?? 0;
+  return (
+    <div className="rounded-lg border-l-4 border-primary bg-primary/10 p-5">
+      <div className="flex items-start gap-3">
+        <Clock className="mt-0.5 shrink-0 text-primary" size={20} />
+        <div>
+          <h3 className="mb-1 font-serif text-lg text-foreground">
+            Offre de lancement — jusqu'à -45 % pendant 1 an
+          </h3>
+          <p className="font-sans text-sm text-muted-foreground">
+            {jours > 0
+              ? `Il vous reste ${jours} jour${jours > 1 ? "s" : ""} pour en profiter (jusqu'au ${formatDateFr(promo.date_limite)}).`
+              : `Dernier jour pour en profiter (jusqu'au ${formatDateFr(promo.date_limite)}).`}
+            {" "}Le tarif remisé s'applique pendant 12 mois, puis votre abonnement revient automatiquement au tarif normal.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PromoActiveBanner({ finLe }: { finLe: string }) {
+  return (
+    <div className="mb-5 rounded-lg border border-primary/30 bg-primary/5 p-4">
+      <p className="font-sans text-sm text-foreground">
+        Vous bénéficiez de l'offre de lancement jusqu'au {formatDateFr(finLe)}.
+        Au-delà, votre abonnement passe automatiquement au tarif normal.
+      </p>
+    </div>
+  );
+}
+
+function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, compact, prixPromo }: {
   plan: PlanInfo;
   isCurrent: boolean;
   isPending: boolean;
@@ -733,6 +769,7 @@ function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, comp
   disabled: boolean;
   onClick: () => void;
   compact?: boolean;
+  prixPromo?: number;
 }) {
   const isPremium = plan.formule === "premium";
   return (
