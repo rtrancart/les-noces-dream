@@ -854,8 +854,9 @@ function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, comp
    ============================================================ */
 function GestionAbonnement({
   abo, showChange, setShowChange, subscribe, submitting, openStripePortal,
-  portalDisabled, openingPortal, cancelScheduledChange, cancellingSchedule, busy,
+  portalDisabled, openingPortal, cancelScheduledChange, cancellingSchedule, busy, promo,
 }: {
+  promo?: PromoEligibilite | null;
   abo: Abonnement;
   showChange: boolean;
   setShowChange: (v: boolean) => void;
