@@ -275,7 +275,19 @@ Deno.serve(async (req) => {
             periodicite,
           },
         });
-        return json({ changed: true, mode: decision.type });
+        // Promo en cours : on repose un schedule qui bascule au tarif normal
+        // à la date de fin d'offre initiale (jamais prolongée).
+        if (promoApplied && promoEnCours && abo?.id) {
+          await reposerSchedulePromo({
+            subscriptionId: primary.id,
+            pricePromo: priceId,
+            priceNormal: planToPriceId(formule, periodicite),
+            promoFinLe: abo.promo_fin_le as string,
+            aboId: abo.id,
+            prestataireId: prestataire.id,
+          });
+        }
+        return json({ changed: true, mode: decision.type, promo: promoApplied });
       }
 
       // Changement programmé : Subscription Schedule
@@ -283,6 +295,16 @@ Deno.serve(async (req) => {
         from_subscription: primary.id,
       });
       const phaseCurrent = schedule.phases[0];
+      const promoFinTs = promoApplied && promoEnCours && abo?.promo_fin_le
+        ? Math.floor(new Date(abo.promo_fin_le).getTime() / 1000)
+        : null;
+      const phasePromo = promoFinTs && phaseCurrent.end_date && promoFinTs > phaseCurrent.end_date
+        ? [{
+          items: [{ price: priceId, quantity: 1 }],
+          end_date: promoFinTs,
+          proration_behavior: "none" as const,
+        }]
+        : [];
       await stripe.subscriptionSchedules.update(schedule.id, {
         end_behavior: "release",
         phases: [
@@ -292,8 +314,11 @@ Deno.serve(async (req) => {
             end_date: phaseCurrent.end_date,
             proration_behavior: "none",
           },
+          ...phasePromo,
           {
-            items: [{ price: priceId, quantity: 1 }],
+            items: [
+              { price: phasePromo.length ? planToPriceId(formule, periodicite) : priceId, quantity: 1 },
+            ],
             iterations: 1,
             proration_behavior: "none",
             metadata: {
