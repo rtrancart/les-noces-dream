@@ -49,7 +49,10 @@ Deno.serve(async (req) => {
           ? session.subscription
           : session.subscription.id;
         const sub = await stripe.subscriptions.retrieve(subId);
-        await syncSubscription(sub);
+        // Offre de lancement : bascule automatique au tarif normal après 12 mois.
+        await ensurePromoSchedule(sub);
+        const subFinal = await stripe.subscriptions.retrieve(subId);
+        await syncSubscription(subFinal);
         break;
       }
 
