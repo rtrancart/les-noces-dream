@@ -28,7 +28,9 @@ function BooleanRow({ field }: { field: Field }) {
         <div
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
-            isYes ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+            isYes
+              ? "border border-primary/40 bg-primary/20 text-primary"
+              : "bg-muted text-muted-foreground",
           )}
         >
           {isYes ? (
