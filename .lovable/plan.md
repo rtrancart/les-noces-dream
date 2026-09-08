@@ -5,7 +5,7 @@ Direction retenue : **résumé + accordéons**, mobile first, sans bandeau de ch
 ## Ce que verra le visiteur
 
 - Un titre « Services & Prestations ».
-- Une liste de blocs dépliables, le premier ouvert par défaut. Chaque en-tête affiche une pastille ronde avec une icône, le titre du bloc, un aperçu à droite (ex. « 3 inclus · 1 non », « France entière ») et un chevron qui pivote.
+- Sur mobile : une liste de blocs dépliables, le premier ouvert par défaut, avec en-tête à pastille ronde + icône + aperçu + chevron. Sur desktop : les mêmes blocs sont affichés comme des sections toujours ouvertes, sans chevron.
 - À l'intérieur :
   - les cases à cocher deviennent des lignes à pastille : **oui** (pastille dorée claire + coche) et **non** (pastille grise + tiret, texte atténué et mention « Non ») — les « non » sont désormais affichés ;
   - les listes à choix unique deviennent des lignes intitulé / valeur séparées par un filet fin ;
