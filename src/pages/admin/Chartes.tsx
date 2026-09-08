@@ -221,11 +221,11 @@ export default function AdminChartes() {
                   <FilePlus className="h-4 w-4 mr-2" /> Nouvelle version
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-6xl">
+              <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
                   <DialogTitle>Publier une nouvelle version</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+                <div className="space-y-4 overflow-y-auto pr-1">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="numero">Numéro de version</Label>
