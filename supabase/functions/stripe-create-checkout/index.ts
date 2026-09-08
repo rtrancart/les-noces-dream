@@ -14,8 +14,63 @@ import {
   legacyPlanValue,
   type Periodicite,
   planToPriceId,
+  planToPricePromo,
   priceIdToPlan,
 } from "../_shared/stripe-config.ts";
+
+const supabaseAdminGlobal = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
+
+/**
+ * Repose le Subscription Schedule à 2 phases après un changement de formule
+ * pendant l'offre de lancement : le tarif remisé court jusqu'à la date de fin
+ * d'offre initiale (jamais prolongée), puis le tarif normal s'applique.
+ */
+async function reposerSchedulePromo(args: {
+  subscriptionId: string;
+  pricePromo: string;
+  priceNormal: string;
+  promoFinLe: string;
+  aboId: string;
+  prestataireId: string;
+}): Promise<void> {
+  try {
+    const fin = Math.floor(new Date(args.promoFinLe).getTime() / 1000);
+    const schedule = await stripe.subscriptionSchedules.create({
+      from_subscription: args.subscriptionId,
+    });
+    const phase0 = schedule.phases[0];
+    if (!phase0.start_date || fin <= phase0.start_date) {
+      await stripe.subscriptionSchedules.release(schedule.id);
+      return;
+    }
+    const updated = await stripe.subscriptionSchedules.update(schedule.id, {
+      end_behavior: "release",
+      phases: [
+        {
+          items: [{ price: args.pricePromo, quantity: 1 }],
+          start_date: phase0.start_date,
+          end_date: fin,
+          proration_behavior: "none",
+        },
+        {
+          items: [{ price: args.priceNormal, quantity: 1 }],
+          iterations: 1,
+          proration_behavior: "none",
+        },
+      ],
+      metadata: { prestataire_id: args.prestataireId, promo: "lancement_12_mois" },
+    });
+    await supabaseAdminGlobal
+      .from("abonnements")
+      .update({ promo_active: true, stripe_promo_schedule_id: updated.id })
+      .eq("id", args.aboId);
+  } catch (e) {
+    console.error("[promo] reposerSchedulePromo failed", args.subscriptionId, e);
+  }
+}
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2024-11-20.acacia",
