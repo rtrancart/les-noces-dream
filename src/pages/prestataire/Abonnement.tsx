@@ -558,7 +558,7 @@ export default function PrestataireAbonnement() {
           busy={syncing}
         />
       ) : (
-        <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} busy={syncing} />
+        <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} busy={syncing} promo={promo} />
       )}
     </>
   );
