@@ -3,7 +3,9 @@ import {
   computeChangeType,
   planKey,
   planToPriceId,
+  planToPricePromo,
   priceIdToPlan,
+  PROMO_END_DATE_ISO,
   type Formule,
   type Periodicite,
 } from "../../supabase/functions/_shared/stripe-config";

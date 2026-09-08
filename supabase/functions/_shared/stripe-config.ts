@@ -82,23 +82,39 @@ export function splitPlanKey(key: PlanKey): { formule: Formule; periodicite: Per
   return { formule, periodicite };
 }
 
-/** price_id Stripe → { formule, periodicite }. null si inconnu. */
+/**
+ * price_id Stripe → { formule, periodicite, is_promo }. null si inconnu.
+ * Un prix promo correspond à la MÊME formule/periodicité qu'un prix normal :
+ * seul le montant facturé diffère (is_promo=true).
+ */
 export function priceIdToPlan(
   priceId: string | null | undefined,
-): { formule: Formule; periodicite: Periodicite } | null {
+): { formule: Formule; periodicite: Periodicite; is_promo: boolean } | null {
   if (!priceId) return null;
   const prices = stripePrices();
-  for (const key of PLAN_KEYS) {
-    if (prices[key] && prices[key] === priceId) return splitPlanKey(key);
+  for (const tier of ["normal", "promo"] as PriceTier[]) {
+    for (const key of PLAN_KEYS) {
+      if (prices[tier][key] && prices[tier][key] === priceId) {
+        return { ...splitPlanKey(key), is_promo: tier === "promo" };
+      }
+    }
   }
   return null;
 }
 
-/** (formule, periodicite) → price_id Stripe. Lève si le secret n'est pas configuré. */
+/** (formule, periodicite) → price_id Stripe normal. Lève si le secret n'est pas configuré. */
 export function planToPriceId(formule: Formule, periodicite: Periodicite): string {
   const key = planKey(formule, periodicite);
-  const priceId = stripePrices()[key];
+  const priceId = stripePrices().normal[key];
   if (!priceId) throw new Error(`Price ID manquant pour ${key} (mode ${stripeMode()})`);
+  return priceId;
+}
+
+/** (formule, periodicite) → price_id Stripe promo. Lève si le secret n'est pas configuré. */
+export function planToPricePromo(formule: Formule, periodicite: Periodicite): string {
+  const key = planKey(formule, periodicite);
+  const priceId = stripePrices().promo[key];
+  if (!priceId) throw new Error(`Price ID promo manquant pour ${key} (mode ${stripeMode()})`);
   return priceId;
 }
 
