@@ -154,6 +154,9 @@ export function buildServicesGroups(
       type: toFieldType(ch.type_champ),
       value: toFieldValue(ch.type_champ, raw),
     };
+    if (ch.type_champ === "multi_choix" && Array.isArray(ch.options_liste)) {
+      field.options = ch.options_liste.map(String);
+    }
 
     const bucket = bucketFor(ch);
     buckets[bucket].push(field);
