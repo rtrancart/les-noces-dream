@@ -6,6 +6,13 @@ import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import FacturesList from "@/components/facturation/FacturesList";
+import {
+  dateRetourTarifNormal,
+  formatDateFr,
+  formatEuros,
+  type PromoEligibilite,
+  usePromoLancement,
+} from "@/hooks/usePromoLancement";
 
 type Formule = "standard" | "premium";
 type Periodicite = "mensuel" | "annuel";
@@ -30,6 +37,8 @@ interface Abonnement {
   plan_pending: string | null;
   plan_pending_le: string | null;
   stripe_schedule_id: string | null;
+  promo_active?: boolean | null;
+  promo_fin_le?: string | null;
 }
 
 function formatCarte(brand: string | null, last4: string | null): string | null {
@@ -246,12 +255,18 @@ export default function PrestataireAbonnement() {
   const [showChange, setShowChange] = useState(false);
   const [cancellingSchedule, setCancellingSchedule] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { promo } = usePromoLancement(prestataire?.id);
+  const promoEligible = promo?.eligible === true;
+  // Déjà abonné au tarif remisé : les cartes de changement affichent le tarif remisé.
+  const promoTarifsEnCours: PromoEligibilite | null = abo?.promo_active && promo
+    ? { ...promo, eligible: true, date_limite: abo.promo_fin_le ?? promo.date_limite }
+    : null;
 
   const fetchAbo = useCallback(async () => {
     if (!prestataire?.id) return null;
     const { data } = await supabase
       .from("abonnements")
-      .select("id, plan, formule, periodicite, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_customer_id, stripe_payment_method_id, carte_brand, carte_last4, plan_pending, plan_pending_le, stripe_schedule_id")
+      .select("id, plan, formule, periodicite, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_customer_id, stripe_payment_method_id, carte_brand, carte_last4, plan_pending, plan_pending_le, stripe_schedule_id, promo_active, promo_fin_le")
       .eq("prestataire_id", prestataire.id)
       .maybeSingle();
     const next = (data as Abonnement | null) ?? null;
@@ -337,9 +352,18 @@ export default function PrestataireAbonnement() {
     setManualRedirect(null);
     try {
       const { data, error } = await supabase.functions.invoke("stripe-create-checkout", {
-        body: { formule: plan.formule, periodicite: plan.periodicite },
+        body: { formule: plan.formule, periodicite: plan.periodicite, use_promo: promoEligible },
       });
       if (error) throw error;
+
+      if (data?.error === "promo_non_eligible") {
+        toast({
+          title: "Offre de lancement expirée",
+          description: data?.message ?? "Vous n'êtes plus éligible à l'offre de lancement.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (data?.error === "unpaid_subscription") {
         toast({
@@ -520,6 +544,9 @@ export default function PrestataireAbonnement() {
     <>
       {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} mode={manualRedirect.mode} planKey={manualRedirect.planKey} />}
       {syncing && <SyncingNotice />}
+      {abo?.promo_active && abo?.promo_fin_le && (
+        <PromoActiveBanner finLe={abo.promo_fin_le} />
+      )}
       {hasSubscription && abo ? (
         <GestionAbonnement
           abo={abo}
@@ -533,9 +560,10 @@ export default function PrestataireAbonnement() {
           cancelScheduledChange={cancelScheduledChange}
           cancellingSchedule={cancellingSchedule}
           busy={syncing}
+          promo={promoTarifsEnCours}
         />
       ) : (
-        <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} busy={syncing} />
+        <VenteAbonnement abo={abo} subscribe={subscribe} submitting={submitting} busy={syncing} promo={promo} />
       )}
     </>
   );
@@ -669,7 +697,7 @@ function ComparatifFormules() {
    GRILLE 2 FORMULES + SÉLECTEUR
    ============================================================ */
 function GrilleFormules({
-  periodicite, setPeriodicite, currentKey, pendingKey, submitting, disabled, subscribe, compact,
+  periodicite, setPeriodicite, currentKey, pendingKey, submitting, disabled, subscribe, compact, promo,
 }: {
   periodicite: Periodicite;
   setPeriodicite: (p: Periodicite) => void;
@@ -679,6 +707,7 @@ function GrilleFormules({
   disabled: boolean;
   subscribe: (k: PlanKey) => void;
   compact?: boolean;
+  promo?: PromoEligibilite | null;
 }) {
   const keys: PlanKey[] = [planKeyOf("standard", periodicite), planKeyOf("premium", periodicite)];
   return (
@@ -695,6 +724,7 @@ function GrilleFormules({
             disabled={disabled}
             onClick={() => subscribe(k)}
             compact={compact}
+            prixPromo={promo?.eligible ? promo.prix_promo?.[k] : undefined}
           />
         ))}
       </div>
@@ -702,7 +732,41 @@ function GrilleFormules({
   );
 }
 
-function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, compact }: {
+/* ---------- Bandeaux de l'offre de lancement ---------- */
+function PromoOffreBanner({ promo }: { promo: PromoEligibilite }) {
+  const jours = promo.jours_restants ?? 0;
+  return (
+    <div className="rounded-lg border-l-4 border-primary bg-primary/10 p-5">
+      <div className="flex items-start gap-3">
+        <Clock className="mt-0.5 shrink-0 text-primary" size={20} />
+        <div>
+          <h3 className="mb-1 font-serif text-lg text-foreground">
+            Offre de lancement — jusqu'à -45 % pendant 1 an
+          </h3>
+          <p className="font-sans text-sm text-muted-foreground">
+            {jours > 0
+              ? `Il vous reste ${jours} jour${jours > 1 ? "s" : ""} pour en profiter (jusqu'au ${formatDateFr(promo.date_limite)}).`
+              : `Dernier jour pour en profiter (jusqu'au ${formatDateFr(promo.date_limite)}).`}
+            {" "}Le tarif remisé s'applique pendant 12 mois, puis votre abonnement revient automatiquement au tarif normal.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PromoActiveBanner({ finLe }: { finLe: string }) {
+  return (
+    <div className="mb-5 rounded-lg border border-primary/30 bg-primary/5 p-4">
+      <p className="font-sans text-sm text-foreground">
+        Vous bénéficiez de l'offre de lancement jusqu'au {formatDateFr(finLe)}.
+        Au-delà, votre abonnement passe automatiquement au tarif normal.
+      </p>
+    </div>
+  );
+}
+
+function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, compact, prixPromo }: {
   plan: PlanInfo;
   isCurrent: boolean;
   isPending: boolean;
@@ -710,6 +774,7 @@ function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, comp
   disabled: boolean;
   onClick: () => void;
   compact?: boolean;
+  prixPromo?: number;
 }) {
   const isPremium = plan.formule === "premium";
   return (
@@ -739,12 +804,24 @@ function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, comp
       </div>
 
       <div className="mb-1 flex items-baseline gap-1.5">
-        <span className="font-serif text-3xl text-foreground">{plan.prix}</span>
+        <span className="font-serif text-3xl text-foreground">
+          {prixPromo ? formatEuros(prixPromo) : plan.prix}
+        </span>
+        {prixPromo && (
+          <span className="font-sans text-sm text-muted-foreground line-through">{plan.prix}</span>
+        )}
         <span className="font-sans text-xs text-muted-foreground">{plan.periode}</span>
       </div>
-      <p className="mb-4 font-sans text-xs text-muted-foreground">
-        {plan.equivalent ? `${plan.equivalent} · ${plan.economie}` : "TTC, sans engagement"}
-      </p>
+      {prixPromo ? (
+        <p className="mb-4 font-sans text-xs text-muted-foreground">
+          Tarif de lancement pendant 12 mois, puis {plan.prix} {plan.periode} à partir du{" "}
+          {formatDateFr(dateRetourTarifNormal())}.
+        </p>
+      ) : (
+        <p className="mb-4 font-sans text-xs text-muted-foreground">
+          {plan.equivalent ? `${plan.equivalent} · ${plan.economie}` : "TTC, sans engagement"}
+        </p>
+      )}
 
       <ul className="mb-5 space-y-2">
         {(isPremium
@@ -782,8 +859,9 @@ function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, comp
    ============================================================ */
 function GestionAbonnement({
   abo, showChange, setShowChange, subscribe, submitting, openStripePortal,
-  portalDisabled, openingPortal, cancelScheduledChange, cancellingSchedule, busy,
+  portalDisabled, openingPortal, cancelScheduledChange, cancellingSchedule, busy, promo,
 }: {
+  promo?: PromoEligibilite | null;
   abo: Abonnement;
   showChange: boolean;
   setShowChange: (v: boolean) => void;
@@ -969,6 +1047,7 @@ function GestionAbonnement({
               disabled={submitting !== null || changeBlocked || busy}
               subscribe={subscribe}
               compact
+              promo={promo}
             />
             <p className="font-sans text-xs text-muted-foreground">
               Passage à Premium ou à l'annuel : effectif immédiatement, avec ajustement au prorata.
@@ -1019,16 +1098,19 @@ function ActionButton({ onClick, icon, label, highlight, disabled, loading }: { 
 /* ============================================================
    MODE VENTE — aucun abonnement Stripe
    ============================================================ */
-function VenteAbonnement({ abo, subscribe, submitting, busy }: {
+function VenteAbonnement({ abo, subscribe, submitting, busy, promo }: {
   abo: Abonnement | null;
   subscribe: (k: PlanKey) => void;
   submitting: PlanKey | null;
   busy: boolean;
+  promo?: PromoEligibilite | null;
 }) {
   const [periodicite, setPeriodicite] = useState<Periodicite>("mensuel");
+  const promoActive = promo?.eligible === true ? promo : null;
   return (
     <div className="space-y-8">
       <StatusBanner abo={abo} />
+      {promoActive && <PromoOffreBanner promo={promoActive} />}
       <div className="space-y-6">
         <div className="text-center">
           <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-1">
@@ -1048,6 +1130,7 @@ function VenteAbonnement({ abo, subscribe, submitting, busy }: {
           submitting={submitting}
           disabled={submitting !== null || busy}
           subscribe={subscribe}
+          promo={promoActive}
         />
 
         <ComparatifFormules />

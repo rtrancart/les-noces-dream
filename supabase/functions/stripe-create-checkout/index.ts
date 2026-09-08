@@ -14,8 +14,63 @@ import {
   legacyPlanValue,
   type Periodicite,
   planToPriceId,
+  planToPricePromo,
   priceIdToPlan,
 } from "../_shared/stripe-config.ts";
+
+const supabaseAdminGlobal = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
+
+/**
+ * Repose le Subscription Schedule à 2 phases après un changement de formule
+ * pendant l'offre de lancement : le tarif remisé court jusqu'à la date de fin
+ * d'offre initiale (jamais prolongée), puis le tarif normal s'applique.
+ */
+async function reposerSchedulePromo(args: {
+  subscriptionId: string;
+  pricePromo: string;
+  priceNormal: string;
+  promoFinLe: string;
+  aboId: string;
+  prestataireId: string;
+}): Promise<void> {
+  try {
+    const fin = Math.floor(new Date(args.promoFinLe).getTime() / 1000);
+    const schedule = await stripe.subscriptionSchedules.create({
+      from_subscription: args.subscriptionId,
+    });
+    const phase0 = schedule.phases[0];
+    if (!phase0.start_date || fin <= phase0.start_date) {
+      await stripe.subscriptionSchedules.release(schedule.id);
+      return;
+    }
+    const updated = await stripe.subscriptionSchedules.update(schedule.id, {
+      end_behavior: "release",
+      phases: [
+        {
+          items: [{ price: args.pricePromo, quantity: 1 }],
+          start_date: phase0.start_date,
+          end_date: fin,
+          proration_behavior: "none",
+        },
+        {
+          items: [{ price: args.priceNormal, quantity: 1 }],
+          iterations: 1,
+          proration_behavior: "none",
+        },
+      ],
+      metadata: { prestataire_id: args.prestataireId, promo: "lancement_12_mois" },
+    });
+    await supabaseAdminGlobal
+      .from("abonnements")
+      .update({ promo_active: true, stripe_promo_schedule_id: updated.id })
+      .eq("id", args.aboId);
+  } catch (e) {
+    console.error("[promo] reposerSchedulePromo failed", args.subscriptionId, e);
+  }
+}
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
   apiVersion: "2024-11-20.acacia",
@@ -83,9 +138,46 @@ Deno.serve(async (req) => {
 
     const { data: abo } = await supabaseAdmin
       .from("abonnements")
-      .select("id, stripe_customer_id, fin_essai_le, stripe_schedule_id")
+      .select(
+        "id, stripe_customer_id, fin_essai_le, stripe_schedule_id, promo_active, promo_fin_le, stripe_promo_schedule_id",
+      )
       .eq("prestataire_id", prestataire.id)
       .maybeSingle();
+
+    // Offre de lancement : l'éligibilité est TOUJOURS revalidée côté serveur,
+    // le drapeau du client n'est qu'une intention.
+    let promoApplied = false;
+    if (body?.use_promo === true) {
+      const { data: elig, error: eligErr } = await supabaseAuth.rpc("get_promo_eligibility", {
+        p_prestataire_id: prestataire.id,
+      });
+      const eligible = (elig as { eligible?: boolean } | null)?.eligible === true;
+      if (eligErr || !eligible) {
+        return json({
+          error: "promo_non_eligible",
+          message: "Vous n'êtes plus éligible à l'offre de lancement.",
+        }, 409);
+      }
+      try {
+        priceId = planToPricePromo(formule, periodicite);
+        promoApplied = true;
+      } catch (_e) {
+        return json({ error: `Price ID promo manquant pour ${formule} ${periodicite}` }, 500);
+      }
+    }
+
+    // Changement de formule pendant la promo : le nouveau plan garde le tarif remisé
+    // pour la durée restante des 12 mois (promo_fin_le inchangée).
+    const promoEnCours = abo?.promo_active === true && !!abo?.promo_fin_le &&
+      new Date(abo.promo_fin_le).getTime() > Date.now();
+    if (!promoApplied && promoEnCours) {
+      try {
+        priceId = planToPricePromo(formule, periodicite);
+        promoApplied = true;
+      } catch (_e) {
+        // Prix promo indisponible : on retombe sur le tarif normal.
+      }
+    }
 
     // 1. Customer Stripe
     let customerId = abo?.stripe_customer_id ?? null;
@@ -196,6 +288,21 @@ Deno.serve(async (req) => {
           .eq("id", abo.id);
       }
 
+      // Le schedule promo est libéré avant tout changement : il sera recréé
+      // avec la durée restante de l'offre de lancement.
+      if (abo?.stripe_promo_schedule_id) {
+        try {
+          await stripe.subscriptionSchedules.release(abo.stripe_promo_schedule_id);
+        } catch (e) {
+          const code = (e as { code?: string })?.code;
+          if (code !== "resource_missing") console.warn("release promo schedule failed", e);
+        }
+        await supabaseAdmin
+          .from("abonnements")
+          .update({ stripe_promo_schedule_id: null })
+          .eq("id", abo.id);
+      }
+
       if (decision.immediate) {
         // Stripe refuse billing_cycle_anchor:"unchanged" quand l'intervalle change
         // (mensuel <-> annuel) : dans ce cas le cycle repart à la date du changement.
@@ -223,7 +330,19 @@ Deno.serve(async (req) => {
             periodicite,
           },
         });
-        return json({ changed: true, mode: decision.type });
+        // Promo en cours : on repose un schedule qui bascule au tarif normal
+        // à la date de fin d'offre initiale (jamais prolongée).
+        if (promoApplied && promoEnCours && abo?.id) {
+          await reposerSchedulePromo({
+            subscriptionId: primary.id,
+            pricePromo: priceId,
+            priceNormal: planToPriceId(formule, periodicite),
+            promoFinLe: abo.promo_fin_le as string,
+            aboId: abo.id,
+            prestataireId: prestataire.id,
+          });
+        }
+        return json({ changed: true, mode: decision.type, promo: promoApplied });
       }
 
       // Changement programmé : Subscription Schedule
@@ -231,6 +350,16 @@ Deno.serve(async (req) => {
         from_subscription: primary.id,
       });
       const phaseCurrent = schedule.phases[0];
+      const promoFinTs = promoApplied && promoEnCours && abo?.promo_fin_le
+        ? Math.floor(new Date(abo.promo_fin_le).getTime() / 1000)
+        : null;
+      const phasePromo = promoFinTs && phaseCurrent.end_date && promoFinTs > phaseCurrent.end_date
+        ? [{
+          items: [{ price: priceId, quantity: 1 }],
+          end_date: promoFinTs,
+          proration_behavior: "none" as const,
+        }]
+        : [];
       await stripe.subscriptionSchedules.update(schedule.id, {
         end_behavior: "release",
         phases: [
@@ -240,8 +369,11 @@ Deno.serve(async (req) => {
             end_date: phaseCurrent.end_date,
             proration_behavior: "none",
           },
+          ...phasePromo,
           {
-            items: [{ price: priceId, quantity: 1 }],
+            items: [
+              { price: phasePromo.length ? planToPriceId(formule, periodicite) : priceId, quantity: 1 },
+            ],
             iterations: 1,
             proration_behavior: "none",
             metadata: {
@@ -299,6 +431,7 @@ Deno.serve(async (req) => {
           user_id: userId,
           formule,
           periodicite,
+          promo: promoApplied ? "lancement_12_mois" : "",
         },
       },
       success_url: `${origin}/espace-pro/abonnement?statut=succes`,
@@ -307,6 +440,7 @@ Deno.serve(async (req) => {
         prestataire_id: prestataire.id,
         formule,
         periodicite,
+        promo: promoApplied ? "lancement_12_mois" : "",
       },
     });
 

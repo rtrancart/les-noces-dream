@@ -7,7 +7,9 @@ import {
   type Formule,
   legacyPlanValue,
   type Periodicite,
+  planToPriceId,
   priceIdToPlan,
+  PROMO_DUREE_MOIS,
 } from "../_shared/stripe-config.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
@@ -47,7 +49,10 @@ Deno.serve(async (req) => {
           ? session.subscription
           : session.subscription.id;
         const sub = await stripe.subscriptions.retrieve(subId);
-        await syncSubscription(sub);
+        // Offre de lancement : bascule automatique au tarif normal après 12 mois.
+        await ensurePromoSchedule(sub);
+        const subFinal = await stripe.subscriptions.retrieve(subId);
+        await syncSubscription(subFinal);
         break;
       }
 
@@ -267,6 +272,23 @@ Deno.serve(async (req) => {
       case "subscription_schedule.released":
       case "subscription_schedule.canceled": {
         const schedule = event.data.object as Stripe.SubscriptionSchedule;
+
+        // Schedule de l'offre de lancement (distinct des downgrades programmés)
+        const { data: aboPromo } = await supabase
+          .from("abonnements")
+          .select("id")
+          .eq("stripe_promo_schedule_id", schedule.id)
+          .maybeSingle();
+        if (aboPromo) {
+          if (event.type !== "subscription_schedule.updated") {
+            await supabase
+              .from("abonnements")
+              .update({ promo_active: false, promo_fin_le: null, stripe_promo_schedule_id: null })
+              .eq("id", aboPromo.id);
+          }
+          break;
+        }
+
         // Retrouver l'abonnement lié à ce schedule
         const { data: abo } = await supabase
           .from("abonnements")
@@ -465,6 +487,15 @@ async function syncSubscription(sub: Stripe.Subscription) {
   }
   if (formule) patch.formule = formule;
   if (periodicite) patch.periodicite = periodicite;
+  // Offre de lancement : le prix payé porte l'information, pas la formule.
+  if (resolved?.is_promo) {
+    patch.promo_active = true;
+  } else if (resolved) {
+    // Retour au tarif normal (fin de la phase promo) : on solde l'offre.
+    patch.promo_active = false;
+    patch.promo_fin_le = null;
+    patch.stripe_promo_schedule_id = null;
+  }
   if (plan) patch.plan = plan; // double écriture transitoire (colonne legacy)
   if (montantCents != null) patch.montant_cents = montantCents;
   if (sub.cancel_at_period_end) {
@@ -503,6 +534,93 @@ async function syncSubscription(sub: Stripe.Subscription) {
   }
 }
 
+
+// -- Offre de lancement (P7) ------------------------------------------------
+
+/** Nombre de périodes de la phase promo (12 mois) selon la périodicité. */
+export function promoIterations(periodicite: Periodicite): number {
+  return periodicite === "annuel" ? 1 : PROMO_DUREE_MOIS;
+}
+
+/**
+ * Crée le Subscription Schedule à 2 phases pour une souscription au tarif promo :
+ *  - phase 1 : prix promo pendant 12 mois,
+ *  - phase 2 : prix normal (le schedule est libéré ensuite, la sub continue au tarif normal).
+ * Idempotent : ne fait rien si la sub n'est pas au tarif promo ou a déjà un schedule promo.
+ * N'échoue jamais bruyamment : le paiement est déjà encaissé, un retry manuel reste possible.
+ */
+async function ensurePromoSchedule(sub: Stripe.Subscription): Promise<void> {
+  try {
+    const item = sub.items.data[0];
+    const resolved = priceIdToPlan(item?.price?.id ?? null);
+    if (!resolved?.is_promo) return;
+
+    const prestataireId = await resolvePrestataireId(sub);
+    if (!prestataireId) return;
+
+    const { data: abo } = await supabase
+      .from("abonnements")
+      .select("id, stripe_promo_schedule_id")
+      .eq("prestataire_id", prestataireId)
+      .maybeSingle();
+    if (abo?.stripe_promo_schedule_id) return;
+    if (sub.schedule) {
+      console.warn("[promo] subscription déjà rattachée à un schedule", sub.id);
+      return;
+    }
+
+    const prixNormal = planToPriceId(resolved.formule, resolved.periodicite);
+    const schedule = await stripe.subscriptionSchedules.create({ from_subscription: sub.id });
+    const phase0 = schedule.phases[0];
+
+    const updated = await stripe.subscriptionSchedules.update(schedule.id, {
+      end_behavior: "release",
+      phases: [
+        {
+          items: [{ price: item.price.id, quantity: 1 }],
+          start_date: phase0.start_date,
+          iterations: promoIterations(resolved.periodicite),
+          proration_behavior: "none",
+        },
+        {
+          items: [{ price: prixNormal, quantity: 1 }],
+          iterations: 1,
+          proration_behavior: "none",
+        },
+      ],
+      metadata: {
+        prestataire_id: prestataireId,
+        promo: "lancement_12_mois",
+        formule: resolved.formule,
+        periodicite: resolved.periodicite,
+      },
+    });
+
+    const finPhase1 = updated.phases[0]?.end_date;
+    const promoFinLe = finPhase1
+      ? new Date(finPhase1 * 1000).toISOString()
+      : moisPlus(new Date(), PROMO_DUREE_MOIS).toISOString();
+
+    if (abo?.id) {
+      await supabase
+        .from("abonnements")
+        .update({
+          promo_active: true,
+          promo_fin_le: promoFinLe,
+          stripe_promo_schedule_id: updated.id,
+        })
+        .eq("id", abo.id);
+    }
+  } catch (e) {
+    console.error("[promo] ensurePromoSchedule failed", sub.id, e);
+  }
+}
+
+export function moisPlus(date: Date, mois: number): Date {
+  const d = new Date(date.getTime());
+  d.setUTCMonth(d.getUTCMonth() + mois);
+  return d;
+}
 
 // -- Emails d'impayé --------------------------------------------------------
 

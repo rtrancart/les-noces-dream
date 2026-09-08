@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useMemo } from "react";
+import PromoLancementBanner from "@/components/prestataire/PromoLancementBanner";
 
 interface DashboardStats {
   totalDemandes: number;
@@ -136,6 +137,7 @@ export default function PrestataireDashboard() {
 
   return (
     <div className="space-y-6">
+      <PromoLancementBanner prestataireId={prestataire.id} />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="font-serif text-2xl md:text-3xl text-foreground">
