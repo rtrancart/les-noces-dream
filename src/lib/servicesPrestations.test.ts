@@ -47,8 +47,8 @@ describe("buildServicesGroups", () => {
 
     const inclus = groups.find((g) => g.id === "inclus")!;
     expect(inclus.fields.map((f) => f.key)).toEqual([
-      "seance_engagement",
       "drone",
+      "seance_engagement",
       "album_photo",
       "disponibilite_simultanee",
     ]);
