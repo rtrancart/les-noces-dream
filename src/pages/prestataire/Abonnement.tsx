@@ -37,6 +37,8 @@ interface Abonnement {
   plan_pending: string | null;
   plan_pending_le: string | null;
   stripe_schedule_id: string | null;
+  promo_active?: boolean | null;
+  promo_fin_le?: string | null;
 }
 
 function formatCarte(brand: string | null, last4: string | null): string | null {
