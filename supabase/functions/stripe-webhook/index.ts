@@ -509,6 +509,93 @@ async function syncSubscription(sub: Stripe.Subscription) {
 }
 
 
+// -- Offre de lancement (P7) ------------------------------------------------
+
+/** Nombre de périodes de la phase promo (12 mois) selon la périodicité. */
+export function promoIterations(periodicite: Periodicite): number {
+  return periodicite === "annuel" ? 1 : PROMO_DUREE_MOIS;
+}
+
+/**
+ * Crée le Subscription Schedule à 2 phases pour une souscription au tarif promo :
+ *  - phase 1 : prix promo pendant 12 mois,
+ *  - phase 2 : prix normal (le schedule est libéré ensuite, la sub continue au tarif normal).
+ * Idempotent : ne fait rien si la sub n'est pas au tarif promo ou a déjà un schedule promo.
+ * N'échoue jamais bruyamment : le paiement est déjà encaissé, un retry manuel reste possible.
+ */
+async function ensurePromoSchedule(sub: Stripe.Subscription): Promise<void> {
+  try {
+    const item = sub.items.data[0];
+    const resolved = priceIdToPlan(item?.price?.id ?? null);
+    if (!resolved?.is_promo) return;
+
+    const prestataireId = await resolvePrestataireId(sub);
+    if (!prestataireId) return;
+
+    const { data: abo } = await supabase
+      .from("abonnements")
+      .select("id, stripe_promo_schedule_id")
+      .eq("prestataire_id", prestataireId)
+      .maybeSingle();
+    if (abo?.stripe_promo_schedule_id) return;
+    if (sub.schedule) {
+      console.warn("[promo] subscription déjà rattachée à un schedule", sub.id);
+      return;
+    }
+
+    const prixNormal = planToPriceId(resolved.formule, resolved.periodicite);
+    const schedule = await stripe.subscriptionSchedules.create({ from_subscription: sub.id });
+    const phase0 = schedule.phases[0];
+
+    const updated = await stripe.subscriptionSchedules.update(schedule.id, {
+      end_behavior: "release",
+      phases: [
+        {
+          items: [{ price: item.price.id, quantity: 1 }],
+          start_date: phase0.start_date,
+          iterations: promoIterations(resolved.periodicite),
+          proration_behavior: "none",
+        },
+        {
+          items: [{ price: prixNormal, quantity: 1 }],
+          iterations: 1,
+          proration_behavior: "none",
+        },
+      ],
+      metadata: {
+        prestataire_id: prestataireId,
+        promo: "lancement_12_mois",
+        formule: resolved.formule,
+        periodicite: resolved.periodicite,
+      },
+    });
+
+    const finPhase1 = updated.phases[0]?.end_date;
+    const promoFinLe = finPhase1
+      ? new Date(finPhase1 * 1000).toISOString()
+      : moisPlus(new Date(), PROMO_DUREE_MOIS).toISOString();
+
+    if (abo?.id) {
+      await supabase
+        .from("abonnements")
+        .update({
+          promo_active: true,
+          promo_fin_le: promoFinLe,
+          stripe_promo_schedule_id: updated.id,
+        })
+        .eq("id", abo.id);
+    }
+  } catch (e) {
+    console.error("[promo] ensurePromoSchedule failed", sub.id, e);
+  }
+}
+
+export function moisPlus(date: Date, mois: number): Date {
+  const d = new Date(date.getTime());
+  d.setUTCMonth(d.getUTCMonth() + mois);
+  return d;
+}
+
 // -- Emails d'impayé --------------------------------------------------------
 
 const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://les-noces.lovable.app";
