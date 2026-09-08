@@ -83,9 +83,46 @@ Deno.serve(async (req) => {
 
     const { data: abo } = await supabaseAdmin
       .from("abonnements")
-      .select("id, stripe_customer_id, fin_essai_le, stripe_schedule_id")
+      .select(
+        "id, stripe_customer_id, fin_essai_le, stripe_schedule_id, promo_active, promo_fin_le, stripe_promo_schedule_id",
+      )
       .eq("prestataire_id", prestataire.id)
       .maybeSingle();
+
+    // Offre de lancement : l'éligibilité est TOUJOURS revalidée côté serveur,
+    // le drapeau du client n'est qu'une intention.
+    let promoApplied = false;
+    if (body?.use_promo === true) {
+      const { data: elig, error: eligErr } = await supabaseAuth.rpc("get_promo_eligibility", {
+        p_prestataire_id: prestataire.id,
+      });
+      const eligible = (elig as { eligible?: boolean } | null)?.eligible === true;
+      if (eligErr || !eligible) {
+        return json({
+          error: "promo_non_eligible",
+          message: "Vous n'êtes plus éligible à l'offre de lancement.",
+        }, 409);
+      }
+      try {
+        priceId = planToPricePromo(formule, periodicite);
+        promoApplied = true;
+      } catch (_e) {
+        return json({ error: `Price ID promo manquant pour ${formule} ${periodicite}` }, 500);
+      }
+    }
+
+    // Changement de formule pendant la promo : le nouveau plan garde le tarif remisé
+    // pour la durée restante des 12 mois (promo_fin_le inchangée).
+    const promoEnCours = abo?.promo_active === true && !!abo?.promo_fin_le &&
+      new Date(abo.promo_fin_le).getTime() > Date.now();
+    if (!promoApplied && promoEnCours) {
+      try {
+        priceId = planToPricePromo(formule, periodicite);
+        promoApplied = true;
+      } catch (_e) {
+        // Prix promo indisponible : on retombe sur le tarif normal.
+      }
+    }
 
     // 1. Customer Stripe
     let customerId = abo?.stripe_customer_id ?? null;
