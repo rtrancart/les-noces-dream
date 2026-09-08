@@ -124,6 +124,8 @@ const COMPARATIF: { titre: string; lignes: { label: string; standard: Cell; prem
     titre: "Votre vitrine",
     lignes: [
       { label: "Galerie photos", standard: "10 photos", premium: "Illimitée" },
+      { label: "Vidéos sur votre fiche", standard: false, premium: "Jusqu'à 10 vidéos" },
+      { label: "Liens vers vos réseaux sociaux", standard: false, premium: true },
       { label: "Description détaillée et services", standard: true, premium: true },
       { label: "Zones d'intervention multiples", standard: true, premium: true },
     ],
