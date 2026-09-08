@@ -470,6 +470,15 @@ async function syncSubscription(sub: Stripe.Subscription) {
   }
   if (formule) patch.formule = formule;
   if (periodicite) patch.periodicite = periodicite;
+  // Offre de lancement : le prix payé porte l'information, pas la formule.
+  if (resolved?.is_promo) {
+    patch.promo_active = true;
+  } else if (resolved) {
+    // Retour au tarif normal (fin de la phase promo) : on solde l'offre.
+    patch.promo_active = false;
+    patch.promo_fin_le = null;
+    patch.stripe_promo_schedule_id = null;
+  }
   if (plan) patch.plan = plan; // double écriture transitoire (colonne legacy)
   if (montantCents != null) patch.montant_cents = montantCents;
   if (sub.cancel_at_period_end) {
