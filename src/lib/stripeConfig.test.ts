@@ -3,7 +3,9 @@ import {
   computeChangeType,
   planKey,
   planToPriceId,
+  planToPricePromo,
   priceIdToPlan,
+  PROMO_END_DATE_ISO,
   type Formule,
   type Periodicite,
 } from "../../supabase/functions/_shared/stripe-config";
@@ -70,13 +72,27 @@ describe("résolution des price_ids", () => {
     process.env.STRIPE_PRICE_STANDARD_ANNUEL_TEST = "price_sa";
     process.env.STRIPE_PRICE_PREMIUM_MENSUEL_TEST = "price_pm";
     process.env.STRIPE_PRICE_PREMIUM_ANNUEL_TEST = "price_pa";
+    process.env.STRIPE_PRICE_PROMO_STANDARD_MENSUEL_TEST = "price_sm_promo";
+    process.env.STRIPE_PRICE_PROMO_STANDARD_ANNUEL_TEST = "price_sa_promo";
+    process.env.STRIPE_PRICE_PROMO_PREMIUM_MENSUEL_TEST = "price_pm_promo";
+    process.env.STRIPE_PRICE_PROMO_PREMIUM_ANNUEL_TEST = "price_pa_promo";
   });
 
-  it("planToPriceId et priceIdToPlan sont réciproques", () => {
+  it("planToPriceId et priceIdToPlan sont réciproques (prix normaux)", () => {
     for (const f of FORMULES) {
       for (const p of PERIODICITES) {
         const id = planToPriceId(f, p);
-        expect(priceIdToPlan(id)).toEqual({ formule: f, periodicite: p });
+        expect(priceIdToPlan(id)).toEqual({ formule: f, periodicite: p, is_promo: false });
+      }
+    }
+  });
+
+  it("planToPricePromo et priceIdToPlan sont réciproques (prix promo)", () => {
+    for (const f of FORMULES) {
+      for (const p of PERIODICITES) {
+        const id = planToPricePromo(f, p);
+        expect(id).not.toBe(planToPriceId(f, p));
+        expect(priceIdToPlan(id)).toEqual({ formule: f, periodicite: p, is_promo: true });
       }
     }
   });
@@ -89,9 +105,16 @@ describe("résolution des price_ids", () => {
   it("lève si le secret est absent", () => {
     delete process.env.STRIPE_PRICE_PREMIUM_ANNUEL_TEST;
     expect(() => planToPriceId("premium", "annuel")).toThrow();
+    delete process.env.STRIPE_PRICE_PROMO_PREMIUM_ANNUEL_TEST;
+    expect(() => planToPricePromo("premium", "annuel")).toThrow();
   });
 
   it("planKey construit la clé attendue", () => {
     expect(planKey("premium", "annuel")).toBe("premium_annuel");
+  });
+
+  it("expose la date butoir de l'offre de lancement", () => {
+    expect(PROMO_END_DATE_ISO).toBe("2026-12-31T23:59:59Z");
+    expect(new Date(PROMO_END_DATE_ISO).getTime()).toBeGreaterThan(0);
   });
 });
