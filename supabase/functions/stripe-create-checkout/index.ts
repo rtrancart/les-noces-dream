@@ -376,6 +376,7 @@ Deno.serve(async (req) => {
           user_id: userId,
           formule,
           periodicite,
+          promo: promoApplied ? "lancement_12_mois" : "",
         },
       },
       success_url: `${origin}/espace-pro/abonnement?statut=succes`,
@@ -384,6 +385,7 @@ Deno.serve(async (req) => {
         prestataire_id: prestataire.id,
         formule,
         periodicite,
+        promo: promoApplied ? "lancement_12_mois" : "",
       },
     });
 
