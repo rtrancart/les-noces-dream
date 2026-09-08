@@ -124,6 +124,8 @@ const COMPARATIF: { titre: string; lignes: { label: string; standard: Cell; prem
     titre: "Votre vitrine",
     lignes: [
       { label: "Galerie photos", standard: "10 photos", premium: "Illimitée" },
+      { label: "Vidéos sur votre fiche", standard: false, premium: "Jusqu'à 10 vidéos" },
+      { label: "Liens vers vos réseaux sociaux", standard: false, premium: true },
       { label: "Description détaillée et services", standard: true, premium: true },
       { label: "Zones d'intervention multiples", standard: true, premium: true },
     ],
@@ -825,8 +827,8 @@ function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, comp
 
       <ul className="mb-5 space-y-2">
         {(isPremium
-          ? ["Tout ce que contient Standard", "Badge Premium et position prioritaire", "Mise en avant régionale", "Statistiques avancées", "Support prioritaire"]
-          : ["Fiche complète et galerie photos", "Demandes de devis illimitées", "Messagerie et avis clients", "Statistiques de consultation"]
+          ? ["Tout ce que contient Standard", "Galerie photos illimitée", "Jusqu'à 10 vidéos sur votre fiche", "Liens vers vos réseaux sociaux", "Badge Premium et position prioritaire", "Mise en avant régionale", "Statistiques avancées", "Support prioritaire"]
+          : ["Fiche complète et galerie jusqu'à 10 photos", "Demandes de devis illimitées", "Messagerie et avis clients", "Statistiques de consultation"]
         ).map((t) => (
           <li key={t} className="flex items-start gap-2">
             <Check size={16} className={cn("mt-0.5 flex-shrink-0", isPremium ? "text-primary" : "text-sauge")} />
