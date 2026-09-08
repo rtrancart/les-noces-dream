@@ -272,6 +272,23 @@ Deno.serve(async (req) => {
       case "subscription_schedule.released":
       case "subscription_schedule.canceled": {
         const schedule = event.data.object as Stripe.SubscriptionSchedule;
+
+        // Schedule de l'offre de lancement (distinct des downgrades programmés)
+        const { data: aboPromo } = await supabase
+          .from("abonnements")
+          .select("id")
+          .eq("stripe_promo_schedule_id", schedule.id)
+          .maybeSingle();
+        if (aboPromo) {
+          if (event.type !== "subscription_schedule.updated") {
+            await supabase
+              .from("abonnements")
+              .update({ promo_active: false, promo_fin_le: null, stripe_promo_schedule_id: null })
+              .eq("id", aboPromo.id);
+          }
+          break;
+        }
+
         // Retrouver l'abonnement lié à ce schedule
         const { data: abo } = await supabase
           .from("abonnements")
