@@ -8,7 +8,6 @@ import {
   Shield,
   ChevronRight,
   Eye,
-  Check,
 } from "lucide-react";
 import {
   Tooltip,
@@ -28,7 +27,9 @@ import FicheCarte from "@/components/fiche/FicheCarte";
 import FicheVideos from "@/components/fiche/FicheVideos";
 import FicheReseauxSociaux from "@/components/fiche/FicheReseauxSociaux";
 import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
+import ServicesPrestations from "@/components/fiche/ServicesPrestations";
 import { getCondensedZoneNames } from "@/lib/zonesIntervention";
+import { buildServicesGroups } from "@/lib/servicesPrestations";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import { trackEvent, startFicheSession } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
@@ -175,25 +176,6 @@ export default function FichePrestataireView({
   };
 
   const champsSpec = presta.champs_specifiques as Record<string, unknown> | null;
-
-  // Regroupement des réponses renseignées par groupe, dans l'ordre de saisie.
-  const groupesChamps: { groupe: string | null; champs: ChampCategorie[] }[] = [];
-  if (champsSpec) {
-    for (const ch of champsCategorie) {
-      const val = champsSpec[ch.cle];
-      const rempli =
-        ch.type_champ === "booleen"
-          ? val === true
-          : Array.isArray(val)
-            ? val.length > 0
-            : val != null && val !== "";
-      if (!rempli) continue;
-      const g = ch.groupe || null;
-      const last = groupesChamps.find((x) => x.groupe === g);
-      if (last) last.champs.push(ch);
-      else groupesChamps.push({ groupe: g, champs: [ch] });
-    }
-  }
   const statutLabel = presta.statut ? STATUT_LABELS[presta.statut] ?? presta.statut : null;
 
   return (
@@ -436,73 +418,12 @@ export default function FichePrestataireView({
               </div>
             )}
 
-            {/* Champs spécifiques */}
-            {groupesChamps.length > 0 && champsSpec && (
-              <div>
-                <h2 className="font-serif text-xl font-semibold text-foreground mb-4">
-                  Services & Prestations
-                </h2>
-                <div className="space-y-6">
-                  {groupesChamps.map(({ groupe, champs }) => (
-                    <div key={groupe ?? "_"}>
-                      {groupe && (
-                        <h3 className="font-sans text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
-                          {groupe}
-                        </h3>
-                      )}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                        {champs.map((ch) => {
-                          const val = champsSpec[ch.cle];
-
-                          if (ch.type_champ === "booleen") {
-                            return (
-                              <div key={ch.cle} className="flex items-start gap-2 text-sm">
-                                <Check className="h-4 w-4 shrink-0 mt-0.5 text-primary" aria-hidden />
-                                <span className="text-foreground">{ch.label}</span>
-                              </div>
-                            );
-                          }
-
-                          if (ch.type_champ === "multi_choix" || Array.isArray(val)) {
-                            const items = (Array.isArray(val) ? val : [val]).map(String);
-                            return (
-                              <div key={ch.cle} className="text-sm sm:col-span-2">
-                                <span className="text-muted-foreground">{ch.label}</span>
-                                <ul className="mt-1 list-disc pl-5 space-y-0.5">
-                                  {items.map((it) => (
-                                    <li key={it} className="text-foreground">{it}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            );
-                          }
-
-                          if (ch.type_champ === "texte") {
-                            return (
-                              <div key={ch.cle} className="text-sm sm:col-span-2">
-                                <p className="text-muted-foreground">{ch.label}</p>
-                                <p className="mt-1 text-foreground whitespace-pre-line break-words">
-                                  {String(val)}
-                                </p>
-                              </div>
-                            );
-                          }
-
-                          return (
-                            <div key={ch.cle} className="flex flex-wrap items-baseline gap-x-2 text-sm">
-                              <span className="text-muted-foreground">{ch.label} :</span>
-                              <span className="font-medium text-foreground break-words">
-                                {String(val)}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Services & Prestations */}
+            <ServicesPrestations
+              groups={buildServicesGroups(champsCategorie, champsSpec)}
+              onDevis={() => setDevisOpen(true)}
+              previewMode={previewMode}
+            />
 
             {/* Tags */}
             {presta.tags && presta.tags.length > 0 && (

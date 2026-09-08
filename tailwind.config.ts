@@ -71,6 +71,9 @@ export default {
         "nude-poudre": "hsl(var(--nude-poudre))",
         "gris-cachemire": "hsl(var(--gris-cachemire))",
       },
+      boxShadow: {
+        soft: "0 4px 24px -4px hsl(42 62% 40% / .08)",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
