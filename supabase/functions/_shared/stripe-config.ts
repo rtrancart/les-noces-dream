@@ -46,14 +46,30 @@ export function stripeMode(): "test" | "live" {
   return env("STRIPE_MODE") === "live" ? "live" : "test";
 }
 
+/** Fin globale de l'offre de lancement (garde-fou côté code). */
+export const PROMO_END_DATE_ISO = "2026-12-31T23:59:59Z";
+
+/** Durée de la phase promotionnelle, en mois. */
+export const PROMO_DUREE_MOIS = 12;
+
+export type PriceTier = "normal" | "promo";
+
 /** Identifiants de prix Stripe pour le mode courant. Lu à chaud (pas de cache). */
-export function stripePrices(): Record<PlanKey, string | undefined> {
+export function stripePrices(): Record<PriceTier, Record<PlanKey, string | undefined>> {
   const suffix = stripeMode() === "live" ? "LIVE" : "TEST";
   return {
-    standard_mensuel: env(`STRIPE_PRICE_STANDARD_MENSUEL_${suffix}`),
-    standard_annuel: env(`STRIPE_PRICE_STANDARD_ANNUEL_${suffix}`),
-    premium_mensuel: env(`STRIPE_PRICE_PREMIUM_MENSUEL_${suffix}`),
-    premium_annuel: env(`STRIPE_PRICE_PREMIUM_ANNUEL_${suffix}`),
+    normal: {
+      standard_mensuel: env(`STRIPE_PRICE_STANDARD_MENSUEL_${suffix}`),
+      standard_annuel: env(`STRIPE_PRICE_STANDARD_ANNUEL_${suffix}`),
+      premium_mensuel: env(`STRIPE_PRICE_PREMIUM_MENSUEL_${suffix}`),
+      premium_annuel: env(`STRIPE_PRICE_PREMIUM_ANNUEL_${suffix}`),
+    },
+    promo: {
+      standard_mensuel: env(`STRIPE_PRICE_PROMO_STANDARD_MENSUEL_${suffix}`),
+      standard_annuel: env(`STRIPE_PRICE_PROMO_STANDARD_ANNUEL_${suffix}`),
+      premium_mensuel: env(`STRIPE_PRICE_PROMO_PREMIUM_MENSUEL_${suffix}`),
+      premium_annuel: env(`STRIPE_PRICE_PROMO_PREMIUM_ANNUEL_${suffix}`),
+    },
   };
 }
 
