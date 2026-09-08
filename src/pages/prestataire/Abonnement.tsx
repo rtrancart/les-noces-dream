@@ -1042,6 +1042,7 @@ function GestionAbonnement({
               disabled={submitting !== null || changeBlocked || busy}
               subscribe={subscribe}
               compact
+              promo={promo}
             />
             <p className="font-sans text-xs text-muted-foreground">
               Passage à Premium ou à l'annuel : effectif immédiatement, avec ajustement au prorata.
