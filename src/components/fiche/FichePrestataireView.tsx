@@ -8,7 +8,6 @@ import {
   Shield,
   ChevronRight,
   Eye,
-  Check,
 } from "lucide-react";
 import {
   Tooltip,
@@ -28,7 +27,9 @@ import FicheCarte from "@/components/fiche/FicheCarte";
 import FicheVideos from "@/components/fiche/FicheVideos";
 import FicheReseauxSociaux from "@/components/fiche/FicheReseauxSociaux";
 import FicheStickyMobileCTA from "@/components/fiche/FicheStickyMobileCTA";
+import ServicesPrestations from "@/components/fiche/ServicesPrestations";
 import { getCondensedZoneNames } from "@/lib/zonesIntervention";
+import { buildServicesGroups } from "@/lib/servicesPrestations";
 import ProviderCard, { type ProviderCardData } from "@/components/search/ProviderCard";
 import { trackEvent, startFicheSession } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
