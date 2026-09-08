@@ -4,7 +4,7 @@ Direction retenue : **résumé + accordéons**, mobile first, sans bandeau de ch
 
 ## Ce que verra le visiteur
 
-- Un sur-titre discret (catégorie · ville) en petites capitales dorées, puis le titre « Services & Prestations ».
+- Un titre « Services & Prestations ».
 - Une liste de blocs dépliables, le premier ouvert par défaut. Chaque en-tête affiche une pastille ronde avec une icône, le titre du bloc, un aperçu à droite (ex. « 3 inclus · 1 non », « France entière ») et un chevron qui pivote.
 - À l'intérieur :
   - les cases à cocher deviennent des lignes à pastille : **oui** (pastille dorée claire + coche) et **non** (pastille grise + tiret, texte atténué et mention « Non ») — les « non » sont désormais affichés ;
