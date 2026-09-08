@@ -352,6 +352,15 @@ export default function PrestataireAbonnement() {
       });
       if (error) throw error;
 
+      if (data?.error === "promo_non_eligible") {
+        toast({
+          title: "Offre de lancement expirée",
+          description: data?.message ?? "Vous n'êtes plus éligible à l'offre de lancement.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (data?.error === "unpaid_subscription") {
         toast({
           title: "Paiement en attente",
