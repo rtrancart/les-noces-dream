@@ -540,6 +540,9 @@ export default function PrestataireAbonnement() {
     <>
       {manualRedirect && <StripeRedirectNotice url={manualRedirect.url} mode={manualRedirect.mode} planKey={manualRedirect.planKey} />}
       {syncing && <SyncingNotice />}
+      {abo?.promo_active && abo?.promo_fin_le && (
+        <PromoActiveBanner finLe={abo.promo_fin_le} />
+      )}
       {hasSubscription && abo ? (
         <GestionAbonnement
           abo={abo}
