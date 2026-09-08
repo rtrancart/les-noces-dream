@@ -257,6 +257,10 @@ export default function PrestataireAbonnement() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { promo } = usePromoLancement(prestataire?.id);
   const promoEligible = promo?.eligible === true;
+  // Déjà abonné au tarif remisé : les cartes de changement affichent le tarif remisé.
+  const promoTarifsEnCours: PromoEligibilite | null = abo?.promo_active && promo
+    ? { ...promo, eligible: true, date_limite: abo.promo_fin_le ?? promo.date_limite }
+    : null;
 
   const fetchAbo = useCallback(async () => {
     if (!prestataire?.id) return null;
