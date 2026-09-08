@@ -6,6 +6,13 @@ import { useSharedPrestataire } from "@/contexts/PrestataireContext";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import FacturesList from "@/components/facturation/FacturesList";
+import {
+  dateRetourTarifNormal,
+  formatDateFr,
+  formatEuros,
+  type PromoEligibilite,
+  usePromoLancement,
+} from "@/hooks/usePromoLancement";
 
 type Formule = "standard" | "premium";
 type Periodicite = "mensuel" | "annuel";
