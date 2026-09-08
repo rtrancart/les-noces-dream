@@ -123,7 +123,7 @@ const COMPARATIF: { titre: string; lignes: { label: string; standard: Cell; prem
   {
     titre: "Votre vitrine",
     lignes: [
-      { label: "Galerie photos", standard: true, premium: true },
+      { label: "Galerie photos", standard: "10 photos", premium: "Illimitée" },
       { label: "Description détaillée et services", standard: true, premium: true },
       { label: "Zones d'intervention multiples", standard: true, premium: true },
     ],
