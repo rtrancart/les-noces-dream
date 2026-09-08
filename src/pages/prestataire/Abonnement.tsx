@@ -799,12 +799,24 @@ function PlanCard({ plan, isCurrent, isPending, loading, disabled, onClick, comp
       </div>
 
       <div className="mb-1 flex items-baseline gap-1.5">
-        <span className="font-serif text-3xl text-foreground">{plan.prix}</span>
+        <span className="font-serif text-3xl text-foreground">
+          {prixPromo ? formatEuros(prixPromo) : plan.prix}
+        </span>
+        {prixPromo && (
+          <span className="font-sans text-sm text-muted-foreground line-through">{plan.prix}</span>
+        )}
         <span className="font-sans text-xs text-muted-foreground">{plan.periode}</span>
       </div>
-      <p className="mb-4 font-sans text-xs text-muted-foreground">
-        {plan.equivalent ? `${plan.equivalent} · ${plan.economie}` : "TTC, sans engagement"}
-      </p>
+      {prixPromo ? (
+        <p className="mb-4 font-sans text-xs text-muted-foreground">
+          Tarif de lancement pendant 12 mois, puis {plan.prix} {plan.periode} à partir du{" "}
+          {formatDateFr(dateRetourTarifNormal())}.
+        </p>
+      ) : (
+        <p className="mb-4 font-sans text-xs text-muted-foreground">
+          {plan.equivalent ? `${plan.equivalent} · ${plan.economie}` : "TTC, sans engagement"}
+        </p>
+      )}
 
       <ul className="mb-5 space-y-2">
         {(isPremium
