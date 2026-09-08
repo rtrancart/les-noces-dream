@@ -260,7 +260,7 @@ export default function PrestataireAbonnement() {
     if (!prestataire?.id) return null;
     const { data } = await supabase
       .from("abonnements")
-      .select("id, plan, formule, periodicite, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_customer_id, stripe_payment_method_id, carte_brand, carte_last4, plan_pending, plan_pending_le, stripe_schedule_id")
+      .select("id, plan, formule, periodicite, statut, montant_cents, fin_essai_le, fin_periode_le, cancel_at_period_end, suspendu_pour_impaye_le, stripe_subscription_id, stripe_customer_id, stripe_payment_method_id, carte_brand, carte_last4, plan_pending, plan_pending_le, stripe_schedule_id, promo_active, promo_fin_le")
       .eq("prestataire_id", prestataire.id)
       .maybeSingle();
     const next = (data as Abonnement | null) ?? null;
