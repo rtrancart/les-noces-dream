@@ -176,13 +176,14 @@ export function buildServicesGroups(
     .map(({ id, title, icon }) => {
       const fields = buckets[id];
       if (fields.length === 0) return null;
-      return {
+      const group: FieldGroup = {
         id,
         title,
         icon,
         fields,
         summary: buildSummary(fields),
       };
+      return group;
     })
     .filter((g): g is FieldGroup => g !== null);
 }
