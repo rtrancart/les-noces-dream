@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { useMemo } from "react";
+import PromoLancementBanner from "@/components/prestataire/PromoLancementBanner";
 
 interface DashboardStats {
   totalDemandes: number;
