@@ -128,12 +128,9 @@ Deno.serve(async (req) => {
 
     return new Response(html, {
       status: 200,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "public, max-age=300, s-maxage=600",
-        "x-prerender": "snapshot",
+      headers: enTetesHtml("snapshot", "public, max-age=300, s-maxage=600", {
         "x-prerender-path": storagePath,
-      },
+      }),
     });
   } catch {
     return servirApplication("passthrough-erreur");
