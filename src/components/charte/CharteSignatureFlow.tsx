@@ -51,7 +51,6 @@ export function parseCharte(html: string): { articles: ArticleSection[]; engagem
     }
     const nodes = Array.from(root.children);
 
-    let currentTitre = "";
     let current: ArticleSection | null = null;
     let counter = 0;
     const preamble: string[] = [];
@@ -65,21 +64,13 @@ export function parseCharte(html: string): { articles: ArticleSection[]; engagem
         const text = (node.textContent || "").replace(/\s+/g, " ").trim();
         if (!text) continue;
         const m = text.match(/^Article\s+(\d+)\s*[—–-]?\s*(.*)$/i);
-        const isSection = tag === "H2" && !m;
-        if (isSection) {
-          // Un titre de partie : sert de sur-titre aux articles suivants,
-          // sauf s'il commence une section de contenu autonome (préambule…).
-          currentTitre = text;
-          counter += 1;
-          current = { num: counter, title: text, titre: "", html: "" };
-          articles.push(current);
-          continue;
-        }
         counter += 1;
         current = {
           num: counter,
-          title: m ? (m[2] || `Article ${m[1]}`) : text,
-          titre: currentTitre,
+          title: m ? m[2] || `Article ${m[1]}` : text,
+          titre: "",
+          heading: text,
+          articleNum: m ? parseInt(m[1], 10) : undefined,
           html: "",
         };
         articles.push(current);
@@ -88,6 +79,7 @@ export function parseCharte(html: string): { articles: ArticleSection[]; engagem
       if (current) current.html += node.outerHTML;
       else preamble.push(node.outerHTML);
     }
+
 
     if (preamble.length && articles.length) {
       articles[0].html = preamble.join("") + articles[0].html;
