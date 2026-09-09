@@ -980,6 +980,12 @@
           "key": "user-agent",
           "value": "(?i).*(bot|crawler|crawl|spider|slurp|bingpreview|facebookexternalhit|embedly|quora link preview|pinterest|whatsapp|telegram|discord|twitter|linkedinbot|applebot|headless|lighthouse|chrome-lighthouse|google-inspectiontool).*"
         }
+      ],
+      "missing": [
+        {
+          "type": "query",
+          "key": "__prerender_bypass"
+        }
       ]
     },
     {
