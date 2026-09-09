@@ -936,6 +936,10 @@
   ],
   "rewrites": [
     {
+      "source": "/functions/v1/:fn*",
+      "destination": "https://egbohbwiywgyyculswvf.supabase.co/functions/v1/:fn*"
+    },
+    {
       "source": "/:path((?!api/|assets/|admin(?:/|$)|espace-pro(?:/|$)|espace-client(?:/|$)|connexion(?:/|$)|inscription(?:/|$)|recherche(?:/|$)|auth/|paiement(?:/|$)|checkout(?:/|$)|sitemap\\.xml|robots\\.txt|favicon|.*\\.[a-zA-Z0-9]{2,5}$).*)",
       "destination": "https://egbohbwiywgyyculswvf.supabase.co/functions/v1/prerender-serve?__path=/:path",
       "has": [
