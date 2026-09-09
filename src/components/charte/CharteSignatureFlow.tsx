@@ -20,10 +20,15 @@ interface ArticleSection {
   num: number;
   title: string;
   titre: string;
+  /** Intitulé complet du titre d'origine (mode fallback sans data-article). */
+  heading?: string;
+  /** Numéro d'article tel qu'écrit dans la Charte (mode fallback). */
+  articleNum?: number;
   html: string;
 }
 
-function parseCharte(html: string): { articles: ArticleSection[]; engagementsTitles: string[] } {
+
+export function parseCharte(html: string): { articles: ArticleSection[]; engagementsTitles: string[] } {
   if (typeof window === "undefined") return { articles: [], engagementsTitles: [] };
   const parser = new DOMParser();
   const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
@@ -41,9 +46,58 @@ function parseCharte(html: string): { articles: ArticleSection[]; engagementsTit
   });
   articles.sort((a, b) => a.num - b.num);
 
-  const engagementsTitles = articles.filter((a) => a.num <= 6).map((a) => a.title);
+  // Fallback : contenu sans balisage <section data-article> (Charte importée
+  // depuis un document bureautique). On découpe sur les titres h2/h3.
+  if (articles.length === 0) {
+    let root: Element = doc.body;
+    // Déballe les conteneurs uniques (div wrapper, body importé…)
+    while (root.children.length === 1 && /^(DIV|BODY|ARTICLE|MAIN)$/.test(root.children[0].tagName)) {
+      root = root.children[0];
+    }
+    const nodes = Array.from(root.children);
+
+    let current: ArticleSection | null = null;
+    let counter = 0;
+    const preamble: string[] = [];
+
+    const isHeading = (t: string) => t === "H2" || t === "H3";
+
+    for (const node of nodes) {
+      const tag = node.tagName;
+      if (tag === "H1") continue;
+      if (isHeading(tag)) {
+        const text = (node.textContent || "").replace(/\s+/g, " ").trim();
+        if (!text) continue;
+        const m = text.match(/^Article\s+(\d+)\s*[—–-]?\s*(.*)$/i);
+        counter += 1;
+        current = {
+          num: counter,
+          title: m ? m[2] || `Article ${m[1]}` : text,
+          titre: "",
+          heading: text,
+          articleNum: m ? parseInt(m[1], 10) : undefined,
+          html: "",
+        };
+        articles.push(current);
+        continue;
+      }
+      if (current) current.html += node.outerHTML;
+      else preamble.push(node.outerHTML);
+    }
+
+
+    if (preamble.length && articles.length) {
+      articles[0].html = preamble.join("") + articles[0].html;
+    }
+  }
+
+  const engagementsTitles = articles
+    .filter((a) => (a.articleNum ?? a.num) <= 6 && (a.articleNum !== undefined || a.heading === undefined))
+    .map((a) => a.title);
+
   return { articles, engagementsTitles };
 }
+
 
 const COUNTDOWN_SECONDS = 0;
 
@@ -170,11 +224,16 @@ export function CharteSignatureFlow({ mode, onSigned, allowReportLater = false }
   if (!charte || articles.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <Card className="p-8 text-center max-w-md">
+        <Card className="p-8 text-center max-w-md space-y-5">
           <p className="font-sans text-muted-foreground">
-            La Charte n'est pas disponible pour le moment. Veuillez réessayer plus tard.
+            La Charte n'est pas disponible pour le moment. Vous pourrez la signer
+            plus tard depuis votre espace.
           </p>
+          <Button onClick={() => navigate("/espace-pro")} size="lg">
+            J'accède à mon espace
+          </Button>
         </Card>
+
       </div>
     );
   }
@@ -246,12 +305,17 @@ export function CharteSignatureFlow({ mode, onSigned, allowReportLater = false }
         {isArticleStep && (
           <Card className="p-6 md:p-10 space-y-6">
             <div className="space-y-2">
-              <p className="font-sans text-xs uppercase tracking-wider text-muted-foreground">
-                {articles[step].titre}
-              </p>
+              {articles[step].titre && (
+                <p className="font-sans text-xs uppercase tracking-wider text-muted-foreground">
+                  {articles[step].titre}
+                </p>
+              )}
               <h2 className="font-serif text-2xl md:text-3xl">
-                Article {articles[step].num} — {articles[step].title}
+                {articles[step].heading
+                  ? articles[step].heading
+                  : `Article ${articles[step].num} — ${articles[step].title}`}
               </h2>
+
               <ProgressBar />
               <p className="font-sans text-xs text-muted-foreground text-right">
                 {step + 1} / {totalSteps}
