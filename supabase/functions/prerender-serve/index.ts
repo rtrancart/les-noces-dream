@@ -36,20 +36,36 @@ function estExclu(p: string): boolean {
   return PREFIXES_EXCLUS.some((prefix) => p === prefix || p.startsWith(prefix + "/"));
 }
 
+/**
+ * En-têtes communs à TOUTE réponse HTML.
+ * Aucune directive `sandbox` : une CSP permissive explicite est posée pour
+ * neutraliser toute politique restrictive injectée en amont, qui empêcherait
+ * l'exécution du JavaScript de l'application.
+ */
+function enTetesHtml(marqueur: string, cache: string, extra: Record<string, string> = {}) {
+  return {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": cache,
+    "content-security-policy":
+      "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; frame-ancestors *",
+    "x-prerender": marqueur,
+    ...extra,
+  };
+}
+
 /** Renvoie la coquille de l'application. `/index.html` n'est jamais réécrit. */
 async function servirApplication(marqueur: string, statut = 200): Promise<Response> {
   try {
     const res = await fetch(`${SITE_URL}/index.html`, {
-      headers: { "user-agent": "prerender-serve/1.0 passthrough" },
+      headers: {
+        "user-agent": "prerender-serve/1.0 passthrough",
+        accept: "text/html,application/xhtml+xml",
+      },
     });
     const html = await res.text();
     return new Response(html, {
       status: res.ok ? statut : 200,
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "no-store",
-        "x-prerender": marqueur,
-      },
+      headers: enTetesHtml(marqueur, "no-store"),
     });
   } catch {
     // Dernier recours : redirection vers la racine plutôt qu'une erreur serveur.
