@@ -5,6 +5,7 @@ import Stripe from "npm:stripe@17";
 import { syncStripeInvoiceToPennylane } from "../_shared/pennylane-sync.ts";
 import {
   stripeSecretKey,
+  stripeWebhookSecret,
   type Formule,
   legacyPlanValue,
   type Periodicite,
