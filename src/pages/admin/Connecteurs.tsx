@@ -19,7 +19,6 @@ export default function AdminConnecteurs() {
 
       <PennylaneConnectionPanel />
 
-      <MigratePhotosBatchPanel />
 
       <PrerenderSnapshotsPanel />
 
