@@ -3,7 +3,7 @@
 //
 // Un seul produit Stripe "Abonnement LesNoces.net" avec 4 prix :
 //   standard_mensuel (89 €), standard_annuel (948 €),
-//   premium_mensuel (149 €), premium_annuel (1 590 €).
+//   premium_mensuel (149 €), premium_annuel (1 548 €).
 
 export type Formule = "standard" | "premium";
 export type Periodicite = "mensuel" | "annuel";
@@ -44,6 +44,22 @@ function env(name: string): string | undefined {
 
 export function stripeMode(): "test" | "live" {
   return env("STRIPE_MODE") === "live" ? "live" : "test";
+}
+
+/** Nom suffixé selon le mode courant, avec repli sur le nom historique sans suffixe. */
+function envForMode(base: string): string {
+  const suffix = stripeMode() === "live" ? "LIVE" : "TEST";
+  return env(`${base}_${suffix}`) ?? env(base) ?? "";
+}
+
+/** Clé secrète Stripe du mode courant. */
+export function stripeSecretKey(): string {
+  return envForMode("STRIPE_SECRET_KEY");
+}
+
+/** Secret de signature du webhook Stripe du mode courant. */
+export function stripeWebhookSecret(): string {
+  return envForMode("STRIPE_WEBHOOK_SECRET");
 }
 
 /** Fin globale de l'offre de lancement (garde-fou côté code). */

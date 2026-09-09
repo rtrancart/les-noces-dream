@@ -9,6 +9,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@17";
 import {
+  stripeSecretKey,
   computeChangeType,
   type Formule,
   legacyPlanValue,
@@ -72,7 +73,7 @@ async function reposerSchedulePromo(args: {
   }
 }
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
+const stripe = new Stripe(stripeSecretKey(), {
   apiVersion: "2024-11-20.acacia",
 });
 
