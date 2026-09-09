@@ -224,11 +224,16 @@ export function CharteSignatureFlow({ mode, onSigned, allowReportLater = false }
   if (!charte || articles.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <Card className="p-8 text-center max-w-md">
+        <Card className="p-8 text-center max-w-md space-y-5">
           <p className="font-sans text-muted-foreground">
-            La Charte n'est pas disponible pour le moment. Veuillez réessayer plus tard.
+            La Charte n'est pas disponible pour le moment. Vous pourrez la signer
+            plus tard depuis votre espace.
           </p>
+          <Button onClick={() => navigate("/espace-pro")} size="lg">
+            J'accède à mon espace
+          </Button>
         </Card>
+
       </div>
     );
   }
