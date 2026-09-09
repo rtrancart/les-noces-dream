@@ -193,7 +193,9 @@ Deno.serve(async (req) => {
         break;
       }
 
-      const absoluteUrl = `${siteUrl.replace(/\/$/, "")}${urlPath}`;
+      // `__prerender_bypass` empêche l'hébergeur de renvoyer le pré-rendu au
+      // moteur de rendu headless (boucle) : on veut la vraie SPA à rendre.
+      const absoluteUrl = `${siteUrl.replace(/\/$/, "")}${urlPath}?__prerender_bypass=1`;
       const storagePath = storagePathFromUrlPath(urlPath);
 
       let html: string | null = null;
