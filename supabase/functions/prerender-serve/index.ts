@@ -94,23 +94,10 @@ Deno.serve(async (req) => {
     // Erreur de lecture → surtout pas de fausse absence.
     if (error) return servirApplication("passthrough-erreur-lecture");
 
-    // Page inconnue du recensement → vraie absence.
-    if (!data) {
-      return new Response(
-        `<!doctype html><html lang="fr"><head><meta charset="utf-8">` +
-          `<meta name="robots" content="noindex"><title>Page introuvable — Les Noces</title></head>` +
-          `<body><h1>Page introuvable</h1>` +
-          `<p><a href="${SITE_URL}/">Retour à l'accueil</a></p></body></html>`,
-        {
-          status: 404,
-          headers: {
-            "content-type": "text/html; charset=utf-8",
-            "cache-control": "no-store",
-            "x-prerender": "notfound",
-          },
-        },
-      );
-    }
+    // Page inconnue du recensement (fiche toute neuve, page non indexable,
+    // réconciliation pas encore passée) → application, jamais de fausse 404.
+    if (!data) return servirApplication("passthrough-inconnu");
+
 
     // Page indexable connue mais snapshot pas encore produit → application.
     const storagePath = data.storage_path ?? cheminStockageDepuisUrl(chemin);
