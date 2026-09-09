@@ -76,8 +76,8 @@ const PLANS: Record<PlanKey, PlanInfo> = {
   },
   premium_annuel: {
     key: "premium_annuel", formule: "premium", periodicite: "annuel",
-    label: "Premium", prix: "1 590€", periode: "par an",
-    equivalent: "soit 132,50€ / mois", economie: "2 mois offerts",
+    label: "Premium", prix: "1 548€", periode: "par an",
+    equivalent: "soit 129€ / mois", economie: "économisez 240€ par an (-13 %)",
   },
 };
 
