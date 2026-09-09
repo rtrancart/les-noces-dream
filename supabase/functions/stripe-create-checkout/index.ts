@@ -372,7 +372,9 @@ Deno.serve(async (req) => {
           ...phasePromo,
           {
             items: [
-              { price: phasePromo.length ? planToPriceId(formule, periodicite) : priceId, quantity: 1 },
+              // Toujours le tarif normal : soit la promo s'achève avec la phase
+              // promo ci-dessus, soit elle est déjà terminée à cette date.
+              { price: planToPriceId(formule, periodicite), quantity: 1 },
             ],
             iterations: 1,
             proration_behavior: "none",
