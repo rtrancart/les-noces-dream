@@ -23,7 +23,7 @@ interface ArticleSection {
   html: string;
 }
 
-function parseCharte(html: string): { articles: ArticleSection[]; engagementsTitles: string[] } {
+export function parseCharte(html: string): { articles: ArticleSection[]; engagementsTitles: string[] } {
   if (typeof window === "undefined") return { articles: [], engagementsTitles: [] };
   const parser = new DOMParser();
   const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
