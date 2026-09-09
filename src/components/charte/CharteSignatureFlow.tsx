@@ -44,8 +44,13 @@ function parseCharte(html: string): { articles: ArticleSection[]; engagementsTit
   // Fallback : contenu sans balisage <section data-article> (Charte importée
   // depuis un document bureautique). On découpe sur les titres h2/h3.
   if (articles.length === 0) {
-    const root = doc.body.querySelector("body") ?? doc.body;
+    let root: Element = doc.body;
+    // Déballe les conteneurs uniques (div wrapper, body importé…)
+    while (root.children.length === 1 && /^(DIV|BODY|ARTICLE|MAIN)$/.test(root.children[0].tagName)) {
+      root = root.children[0];
+    }
     const nodes = Array.from(root.children);
+
     let currentTitre = "";
     let current: ArticleSection | null = null;
     let counter = 0;
