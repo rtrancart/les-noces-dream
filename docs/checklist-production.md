@@ -16,7 +16,7 @@
 
 ## Sécurité edge functions
 
-- [ ] **`stripe-webhook-simulate` supprimé** avant cutover DNS. Aucune fonction bypassant la signature Stripe ne doit exister en Live (`supabase functions delete stripe-webhook-simulate`).
+- [x] **`stripe-webhook-simulate` supprimé** (fonction retirée du dépôt et de l'environnement).
 - [ ] Revérifier qu'aucune autre edge function ne court-circuite `stripe.webhooks.constructEventAsync`.
 
 ## Emails
