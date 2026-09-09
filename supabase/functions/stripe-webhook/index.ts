@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import Stripe from "npm:stripe@17";
 import { syncStripeInvoiceToPennylane } from "../_shared/pennylane-sync.ts";
 import {
+  stripeSecretKey,
   type Formule,
   legacyPlanValue,
   type Periodicite,
@@ -12,10 +13,10 @@ import {
   PROMO_DUREE_MOIS,
 } from "../_shared/stripe-config.ts";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
+const stripe = new Stripe(stripeSecretKey(), {
   apiVersion: "2024-11-20.acacia",
 });
-const WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
+const WEBHOOK_SECRET = stripeWebhookSecret();
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
