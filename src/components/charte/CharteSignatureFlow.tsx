@@ -305,12 +305,17 @@ export function CharteSignatureFlow({ mode, onSigned, allowReportLater = false }
         {isArticleStep && (
           <Card className="p-6 md:p-10 space-y-6">
             <div className="space-y-2">
-              <p className="font-sans text-xs uppercase tracking-wider text-muted-foreground">
-                {articles[step].titre}
-              </p>
+              {articles[step].titre && (
+                <p className="font-sans text-xs uppercase tracking-wider text-muted-foreground">
+                  {articles[step].titre}
+                </p>
+              )}
               <h2 className="font-serif text-2xl md:text-3xl">
-                Article {articles[step].num} — {articles[step].title}
+                {articles[step].heading
+                  ? articles[step].heading
+                  : `Article ${articles[step].num} — ${articles[step].title}`}
               </h2>
+
               <ProgressBar />
               <p className="font-sans text-xs text-muted-foreground text-right">
                 {step + 1} / {totalSteps}
