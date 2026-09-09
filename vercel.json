@@ -899,21 +899,6 @@
       "permanent": true
     },
     {
-      "source": "/mentions-legales",
-      "destination": "/mentions-legales",
-      "permanent": true
-    },
-    {
-      "source": "/cgu",
-      "destination": "/cgu",
-      "permanent": true
-    },
-    {
-      "source": "/connexion",
-      "destination": "/connexion",
-      "permanent": true
-    },
-    {
       "source": "/client/inscription",
       "destination": "/inscription",
       "permanent": true
