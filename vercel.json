@@ -955,6 +955,10 @@
       "destination": "https://egbohbwiywgyyculswvf.supabase.co/functions/v1/prerender-serve?__path=/:path"
     },
     {
+      "source": "/sitemap.xml",
+      "destination": "https://egbohbwiywgyyculswvf.supabase.co/functions/v1/generate-sitemap"
+    },
+    {
       "source": "/",
       "destination": "https://egbohbwiywgyyculswvf.supabase.co/functions/v1/prerender-serve?__path=/"
     },
