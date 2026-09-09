@@ -20,8 +20,13 @@ interface ArticleSection {
   num: number;
   title: string;
   titre: string;
+  /** Intitulé complet du titre d'origine (mode fallback sans data-article). */
+  heading?: string;
+  /** Numéro d'article tel qu'écrit dans la Charte (mode fallback). */
+  articleNum?: number;
   html: string;
 }
+
 
 export function parseCharte(html: string): { articles: ArticleSection[]; engagementsTitles: string[] } {
   if (typeof window === "undefined") return { articles: [], engagementsTitles: [] };
