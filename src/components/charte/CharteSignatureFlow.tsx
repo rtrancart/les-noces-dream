@@ -91,7 +91,10 @@ export function parseCharte(html: string): { articles: ArticleSection[]; engagem
     }
   }
 
-  const engagementsTitles = articles.filter((a) => a.num <= 6).map((a) => a.title);
+  const engagementsTitles = articles
+    .filter((a) => (a.articleNum ?? a.num) <= 6 && (a.articleNum !== undefined || a.heading === undefined))
+    .map((a) => a.title);
+
   return { articles, engagementsTitles };
 }
 
