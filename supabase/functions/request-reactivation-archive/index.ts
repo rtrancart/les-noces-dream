@@ -1,10 +1,15 @@
-// request-reactivation-archive — Prestataire archivé (charte non signée dans les 60 jours)
+// request-reactivation-archive — Prestataire archivé (motif charte non signée)
 // demande la réactivation et la republication de sa fiche.
+//
+// Cette fonction n'est plus appelée par la page publique /reactivation, qui
+// redirige désormais vers un contact email manuel. Elle reste utilisée par le
+// flux interne de signature de charte (redirection archive_locked depuis
+// sign-charte) lorsque l'archivage est bien lié à la non-signature.
 //
 // Auth optionnelle :
 //   - Si Authorization header fourni : on résout prestataire_id via user_id.
 //   - Sinon : prestataire_id doit être passé dans le body (provenance : magic link
-//     expiré, redirection 423 archive_locked depuis sign-charte, ou CTA email).
+//     expiré ou redirection 423 archive_locked depuis sign-charte).
 //
 // Codes retour :
 //   200 : demande envoyée
