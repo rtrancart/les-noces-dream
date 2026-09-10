@@ -110,7 +110,7 @@ export function ProviderInfoBanner({ prestataire, categoryName }: ProviderInfoBa
             <p className="font-sans text-xs text-muted-foreground mt-2">
               La réactivation de votre fiche passe par notre équipe.{" "}
               <a href="/reactivation" className="underline hover:text-foreground">
-                Demander une réactivation
+                Contacter notre équipe
               </a>
               .
             </p>
