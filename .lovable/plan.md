@@ -1,52 +1,85 @@
-# Audit lecture seule — Consentement & tracking (pré-CMP Axeptio)
+# Consentement cookies : Axeptio + Consent Mode v2
 
-Aucune modification. État de l'existant uniquement.
+Objectif : bloquer par défaut les traceurs tiers (GA4, Google Ads, Meta) tant
+que le visiteur n'a pas donné son accord, via le widget Axeptio.
 
-## 1. Ordre des scripts dans le `<head>` de `index.html`
+## Ce qui change
 
-Dans l'ordre exact :
+### 1. Ordre de chargement dans `index.html`
 
-1. `preconnect` Supabase, `fonts.googleapis.com`, `fonts.gstatic.com`, `googletagmanager.com`
-2. Feuille Google Fonts (Playfair Display + Montserrat)
-3. Deux blocs JSON-LD (`Organization`, `WebSite`)
-4. **Snippet GTM** (`GTM-5845GQJR`) — injecté directement en dur, sans condition
-5. Balises meta og:/twitter:
+Trois blocs en tête du `<head>`, dans cet ordre strict :
 
-Constats :
-- **Aucune initialisation Consent Mode v2** : pas de `gtag('consent','default', ...)` nulle part, ni avant ni après GTM.
-- **Aucun script Axeptio**, aucun `axeptioSettings`, aucune référence à une CMP dans tout le code.
-- Le `<noscript>` GTM est correctement placé dans le `<body>`.
+```text
+a. axeptioSettings + loader Axeptio   (clientId depuis l'environnement,
+                                       cookiesVersion "lesnoces-fr")
+b. Consent Mode v2 : tous les signaux à "denied", wait_for_update 500 ms
+c. Snippet GTM existant (GTM-5845GQJR), inchangé, déplacé après a et b
+```
 
-## 2. Composant de gestion du consentement
+Le conteneur GTM n'est ni dupliqué ni modifié : il est simplement précédé de
+la CMP et du Consent Mode. Le `<noscript>` GTM reste dans le `<body>`.
 
-**Il n'existe aucun composant CMP/consentement.**
+Signaux mis à `denied` par défaut : `ad_storage`, `analytics_storage`,
+`ad_user_data`, `ad_personalization`.
 
-Recherche exhaustive (`axeptio`, `consent`, `cmp`, `consent_update`, `gtag('consent'`) :
-- Les seules occurrences de « consentement » concernent le **consentement marketing Brevo** (`consentement_marketing` sur `profiles`, case RGPD dans `Inscription.tsx`, retrait dans `client/Parametres.tsx` via RPC `definir_consentement_marketing`) — domaine CRM, rien à voir avec les cookies/traceurs.
-- `OAuthConsent.tsx` concerne le consentement OAuth de l'app MCP — sans rapport.
-- **Aucun** appel à `gtag('consent','update', ...)`, **aucun** push `consent_update` dans le dataLayer, **aucune** écoute d'événement CMP.
+### 2. Couche applicative d'écoute des choix
 
-## 3. Variables d'environnement liées au tracking/consentement
+Un composant sans aucun rendu visible, monté tout en haut de l'application
+(au-dessus du routeur), donc actif dès le premier chargement et sur toutes les
+pages. À chaque décision de l'utilisateur dans le widget Axeptio :
 
-- `VITE_GA4_ID` — lu dans `src/lib/analytics.ts` (`initGA4()`). **Non déclarée dans `.env`** : si absente, `initGA4()` ne fait rien (GA4 ne charge pas). Le `.env` actuel ne contient que les clés Supabase et `VITE_SITE_URL`.
-- **Aucune variable d'identifiant client CMP** (type `AXEPTIO_CLIENT_ID`) n'existe ni n'est attendue par le code.
+- Mise à jour Google via `gtag('consent','update', ...)` :
+  - catégorie `google_analytics` → `analytics_storage`
+  - catégorie `google_ads` → `ad_storage` + `ad_user_data` + `ad_personalization`
+- Push dans le `dataLayer` d'un événement `consent_update` portant l'état des
+  trois catégories (`analytics`, `ads`, `meta`). La catégorie `meta` sert au
+  déclenchement du Meta Pixel côté conteneur GTM.
 
-Note d'architecture : le tracking passe par **deux canaux** :
-- GTM en dur dans `index.html` (charge GA4 via GTM côté conteneur, piloté par les events dataLayer de `useTracking.ts`)
-- GA4 direct optionnel via `initGA4()` si `VITE_GA4_ID` est défini (aujourd'hui inactif)
+L'interface de consentement reste entièrement gérée par le widget Axeptio.
 
-## 4. Consent Mode v2 — signaux par défaut
+### 3. Robustesse SPA
 
-**Non initialisé.** Aucun `gtag('consent','default')` n'existe. Il n'y a donc **aucun signal à `denied` par défaut** : GTM démarre sans état de consentement, et les tags configurés dans le conteneur GTM se comportent selon leur propre configuration (pas de garde côté site).
+Le choix est mémorisé par Axeptio (son propre cookie) et l'écoute est
+enregistrée une seule fois au montage de l'application. Une navigation côté
+client ne réinitialise donc rien et ne fait pas réapparaître le bandeau ;
+celui-ci ne revient que si aucun choix n'a été fait, ou si le visiteur rouvre
+volontairement ses préférences.
 
-## Résumé
+### 4. Variable d'environnement
 
-| Point | État |
-|---|---|
-| Consent Mode v2 `default` | Absent |
-| Consent Mode v2 `update` / event `consent_update` | Absent |
-| Script / settings Axeptio | Absent |
-| Composant consentement cookies | Inexistant |
-| Variable CMP (client ID, etc.) | Aucune attendue |
-| GTM | En dur dans `index.html`, sans condition de consentement |
-| GA4 direct (`VITE_GA4_ID`) | Prévu mais non configuré |
+`VITE_AXEPTIO_CLIENT_ID` déclarée dans un fichier d'exemple d'environnement
+avec une valeur placeholder. La vraie valeur sera renseignée côté hébergement.
+
+## Détails techniques
+
+- `index.html` : les blocs a/b/c sont placés immédiatement après les
+  `preconnect` (ajout d'un `preconnect` vers `static.axept.io`). Le `clientId`
+  est injecté au build via le placeholder Vite `%VITE_AXEPTIO_CLIENT_ID%` dans
+  l'objet `axeptioSettings` ; si le placeholder est vide, le loader n'est pas
+  injecté et le Consent Mode reste en `denied` (aucun traceur tiers).
+- Le bloc b définit `window.dataLayer` et la fonction `gtag` avant l'appel
+  `gtag('consent','default',{...,'wait_for_update':500})`, conformément à la
+  spécification Google.
+- Nouveau `src/components/ConsentManager.tsx` : `useEffect` unique qui empile
+  un callback dans `window._axcb` et s'abonne à `axeptio_sdk.on('cookies:complete')`
+  pour lire les choix, puis appelle `gtag('consent','update', ...)` et pousse
+  `consent_update`. Retourne `null`.
+- Monté dans `src/App.tsx` à l'intérieur de `TooltipProvider`, au-dessus de
+  `BrowserRouter`, hors de toute route.
+- `src/vite-env.d.ts` : ajout des déclarations `axeptioSettings` et `_axcb`
+  sur `Window` (le `dataLayer` et `gtag` y sont déjà déclarés).
+- Nouveau `.env.example` avec `VITE_AXEPTIO_CLIENT_ID="votre-client-id-axeptio"`
+  (le `.env` réel, auto-géré, n'est pas modifié).
+
+## Hors périmètre (inchangé)
+
+- Conteneur GTM et events `useTracking` existants.
+- Canal GA4 direct : `VITE_GA4_ID` reste non défini.
+- Consentement marketing Brevo (`consentement_marketing`).
+- Tracking `evenements_prestataire` (intérêt légitime, non soumis au consentement).
+
+## Vérification
+
+- `bunx tsc --noEmit`
+- Contrôle de l'ordre des trois blocs dans le HTML servi et de l'absence de
+  rendu visible ajouté par le composant.
