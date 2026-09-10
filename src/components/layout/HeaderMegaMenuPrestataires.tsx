@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 import { useHeaderCategories } from "@/hooks/useHeaderCategories";
 import CategoryMedallion from "./CategoryMedallion";
 
@@ -67,16 +65,6 @@ export default function HeaderMegaMenuPrestataires({ onNavigate }: Props) {
                   </ul>
                 </div>
               ))}
-            </div>
-            <div className="mt-6 pt-4 border-t border-[hsl(var(--header-or-fonce)/0.15)] flex justify-end">
-              <Link
-                to="/prestataires"
-                onClick={onNavigate}
-                className="inline-flex items-center gap-2 font-sans text-sm text-[hsl(var(--header-or-fonce))] hover:underline"
-              >
-                Voir toutes les catégories
-                <ArrowRight className="w-4 h-4" />
-              </Link>
             </div>
           </>
         )}

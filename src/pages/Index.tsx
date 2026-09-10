@@ -282,14 +282,6 @@ function CategoriesSection({ categories }: { categories: CategoryData[] }) {
           ))}
         </div>
 
-        <div className="flex justify-center mt-14">
-          <Button asChild size="lg" className="gap-3 h-14 px-8 text-base">
-            <Link to="/categories">
-              Voir toutes nos catégories de prestataires
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </Button>
-        </div>
       </div>
     </section>
   );

@@ -190,15 +190,6 @@ function PrestatairesPanel({
           </ul>
         </div>
       ))}
-      <div className="px-5 py-4 border-t border-[hsl(var(--header-or-fonce)/0.15)]">
-        <Link
-          to="/prestataires"
-          onClick={onClose}
-          className="block text-center font-sans text-sm text-[hsl(var(--header-or-fonce))] py-2"
-        >
-          Voir toutes les catégories →
-        </Link>
-      </div>
     </div>
   );
 }
