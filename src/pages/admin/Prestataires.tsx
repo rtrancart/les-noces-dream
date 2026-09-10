@@ -424,7 +424,9 @@ export default function Prestataires() {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
-      query = query.ilike("nom_commercial_norm", `%${normalized}%`);
+      query = query.or(
+        `nom_commercial_norm.ilike.%${normalized}%,email_contact.ilike.%${normalized}%`,
+      );
     }
 
     const [{ data: result, error }, { data: cats }] = await Promise.all([
