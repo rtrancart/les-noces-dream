@@ -10,12 +10,24 @@
     <link rel="preconnect" href="https://www.googletagmanager.com" />
     <link rel="preconnect" href="https://static.axept.io" crossorigin />
 
-    <!-- 1. CMP Axeptio -->
+    <!-- 1. CMP Axeptio (pilote nativement le Google Consent Mode v2) -->
     <script>
       (function () {
         var clientId = "%VITE_AXEPTIO_CLIENT_ID%";
         if (!clientId || clientId.indexOf("%") === 0) return;
-        window.axeptioSettings = { clientId: clientId, cookiesVersion: "lesnoces-fr" };
+        window.axeptioSettings = {
+          clientId: clientId,
+          cookiesVersion: "3dca1c47-d90b-43a2-b8e6-22723d56f121",
+          googleConsentMode: {
+            default: {
+              analytics_storage: "denied",
+              ad_storage: "denied",
+              ad_user_data: "denied",
+              ad_personalization: "denied",
+              wait_for_update: 500
+            }
+          }
+        };
         var e = document.createElement("script");
         e.async = true;
         e.src = "//static.axept.io/sdk.js";
@@ -24,19 +36,12 @@
     </script>
     <!-- End CMP Axeptio -->
 
-    <!-- 2. Google Consent Mode v2 — tout refusé par défaut -->
+    <!-- 2. dataLayer / gtag — requis par GTM et la couche applicative -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('consent', 'default', {
-        'ad_storage': 'denied',
-        'analytics_storage': 'denied',
-        'ad_user_data': 'denied',
-        'ad_personalization': 'denied',
-        'wait_for_update': 500
-      });
     </script>
-    <!-- End Google Consent Mode v2 -->
+    <!-- End dataLayer / gtag -->
 
     <!-- 3. Google Tag Manager -->
     <script>
