@@ -175,38 +175,9 @@ export async function executeIntent(intent: BulkIntent): Promise<BulkItemResult>
     });
 
 
-    // Le trigger DB peut flip vers 'actif' si charte signée / exemption valide.
-    // Dans ce cas, envoyer l'email de publication (même logique que
-    // updateStatut individuel).
-    if (updated.statut === "actif") {
-      let recipient = updated.email_contact;
-      let prenom = "";
-      if (updated.user_id) {
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("email, prenom")
-          .eq("id", updated.user_id)
-          .maybeSingle();
-        if (prof?.email) recipient = prof.email;
-        prenom = prof?.prenom ?? "";
-      }
-      if (recipient) {
-        const siteUrl = window.location.origin;
-        await supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "validation_publication_fiche",
-            recipientEmail: recipient,
-            idempotencyKey: `publication-${intent.prestataireId}`,
-            templateData: {
-              prenom,
-              nom_commercial: updated.nom_commercial,
-              lien_fiche_publique: `${siteUrl}/prestataire/${updated.slug}`,
-              lien_dashboard: `${siteUrl}/espace-pro`,
-            },
-          },
-        });
-      }
-    }
+    // Fiches migrées : pas d'email « Votre fiche est publiée ». Ces
+    // prestataires n'entrent que dans la chaîne M (M-01 + relances), qui
+    // annonce déjà la mise en ligne et fournit le lien de connexion.
   } catch (e: any) {
     result.validation = "error";
     result.errors.push(`Validation: ${e?.message ?? String(e)}`);

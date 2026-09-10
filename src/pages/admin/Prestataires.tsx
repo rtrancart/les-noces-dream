@@ -475,7 +475,7 @@ export default function Prestataires() {
       .from("prestataires")
       .update({ statut })
       .eq("id", id)
-      .select("id, nom_commercial, slug, statut, user_id, email_contact")
+      .select("id, nom_commercial, slug, statut, user_id, email_contact, origine")
       .maybeSingle();
     if (error) { toast.error(error.message); return; }
     toast.success("Statut mis à jour");
@@ -483,7 +483,8 @@ export default function Prestataires() {
 
     // Trigger publication email when the prestataire becomes actif
     // (statut validee + charte signée auto-flip to actif via DB trigger).
-    if (updated && updated.statut === "actif") {
+    // Les fiches migrées sont exclues : elles n'entrent que dans la chaîne M.
+    if (updated && updated.statut === "actif" && updated.origine !== "migration") {
       let recipient = updated.email_contact;
       let prenom = "";
       if (updated.user_id) {
