@@ -65,6 +65,7 @@ import AdminArticles from "./pages/admin/Articles";
 import AdminPages from "./pages/admin/Pages";
 import AdminLogs from "./pages/admin/Logs";
 import AdminEmails from "./pages/admin/Emails";
+import AdminSuiviEmails from "./pages/admin/SuiviEmails";
 import AdminRegions from "./pages/admin/Regions";
 import { Navigate } from "react-router-dom";
 import ChartePendingGuard from "@/components/auth/ChartePendingGuard";
@@ -173,6 +174,7 @@ const App = () => (
               <Route path="pages" element={<AdminPages />} />
               <Route path="logs" element={<AdminLogs />} />
               <Route path="emails" element={<AdminEmails />} />
+              <Route path="emails-suivi" element={<AdminSuiviEmails />} />
               <Route path="regions" element={<AdminRegions />} />
               <Route path="prestataires-pre-inscrits" element={<Navigate to="/admin/prestataires" replace />} />
               <Route path="chartes" element={<AdminChartes />} />

@@ -2741,6 +2741,17 @@ export type Database = {
         Args: { p_prestataire_id: string }
         Returns: undefined
       }
+      get_email_dashboard: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_since?: string
+          p_status?: string
+          p_templates?: string[]
+          p_until?: string
+        }
+        Returns: Json
+      }
       get_email_logs_for_recipient: {
         Args: {
           p_limit?: number
