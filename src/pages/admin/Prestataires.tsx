@@ -424,7 +424,9 @@ export default function Prestataires() {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase();
-      query = query.ilike("nom_commercial_norm", `%${normalized}%`);
+      query = query.or(
+        `nom_commercial_norm.ilike.%${normalized}%,email_contact.ilike.%${normalized}%`,
+      );
     }
 
     const [{ data: result, error }, { data: cats }] = await Promise.all([
@@ -927,7 +929,7 @@ export default function Prestataires() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Rechercher un prestataire…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 font-sans text-sm" />
+              <Input placeholder="Rechercher un prestataire ou un email…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 font-sans text-sm" />
             </div>
             <Select value={filterCategorie} onValueChange={setFilterCategorie}>
               <SelectTrigger className="w-[200px] font-sans text-sm"><SelectValue placeholder="Filtrer par catégorie" /></SelectTrigger>
