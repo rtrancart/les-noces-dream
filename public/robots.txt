@@ -41,6 +41,4 @@ Allow: /
 Disallow: /*/preview
 Disallow: /prestataire/id/
 
-Sitemap: https://egbohbwiywgyyculswvf.supabase.co/functions/v1/generate-sitemap
-# URL directe de l'Edge Function Supabase. À remplacer par https://lesnoces.net/sitemap.xml
-# après ajout d'un rewrite Vercel /sitemap.xml → Edge Function (à faire lors de la bascule DNS).
+Sitemap: https://lesnoces.net/sitemap.xml
