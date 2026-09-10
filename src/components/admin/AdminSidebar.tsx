@@ -10,6 +10,7 @@ import {
   LogOut,
   Settings,
   Mail,
+  MailCheck,
   MapPin,
   UserPlus,
   FileSignature,

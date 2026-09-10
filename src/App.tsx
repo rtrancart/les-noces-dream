@@ -174,6 +174,7 @@ const App = () => (
               <Route path="pages" element={<AdminPages />} />
               <Route path="logs" element={<AdminLogs />} />
               <Route path="emails" element={<AdminEmails />} />
+              <Route path="emails-suivi" element={<AdminSuiviEmails />} />
               <Route path="regions" element={<AdminRegions />} />
               <Route path="prestataires-pre-inscrits" element={<Navigate to="/admin/prestataires" replace />} />
               <Route path="chartes" element={<AdminChartes />} />
