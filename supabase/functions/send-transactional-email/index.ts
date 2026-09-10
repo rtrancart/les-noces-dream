@@ -142,6 +142,97 @@ Deno.serve(async (req) => {
   // Create Supabase client with service role (bypasses RLS)
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+  // Defense in depth: migrated providers belong exclusively to migration
+  // chain M. Keep this server-side guard so an older deployed admin bundle
+  // cannot enqueue the standard publication email.
+  if (templateName === 'validation_publication_fiche') {
+    const normalizedRecipient = effectiveRecipient.trim().toLowerCase()
+    const { data: directProvider, error: directProviderError } = await supabase
+      .from('prestataires')
+      .select('id, origine')
+      .ilike('email_contact', normalizedRecipient)
+      .eq('origine', 'migration')
+      .limit(1)
+      .maybeSingle()
+
+    if (directProviderError) {
+      console.error('Migration publication guard lookup failed', {
+        error: directProviderError,
+        recipient: normalizedRecipient,
+      })
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify publication email eligibility' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+
+    let migratedProvider = directProvider
+    if (!migratedProvider) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('email', normalizedRecipient)
+        .limit(1)
+        .maybeSingle()
+
+      if (profileError) {
+        console.error('Migration publication profile lookup failed', {
+          error: profileError,
+          recipient: normalizedRecipient,
+        })
+        return new Response(
+          JSON.stringify({ error: 'Failed to verify publication email eligibility' }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+      }
+
+      if (profile?.id) {
+        const { data: linkedProvider, error: linkedProviderError } = await supabase
+          .from('prestataires')
+          .select('id, origine')
+          .eq('user_id', profile.id)
+          .eq('origine', 'migration')
+          .limit(1)
+          .maybeSingle()
+
+        if (linkedProviderError) {
+          console.error('Migration publication linked provider lookup failed', {
+            error: linkedProviderError,
+            recipient: normalizedRecipient,
+          })
+          return new Response(
+            JSON.stringify({ error: 'Failed to verify publication email eligibility' }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          )
+        }
+        migratedProvider = linkedProvider
+      }
+    }
+
+    if (migratedProvider) {
+      console.warn('Publication email skipped for migrated provider', {
+        providerId: migratedProvider.id,
+        recipient: normalizedRecipient,
+      })
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: 'migration_chain_only' }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    }
+  }
+
   // 2. Check suppression list (fail-closed: if we can't verify, don't send)
   const { data: suppressed, error: suppressionError } = await supabase
     .from('suppressed_emails')
