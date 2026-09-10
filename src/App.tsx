@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ZonesProvider } from "@/contexts/ZonesContext";
 import ScrollToTop from "@/components/ScrollToTop";
+import ConsentManager from "@/components/ConsentManager";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import PublicLayout from "@/components/layout/PublicLayout";
 import Index from "./pages/Index";
@@ -76,6 +77,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <ConsentManager />
       <Toaster />
       <Sonner />
       <BrowserRouter>

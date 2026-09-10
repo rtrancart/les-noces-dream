@@ -8,6 +8,45 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://www.googletagmanager.com" />
+    <link rel="preconnect" href="https://static.axept.io" crossorigin />
+
+    <!-- 1. CMP Axeptio -->
+    <script>
+      (function () {
+        var clientId = "%VITE_AXEPTIO_CLIENT_ID%";
+        if (!clientId || clientId.indexOf("%") === 0) return;
+        window.axeptioSettings = { clientId: clientId, cookiesVersion: "lesnoces-fr" };
+        var e = document.createElement("script");
+        e.async = true;
+        e.src = "//static.axept.io/sdk.js";
+        document.getElementsByTagName("script")[0].parentNode.appendChild(e);
+      })();
+    </script>
+    <!-- End CMP Axeptio -->
+
+    <!-- 2. Google Consent Mode v2 — tout refusé par défaut -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'analytics_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'wait_for_update': 500
+      });
+    </script>
+    <!-- End Google Consent Mode v2 -->
+
+    <!-- 3. Google Tag Manager -->
+    <script>
+      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-5845GQJR');
+    </script>
+    <!-- End Google Tag Manager -->
 
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500&display=swap" rel="stylesheet" />
 
@@ -18,15 +57,6 @@
       {"@context":"https://schema.org","@type":"WebSite","name":"LesNoces.net","url":"https://lesnoces.net","inLanguage":"fr-FR"}
     </script>
 
-    <!-- Google Tag Manager -->
-    <script>
-      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-      })(window,document,'script','dataLayer','GTM-5845GQJR');
-    </script>
-    <!-- End Google Tag Manager -->
     <meta property="og:title" content="Lovable App">
   <meta name="twitter:title" content="Lovable App">
   <meta name="description" content="LesNoces.net is a wedding planning platform connecting couples with service providers across France.">
