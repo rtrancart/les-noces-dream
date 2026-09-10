@@ -65,6 +65,7 @@ import AdminArticles from "./pages/admin/Articles";
 import AdminPages from "./pages/admin/Pages";
 import AdminLogs from "./pages/admin/Logs";
 import AdminEmails from "./pages/admin/Emails";
+import AdminSuiviEmails from "./pages/admin/SuiviEmails";
 import AdminRegions from "./pages/admin/Regions";
 import { Navigate } from "react-router-dom";
 import ChartePendingGuard from "@/components/auth/ChartePendingGuard";

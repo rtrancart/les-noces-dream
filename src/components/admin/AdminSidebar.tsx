@@ -52,6 +52,7 @@ const contentItems = [
 
 const systemItems = [
   { title: "Connecteurs", url: "/admin/connecteurs", icon: Plug },
+  { title: "Suivi des emails", url: "/admin/emails-suivi", icon: MailCheck },
 ];
 
 export function AdminSidebar() {
