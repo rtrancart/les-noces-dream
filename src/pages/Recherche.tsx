@@ -31,8 +31,9 @@ function useSearchData() {
       const [prestRes, catRes] = await Promise.all([
         supabase
           .from("prestataires_public")
-          .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, est_premium, zones_intervention, categorie_mere_id, categorie_fille_id, latitude, longitude")
+          .select("id, nom_commercial, slug, description_courte, ville, region, photo_principale_url, note_moyenne, nombre_avis, prix_depart, est_premium, zones_intervention, categorie_mere_id, categorie_fille_id, latitude, longitude, score_classement, score_tri")
           .eq("statut", "actif")
+          .order("score_tri", { ascending: false, nullsFirst: false })
           .order("est_premium", { ascending: false })
           .order("note_moyenne", { ascending: false }),
         supabase
