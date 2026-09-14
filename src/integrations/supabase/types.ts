@@ -1707,6 +1707,7 @@ export type Database = {
           demande_reactivation_le: string | null
           demande_reactivation_message: string | null
           dernier_contact_tunnel_a_envoye_le: string | null
+          derniere_connexion_le: string | null
           description: string | null
           description_courte: string | null
           email_contact: string | null
@@ -1751,6 +1752,7 @@ export type Database = {
           relances_envoyees: number
           representant_nom: string | null
           representant_prenom: string | null
+          score_classement: number | null
           siret: string | null
           site_web: string | null
           slug: string
@@ -1791,6 +1793,7 @@ export type Database = {
           demande_reactivation_le?: string | null
           demande_reactivation_message?: string | null
           dernier_contact_tunnel_a_envoye_le?: string | null
+          derniere_connexion_le?: string | null
           description?: string | null
           description_courte?: string | null
           email_contact?: string | null
@@ -1835,6 +1838,7 @@ export type Database = {
           relances_envoyees?: number
           representant_nom?: string | null
           representant_prenom?: string | null
+          score_classement?: number | null
           siret?: string | null
           site_web?: string | null
           slug: string
@@ -1875,6 +1879,7 @@ export type Database = {
           demande_reactivation_le?: string | null
           demande_reactivation_message?: string | null
           dernier_contact_tunnel_a_envoye_le?: string | null
+          derniere_connexion_le?: string | null
           description?: string | null
           description_courte?: string | null
           email_contact?: string | null
@@ -1919,6 +1924,7 @@ export type Database = {
           relances_envoyees?: number
           representant_nom?: string | null
           representant_prenom?: string | null
+          score_classement?: number | null
           siret?: string | null
           site_web?: string | null
           slug?: string
@@ -2377,6 +2383,7 @@ export type Database = {
           cree_par_admin: boolean | null
           date_premiere_publication: string | null
           demande_reactivation_le: string | null
+          derniere_connexion_le: string | null
           description: string | null
           description_courte: string | null
           email_contact: string | null
@@ -2401,6 +2408,8 @@ export type Database = {
           prix_depart: number | null
           prix_max: number | null
           region: string | null
+          score_classement: number | null
+          score_tri: number | null
           site_web: string | null
           slug: string | null
           statut: Database["public"]["Enums"]["statut_prestataire"] | null
@@ -2700,6 +2709,14 @@ export type Database = {
         Args: { p_kind: string; p_prestataire_id: string }
         Returns: undefined
       }
+      calculer_score_classement: {
+        Args: { p_prestataire_id: string }
+        Returns: number
+      }
+      calculer_score_classement_for_row: {
+        Args: { p: Database["public"]["Tables"]["prestataires"]["Row"] }
+        Returns: number
+      }
       calculer_taux_reponse: {
         Args: { p_prestataire_id: string }
         Returns: {
@@ -2908,6 +2925,10 @@ export type Database = {
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
       mark_prestataire_first_login: { Args: never; Returns: undefined }
+      marquer_derniere_connexion: {
+        Args: { p_prestataire_id: string }
+        Returns: undefined
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -2968,10 +2989,18 @@ export type Database = {
           read_ct: number
         }[]
       }
+      recalculer_tous_les_scores: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: number
+      }
       resoudre_region_label: { Args: { p_region: string }; Returns: string }
       resoudre_zone_intervention: {
         Args: { p_valeur: string }
         Returns: string
+      }
+      score_classement_bruite: {
+        Args: { p_id: string; p_score: number }
+        Returns: number
       }
       soumettre_avis: {
         Args: {
