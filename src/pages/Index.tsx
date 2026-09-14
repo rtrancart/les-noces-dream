@@ -654,7 +654,7 @@ export default function Index() {
     <>
       <SeoHead
         title="LesNoces.net — Prestataires de mariage haut de gamme sélectionnés"
-        description="Trouvez les meilleurs prestataires de mariage haut de gamme en France. Lieux de réception, photographes, traiteurs, fleuristes et plus encore — sélectionnés par LesNoces.net."
+        description="Trouvez le prestataire idéal pour votre mariage, cocktail ou séminaire d'entreprise : lieux, traiteurs et photographes haut de gamme sélectionnés par LesNoces.net."
         canonicalUrl="/"
       />
       <JsonLd
