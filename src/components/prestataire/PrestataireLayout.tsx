@@ -32,7 +32,7 @@ function PrestataireLayoutInner() {
     if (typeof window !== "undefined" && window.localStorage.getItem(key) === today) {
       return;
     }
-    supabase.rpc("marquer_derniere_connexion", { p_prestataire_id: prestataire.id })
+    Promise.resolve(supabase.rpc("marquer_derniere_connexion", { p_prestataire_id: prestataire.id }))
       .then(() => {
         if (typeof window !== "undefined") {
           window.localStorage.setItem(key, today);
