@@ -8,7 +8,7 @@ Un seul point d'ajout, au moment de l'envoi : tous les liens de l'email pointant
 
 Règles appliquées :
 - `utm_source=lesnoces_email` (identique partout)
-- `utm_medium=email`
+- `utm_medium=lovable` (identique partout)
 - `utm_campaign` = famille de l'email (voir tableau)
 - `utm_content` = nom exact de l'email (permet de distinguer M-01 / M-02 / M-03…)
 - Liens ignorés : `mailto:`, images, lien de désinscription, et **les emails d'authentification** (connexion, mot de passe oublié, changement d'email) — on ne touche pas aux liens contenant un jeton de sécurité.
