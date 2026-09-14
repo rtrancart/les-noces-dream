@@ -25,6 +25,24 @@ function PrestataireLayoutInner() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const location = useLocation();
 
+  useEffect(() => {
+    if (!prestataire?.id) return;
+    const key = `ln_derniere_connexion_${prestataire.id}`;
+    const today = new Date().toISOString().slice(0, 10);
+    if (typeof window !== "undefined" && window.localStorage.getItem(key) === today) {
+      return;
+    }
+    supabase.rpc("marquer_derniere_connexion", { p_prestataire_id: prestataire.id })
+      .then(() => {
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(key, today);
+        }
+      })
+      .catch(() => {
+        // silencieux : ne bloque jamais l'accès à l'espace pro
+      });
+  }, [prestataire?.id]);
+
   const currentItem = mainItems.find((item) =>
     item.url === "/espace-pro"
       ? location.pathname === "/espace-pro"
