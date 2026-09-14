@@ -137,7 +137,11 @@ export default function BlogArticle() {
     <div className="bg-[#FBF8F3] min-h-screen text-bleu-abysse">
       <SeoHead
         title={article.meta_title || `${article.titre} | LesNoces.net`}
-        description={article.meta_description || article.extrait || `${article.titre} — chronique LesNoces.net.`}
+        description={
+          article.meta_description ||
+          `${article.titre} : conseils et inspirations mariage par LesNoces.net pour préparer votre grand jour.`
+        }
+
         canonicalUrl={`/blog/${article.slug}`}
         imageUrl={article.image_couverture_url ?? undefined}
         ogType="article"

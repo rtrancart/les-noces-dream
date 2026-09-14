@@ -60,9 +60,10 @@ export default function CharteQualite() {
     }
   };
 
-  const seoTitle = current
-    ? `Charte Qualité v${current.numero_version} | LesNoces.net`
-    : "Charte Qualité | LesNoces.net";
+  const seoTitle = current?.archivee_le
+    ? `Charte qualité v${current.numero_version} | LesNoces.net`
+    : "Charte qualité — nos critères de sélection | LesNoces.net";
+
 
   return (
     <>
