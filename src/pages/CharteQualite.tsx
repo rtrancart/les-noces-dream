@@ -60,15 +60,16 @@ export default function CharteQualite() {
     }
   };
 
-  const seoTitle = current
-    ? `Charte Qualité v${current.numero_version} | LesNoces.net`
-    : "Charte Qualité | LesNoces.net";
+  const seoTitle = current?.archivee_le
+    ? `Charte qualité v${current.numero_version} | LesNoces.net`
+    : "Charte qualité — nos critères de sélection | LesNoces.net";
+
 
   return (
     <>
       <SeoHead
         title={seoTitle}
-        description="Charte Qualité des prestataires LesNoces.net : engagements de qualité, transparence et professionnalisme."
+        description="Découvrez comment LesNoces.net sélectionne ses prestataires haut de gamme : critères d'exigence, vérifications et engagements pour votre mariage."
         canonicalUrl="/charte-qualite"
       />
       <div className="bg-background py-12 px-4">

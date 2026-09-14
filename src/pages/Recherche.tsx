@@ -313,20 +313,31 @@ export default function Recherche() {
   }, [categorySlugs, locationZones, citySearch]);
 
   // Dynamic title from filters
-  const dynamicTitle = useMemo(() => {
+  const seoParts = useMemo(() => {
     const catNames = getCondensedCategoryNames(categoryTree, categorySlugs);
     const catPart = catNames.length > 0 ? catNames.join(", ") : "Prestataires de mariage";
 
     if (citySearch) {
-      return `${catPart} à ${citySearch.label} (${citySearch.radius} km)`;
+      return { catPart, locPart: ` à ${citySearch.label}`, locLabel: citySearch.label };
     }
 
     const locLabels = getCondensedZoneNames(locationZones);
+    const locLabel = locLabels.length > 0 ? locLabels.join(", ") : "France";
     const locPart = locLabels.length > 0 ? ` à ${locLabels.join(", ")}` : " en France";
-    return `${catPart}${locPart}`;
+    return { catPart, locPart, locLabel };
   }, [categorySlugs, locationZones, categoryTree, citySearch]);
 
-  // SEO is rendered via <SeoHead> in JSX (see return).
+  const dynamicTitle = useMemo(() => {
+    if (citySearch) {
+      return `${seoParts.catPart} à ${citySearch.label} (${citySearch.radius} km)`;
+    }
+    return `${seoParts.catPart}${seoParts.locPart}`;
+  }, [seoParts, citySearch]);
+
+  const seoTitle = `${seoParts.catPart}${seoParts.locPart} — prestataires haut de gamme | LesNoces.net`;
+  const seoDescription = `Trouvez votre ${seoParts.catPart.toLowerCase()}${seoParts.locPart} : prestataires haut de gamme sélectionnés par LesNoces.net. Comparez les avis vérifiés et demandez vos devis gratuitement.`;
+
+
 
   const togglePrice = (p: string) =>
     setPriceFilters((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));

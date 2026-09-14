@@ -241,17 +241,21 @@ export default function PrestatairesListe() {
       intro = `${n} professionnels sélectionnés et validés par LesNoces.net.`;
     }
 
-    const metaTitle = `${cat} de mariage en ${metaZone} | LesNoces.net`;
+    const metaTitle = slug2
+      ? `${cat} — ${metaZone} | LesNoces.net`
+      : `${cat} de mariage en ${metaZone} | LesNoces.net`;
+    const metaDescription = slug2
+      ? `${cat} de mariage à ${metaZone} : une sélection haut de gamme signée LesNoces.net. Comparez les avis vérifiés et contactez vos prestataires.`
+      : `Découvrez les meilleurs ${cat.toLowerCase()} de mariage en ${metaZone} : prestataires haut de gamme sélectionnés par LesNoces.net, avis vérifiés et devis sur demande.`;
     const canonicalPath = slug2
       ? `/prestataires/${slugMere}/${slug2}`
       : `/prestataires/${slugMere}`;
 
-    return { h1, intro, metaTitle, canonicalUrl: `${SITE_URL}${canonicalPath}` };
+    return { h1, intro, metaTitle, metaDescription, canonicalUrl: `${SITE_URL}${canonicalPath}` };
   }, [categorieMere, categorieFille, zone, providers.length, slugMere, slug2, fallbackSlug]);
 
-  const seoMetaDesc = seo
-    ? `${seo.h1}. ${seo.intro} Comparez les meilleurs prestataires sur LesNoces.net.`
-    : null;
+  const seoMetaDesc = seo ? seo.metaDescription : null;
+
 
   /* ───── Render ───── */
 

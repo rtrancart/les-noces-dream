@@ -332,10 +332,11 @@ export default function MariageRegion() {
   // ── SEO/JSON-LD ──
   const metaTitle =
     page.meta_title ||
-    `Mariage en ${page.nom_region} — Prestataires & Conseils | LesNoces.net`;
+    `Se marier en ${page.nom_region} — prestataires & conseils | LesNoces.net`;
   const metaDesc =
     page.meta_description ||
-    `Trouvez les meilleurs prestataires de mariage en ${page.nom_region}. ${stats.nb_prestataires} professionnels validés par LesNoces dans ${stats.nb_villes} villes.`;
+    `Mariage en ${page.nom_region} : découvrez nos conseils et notre sélection des meilleurs prestataires haut de gamme de la région.`;
+
   
 
   const schemas: Record<string, unknown>[] = [

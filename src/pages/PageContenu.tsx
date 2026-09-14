@@ -59,7 +59,11 @@ export default function PageContenu() {
     <>
       <SeoHead
         title={page.meta_title ?? `${page.titre} | LesNoces.net`}
-        description={page.meta_description ?? page.titre}
+        description={
+          page.meta_description ??
+          `${page.titre} de LesNoces.net, marketplace de prestataires de mariage haut de gamme. Consultez les informations officielles et conditions du service.`
+        }
+
         canonicalUrl={`/${page.slug}`}
       />
       <article className="max-w-3xl mx-auto px-6 py-16 md:py-20">

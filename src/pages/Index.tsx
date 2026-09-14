@@ -653,7 +653,7 @@ export default function Index() {
   return (
     <>
       <SeoHead
-        title="LesNoces.net — Prestataires de mariage haut de gamme sélectionnés"
+        title="LesNoces.net — Prestataires de mariage haut de gamme"
         description="Trouvez le prestataire idéal pour votre mariage, cocktail ou séminaire d'entreprise : lieux, traiteurs et photographes haut de gamme sélectionnés par LesNoces.net."
         canonicalUrl="/"
       />

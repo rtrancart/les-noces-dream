@@ -187,10 +187,8 @@ export default function FichePrestataireView({
             ? `Prévisualisation — ${presta.nom_commercial} | LesNoces.net`
             : `${presta.nom_commercial} — ${catMere?.nom ?? "Prestataire de mariage"} à ${presta.ville} | LesNoces.net`
         }
-        description={
-          presta.description_courte ??
-          `Découvrez ${presta.nom_commercial}, ${catMere?.nom ?? "prestataire"} à ${presta.ville}. Avis, photos, tarifs et demande de devis sur LesNoces.net.`
-        }
+        description={`${presta.nom_commercial}, ${(catMere?.nom ?? "prestataire").toLowerCase()} de mariage à ${presta.ville} sélectionné par LesNoces.net. Découvrez ses prestations, ses photos et les avis, puis demandez un devis.`}
+
         canonicalUrl={
           previewMode
             ? `/prestataire/${presta.slug}/preview`
