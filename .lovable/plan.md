@@ -60,7 +60,7 @@ Bruit déterministe, **non stocké** : calculé au tri via `hashtext(id::text ||
 
 Tri par défaut : `(score_classement + bruit) DESC NULLS LAST, est_premium DESC, note_moyenne DESC`.
 
-Comme PostgREST ne permet pas d'exprimer ce tri, il sera porté par une fonction SQL de classement : `public.score_classement_bruite(p_id uuid, p_score numeric) returns numeric` (IMMUTABLE-safe via `current_date`), exposée dans `prestataires_public` sous forme d'une colonne calculée `score_tri`, sur laquelle les pages font `.order("score_tri", { ascending: false, nullsFirst: false }).order("est_premium", ...).order("note_moyenne", ...)`.
+Comme PostgREST ne permet pas d'exprimer ce tri, il sera porté par une fonction SQL de classement : `public.score_classement_bruite(p_id uuid, p_score numeric) returns numeric` (STABLE, car elle dépend de `current_date`), exposée dans `prestataires_public` sous forme d'une colonne calculée `score_tri`, sur laquelle les pages font `.order("score_tri", { ascending: false, nullsFirst: false }).order("est_premium", ...).order("note_moyenne", ...)`.
 
 - `src/pages/Recherche.tsx` (l. 33-37) et `src/pages/PrestatairesListe.tsx` (l. 128-134) : `score_classement` ajouté au `select`, tri remplacé.
 - Tris explicites par distance et par prix : `ORDER BY` purs, sans bruit — inchangés.
