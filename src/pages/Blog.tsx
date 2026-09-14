@@ -111,8 +111,9 @@ export default function Blog() {
   return (
     <div className="bg-[#FBF8F3] min-h-screen text-bleu-abysse">
       <SeoHead
-        title="Blog mariage — Inspirations et conseils | LesNoces.net"
-        description="Le carnet d'une rédaction qui parcourt la France des belles noces — chroniques, carnets de lieux, confidences d'artisans."
+        title="Blog mariage — inspirations et conseils | LesNoces.net"
+        description="Idées déco, budget, organisation, tendances : nos conseils d'experts et inspirations pour préparer votre mariage sereinement, du oui au grand jour."
+
         canonicalUrl="/blog"
       />
       <JsonLd

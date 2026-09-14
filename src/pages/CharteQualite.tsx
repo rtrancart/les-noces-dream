@@ -68,7 +68,7 @@ export default function CharteQualite() {
     <>
       <SeoHead
         title={seoTitle}
-        description="Charte Qualité des prestataires LesNoces.net : engagements de qualité, transparence et professionnalisme."
+        description="Découvrez comment LesNoces.net sélectionne ses prestataires haut de gamme : critères d'exigence, vérifications et engagements pour votre mariage."
         canonicalUrl="/charte-qualite"
       />
       <div className="bg-background py-12 px-4">

@@ -66,7 +66,7 @@ export default function PrestatairesConsultes() {
     <div className="min-h-screen bg-background">
       <SeoHead
         title="Prestataires consultés | LesNoces.net"
-        description="Historique de vos prestataires de mariage consultés sur LesNoces.net."
+        description="Retrouvez en un clic les prestataires de mariage que vous avez consultés sur LesNoces.net."
         canonicalUrl="/prestataires-consultes"
         noindex
       />
