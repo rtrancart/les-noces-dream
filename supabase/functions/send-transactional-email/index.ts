@@ -3,6 +3,7 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 import { wrapWithShell } from '../_shared/email-shell.ts'
+import { tagEmailLinks } from '../_shared/utm.ts'
 
 
 // Configuration baked in at scaffold time — do NOT change these manually.
@@ -457,6 +458,11 @@ Deno.serve(async (req) => {
         ? template.subject(templateData)
         : template.subject
   }
+
+  // Tag every site link with UTM params (post-render, covers both DB and
+  // code templates). The unsubscribe link is appended downstream, so it is
+  // never affected here.
+  html = tagEmailLinks(html, templateName)
 
   if (unresolvedVars.size > 0) {
     // Incident: an email is going out with unfilled placeholders.
