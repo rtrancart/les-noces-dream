@@ -44,6 +44,30 @@ function jsonResponse(data: Record<string, unknown>, status = 200): Response {
   })
 }
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/** Insère un bloc preheader masqué en tête du <body> (ou du document). */
+export function injectPreheader(html: string, preheader: string): string {
+  const block =
+    `<div style="display:none;font-size:1px;color:#FAF9F6;line-height:1px;` +
+    `max-height:0;max-width:0;opacity:0;overflow:hidden;">` +
+    `${escapeHtml(preheader)}` +
+    `&#8199;&#65279;&#847;`.repeat(40) +
+    `</div>`
+  const m = html.match(/<body[^>]*>/i)
+  if (m && m.index !== undefined) {
+    const at = m.index + m[0].length
+    return html.slice(0, at) + block + html.slice(at)
+  }
+  return block + html
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
