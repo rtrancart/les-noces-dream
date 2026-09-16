@@ -294,8 +294,12 @@ export default function Emails() {
               className="pl-9"
             />
           </div>
-          <Segmented value={dest} onChange={setDest} options={DESTINATAIRES} />
-          <Segmented value={etat} onChange={setEtat} options={ETATS} />
+          <Segmented
+            value={dest}
+            onChange={(v) => setDest(v as typeof dest)}
+            options={DESTINATAIRES}
+          />
+          <Segmented value={etat} onChange={(v) => setEtat(v as typeof etat)} options={ETATS} />
         </div>
         <Segmented
           value={grouped ? "groupe" : "plat"}

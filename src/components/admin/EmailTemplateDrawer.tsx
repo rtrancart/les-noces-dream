@@ -422,9 +422,6 @@ export default function EmailTemplateDrawer({ item, onClose, onSaved }: Props) {
           </div>
         </footer>
       </aside>
-      <span className="sr-only">
-        <Badge>{item.templateName}</Badge>
-      </span>
     </div>
   );
 }
