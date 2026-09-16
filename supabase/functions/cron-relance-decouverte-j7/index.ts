@@ -1,6 +1,6 @@
-// Cron J+7 — Tunnel A : relance des prestataires invités par un admin qui
+// Cron J+2 — Tunnel A : relance des prestataires invités par un admin qui
 // n'ont toujours pas activé leur compte.
-// Sélection : statut = 'pre_inscrit', magic_link_envoye_le <= now() - 7 j,
+// Sélection : statut = 'pre_inscrit', magic_link_envoye_le <= now() - 2 j,
 // premier_login_le IS NULL, relance_decouverte_j7_envoye_le IS NULL.
 // L'update DB est fait AVANT enqueue (verrou idempotent).
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
