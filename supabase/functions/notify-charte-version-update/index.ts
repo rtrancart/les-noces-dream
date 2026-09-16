@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     for (const p of targets ?? []) {
       if (!p.email_contact) continue;
       const { data: profile } = await adminClient.from("profiles").select("prenom").eq("id", p.user_id).maybeSingle();
-      await adminClient.functions.invoke("send-transactional-email", {
+      await adminClient.functions.invoke("send-app-email", {
         body: {
           templateName: "notif_nouvelle_version_charte",
           recipientEmail: p.email_contact,

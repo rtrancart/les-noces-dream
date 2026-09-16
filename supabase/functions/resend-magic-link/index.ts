@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       joursRestants = Math.max(0, Math.ceil(60 - elapsed));
     }
 
-    await adminClient.functions.invoke("send-transactional-email", {
+    await adminClient.functions.invoke("send-app-email", {
       body: {
         templateName: "relance_signature_charte",
         recipientEmail: presta.email_contact,

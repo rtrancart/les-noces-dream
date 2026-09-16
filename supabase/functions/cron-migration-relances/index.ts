@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
       const anchor = step === "m05" ? row.premier_login_le : row.magic_link_envoye_le;
       const idempotencyKey = `migration-${step}-${row.id}-${anchor}`;
 
-      const { error: invokeErr } = await supabase.functions.invoke("send-transactional-email", {
+      const { error: invokeErr } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: cfg.template,
           recipientEmail: row.email_contact,

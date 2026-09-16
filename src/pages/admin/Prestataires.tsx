@@ -500,7 +500,7 @@ export default function Prestataires() {
       }
       if (recipient) {
         const siteUrl = window.location.origin;
-        const { error: mailErr } = await supabase.functions.invoke("send-transactional-email", {
+        const { error: mailErr } = await supabase.functions.invoke("send-app-email", {
           body: {
             templateName: "validation_publication_fiche",
             recipientEmail: recipient,

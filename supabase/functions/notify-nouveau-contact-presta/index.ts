@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
     lienConversation: `${SITE_URL}/espace-pro/demandes?demande=${demande.id}`,
   };
 
-  const { error: mailErr } = await admin.functions.invoke("send-transactional-email", {
+  const { error: mailErr } = await admin.functions.invoke("send-app-email", {
     body: {
       templateName,
       recipientEmail: presta.email_contact,
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
   });
 
   if (mailErr) {
-    console.error("send-transactional-email error", mailErr);
+    console.error("send-app-email error", mailErr);
     return json({ error: "Envoi email impossible" }, 500);
   }
 

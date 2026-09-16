@@ -667,7 +667,7 @@ async function enqueueImpayeEmail(
       templateData.portail_url = portailUrl;
     }
 
-    const { error } = await supabase.functions.invoke("send-transactional-email", {
+    const { error } = await supabase.functions.invoke("send-app-email", {
       body: {
         templateName,
         recipientEmail: presta.email_contact,
