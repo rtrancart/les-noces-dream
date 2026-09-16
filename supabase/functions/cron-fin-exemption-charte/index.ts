@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
 
       if (p.email_contact) {
         try {
-          await admin.functions.invoke("send-transactional-email", {
+          await admin.functions.invoke("send-app-email", {
             body: {
               templateName: "suspension_charte_exemption_expiree",
               recipientEmail: p.email_contact,

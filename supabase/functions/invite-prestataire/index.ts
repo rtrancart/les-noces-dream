@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
     // 4. Email
     const expirationHeures = Math.round(ttlSeconds / 3600);
     const isMigration = presta?.origine === "migration";
-    await adminClient.functions.invoke("send-transactional-email", {
+    await adminClient.functions.invoke("send-app-email", {
       body: {
         templateName: isMigration ? "migration_m01_reactivation" : "invitation_prestataire",
         recipientEmail: cleanEmail,

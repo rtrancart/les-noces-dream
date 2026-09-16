@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
 
       const idempotencyKey = `dernier-contact-tunnel-a-${row.id}-${row.magic_link_envoye_le}`;
 
-      const { error: invokeErr } = await supabase.functions.invoke("send-transactional-email", {
+      const { error: invokeErr } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "dernier_contact_tunnel_a",
           recipientEmail: row.email_contact,

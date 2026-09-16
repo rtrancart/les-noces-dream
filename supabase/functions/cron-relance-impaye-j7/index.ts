@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 
       const idempotencyKey = `impaye-rappel-${row.prestataire_id}-${row.stripe_subscription_id}-${row.premier_echec_le}`;
 
-      const { error: invokeErr } = await supabase.functions.invoke("send-transactional-email", {
+      const { error: invokeErr } = await supabase.functions.invoke("send-app-email", {
         body: {
           templateName: "impaye_rappel_intermediaire",
           recipientEmail: presta.email_contact,

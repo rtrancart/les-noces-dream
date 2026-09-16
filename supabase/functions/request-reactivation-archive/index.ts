@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
     }
 
     // Envoi email équipe (template Scaleway)
-    const { error: emailErr } = await adminClient.functions.invoke("send-transactional-email", {
+    const { error: emailErr } = await adminClient.functions.invoke("send-app-email", {
       body: {
         templateName: "demande_reactivation",
         recipientEmail: teamEmail,

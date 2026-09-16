@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
     // Send to each admin
     for (const ap of adminProfiles ?? []) {
-      await adminClient.functions.invoke("send-transactional-email", {
+      await adminClient.functions.invoke("send-app-email", {
         body: {
           templateName: "notif_nouvelle_soumission_fiche",
           recipientEmail: (ap as any).email,
