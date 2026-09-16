@@ -1717,6 +1717,9 @@ export type Database = {
           description: string | null
           description_courte: string | null
           email_contact: string | null
+          email_verifie:
+            | Database["public"]["Enums"]["verification_email"]
+            | null
           est_premium: boolean | null
           est_verifie: boolean | null
           fin_premium: string | null
@@ -1803,6 +1806,9 @@ export type Database = {
           description?: string | null
           description_courte?: string | null
           email_contact?: string | null
+          email_verifie?:
+            | Database["public"]["Enums"]["verification_email"]
+            | null
           est_premium?: boolean | null
           est_verifie?: boolean | null
           fin_premium?: string | null
@@ -1889,6 +1895,9 @@ export type Database = {
           description?: string | null
           description_courte?: string | null
           email_contact?: string | null
+          email_verifie?:
+            | Database["public"]["Enums"]["verification_email"]
+            | null
           est_premium?: boolean | null
           est_verifie?: boolean | null
           fin_premium?: string | null
@@ -3098,6 +3107,11 @@ export type Database = {
         | "boost"
         | "systeme"
       type_planificateur: "checklist" | "budget" | "invites" | "planning"
+      verification_email:
+        | "valid"
+        | "unknown"
+        | "invalid"
+        | "accept_all_unverifiable"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3307,6 +3321,12 @@ export const Constants = {
         "systeme",
       ],
       type_planificateur: ["checklist", "budget", "invites", "planning"],
+      verification_email: [
+        "valid",
+        "unknown",
+        "invalid",
+        "accept_all_unverifiable",
+      ],
     },
   },
 } as const
