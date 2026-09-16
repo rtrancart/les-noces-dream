@@ -3,8 +3,8 @@
 // pointing to the public site gets tracking params appended.
 // mailto:, non-site domains, image URLs and the unsubscribe link are ignored.
 
-const UTM_SOURCE = 'lesnoces_email'
-const UTM_MEDIUM = 'lovable'
+const UTM_SOURCE = 'lovable'
+const UTM_MEDIUM = 'email'
 
 // templateName -> { campaign, content }
 const UTM_MAP: Record<string, { campaign: string; content: string }> = {
