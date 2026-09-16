@@ -347,6 +347,7 @@ export default function Prestataires() {
   // suppressed_emails, source de vérité déjà alimentée par le webhook.
   const [suppressed, setSuppressed] = useState<Map<string, string>>(new Map());
   const [filterEmailRejete, setFilterEmailRejete] = useState(false);
+  const [filterEmailVerifie, setFilterEmailVerifie] = useState<string>("tous");
   const suppressedSet = useMemo(() => new Set(suppressed.keys()), [suppressed]);
 
   const handleChangePassword = async () => {
@@ -418,6 +419,8 @@ export default function Prestataires() {
       .limit(200);
     if (filterStatut !== "tous") query = query.eq("statut", filterStatut as StatutPrestataire);
     if (filterCategorie !== "toutes") query = query.eq("categorie_mere_id", filterCategorie);
+    if (filterEmailVerifie === "non_verifie") query = query.is("email_verifie", null);
+    else if (filterEmailVerifie !== "tous") query = query.eq("email_verifie", filterEmailVerifie);
     // Recherche insensible aux accents et à la casse (colonne normalisée côté DB)
     if (search) {
       const normalized = search
@@ -451,10 +454,10 @@ export default function Prestataires() {
     setSuppressed(map);
   };
 
-  useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search]);
+  useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search, filterEmailVerifie]);
   useEffect(() => { fetchSuppressed(); }, []);
   // Reset selection whenever filters/search change (evite d'agir sur des fiches invisibles)
-  useEffect(() => { setSelectedIds(new Set()); }, [filterStatut, filterCategorie, search, filterSousSeuil, locationZones, citySearch, filterEmailRejete]);
+  useEffect(() => { setSelectedIds(new Set()); }, [filterStatut, filterCategorie, search, filterSousSeuil, locationZones, citySearch, filterEmailRejete, filterEmailVerifie]);
 
   // Compteurs globaux par statut (indépendants des filtres)
   const [globalCounts, setGlobalCounts] = useState<Record<string, number>>({});
@@ -941,6 +944,17 @@ export default function Prestataires() {
               <SelectContent>
                 <SelectItem value="tous">Tous les statuts</SelectItem>
                 {Object.entries(statutLabels).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
+              </SelectContent>
+            </Select>
+            <Select value={filterEmailVerifie} onValueChange={setFilterEmailVerifie}>
+              <SelectTrigger className="w-[180px] font-sans text-sm"><SelectValue placeholder="Email vérifié" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tous">Email : tous</SelectItem>
+                <SelectItem value="valid">Valid</SelectItem>
+                <SelectItem value="unknown">Unknown</SelectItem>
+                <SelectItem value="invalid">Invalid</SelectItem>
+                <SelectItem value="accept_all_unverifiable">Accept-all</SelectItem>
+                <SelectItem value="non_verifie">Non vérifié</SelectItem>
               </SelectContent>
             </Select>
           </div>
