@@ -15,9 +15,7 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = true
   [functions.generate-sitemap]
     verify_jwt = false
-  [functions.handle-email-suppression]
-    verify_jwt = false
-  [functions.handle-email-unsubscribe]
+  [functions.handle-email-events]
     verify_jwt = false
   [functions.preview-transactional-email]
     verify_jwt = false
