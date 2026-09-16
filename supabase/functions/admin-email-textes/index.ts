@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
           templateName: name,
           displayName: entry.displayName ?? name,
           variables: def.variables,
+          previewData: entry.previewData ?? {},
           defaultSubject: def.subject,
           defaultHtml: def.html,
           shellHead,
@@ -174,7 +175,34 @@ Deno.serve(async (req) => {
       })
     }
 
-    throw new Error("action inconnue (list | reset | seed_missing | seed_designed)")
+    if (action === 'send_test') {
+      const templateName = body?.templateName as string
+      const to = body?.to as string
+      if (!templateName || !TEMPLATES[templateName]) throw new Error('templateName invalide')
+      if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) throw new Error('Adresse email invalide')
+
+      const entry = TEMPLATES[templateName]
+      const res = await fetch(`${supabaseUrl}/functions/v1/send-app-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${serviceRoleKey}`,
+        },
+        body: JSON.stringify({
+          templateName,
+          recipientEmail: to,
+          templateData: entry.previewData ?? {},
+          idempotencyKey: `admin-test-${templateName}-${Date.now()}`,
+        }),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(payload?.error ?? "L'envoi de test a échoué")
+      return new Response(JSON.stringify({ ok: true, result: payload }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    throw new Error("action inconnue (list | reset | seed_missing | seed_designed | send_test)")
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), {
       status: 400,

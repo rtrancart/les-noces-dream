@@ -924,11 +924,13 @@ export type Database = {
           created_at: string
           cta_label: string | null
           description: string | null
+          destinataire: string
           display_name: string
           est_actif: boolean
           footer: string | null
           id: string
           intro: string | null
+          sous_objet: string | null
           sujet: string
           template_name: string
           titre: string | null
@@ -941,11 +943,13 @@ export type Database = {
           created_at?: string
           cta_label?: string | null
           description?: string | null
+          destinataire?: string
           display_name: string
           est_actif?: boolean
           footer?: string | null
           id?: string
           intro?: string | null
+          sous_objet?: string | null
           sujet: string
           template_name: string
           titre?: string | null
@@ -958,11 +962,13 @@ export type Database = {
           created_at?: string
           cta_label?: string | null
           description?: string | null
+          destinataire?: string
           display_name?: string
           est_actif?: boolean
           footer?: string | null
           id?: string
           intro?: string | null
+          sous_objet?: string | null
           sujet?: string
           template_name?: string
           titre?: string | null
