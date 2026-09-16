@@ -1,6 +1,6 @@
-// Cron J+14 — Tunnel A : dernier contact aux prestataires invités par un admin
-// qui n'ont toujours pas activé leur compte, 14 jours après l'envoi initial.
-// Sélection : statut = 'pre_inscrit', magic_link_envoye_le <= now() - 14 j,
+// Cron J+4 — Tunnel A : dernier contact aux prestataires invités par un admin
+// qui n'ont toujours pas activé leur compte, 4 jours après l'envoi initial.
+// Sélection : statut = 'pre_inscrit', magic_link_envoye_le <= now() - 4 j,
 // premier_login_le IS NULL, dernier_contact_tunnel_a_envoye_le IS NULL.
 // Aucun email suivant. Verrou idempotent : update AVANT enqueue.
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const cutoff = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString();
+  const cutoff = new Date(Date.now() - 4 * 24 * 3600 * 1000).toISOString();
   const { data: rows, error } = await supabase
     .from("prestataires")
     .select("id, user_id, email_contact, nom_commercial, origine, magic_link_envoye_le")
