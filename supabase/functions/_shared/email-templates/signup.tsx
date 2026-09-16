@@ -1,44 +1,59 @@
 /// <reference types="npm:@types/react@18.3.1" />
 
 import * as React from 'npm:react@18.3.1'
+
 import {
-  Body, Button, Container, Head, Heading, Html, Img, Preview, Section, Text,
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Link,
+  Preview,
+  Text,
 } from 'npm:@react-email/components@0.0.22'
 
-const LOGO_URL = 'https://egbohbwiywgyyculswvf.supabase.co/storage/v1/object/public/email-assets/brand/logo-wordmark-abysse.png'
-
-interface Props {
-  siteName?: string
-  siteUrl?: string
-  recipient?: string
-  confirmationUrl?: string
+interface SignupEmailProps {
+  siteName: string
+  siteUrl: string
+  recipient: string
+  confirmationUrl: string
 }
 
-export const SignupEmail = ({ siteName = 'LesNoces.net', confirmationUrl }: Props) => (
-  <Html lang="fr" dir="ltr">
-    <Head />
-    <Preview>Confirmez votre adresse email pour finaliser votre inscription</Preview>
+export const SignupEmail = ({
+  siteName,
+  siteUrl,
+  recipient,
+  confirmationUrl,
+}: SignupEmailProps) => (
+  <Html lang="en" dir="ltr">
+    <Head>
+      <style>{darkModeCss}</style>
+    </Head>
+    <Preview>Confirm your email for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Section style={header}>
-          <Img src={LOGO_URL} alt={siteName} width="160" height="48" style={logoImg} />
-        </Section>
-        <Heading style={h1}>Bienvenue sur {siteName}</Heading>
+        <Heading style={h1}>Confirm your email</Heading>
         <Text style={text}>
-          Merci de rejoindre la communauté {siteName}. Pour finaliser votre inscription et sécuriser
-          votre compte, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous.
+          Thanks for signing up for{' '}
+          <Link href={siteUrl} style={link}>
+            <strong>{siteName}</strong>
+          </Link>
+          !
         </Text>
-        {confirmationUrl && (
-          <Section style={{ textAlign: 'center', margin: '32px 0' }}>
-            <Button href={confirmationUrl} style={button}>Confirmer mon adresse email</Button>
-          </Section>
-        )}
-        <Text style={hint}>
-          Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br />
-          <span style={linkText}>{confirmationUrl}</span>
+        <Text style={text}>
+          Please confirm your email address (
+          <Link href={`mailto:${recipient}`} style={link}>
+            {recipient}
+          </Link>
+          ) by clicking the button below:
         </Text>
+        <Button className="dm-btn" style={button} href={confirmationUrl}>
+          Verify Email
+        </Button>
         <Text style={footer}>
-          Si vous n'êtes pas à l'origine de cette inscription, ignorez simplement cet email.
+          If you didn't create an account, you can safely ignore this email.
         </Text>
       </Container>
     </Body>
@@ -47,13 +62,36 @@ export const SignupEmail = ({ siteName = 'LesNoces.net', confirmationUrl }: Prop
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Montserrat, Arial, sans-serif' }
-const container = { padding: '0 0 32px', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F5EFE3', padding: '28px', textAlign: 'center' as const, marginBottom: '32px' }
-const logoImg = { display: 'block', margin: '0 auto', height: '48px', width: 'auto' }
-const h1 = { fontFamily: 'Playfair Display, Georgia, serif', fontSize: '26px', fontWeight: 'normal' as const, color: '#2C3E50', margin: '0 28px 16px', lineHeight: '1.3' }
-const text = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '0 28px 16px' }
-const button = { backgroundColor: '#A57D27', color: '#ffffff', padding: '14px 32px', borderRadius: '2px', fontSize: '13px', fontWeight: 'bold' as const, textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' as const }
-const hint = { fontSize: '12px', color: '#777', margin: '0 28px 24px', lineHeight: '1.6' }
-const linkText = { color: '#A57D27', wordBreak: 'break-all' as const }
-const footer = { fontSize: '12px', color: '#999', margin: '32px 28px 0', textAlign: 'center' as const }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
+}
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
+const link = { color: 'inherit', textDecoration: 'underline' }
+const button = {
+  backgroundColor: '#000000',
+  color: '#ffffff',
+  fontSize: '14px',
+  border: '1px solid #000000',
+  borderRadius: '8px',
+  padding: '12px 20px',
+  textDecoration: 'none',
+}
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+// Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
+const darkModeCss = `
+  @media (prefers-color-scheme: dark) {
+    .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  }
+  [data-ogsc] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  [data-ogsb] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+`

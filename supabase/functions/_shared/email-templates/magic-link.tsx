@@ -1,42 +1,44 @@
 /// <reference types="npm:@types/react@18.3.1" />
 
 import * as React from 'npm:react@18.3.1'
+
 import {
-  Body, Button, Container, Head, Heading, Html, Img, Preview, Section, Text,
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Preview,
+  Text,
 } from 'npm:@react-email/components@0.0.22'
 
-const LOGO_URL = 'https://egbohbwiywgyyculswvf.supabase.co/storage/v1/object/public/email-assets/brand/logo-wordmark-abysse.png'
-
-interface Props {
-  siteName?: string
-  confirmationUrl?: string
+interface MagicLinkEmailProps {
+  siteName: string
+  confirmationUrl: string
 }
 
-export const MagicLinkEmail = ({ siteName = 'LesNoces.net', confirmationUrl }: Props) => (
-  <Html lang="fr" dir="ltr">
-    <Head />
-    <Preview>Votre lien de connexion sécurisé pour {siteName}</Preview>
+export const MagicLinkEmail = ({
+  siteName,
+  confirmationUrl,
+}: MagicLinkEmailProps) => (
+  <Html lang="en" dir="ltr">
+    <Head>
+      <style>{darkModeCss}</style>
+    </Head>
+    <Preview>Your login link for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Section style={header}>
-          <Img src={LOGO_URL} alt={siteName} width="160" height="48" style={logoImg} />
-        </Section>
-        <Heading style={h1}>Votre lien de connexion</Heading>
+        <Heading style={h1}>Your login link</Heading>
         <Text style={text}>
-          Cliquez sur le bouton ci-dessous pour vous connecter à votre espace {siteName}. Ce lien
-          est personnel et à usage unique.
+          Click the button below to log in to {siteName}. This link will expire
+          shortly.
         </Text>
-        {confirmationUrl && (
-          <Section style={{ textAlign: 'center', margin: '32px 0' }}>
-            <Button href={confirmationUrl} style={button}>Me connecter</Button>
-          </Section>
-        )}
-        <Text style={hint}>
-          Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br />
-          <span style={linkText}>{confirmationUrl}</span>
-        </Text>
+        <Button className="dm-btn" style={button} href={confirmationUrl}>
+          Log In
+        </Button>
         <Text style={footer}>
-          Si vous n'avez pas demandé cette connexion, ignorez cet email.
+          If you didn't request this link, you can safely ignore this email.
         </Text>
       </Container>
     </Body>
@@ -45,13 +47,35 @@ export const MagicLinkEmail = ({ siteName = 'LesNoces.net', confirmationUrl }: P
 
 export default MagicLinkEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Montserrat, Arial, sans-serif' }
-const container = { padding: '0 0 32px', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F5EFE3', padding: '28px', textAlign: 'center' as const, marginBottom: '32px' }
-const logoImg = { display: 'block', margin: '0 auto', height: '48px', width: 'auto' }
-const h1 = { fontFamily: 'Playfair Display, Georgia, serif', fontSize: '26px', fontWeight: 'normal' as const, color: '#2C3E50', margin: '0 28px 16px', lineHeight: '1.3' }
-const text = { fontSize: '15px', color: '#4A4A4A', lineHeight: '1.6', margin: '0 28px 16px' }
-const button = { backgroundColor: '#A57D27', color: '#ffffff', padding: '14px 32px', borderRadius: '2px', fontSize: '13px', fontWeight: 'bold' as const, textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' as const }
-const hint = { fontSize: '12px', color: '#777', margin: '0 28px 24px', lineHeight: '1.6' }
-const linkText = { color: '#A57D27', wordBreak: 'break-all' as const }
-const footer = { fontSize: '12px', color: '#999', margin: '32px 28px 0', textAlign: 'center' as const }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
+}
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
+const button = {
+  backgroundColor: '#000000',
+  color: '#ffffff',
+  fontSize: '14px',
+  border: '1px solid #000000',
+  borderRadius: '8px',
+  padding: '12px 20px',
+  textDecoration: 'none',
+}
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+// Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
+const darkModeCss = `
+  @media (prefers-color-scheme: dark) {
+    .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  }
+  [data-ogsc] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  [data-ogsb] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+`
