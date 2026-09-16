@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const cutoff = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+  const cutoff = new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString();
   const { data: rows, error } = await supabase
     .from("prestataires")
     .select("id, user_id, email_contact, nom_commercial, origine, magic_link_envoye_le")
