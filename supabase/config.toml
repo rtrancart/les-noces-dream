@@ -21,8 +21,6 @@ project_id = "egbohbwiywgyyculswvf"
     verify_jwt = false
   [functions.notify-nouveau-contact-presta]
     verify_jwt = false
-  [functions.process-email-queue]
-    verify_jwt = true
   [functions.relay-message]
     verify_jwt = true
   [functions.request-reactivation-archive]
