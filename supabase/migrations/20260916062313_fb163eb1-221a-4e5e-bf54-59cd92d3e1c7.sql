@@ -1,0 +1,2 @@
+update email_textes set display_name = 'Relance découverte J+2 (Tunnel A)' where template_name = 'relance_decouverte_j7';
+update email_textes set display_name = 'Dernier contact Tunnel A (J+4)' where template_name = 'dernier_contact_tunnel_a';
