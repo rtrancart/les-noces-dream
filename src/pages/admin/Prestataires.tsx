@@ -685,10 +685,6 @@ export default function Prestataires() {
       toast.error("Champs obligatoires manquants (nom, catégorie, ville, région, téléphone).");
       return;
     }
-    if (!form.prenom_contact || !form.nom_contact) {
-      toast.error("Prénom et nom du contact sont obligatoires pour l'invitation.");
-      return;
-    }
     const dureeLabel = longTtl ? "60 jours (campagne migration)" : "7 jours";
     if (!window.confirm(`Envoyer l'invitation à ${form.email_contact} ? Lien valide ${dureeLabel}. Le prestataire recevra un email pour activer son espace et signer la Charte Qualité.`)) {
       return;
@@ -702,8 +698,8 @@ export default function Prestataires() {
         body: {
           prestataire_id: editItem?.id,
           email: form.email_contact,
-          prenom: form.prenom_contact,
-          nom: form.nom_contact,
+          prenom: form.prenom_contact || undefined,
+          nom: form.nom_contact || undefined,
           nom_commercial: form.nom_commercial,
           telephone: form.telephone,
           categorie_mere_id: form.categorie_mere_id,
@@ -1249,10 +1245,10 @@ export default function Prestataires() {
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <Field label="Prénom contact *">
+                <Field label="Prénom contact">
                   <Input value={form.prenom_contact} onChange={(e) => setForm({ ...form, prenom_contact: e.target.value })} />
                 </Field>
-                <Field label="Nom contact *">
+                <Field label="Nom contact">
                   <Input value={form.nom_contact} onChange={(e) => setForm({ ...form, nom_contact: e.target.value })} />
                 </Field>
               </div>
