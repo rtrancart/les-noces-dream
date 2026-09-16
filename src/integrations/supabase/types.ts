@@ -2698,6 +2698,7 @@ export type Database = {
         }[]
       }
       admin_stats_zones_categories_json: { Args: never; Returns: Json }
+      appliquer_verification_emails: { Args: { p_data: Json }; Returns: number }
       brevo_compteurs_journal: {
         Args: {
           p_ids: string[]
