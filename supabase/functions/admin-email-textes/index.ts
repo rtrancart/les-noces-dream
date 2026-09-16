@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
           templateName: name,
           displayName: entry.displayName ?? name,
           variables: def.variables,
+          previewData: entry.previewData ?? {},
           defaultSubject: def.subject,
           defaultHtml: def.html,
           shellHead,
