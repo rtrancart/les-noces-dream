@@ -194,7 +194,7 @@ Deno.serve(async (req) => {
   // otherwise fall back to the React Email component (safety net).
   const { data: dbTexte, error: dbTexteError } = await supabase
     .from('email_textes')
-    .select('sujet, corps_html, est_actif')
+    .select('sujet, sous_objet, corps_html, est_actif')
     .eq('template_name', templateName)
     .maybeSingle()
 
@@ -251,6 +251,15 @@ Deno.serve(async (req) => {
       typeof template.subject === 'function'
         ? template.subject(templateData)
         : template.subject
+  }
+
+  // Sous-objet (preheader) : court texte d'aperçu affiché après l'objet dans
+  // la boîte de réception. Injecté masqué en tête du <body> quand il est
+  // renseigné en base pour ce template.
+  if (contentSource === 'db' && typeof dbTexte?.sous_objet === 'string' && dbTexte.sous_objet.trim()) {
+    const pre = substitute(dbTexte.sous_objet.trim())
+    pre.unresolved.forEach((v) => unresolvedVars.add(v))
+    html = injectPreheader(html, pre.out)
   }
 
   // Tag every site link with UTM params (post-render, covers both DB and
