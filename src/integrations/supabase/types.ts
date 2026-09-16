@@ -2745,15 +2745,6 @@ export type Database = {
         Args: { p_consent: boolean }
         Returns: boolean
       }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
-      email_queue_dispatch: { Args: never; Returns: undefined }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
-      }
       enregistrer_consultation_prestataire: {
         Args: { p_prestataire_id: string }
         Returns: undefined
@@ -2929,15 +2920,6 @@ export type Database = {
         Args: { p_prestataire_id: string }
         Returns: undefined
       }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
-        Returns: number
-      }
       normaliser_cle_zone: { Args: { p_valeur: string }; Returns: string }
       prerender_orphelins: {
         Args: { p_limit?: number }
@@ -2980,14 +2962,6 @@ export type Database = {
       reactiver_prestataire_paiement: {
         Args: { p_prestataire_id: string }
         Returns: undefined
-      }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
-        }[]
       }
       recalculer_tous_les_scores: {
         Args: { p_limit?: number; p_offset?: number }
