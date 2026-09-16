@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           templateName,
-          to,
+          recipientEmail: to,
           templateData: entry.previewData ?? {},
           idempotencyKey: `admin-test-${templateName}-${Date.now()}`,
         }),
