@@ -420,7 +420,7 @@ export default function Prestataires() {
     if (filterStatut !== "tous") query = query.eq("statut", filterStatut as StatutPrestataire);
     if (filterCategorie !== "toutes") query = query.eq("categorie_mere_id", filterCategorie);
     if (filterEmailVerifie === "non_verifie") query = query.is("email_verifie", null);
-    else if (filterEmailVerifie !== "tous") query = query.eq("email_verifie", filterEmailVerifie);
+    else if (filterEmailVerifie !== "tous") query = query.eq("email_verifie", filterEmailVerifie as "valid" | "unknown" | "invalid" | "accept_all_unverifiable");
     // Recherche insensible aux accents et à la casse (colonne normalisée côté DB)
     if (search) {
       const normalized = search
