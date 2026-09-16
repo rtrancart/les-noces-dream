@@ -1475,10 +1475,16 @@ export default function Prestataires() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving} className="font-sans text-sm">
                   Annuler
                 </Button>
-                {(editItem as any).origine === "migration" && (
+                {(editItem as any).origine === "migration" ? (
                   <Button variant="secondary" onClick={() => handleSendInvitation({ longTtl: true })} disabled={saving} className="font-sans text-sm">
                     {saving ? "Envoi…" : "Inviter (campagne migration — 60 j)"}
                   </Button>
+                ) : (
+                  (editItem.statut === "brouillon" || editItem.statut === "pre_inscrit") && (
+                    <Button variant="secondary" onClick={() => handleSendInvitation()} disabled={saving} className="font-sans text-sm">
+                      {saving ? "Envoi…" : "Envoyer l'invitation (lien 7 j)"}
+                    </Button>
+                  )
                 )}
                 <Button onClick={handleSave} disabled={saving} className="font-sans text-sm">
                   {saving ? "Enregistrement…" : "Enregistrer les modifications"}
