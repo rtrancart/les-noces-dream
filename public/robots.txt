@@ -40,5 +40,7 @@ Allow: /
 # Prévisualisation privée des fiches non publiées — jamais indexable.
 Disallow: /*/preview
 Disallow: /prestataire/id/
+# Back-office — jamais indexable.
+Disallow: /admin
 
 Sitemap: https://lesnoces.net/sitemap.xml

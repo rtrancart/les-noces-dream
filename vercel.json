@@ -934,6 +934,16 @@
       "permanent": true
     }
   ],
+  "headers": [
+    {
+      "source": "/admin",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/admin/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    }
+  ],
   "rewrites": [
     {
       "source": "/functions/v1/:fn*",
