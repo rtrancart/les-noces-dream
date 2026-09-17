@@ -927,11 +927,6 @@
       "source": "/actualite/21-groupes-musiciens",
       "destination": "/blog",
       "permanent": true
-    },
-    {
-      "source": "/prestataire-profil/:rest*",
-      "destination": "/recherche",
-      "permanent": true
     }
   ],
   "headers": [
