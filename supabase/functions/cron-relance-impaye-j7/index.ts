@@ -50,6 +50,15 @@ Deno.serve(async (req) => {
       continue;
     }
 
+    // Libère le verrou si l'envoi n'aboutit pas, pour que le passage suivant réessaie.
+    const releaseLock = async () => {
+      const { error: relErr } = await supabase
+        .from("abonnements")
+        .update({ rappel_impaye_envoye_le: null })
+        .eq("id", row.id);
+      if (relErr) console.error("cron-relance-impaye-j7: lock release failed", row.id, relErr);
+    };
+
     try {
       const { data: presta } = await supabase
         .from("prestataires")
@@ -58,6 +67,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (!presta?.email_contact) {
         console.warn("cron-relance-impaye-j7: no email_contact", row.prestataire_id);
+        await releaseLock();
         continue;
       }
       let prenom: string | undefined;
@@ -86,11 +96,13 @@ Deno.serve(async (req) => {
       });
       if (invokeErr) {
         console.error("cron-relance-impaye-j7: invoke error", row.prestataire_id, invokeErr);
+        await releaseLock();
       } else {
         sent++;
       }
     } catch (e) {
       console.error("cron-relance-impaye-j7: send failed", row.prestataire_id, e);
+      await releaseLock();
     }
   }
 

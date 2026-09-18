@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     for (const p of targets ?? []) {
       if (!p.email_contact) continue;
       const { data: profile } = await adminClient.from("profiles").select("prenom").eq("id", p.user_id).maybeSingle();
-      await adminClient.functions.invoke("send-app-email", {
+      const { error: emailErr } = await adminClient.functions.invoke("send-app-email", {
         body: {
           templateName: "notif_nouvelle_version_charte",
           recipientEmail: p.email_contact,
@@ -54,6 +54,11 @@ Deno.serve(async (req) => {
           },
         },
       });
+      if (emailErr) {
+        // Pas de marquage si l'envoi échoue : la fiche restera candidate au prochain passage.
+        console.error("notify-charte-version-update: email send failed", p.id, emailErr);
+        continue;
+      }
       await adminClient.from("prestataires").update({ notification_charte_obsolete_envoyee_le: now }).eq("id", p.id);
       sent++;
     }

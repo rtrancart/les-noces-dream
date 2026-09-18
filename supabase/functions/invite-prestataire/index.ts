@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
     // 4. Email
     const expirationHeures = Math.round(ttlSeconds / 3600);
     const isMigration = presta?.origine === "migration";
-    await adminClient.functions.invoke("send-app-email", {
+    const { error: emailErr } = await adminClient.functions.invoke("send-app-email", {
       body: {
         templateName: isMigration ? "migration_m01_reactivation" : "invitation_prestataire",
         recipientEmail: cleanEmail,
@@ -233,6 +233,11 @@ Deno.serve(async (req) => {
         },
       },
     });
+    if (emailErr) {
+      console.error("invite-prestataire: email send failed", presta.id, emailErr);
+      throw new Error("La fiche est enregistrée mais l'email d'invitation n'a pas pu être envoyé. Utilisez « Renvoyer l'invitation » pour réessayer.");
+    }
+
 
     // 5. Admin log (correct columns: entite/entite_id)
     await adminClient.from("logs_admin").insert({

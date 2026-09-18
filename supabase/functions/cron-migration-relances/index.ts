@@ -109,9 +109,19 @@ Deno.serve(async (req) => {
       continue;
     }
 
+    // Libère le verrou si l'envoi n'aboutit pas, pour que le passage suivant réessaie.
+    const releaseLock = async () => {
+      const { error: relErr } = await supabase
+        .from("prestataires")
+        .update({ [cfg.column]: null })
+        .eq("id", row.id);
+      if (relErr) console.error(`cron-migration-relances[${step}]: lock release failed`, row.id, relErr);
+    };
+
     try {
       if (!row.email_contact || !row.user_id) {
         console.warn(`cron-migration-relances[${step}]: missing email_contact/user_id`, row.id);
+        await releaseLock();
         continue;
       }
 
@@ -123,6 +133,7 @@ Deno.serve(async (req) => {
         const dateExemption = formatDateFr(row.charte_exemptee_jusqua);
         if (!dateExemption) {
           console.warn(`cron-migration-relances[${step}]: no exemption date, skipped`, row.id);
+          await releaseLock();
           continue;
         }
         templateData.charte_url = `${SITE_URL}/signer-la-charte`;
@@ -143,6 +154,7 @@ Deno.serve(async (req) => {
         });
         if (tokenErr) {
           console.error(`cron-migration-relances[${step}]: token insert failed`, row.id, tokenErr);
+          await releaseLock();
           continue;
         }
         templateData.magic_link = `${SITE_URL}/accept-invitation?token=${token}`;
@@ -161,11 +173,13 @@ Deno.serve(async (req) => {
       });
       if (invokeErr) {
         console.error(`cron-migration-relances[${step}]: invoke error`, row.id, invokeErr);
+        await releaseLock();
       } else {
         sent++;
       }
     } catch (e) {
       console.error(`cron-migration-relances[${step}]: send failed`, row.id, e);
+      await releaseLock();
     }
   }
 
