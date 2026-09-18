@@ -1412,6 +1412,30 @@ export type Database = {
         }
         Relationships: []
       }
+      monitoring_alertes: {
+        Row: {
+          cle: string
+          created_at: string
+          dernier_envoi_le: string | null
+          details: Json | null
+          updated_at: string
+        }
+        Insert: {
+          cle: string
+          created_at?: string
+          dernier_envoi_le?: string | null
+          details?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          cle?: string
+          created_at?: string
+          dernier_envoi_le?: string | null
+          details?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           corps: string
@@ -2936,6 +2960,12 @@ export type Database = {
         Args: { p_prestataire_id: string }
         Returns: undefined
       }
+      monitoring_alerte_liberer: { Args: { p_cle: string }; Returns: undefined }
+      monitoring_alerte_verrou: {
+        Args: { p_cle: string; p_details: Json }
+        Returns: boolean
+      }
+      monitoring_symptomes: { Args: never; Returns: Json }
       normaliser_cle_zone: { Args: { p_valeur: string }; Returns: string }
       prerender_orphelins: {
         Args: { p_limit?: number }
