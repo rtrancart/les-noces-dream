@@ -26,6 +26,7 @@ import { template as impayePremierEchec } from './impaye-premier-echec.tsx'
 import { template as impayeRappelIntermediaire } from './impaye-rappel-intermediaire.tsx'
 import { template as impayeSuspension } from './impaye-suspension.tsx'
 import { template as suspensionCharteExemptionExpiree } from './suspension-charte-exemption-expiree.tsx'
+import { template as alerteTechniqueAdmin } from './alerte-technique-admin.tsx'
 // Chaîne « prestataires migrés » (jetable après la campagne de reprise du parc)
 import { template as migrationM01 } from './migration-m01-reactivation.tsx'
 import { template as migrationM02 } from './migration-m02-relance.tsx'
@@ -51,6 +52,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'impaye_rappel_intermediaire': impayeRappelIntermediaire,
   'impaye_suspension': impayeSuspension,
   'suspension_charte_exemption_expiree': suspensionCharteExemptionExpiree,
+  'alerte_technique_admin': alerteTechniqueAdmin,
   'migration_m01_reactivation': migrationM01,
   'migration_m02_relance': migrationM02,
   'migration_m03_relance': migrationM03,
