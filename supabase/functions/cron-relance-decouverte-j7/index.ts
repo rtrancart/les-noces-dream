@@ -117,11 +117,13 @@ Deno.serve(async (req) => {
       });
       if (invokeErr) {
         console.error("cron-relance-decouverte-j7: invoke error", row.id, invokeErr);
+        await releaseLock();
       } else {
         sent++;
       }
     } catch (e) {
       console.error("cron-relance-decouverte-j7: send failed", row.id, e);
+      await releaseLock();
     }
   }
 
