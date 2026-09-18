@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       joursRestants = Math.max(0, Math.ceil(60 - elapsed));
     }
 
-    await adminClient.functions.invoke("send-app-email", {
+    const { error: emailErr } = await adminClient.functions.invoke("send-app-email", {
       body: {
         templateName: "relance_signature_charte",
         recipientEmail: presta.email_contact,
@@ -87,6 +87,10 @@ Deno.serve(async (req) => {
         },
       },
     });
+    if (emailErr) {
+      console.error("resend-magic-link: email send failed", presta.id, emailErr);
+      throw new Error("L'email n'a pas pu être envoyé. Réessayez dans un instant.");
+    }
 
     await adminClient.from("prestataires").update({
       magic_link_envoye_le: new Date().toISOString(),
