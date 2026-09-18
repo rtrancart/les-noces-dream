@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
       });
       if (tokenErr) {
         console.error("cron-relance-decouverte-j7: token insert failed", row.id, tokenErr);
+        await releaseLock();
         continue;
       }
       const magicLink = `${SITE_URL}/accept-invitation?token=${token}`;
