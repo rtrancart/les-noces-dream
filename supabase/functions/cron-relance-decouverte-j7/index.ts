@@ -53,9 +53,19 @@ Deno.serve(async (req) => {
       continue;
     }
 
+    // Libère le verrou si l'envoi n'aboutit pas, pour que le passage suivant réessaie.
+    const releaseLock = async () => {
+      const { error: relErr } = await supabase
+        .from("prestataires")
+        .update({ relance_decouverte_j7_envoye_le: null })
+        .eq("id", row.id);
+      if (relErr) console.error("cron-relance-decouverte-j7: lock release failed", row.id, relErr);
+    };
+
     try {
       if (!row.email_contact || !row.user_id) {
         console.warn("cron-relance-decouverte-j7: missing email_contact or user_id", row.id);
+        await releaseLock();
         continue;
       }
 
@@ -78,6 +88,7 @@ Deno.serve(async (req) => {
       });
       if (tokenErr) {
         console.error("cron-relance-decouverte-j7: token insert failed", row.id, tokenErr);
+        await releaseLock();
         continue;
       }
       const magicLink = `${SITE_URL}/accept-invitation?token=${token}`;
@@ -106,11 +117,13 @@ Deno.serve(async (req) => {
       });
       if (invokeErr) {
         console.error("cron-relance-decouverte-j7: invoke error", row.id, invokeErr);
+        await releaseLock();
       } else {
         sent++;
       }
     } catch (e) {
       console.error("cron-relance-decouverte-j7: send failed", row.id, e);
+      await releaseLock();
     }
   }
 
