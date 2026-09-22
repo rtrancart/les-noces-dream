@@ -1293,12 +1293,12 @@ export default function Prestataires() {
           </DialogHeader>
           <Tabs defaultValue="general" className="mt-2">
             <TabsList className={`grid w-full h-auto gap-1 bg-muted/30 p-1.5 ${editItem ? "grid-cols-5" : "grid-cols-4"}`}>
-              <TabsTrigger value="general" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Général</TabsTrigger>
-              <TabsTrigger value="coordonnees" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Coordonnées</TabsTrigger>
-              <TabsTrigger value="photos" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Photos</TabsTrigger>
-              <TabsTrigger value="admin" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Admin</TabsTrigger>
+              <TabsTrigger value="general" className="min-w-0 px-1 font-sans text-[11px] sm:text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Général</TabsTrigger>
+              <TabsTrigger value="coordonnees" className="min-w-0 px-1 font-sans text-[11px] sm:text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Coordonnées</TabsTrigger>
+              <TabsTrigger value="photos" className="min-w-0 px-1 font-sans text-[11px] sm:text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Photos</TabsTrigger>
+              <TabsTrigger value="admin" className="min-w-0 px-1 font-sans text-[11px] sm:text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Admin</TabsTrigger>
               {editItem && (
-                <TabsTrigger value="password" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Mot de passe</TabsTrigger>
+                <TabsTrigger value="password" className="min-w-0 px-1 font-sans text-[11px] sm:text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Mot de passe</TabsTrigger>
               )}
             </TabsList>
 
