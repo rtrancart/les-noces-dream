@@ -15,6 +15,12 @@ import { estRobot, cheminStockageDepuisUrl } from "../_shared/bots.ts";
 const SITE_URL = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://lesnoces.net").replace(/\/$/, "");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const BUCKET = "prerender-snapshots";
+/**
+ * Âge maximal d'un snapshot servi. Au-delà, on préfère l'application normale :
+ * la réconciliation tourne chaque nuit, donc un snapshot de plus de 7 jours
+ * signale un renouvellement en panne, pas un contenu stable.
+ */
+const AGE_MAX_HEURES = 168;
 
 /** Chemins jamais concernés par le pré-rendu (double sécurité côté fonction). */
 const PREFIXES_EXCLUS = [
@@ -103,7 +109,9 @@ Deno.serve(async (req) => {
     // Lecture autoritaire, unique et indexée sur url_path.
     const { data, error } = await supabase
       .from("prerender_queue")
-      .select("url_path, storage_path")
+      .select(
+        "url_path, storage_path, statut, dernier_motif, signature_visible, signature_rendue, rendu_le",
+      )
       .eq("url_path", chemin)
       .maybeSingle();
 
@@ -118,6 +126,30 @@ Deno.serve(async (req) => {
     // Page indexable connue mais snapshot pas encore produit → application.
     const storagePath = data.storage_path ?? cheminStockageDepuisUrl(chemin);
     if (!data.storage_path) return servirApplication("passthrough-snapshot-absent");
+
+    // ── Garde-fous de fraîcheur : un snapshot n'est servi que s'il est
+    // formellement à jour. Toute incertitude ⇒ application normale, jamais
+    // un HTML périmé (c'est ce qui avait produit une page à 16 fiches).
+    if (data.statut !== "a_jour") {
+      return servirApplication("passthrough-snapshot-non-a-jour");
+    }
+    if (data.dernier_motif) {
+      return servirApplication("passthrough-snapshot-en-erreur");
+    }
+    if (
+      !data.signature_visible ||
+      !data.signature_rendue ||
+      data.signature_visible !== data.signature_rendue
+    ) {
+      return servirApplication("passthrough-snapshot-empreinte-differente");
+    }
+    if (!data.rendu_le) {
+      return servirApplication("passthrough-snapshot-sans-date");
+    }
+    const ageHeures = (Date.now() - new Date(data.rendu_le).getTime()) / 3_600_000;
+    if (!Number.isFinite(ageHeures) || ageHeures > AGE_MAX_HEURES) {
+      return servirApplication("passthrough-snapshot-perime");
+    }
 
     const objectUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${storagePath}`;
     const snap = await fetch(objectUrl);

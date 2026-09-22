@@ -6,6 +6,7 @@
 //   2. sync_bloquee    : un event Brevo reste « a_rejouer » depuis plus de 2 h
 //                        (la reprise tourne tous les quarts d'heure).
 //   3. prerender_fige  : aucun snapshot rendu depuis plus de 30 h.
+//   4. prerender_file_bloquee : pages abandonnées ou en attente de capture > 12 h.
 //
 // Anti-doublon : verrou en base (public.monitoring_alerte_verrou) posé AVANT
 // l'envoi, libéré si l'envoi échoue — même schéma que les autres crons.
@@ -15,6 +16,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://lesnoces.net";
 const SEUIL_PRERENDER_HEURES = 30;
+/** Une page en attente de capture au-delà de ce délai signale un blocage. */
+const SEUIL_FILE_HEURES = 12;
 
 function parseJwtClaims(token: string): Record<string, unknown> | null {
   const parts = token.split(".");
@@ -108,6 +111,32 @@ Deno.serve(async (req) => {
         "La tâche nocturne de rafraîchissement des pages pour les moteurs de recherche ne tourne plus. Les pages servies aux robots restent celles de la dernière exécution réussie.",
       detail: `Dernier rafraîchissement le ${heureParis(sym.prerender_dernier_rendu as string)} (heure de Paris), soit il y a ${heuresPrerender} h.`,
       lien: `${SITE_URL}/admin/prestataires`,
+    });
+  }
+
+  // 4. Pages coincées dans la file de capture : abandonnées, ou en attente
+  // depuis plus de 12 h alors que la capture tourne chaque nuit.
+  const limite12h = new Date(Date.now() - SEUIL_FILE_HEURES * 3_600_000).toISOString();
+  const [{ count: nbAbandon }, { count: nbEnAttente }] = await Promise.all([
+    admin
+      .from("prerender_queue")
+      .select("id", { count: "exact", head: true })
+      .eq("statut", "abandonne"),
+    admin
+      .from("prerender_queue")
+      .select("id", { count: "exact", head: true })
+      .eq("statut", "a_traiter")
+      .lt("updated_at", limite12h),
+  ]);
+  const nbCoincees = (nbAbandon ?? 0) + (nbEnAttente ?? 0);
+  if (nbCoincees > 0) {
+    alertes.push({
+      cle: "prerender_file_bloquee",
+      symptome: "Pages bloquées avant publication aux moteurs",
+      explication:
+        "Des pages ne parviennent pas à être capturées pour les moteurs de recherche. Tant que la capture échoue, les robots voient la version applicative et non la page complète.",
+      detail: `${nbAbandon ?? 0} page(s) abandonnée(s) après plusieurs échecs et ${nbEnAttente ?? 0} page(s) en attente depuis plus de ${SEUIL_FILE_HEURES} h.`,
+      lien: `${SITE_URL}/admin/categories`,
     });
   }
 

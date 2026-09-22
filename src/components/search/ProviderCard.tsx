@@ -23,7 +23,23 @@ function formatPrice(prix: number | null) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(prix);
 }
 
-export default function ProviderCard({ provider }: { provider: ProviderCardData }) {
+export default function ProviderCard({
+  provider,
+  /** Libellé de catégorie au singulier, utilisé dans l'alt de l'image (SEO). */
+  categorieLabel,
+}: {
+  provider: ProviderCardData;
+  categorieLabel?: string | null;
+}) {
+  const nbAvis = provider.nombre_avis ?? 0;
+  const aDesAvis = nbAvis > 0 && provider.note_moyenne != null;
+  const altPhoto = [
+    provider.nom_commercial,
+    categorieLabel ? `${categorieLabel}${provider.ville ? ` à ${provider.ville}` : ""}` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <Link
       to={`/prestataire/${provider.slug}`}
@@ -35,7 +51,7 @@ export default function ProviderCard({ provider }: { provider: ProviderCardData 
           {provider.photo_principale_url ? (
             <img
               src={getImageUrl(provider.photo_principale_url, "thumb")}
-              alt={provider.nom_commercial}
+              alt={altPhoto}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
               decoding="async"
@@ -97,21 +113,30 @@ export default function ProviderCard({ provider }: { provider: ProviderCardData 
             </p>
           )}
           <div className="flex items-center justify-between pt-3 border-t border-border">
-            <div className="flex items-center gap-1">
-              <Star className="text-primary fill-primary" size={14} />
-              <span className="font-sans text-sm font-semibold text-foreground">
-                {provider.note_moyenne ? provider.note_moyenne.toFixed(1) : "–"}
+            {aDesAvis ? (
+              <div className="flex items-center gap-1">
+                <Star className="text-primary fill-primary" size={14} />
+                <span className="font-sans text-sm font-semibold text-foreground">
+                  {provider.note_moyenne!.toFixed(1)}
+                </span>
+                <span className="font-sans text-xs text-muted-foreground">
+                  ({nbAvis} avis)
+                </span>
+              </div>
+            ) : (
+              <span className="font-sans text-[11px] text-muted-foreground border border-border rounded-full px-2 py-0.5">
+                Nouveau sur LesNoces.net
               </span>
-              {provider.nombre_avis != null && provider.nombre_avis > 0 && (
-                <span className="font-sans text-xs text-muted-foreground">({provider.nombre_avis})</span>
-              )}
-            </div>
+            )}
             {provider.prix_depart && (
               <span className="font-sans text-lg font-semibold text-foreground">
                 {formatPrice(provider.prix_depart)}
               </span>
             )}
           </div>
+          <span className="mt-3 inline-block font-sans text-sm font-semibold text-primary group-hover:underline">
+            Voir la fiche
+          </span>
         </div>
       </div>
     </Link>
