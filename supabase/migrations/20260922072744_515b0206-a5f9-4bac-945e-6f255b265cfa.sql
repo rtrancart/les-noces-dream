@@ -1,0 +1,1 @@
+ALTER VIEW public.categories_compteurs SET (security_invoker = false);

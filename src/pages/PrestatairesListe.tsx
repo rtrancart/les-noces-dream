@@ -541,7 +541,7 @@ export default function PrestatairesListe() {
 
         {/* Réponse d'emblée */}
         {seoIntro && (
-          <section className="mb-8 rounded-xl bg-secondary/40 border border-border px-5 py-5 md:px-7 md:py-6 max-w-4xl">
+          <section className="mb-8 rounded-xl bg-secondary/40 border border-border px-5 py-5 md:px-7 md:py-6">
             <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-muted-foreground mb-3">
               L'essentiel
             </p>
@@ -600,7 +600,7 @@ export default function PrestatairesListe() {
 
         {/* Éditorial */}
         {!showSkeleton && catCible && seoBody && (
-          <section className="mt-16 max-w-3xl">
+          <section className="mt-16">
             <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-5">
               {titreEditorial(catCible)}
             </h2>
@@ -610,7 +610,7 @@ export default function PrestatairesListe() {
 
         {/* Types de … — maillage vers les catégories filles */}
         {!showSkeleton && catCible && filles.length > 0 && (
-          <section className="mt-12 max-w-4xl">
+          <section className="mt-12">
             <h3 className="font-serif text-lg text-foreground mb-4">
               {titreTypes(categorieMere ?? catCible)}
             </h3>
@@ -634,7 +634,7 @@ export default function PrestatairesListe() {
 
         {/* FAQ */}
         {!showSkeleton && faq.length > 0 && (
-          <section className="mt-14 max-w-3xl">
+          <section className="mt-14">
             <h2 className="font-serif text-2xl md:text-3xl text-foreground mb-5">
               Questions fréquentes
             </h2>
@@ -659,7 +659,7 @@ export default function PrestatairesListe() {
 
         {/* Maillage régions */}
         {!showSkeleton && catCible && regions.length > 0 && (
-          <section className="mt-14 max-w-4xl">
+          <section className="mt-14">
             <h2 className="font-serif text-2xl text-foreground mb-4">
               Se marier en région
             </h2>
@@ -680,7 +680,7 @@ export default function PrestatairesListe() {
 
         {/* Articles liés */}
         {!showSkeleton && articles.length > 0 && (
-          <section className="mt-14 max-w-4xl">
+          <section className="mt-14">
             <h2 className="font-serif text-2xl text-foreground mb-4">
               À lire sur le magazine
             </h2>
