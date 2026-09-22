@@ -18,6 +18,7 @@ import FacturesList from "@/components/facturation/FacturesList";
 import { toast } from "sonner";
 import { Search, Eye, Plus, Pencil, Trash2, Loader2, CalendarIcon, X, ChevronDown, ChevronRight, EyeOff, ImageIcon } from "lucide-react";
 import PrestatairePhotosTab from "@/components/admin/PrestatairePhotosTab";
+import PendingPrestatairePhotosTab, { type PendingPhoto } from "@/components/admin/PendingPrestatairePhotosTab";
 import { EmailLogsDialog } from "@/components/admin/EmailLogsDialog";
 import { EssaiGratuitField } from "@/components/admin/EssaiGratuitField";
 import { Mail } from "lucide-react";
@@ -334,6 +335,7 @@ export default function Prestataires() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
 
   // Sélection multiple pour l'action groupée "Valider & inviter".
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -525,6 +527,8 @@ export default function Prestataires() {
   };
 
   const openCreate = () => {
+    pendingPhotos.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+    setPendingPhotos([]);
     setEditItem(null);
     setForm(emptyForm);
     setDialogOpen(true);
@@ -583,6 +587,46 @@ export default function Prestataires() {
     } catch (e) {
       console.error("Geocoding failed:", e);
     }
+  };
+
+  const clearPendingPhotos = () => {
+    pendingPhotos.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+    setPendingPhotos([]);
+  };
+
+  const uploadPendingPhotos = async (prestataireId: string): Promise<boolean> => {
+    if (pendingPhotos.length === 0) return true;
+    const uploadedUrls: string[] = [];
+    const uploadedPaths: string[] = [];
+
+    for (const photo of pendingPhotos) {
+      const rawExt = photo.file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const ext = rawExt.replace(/[^a-z0-9]/g, "") || "jpg";
+      const path = `${prestataireId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("prestataires-photos").upload(path, photo.file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (error) {
+        if (uploadedPaths.length > 0) await supabase.storage.from("prestataires-photos").remove(uploadedPaths);
+        toast.error(`La fiche a été créée, mais les photos n'ont pas pu être enregistrées : ${error.message}`);
+        return false;
+      }
+      uploadedPaths.push(path);
+      uploadedUrls.push(supabase.storage.from("prestataires-photos").getPublicUrl(path).data.publicUrl);
+    }
+
+    const { data: updated, error: updateError } = await supabase
+      .from("prestataires")
+      .update({ photo_principale_url: uploadedUrls[0] ?? null, urls_galerie: uploadedUrls.slice(1) })
+      .eq("id", prestataireId)
+      .select("id");
+    if (updateError || !updated || updated.length === 0) {
+      await supabase.storage.from("prestataires-photos").remove(uploadedPaths);
+      toast.error(updateError?.message ?? "La fiche a été créée, mais l'ordre des photos n'a pas pu être enregistré.");
+      return false;
+    }
+    return true;
   };
 
   // Vérifie qu'aucune autre fiche n'utilise cet email de contact (insensible à la casse).
@@ -669,9 +713,18 @@ export default function Prestataires() {
       if (error) toast.error(error.message);
       else if (!created || created.length === 0) toast.error("Création refusée (permissions insuffisantes)");
       else {
+        const photosSaved = await uploadPendingPhotos(created[0].id);
+        if (!photosSaved) {
+          clearPendingPhotos();
+          setEditItem(created[0]);
+          fetchData(); fetchGlobalCounts();
+          setSaving(false);
+          return;
+        }
         toast.success("Brouillon sauvegardé");
         logAdmin("create_prestataire_brouillon", "prestataires", created[0].id, { nom: form.nom_commercial });
         triggerGeocode(created[0].id);
+        clearPendingPhotos();
         setDialogOpen(false); fetchData(); fetchGlobalCounts();
       }
     }
@@ -696,10 +749,50 @@ export default function Prestataires() {
     try {
       const emailOk = await checkEmailContactUniqueness(form.email_contact, editItem?.id);
       if (!emailOk) { setSaving(false); return; }
+      let prestataireId = editItem?.id;
+      if (!prestataireId && pendingPhotos.length > 0) {
+        const isUnique = await checkSlugUniqueness();
+        if (!isUnique) return;
+        const { data: created, error: createError } = await supabase.from("prestataires").insert({
+          nom_commercial: form.nom_commercial,
+          raison_sociale: form.raison_sociale || form.nom_commercial,
+          slug: form.slug,
+          description_courte: form.description_courte || null,
+          description: form.description || null,
+          ville: form.ville,
+          region: form.region,
+          code_postal: form.code_postal || null,
+          adresse: form.adresse || null,
+          telephone: form.telephone || null,
+          email_contact: form.email_contact || null,
+          site_web: form.site_web || null,
+          categorie_mere_id: form.categorie_mere_id,
+          categorie_fille_id: form.categorie_fille_id || null,
+          prix_depart: form.prix_depart ? parseInt(form.prix_depart) : null,
+          prix_max: form.prix_max ? parseInt(form.prix_max) : null,
+          statut: "brouillon",
+          notes_admin: form.notes_admin || null,
+          notes_pre_inscription: form.notes_pre_inscription || null,
+          cree_par_admin: form.cree_par_admin,
+          zones_intervention: form.zones_intervention,
+          user_id: null,
+        }).select().single();
+        if (createError || !created) throw createError ?? new Error("Création refusée (permissions insuffisantes)");
+        prestataireId = created.id;
+        setEditItem(created);
+        const photosSaved = await uploadPendingPhotos(prestataireId);
+        if (!photosSaved) {
+          clearPendingPhotos();
+          fetchData(); fetchGlobalCounts();
+          return;
+        }
+        clearPendingPhotos();
+      }
+
       const { data, error } = await supabase.functions.invoke("invite-prestataire", {
 
         body: {
-          prestataire_id: editItem?.id,
+          prestataire_id: prestataireId,
           email: form.email_contact,
           prenom: form.prenom_contact || undefined,
           nom: form.nom_contact || undefined,
@@ -719,6 +812,7 @@ export default function Prestataires() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast.success(`Invitation envoyée à ${form.email_contact} (lien valide ${dureeLabel})`);
+      clearPendingPhotos();
       setDialogOpen(false);
       fetchData(); fetchGlobalCounts();
     } catch (e: any) {
@@ -733,6 +827,7 @@ export default function Prestataires() {
     if (!editItem && (form.nom_commercial || form.email_contact || form.ville)) {
       if (!window.confirm("Annuler la création ? Les informations saisies seront perdues.")) return;
     }
+    clearPendingPhotos();
     setDialogOpen(false);
   };
 
@@ -1197,15 +1292,13 @@ export default function Prestataires() {
             <DialogTitle className="font-serif text-lg">{editItem ? `Modifier — ${editItem.nom_commercial}` : "Créer un prestataire"}</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="general" className="mt-2">
-            <TabsList className={`grid w-full h-auto gap-1 bg-muted/30 p-1.5 ${editItem ? "grid-cols-5" : "grid-cols-3"}`}>
-              <TabsTrigger value="general" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Général</TabsTrigger>
-              <TabsTrigger value="coordonnees" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Coordonnées</TabsTrigger>
+            <TabsList className={`grid w-full h-auto gap-1 bg-muted/30 p-1.5 ${editItem ? "grid-cols-5" : "grid-cols-4"}`}>
+              <TabsTrigger value="general" className="min-w-0 px-1 font-sans text-[11px] sm:text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Général</TabsTrigger>
+              <TabsTrigger value="coordonnees" className="min-w-0 px-1 font-sans text-[11px] sm:text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Coordonnées</TabsTrigger>
+              <TabsTrigger value="photos" className="min-w-0 px-1 font-sans text-[11px] sm:text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Photos</TabsTrigger>
+              <TabsTrigger value="admin" className="min-w-0 px-1 font-sans text-[11px] sm:text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Admin</TabsTrigger>
               {editItem && (
-                <TabsTrigger value="photos" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Photos</TabsTrigger>
-              )}
-              <TabsTrigger value="admin" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Admin</TabsTrigger>
-              {editItem && (
-                <TabsTrigger value="password" className="font-sans text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Mot de passe</TabsTrigger>
+                <TabsTrigger value="password" className="min-w-0 px-1 font-sans text-[11px] sm:text-sm font-medium py-2 text-foreground/60 data-[state=active]:text-primary data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:font-semibold">Mot de passe</TabsTrigger>
               )}
             </TabsList>
 
@@ -1331,6 +1424,11 @@ export default function Prestataires() {
                   galerieUrls={(editItem.urls_galerie as string[]) ?? []}
                   onUpdate={() => { fetchData(); fetchGlobalCounts(); supabase.from("prestataires").select("*").eq("id", editItem.id).single().then(({ data }) => { if (data) setEditItem(data); }); }}
                 />
+              </TabsContent>
+            )}
+            {!editItem && (
+              <TabsContent value="photos">
+                <PendingPrestatairePhotosTab photos={pendingPhotos} onChange={setPendingPhotos} />
               </TabsContent>
             )}
 
