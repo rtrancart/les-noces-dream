@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import FamillesPanel from "@/components/admin/FamillesPanel";
+import CategorieSeoFields, { type FaqPaire } from "@/components/admin/CategorieSeoFields";
 import { toast } from "sonner";
 import { Plus, Pencil, GripVertical, Upload, X, ImageIcon, ChevronDown, ChevronRight } from "lucide-react";
 import {
@@ -246,18 +247,30 @@ export default function Categories() {
   const [editItem, setEditItem] = useState<Categorie | null>(null);
   const [form, setForm] = useState({
     nom: "", slug: "", description_seo: "", est_active: true, parent_id: "", photo_url: "", icone_url: "", famille_id: "",
+    nom_singulier: "", genre: "", seo_intro: "", seo_body: "", faq: [] as FaqPaire[],
+    meta_title: "", meta_description: "",
   });
   const [familles, setFamilles] = useState<{ id: string; libelle: string; ordre_affichage: number }[]>([]);
+  const [compteurs, setCompteurs] = useState<Record<string, number>>({});
+  const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
-    const [catsRes, famRes] = await Promise.all([
+    const [catsRes, famRes, cptRes] = await Promise.all([
       supabase.from("categories").select("*").order("ordre_affichage", { ascending: true }),
       supabase.from("categories_familles").select("id, libelle, ordre_affichage").order("ordre_affichage", { ascending: true }),
+      supabase.from("categories_compteurs").select("id, nb_prestataires_actifs"),
     ]);
     if (catsRes.error) toast.error(catsRes.error.message);
     else setData(catsRes.data ?? []);
     if (!famRes.error) setFamilles(famRes.data ?? []);
+    if (!cptRes.error) {
+      setCompteurs(
+        Object.fromEntries(
+          (cptRes.data ?? []).map((c: any) => [c.id, c.nb_prestataires_actifs ?? 0]),
+        ),
+      );
+    }
     setLoading(false);
   };
 
@@ -318,39 +331,112 @@ export default function Categories() {
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ nom: "", slug: "", description_seo: "", est_active: true, parent_id: "", photo_url: "", icone_url: "", famille_id: "" });
+    setForm({
+      nom: "", slug: "", description_seo: "", est_active: true, parent_id: "",
+      photo_url: "", icone_url: "", famille_id: "",
+      nom_singulier: "", genre: "", seo_intro: "", seo_body: "", faq: [],
+      meta_title: "", meta_description: "",
+    });
     setDialogOpen(true);
   };
 
   const openEdit = (cat: Categorie) => {
     setEditItem(cat);
+    const c = cat as any;
     setForm({
       nom: cat.nom, slug: cat.slug, description_seo: cat.description_seo ?? "",
       est_active: cat.est_active ?? true, parent_id: cat.parent_id ?? "",
       photo_url: cat.photo_url ?? "", icone_url: cat.icone_url ?? "",
-      famille_id: (cat as any).famille_id ?? "",
+      famille_id: c.famille_id ?? "",
+      nom_singulier: c.nom_singulier ?? "",
+      genre: c.genre ?? "",
+      seo_intro: c.seo_intro ?? "",
+      seo_body: c.seo_body ?? "",
+      faq: Array.isArray(c.faq)
+        ? c.faq.map((q: any) => ({
+            question: String(q?.question ?? ""),
+            reponse: String(q?.reponse ?? ""),
+          }))
+        : [],
+      meta_title: c.meta_title ?? "",
+      meta_description: c.meta_description ?? "",
     });
     setDialogOpen(true);
   };
 
+  /** URL publique de la catégorie éditée (mère : /prestataires/slug, fille : /prestataires/mere/fille). */
+  const urlPublique = useMemo(() => {
+    if (!form.slug) return null;
+    if (!form.parent_id) return `/prestataires/${form.slug}`;
+    const mere = data.find((c) => c.id === form.parent_id);
+    return mere ? `/prestataires/${mere.slug}/${form.slug}` : null;
+  }, [form.slug, form.parent_id, data]);
+
+  /** Remise en file de capture immédiate des pages impactées. */
+  const remettreEnFile = async () => {
+    const { error } = await supabase.functions.invoke("prerender-reconcile", {
+      body: { purge: false },
+    });
+    if (error) {
+      toast.warning(
+        "Enregistré, mais la mise à jour des pages pour les moteurs n'a pas pu être lancée — elle aura lieu cette nuit.",
+      );
+    }
+  };
+
   const handleSave = async () => {
     if (!form.nom || !form.slug) { toast.error("Le nom et le slug sont requis"); return; }
+    if (!form.nom_singulier.trim()) {
+      toast.error("Le nom au singulier est obligatoire (il alimente le titre de la page)");
+      return;
+    }
+    if (form.genre !== "masculin" && form.genre !== "feminin") {
+      toast.error("Le genre est obligatoire (masculin ou féminin)");
+      return;
+    }
+    const faqNettoyee = form.faq
+      .map((q) => ({ question: q.question.trim(), reponse: q.reponse.trim() }))
+      .filter((q) => q.question && q.reponse);
+
     const isMere = !form.parent_id;
     const payload: any = {
       nom: form.nom, slug: form.slug, description_seo: form.description_seo || null,
       est_active: form.est_active, parent_id: form.parent_id || null,
       photo_url: form.photo_url || null, icone_url: form.icone_url || null,
       famille_id: isMere ? (form.famille_id || null) : null,
+      nom_singulier: form.nom_singulier.trim(),
+      genre: form.genre,
+      seo_intro: form.seo_intro.trim() || null,
+      seo_body: form.seo_body.trim() || null,
+      faq: faqNettoyee,
+      meta_title: form.meta_title.trim() || null,
+      meta_description: form.meta_description.trim() || null,
     };
+    setSaving(true);
     if (editItem) {
-      const { error } = await supabase.from("categories").update(payload).eq("id", editItem.id);
+      const { data: updated, error } = await supabase
+        .from("categories").update(payload).eq("id", editItem.id).select("id");
       if (error) toast.error(error.message);
-      else { toast.success("Catégorie modifiée"); setDialogOpen(false); fetchData(); }
+      else if (!updated?.length) toast.error("Modification refusée (droits insuffisants)");
+      else {
+        toast.success("Catégorie modifiée");
+        setDialogOpen(false);
+        fetchData();
+        await remettreEnFile();
+      }
     } else {
-      const { error } = await supabase.from("categories").insert(payload);
+      const { data: created, error } = await supabase
+        .from("categories").insert(payload).select("id");
       if (error) toast.error(error.message);
-      else { toast.success("Catégorie créée"); setDialogOpen(false); fetchData(); }
+      else if (!created?.length) toast.error("Création refusée (droits insuffisants)");
+      else {
+        toast.success("Catégorie créée");
+        setDialogOpen(false);
+        fetchData();
+        await remettreEnFile();
+      }
     }
+    setSaving(false);
   };
 
   return (
@@ -421,7 +507,7 @@ export default function Categories() {
 
       {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif text-lg">{editItem ? "Modifier la catégorie" : "Nouvelle catégorie"}</DialogTitle>
           </DialogHeader>
@@ -473,10 +559,20 @@ export default function Categories() {
               <Switch checked={form.est_active} onCheckedChange={(val) => setForm({ ...form, est_active: val })} />
               <Label className="font-sans text-sm">Active</Label>
             </div>
+
+            <CategorieSeoFields
+              form={form}
+              setForm={(f) => setForm({ ...form, ...f })}
+              nbActifs={editItem ? (compteurs[editItem.id] ?? 0) : null}
+              urlPublique={urlPublique}
+              derniereModif={editItem?.updated_at ?? null}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} className="font-sans text-sm">Annuler</Button>
-            <Button onClick={handleSave} className="font-sans text-sm">{editItem ? "Enregistrer" : "Créer"}</Button>
+            <Button onClick={handleSave} disabled={saving} className="font-sans text-sm">
+              {saving ? "Enregistrement…" : editItem ? "Enregistrer" : "Créer"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

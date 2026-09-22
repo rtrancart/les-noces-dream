@@ -498,12 +498,19 @@ export type Database = {
           description_seo: string | null
           est_active: boolean | null
           famille_id: string | null
+          faq: Json
+          genre: string | null
           icone_url: string | null
           id: string
+          meta_description: string | null
+          meta_title: string | null
           nom: string
+          nom_singulier: string | null
           ordre_affichage: number | null
           parent_id: string | null
           photo_url: string | null
+          seo_body: string | null
+          seo_intro: string | null
           slug: string
           updated_at: string
         }
@@ -513,12 +520,19 @@ export type Database = {
           description_seo?: string | null
           est_active?: boolean | null
           famille_id?: string | null
+          faq?: Json
+          genre?: string | null
           icone_url?: string | null
           id?: string
+          meta_description?: string | null
+          meta_title?: string | null
           nom: string
+          nom_singulier?: string | null
           ordre_affichage?: number | null
           parent_id?: string | null
           photo_url?: string | null
+          seo_body?: string | null
+          seo_intro?: string | null
           slug: string
           updated_at?: string
         }
@@ -528,12 +542,19 @@ export type Database = {
           description_seo?: string | null
           est_active?: boolean | null
           famille_id?: string | null
+          faq?: Json
+          genre?: string | null
           icone_url?: string | null
           id?: string
+          meta_description?: string | null
+          meta_title?: string | null
           nom?: string
+          nom_singulier?: string | null
           ordre_affichage?: number | null
           parent_id?: string | null
           photo_url?: string | null
+          seo_body?: string | null
+          seo_intro?: string | null
           slug?: string
           updated_at?: string
         }
@@ -550,6 +571,13 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories_compteurs"
             referencedColumns: ["id"]
           },
         ]
@@ -639,6 +667,13 @@ export type Database = {
             columns: ["categorie_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "champs_categories_categorie_id_fkey"
+            columns: ["categorie_id"]
+            isOneToOne: false
+            referencedRelation: "categories_compteurs"
             referencedColumns: ["id"]
           },
         ]
@@ -1995,10 +2030,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "prestataires_categorie_fille_id_fkey"
+            columns: ["categorie_fille_id"]
+            isOneToOne: false
+            referencedRelation: "categories_compteurs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "prestataires_categorie_mere_id_fkey"
             columns: ["categorie_mere_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prestataires_categorie_mere_id_fkey"
+            columns: ["categorie_mere_id"]
+            isOneToOne: false
+            referencedRelation: "categories_compteurs"
             referencedColumns: ["id"]
           },
           {
@@ -2410,6 +2459,42 @@ export type Database = {
       }
     }
     Views: {
+      categories_compteurs: {
+        Row: {
+          id: string | null
+          nb_prestataires_actifs: number | null
+          parent_id: string | null
+          slug: string | null
+        }
+        Insert: {
+          id?: string | null
+          nb_prestataires_actifs?: never
+          parent_id?: string | null
+          slug?: string | null
+        }
+        Update: {
+          id?: string | null
+          nb_prestataires_actifs?: never
+          parent_id?: string | null
+          slug?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories_compteurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prestataires_public: {
         Row: {
           adresse: string | null
@@ -2475,10 +2560,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "prestataires_categorie_fille_id_fkey"
+            columns: ["categorie_fille_id"]
+            isOneToOne: false
+            referencedRelation: "categories_compteurs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "prestataires_categorie_mere_id_fkey"
             columns: ["categorie_mere_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prestataires_categorie_mere_id_fkey"
+            columns: ["categorie_mere_id"]
+            isOneToOne: false
+            referencedRelation: "categories_compteurs"
             referencedColumns: ["id"]
           },
           {
@@ -2660,10 +2759,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "prestataires_categorie_fille_id_fkey"
+            columns: ["categorie_fille_id"]
+            isOneToOne: false
+            referencedRelation: "categories_compteurs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "prestataires_categorie_mere_id_fkey"
             columns: ["categorie_mere_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prestataires_categorie_mere_id_fkey"
+            columns: ["categorie_mere_id"]
+            isOneToOne: false
+            referencedRelation: "categories_compteurs"
             referencedColumns: ["id"]
           },
           {

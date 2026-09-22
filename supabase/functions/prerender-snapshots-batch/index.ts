@@ -239,6 +239,34 @@ Deno.serve(async (req) => {
         }
       }
 
+      // 2 bis. Contrôle de complétude des pages catégorie : le HTML capturé
+      // doit contenir autant de fiches que la base en compte d'actives. Un
+      // snapshot tronqué est refusé et reprogrammé plutôt que publié.
+      const pageType = entry.page_type as string | null;
+      const sourceId = entry.source_id as string | null;
+      if (
+        html &&
+        !motif &&
+        sourceId &&
+        (pageType === "categorie" || pageType === "categorie_fille")
+      ) {
+        const { data: cptRow } = await admin
+          .from("categories_compteurs")
+          .select("nb_prestataires_actifs")
+          .eq("id", sourceId)
+          .maybeSingle();
+        const attendu = Number(cptRow?.nb_prestataires_actifs ?? 0);
+        if (attendu > 0) {
+          const liens = new Set(
+            [...html.matchAll(/href="\/prestataire\/([^"#?]+)"/g)].map((m) => m[1]),
+          );
+          if (liens.size < attendu) {
+            motif = `Snapshot incomplet : ${liens.size} fiche(s) capturée(s) pour ${attendu} attendue(s)`;
+            html = null;
+          }
+        }
+      }
+
       if (!html || motif) {
         echecs++;
         const newTentatives = ((entry.tentatives as number) ?? 0) + 1;
