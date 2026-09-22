@@ -715,6 +715,7 @@ export default function Prestataires() {
       else {
         const photosSaved = await uploadPendingPhotos(created[0].id);
         if (!photosSaved) {
+          clearPendingPhotos();
           setEditItem(created[0]);
           fetchData(); fetchGlobalCounts();
           setSaving(false);
@@ -778,12 +779,14 @@ export default function Prestataires() {
         }).select().single();
         if (createError || !created) throw createError ?? new Error("Création refusée (permissions insuffisantes)");
         prestataireId = created.id;
+        setEditItem(created);
         const photosSaved = await uploadPendingPhotos(prestataireId);
         if (!photosSaved) {
-          setEditItem(created);
+          clearPendingPhotos();
           fetchData(); fetchGlobalCounts();
           return;
         }
+        clearPendingPhotos();
       }
 
       const { data, error } = await supabase.functions.invoke("invite-prestataire", {
