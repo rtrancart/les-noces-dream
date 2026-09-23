@@ -16,3 +16,9 @@
 
 ## Reste (bloqué sur publication)
 - [ ] Capture réelle + contrôle du HTML servi à Googlebot sur /prestataires/lieux-de-reception, une catégorie fille et une catégorie féminine : à faire APRÈS publication (le moteur de capture rend le site publié)
+
+# Roadmap — Réactivation lissée des relances migrés M-02 → M-04
+- [ ] cron-migration-relances : paramètre `limit` (défaut 50), tri chronologique, exclusion email_verifie = 'invalid'
+- [ ] Séquence stricte : M-03 exige migration_m02_envoye_le ≤ now()-5j ; M-04 exige migration_m03_envoye_le ≤ now()-5j
+- [ ] pg_cron : migration-relance-m02 (08h15 UTC), m03 (08h20 UTC), m04 (08h25 UTC) avec secret Vault email_queue_service_role_key
+
