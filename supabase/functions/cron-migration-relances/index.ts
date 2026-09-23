@@ -1,18 +1,30 @@
 // Chaîne « prestataires migrés » — relances M-02 → M-05.
-// Fonction unique paramétrée : ?step=m02|m03|m04|m05 (ou {"step":"m02"} en body).
+// Fonction unique paramétrée : ?step=m02|m03|m04|m05&limit=50
+// (ou {"step":"m02","limit":50} en body).
 // Modèle : cron-relance-decouverte-j7 (verrou idempotent avant enqueue).
 //
-// Prédicats :
-//   m02/m03/m04 : origine='migration', magic_link_envoye_le <= now()-5|10|15 j,
-//                 premier_login_le IS NULL, jalon correspondant IS NULL
-//   m05         : origine='migration', premier_login_le <= now()-3 j,
-//                 charte_signee_le IS NULL, migration_m05_envoye_le IS NULL
-//                 (les fiches exemptées sont la cible : seul critère d'arrêt =
-//                  signature de la charte)
+// Lissage : `limit` plafonne les envois par passage (défaut 50, max 500) et les
+// candidats sont triés du plus ancien au plus récent — la file se vide
+// progressivement sans pic de volume sur le domaine expéditeur.
+//
+// Prédicats (tous : origine='migration', jalon de l'étape IS NULL,
+//            email_verifie <> 'invalid') :
+//   m02 : magic_link_envoye_le <= now()-5 j, premier_login_le IS NULL
+//   m03 : migration_m02_envoye_le <= now()-5 j, premier_login_le IS NULL
+//   m04 : migration_m03_envoye_le <= now()-5 j, premier_login_le IS NULL
+//   m05 : premier_login_le <= now()-3 j, charte_signee_le IS NULL
+//         (les fiches exemptées sont la cible : seul critère d'arrêt =
+//          signature de la charte)
+// La séquence est stricte : M-03 dépend de l'envoi réel du M-02, M-04 du M-03.
+// Toute connexion du prestataire (premier_login_le) sort la fiche de la chaîne.
 //
 // JETABILITÉ — désactiver la chaîne en une migration :
-//   SELECT cron.unschedule('migration-relances-quotidien');
+//   SELECT cron.unschedule('migration-relance-m02');
+//   SELECT cron.unschedule('migration-relance-m03');
+//   SELECT cron.unschedule('migration-relance-m04');
+//   SELECT cron.unschedule('migration-relance-m05');
 // Les colonnes de jalon et les entrées email_textes peuvent rester en place.
+
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { signInvitationToken } from "../_shared/invitation-token.ts";
