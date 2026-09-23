@@ -21,12 +21,34 @@ const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://lesnoces.net";
 
 type Step = "m02" | "m03" | "m04" | "m05";
 
-const CONFIG: Record<Step, { column: string; template: string; days: number }> = {
+// `prereqColumn` : jalon de l'étape précédente. La chaîne est séquentielle —
+// M-03 n'est éligible que 5 j après l'envoi réel du M-02, M-04 que 5 j après
+// le M-03. Empêche tout saut d'étape et tout cumul de deux relances le même jour.
+const CONFIG: Record<
+  Step,
+  { column: string; template: string; days: number; prereqColumn?: string }
+> = {
   m02: { column: "migration_m02_envoye_le", template: "migration_m02_relance", days: 5 },
-  m03: { column: "migration_m03_envoye_le", template: "migration_m03_relance", days: 10 },
-  m04: { column: "migration_m04_envoye_le", template: "migration_m04_relance", days: 15 },
+  m03: {
+    column: "migration_m03_envoye_le",
+    template: "migration_m03_relance",
+    days: 5,
+    prereqColumn: "migration_m02_envoye_le",
+  },
+  m04: {
+    column: "migration_m04_envoye_le",
+    template: "migration_m04_relance",
+    days: 5,
+    prereqColumn: "migration_m03_envoye_le",
+  },
   m05: { column: "migration_m05_envoye_le", template: "migration_m05_charte", days: 3 },
 };
+
+// Lissage : plafond d'envois par passage, pour ne pas dégrader la réputation
+// du domaine expéditeur avec un pic massif.
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 500;
+
 
 function formatDateFr(iso: string | null): string | undefined {
   if (!iso) return undefined;
