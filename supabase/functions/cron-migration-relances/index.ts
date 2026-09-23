@@ -1,18 +1,30 @@
 // Chaîne « prestataires migrés » — relances M-02 → M-05.
-// Fonction unique paramétrée : ?step=m02|m03|m04|m05 (ou {"step":"m02"} en body).
+// Fonction unique paramétrée : ?step=m02|m03|m04|m05&limit=50
+// (ou {"step":"m02","limit":50} en body).
 // Modèle : cron-relance-decouverte-j7 (verrou idempotent avant enqueue).
 //
-// Prédicats :
-//   m02/m03/m04 : origine='migration', magic_link_envoye_le <= now()-5|10|15 j,
-//                 premier_login_le IS NULL, jalon correspondant IS NULL
-//   m05         : origine='migration', premier_login_le <= now()-3 j,
-//                 charte_signee_le IS NULL, migration_m05_envoye_le IS NULL
-//                 (les fiches exemptées sont la cible : seul critère d'arrêt =
-//                  signature de la charte)
+// Lissage : `limit` plafonne les envois par passage (défaut 50, max 500) et les
+// candidats sont triés du plus ancien au plus récent — la file se vide
+// progressivement sans pic de volume sur le domaine expéditeur.
+//
+// Prédicats (tous : origine='migration', jalon de l'étape IS NULL,
+//            email_verifie <> 'invalid') :
+//   m02 : magic_link_envoye_le <= now()-5 j, premier_login_le IS NULL
+//   m03 : migration_m02_envoye_le <= now()-5 j, premier_login_le IS NULL
+//   m04 : migration_m03_envoye_le <= now()-5 j, premier_login_le IS NULL
+//   m05 : premier_login_le <= now()-3 j, charte_signee_le IS NULL
+//         (les fiches exemptées sont la cible : seul critère d'arrêt =
+//          signature de la charte)
+// La séquence est stricte : M-03 dépend de l'envoi réel du M-02, M-04 du M-03.
+// Toute connexion du prestataire (premier_login_le) sort la fiche de la chaîne.
 //
 // JETABILITÉ — désactiver la chaîne en une migration :
-//   SELECT cron.unschedule('migration-relances-quotidien');
+//   SELECT cron.unschedule('migration-relance-m02');
+//   SELECT cron.unschedule('migration-relance-m03');
+//   SELECT cron.unschedule('migration-relance-m04');
+//   SELECT cron.unschedule('migration-relance-m05');
 // Les colonnes de jalon et les entrées email_textes peuvent rester en place.
+
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { signInvitationToken } from "../_shared/invitation-token.ts";
@@ -21,12 +33,34 @@ const SITE_URL = Deno.env.get("PUBLIC_SITE_URL") ?? "https://lesnoces.net";
 
 type Step = "m02" | "m03" | "m04" | "m05";
 
-const CONFIG: Record<Step, { column: string; template: string; days: number }> = {
+// `prereqColumn` : jalon de l'étape précédente. La chaîne est séquentielle —
+// M-03 n'est éligible que 5 j après l'envoi réel du M-02, M-04 que 5 j après
+// le M-03. Empêche tout saut d'étape et tout cumul de deux relances le même jour.
+const CONFIG: Record<
+  Step,
+  { column: string; template: string; days: number; prereqColumn?: string }
+> = {
   m02: { column: "migration_m02_envoye_le", template: "migration_m02_relance", days: 5 },
-  m03: { column: "migration_m03_envoye_le", template: "migration_m03_relance", days: 10 },
-  m04: { column: "migration_m04_envoye_le", template: "migration_m04_relance", days: 15 },
+  m03: {
+    column: "migration_m03_envoye_le",
+    template: "migration_m03_relance",
+    days: 5,
+    prereqColumn: "migration_m02_envoye_le",
+  },
+  m04: {
+    column: "migration_m04_envoye_le",
+    template: "migration_m04_relance",
+    days: 5,
+    prereqColumn: "migration_m03_envoye_le",
+  },
   m05: { column: "migration_m05_envoye_le", template: "migration_m05_charte", days: 3 },
 };
+
+// Lissage : plafond d'envois par passage, pour ne pas dégrader la réputation
+// du domaine expéditeur avec un pic massif.
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 500;
+
 
 function formatDateFr(iso: string | null): string | undefined {
   if (!iso) return undefined;
@@ -45,14 +79,23 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   let step = url.searchParams.get("step") as Step | null;
-  if (!step) {
+  let rawLimit = url.searchParams.get("limit");
+  if (!step || rawLimit === null) {
     const body = await req.json().catch(() => ({}));
-    step = (body?.step ?? null) as Step | null;
+    step = step ?? ((body?.step ?? null) as Step | null);
+    if (rawLimit === null && body?.limit !== undefined && body?.limit !== null) {
+      rawLimit = String(body.limit);
+    }
   }
   if (!step || !CONFIG[step]) {
     return json({ error: "step invalide (m02|m03|m04|m05)" }, 400);
   }
   const cfg = CONFIG[step];
+
+  const parsedLimit = rawLimit === null ? NaN : Number(rawLimit);
+  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0
+    ? Math.min(Math.floor(parsedLimit), MAX_LIMIT)
+    : DEFAULT_LIMIT;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -67,7 +110,10 @@ Deno.serve(async (req) => {
       "id, user_id, email_contact, nom_commercial, magic_link_envoye_le, premier_login_le, charte_exemptee_jusqua",
     )
     .eq("origine", "migration")
-    .is(cfg.column, null);
+    .is(cfg.column, null)
+    // Garde-fou délivrabilité : on n'envoie jamais vers une adresse dont la
+    // vérification a conclu « invalide » (rebond garanti).
+    .or("email_verifie.is.null,email_verifie.neq.invalid");
 
   if (step === "m05") {
     query = query
@@ -76,13 +122,27 @@ Deno.serve(async (req) => {
       .is("charte_signee_le", null)
       // Sans date d'exemption, le template afficherait le jeton brut
       // {{charte_exemptee_jusqua}} : on exclut ces fiches du M-05.
-      .not("charte_exemptee_jusqua", "is", null);
+      .not("charte_exemptee_jusqua", "is", null)
+      .order("premier_login_le", { ascending: true })
+      .limit(limit);
+  } else if (cfg.prereqColumn) {
+    // M-03 / M-04 : l'étape précédente doit être partie depuis cfg.days jours.
+    query = query
+      .is("premier_login_le", null)
+      .not(cfg.prereqColumn, "is", null)
+      .lte(cfg.prereqColumn, cutoff)
+      .order(cfg.prereqColumn, { ascending: true })
+      .limit(limit);
   } else {
+    // M-02 : ancré sur l'envoi du magic link (M-01).
     query = query
       .is("premier_login_le", null)
       .not("magic_link_envoye_le", "is", null)
-      .lte("magic_link_envoye_le", cutoff);
+      .lte("magic_link_envoye_le", cutoff)
+      .order("magic_link_envoye_le", { ascending: true })
+      .limit(limit);
   }
+
 
   const { data: rows, error } = await query;
   if (error) {
@@ -183,7 +243,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ ok: true, step, candidates: rows?.length ?? 0, sent, skipped });
+  return json({ ok: true, step, limit, candidates: rows?.length ?? 0, sent, skipped });
 });
 
 function json(body: unknown, status = 200) {
