@@ -231,7 +231,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ ok: true, step, candidates: rows?.length ?? 0, sent, skipped });
+  return json({ ok: true, step, limit, candidates: rows?.length ?? 0, sent, skipped });
 });
 
 function json(body: unknown, status = 200) {
