@@ -67,14 +67,23 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   let step = url.searchParams.get("step") as Step | null;
-  if (!step) {
+  let rawLimit = url.searchParams.get("limit");
+  if (!step || rawLimit === null) {
     const body = await req.json().catch(() => ({}));
-    step = (body?.step ?? null) as Step | null;
+    step = step ?? ((body?.step ?? null) as Step | null);
+    if (rawLimit === null && body?.limit !== undefined && body?.limit !== null) {
+      rawLimit = String(body.limit);
+    }
   }
   if (!step || !CONFIG[step]) {
     return json({ error: "step invalide (m02|m03|m04|m05)" }, 400);
   }
   const cfg = CONFIG[step];
+
+  const parsedLimit = rawLimit === null ? NaN : Number(rawLimit);
+  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0
+    ? Math.min(Math.floor(parsedLimit), MAX_LIMIT)
+    : DEFAULT_LIMIT;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -89,7 +98,10 @@ Deno.serve(async (req) => {
       "id, user_id, email_contact, nom_commercial, magic_link_envoye_le, premier_login_le, charte_exemptee_jusqua",
     )
     .eq("origine", "migration")
-    .is(cfg.column, null);
+    .is(cfg.column, null)
+    // Garde-fou délivrabilité : on n'envoie jamais vers une adresse dont la
+    // vérification a conclu « invalide » (rebond garanti).
+    .or("email_verifie.is.null,email_verifie.neq.invalid");
 
   if (step === "m05") {
     query = query
@@ -98,13 +110,27 @@ Deno.serve(async (req) => {
       .is("charte_signee_le", null)
       // Sans date d'exemption, le template afficherait le jeton brut
       // {{charte_exemptee_jusqua}} : on exclut ces fiches du M-05.
-      .not("charte_exemptee_jusqua", "is", null);
+      .not("charte_exemptee_jusqua", "is", null)
+      .order("premier_login_le", { ascending: true })
+      .limit(limit);
+  } else if (cfg.prereqColumn) {
+    // M-03 / M-04 : l'étape précédente doit être partie depuis cfg.days jours.
+    query = query
+      .is("premier_login_le", null)
+      .not(cfg.prereqColumn, "is", null)
+      .lte(cfg.prereqColumn, cutoff)
+      .order(cfg.prereqColumn, { ascending: true })
+      .limit(limit);
   } else {
+    // M-02 : ancré sur l'envoi du magic link (M-01).
     query = query
       .is("premier_login_le", null)
       .not("magic_link_envoye_le", "is", null)
-      .lte("magic_link_envoye_le", cutoff);
+      .lte("magic_link_envoye_le", cutoff)
+      .order("magic_link_envoye_le", { ascending: true })
+      .limit(limit);
   }
+
 
   const { data: rows, error } = await query;
   if (error) {
