@@ -177,7 +177,7 @@ function PrestatairesPanel({
                   </button>
                 ) : (
                   <Link
-                    to={`/recherche?categorie=${m.slug}&lieu=france_entiere`}
+                    to={`/prestataires/${m.slug}`}
                     onClick={onClose}
                     className="w-full flex items-center gap-3 px-5 py-3 min-h-[52px] hover:bg-[hsl(var(--header-or-fonce)/0.06)] active:bg-[hsl(var(--header-or-fonce)/0.1)] transition-colors"
                   >
@@ -208,7 +208,7 @@ function SousCategoriesPanel({
         <div className="flex-1">
           <p className="font-serif text-base text-foreground">{mere.nom}</p>
           <Link
-            to={`/recherche?categorie=${mere.slug}&lieu=france_entiere`}
+            to={`/prestataires/${mere.slug}`}
             onClick={onClose}
             className="font-sans text-xs text-[hsl(var(--header-or-fonce))]"
           >
@@ -220,7 +220,7 @@ function SousCategoriesPanel({
         {mere.enfants.map((s) => (
           <li key={s.id}>
             <Link
-              to={`/recherche?categorie=${s.slug}&lieu=france_entiere`}
+              to={`/prestataires/${mere.slug}/${s.slug}`}
               onClick={onClose}
               className="flex items-center justify-between px-5 py-3 min-h-[52px] font-sans text-[15px] text-foreground/90 hover:bg-[hsl(var(--header-or-fonce)/0.06)] active:bg-[hsl(var(--header-or-fonce)/0.1)]"
             >
