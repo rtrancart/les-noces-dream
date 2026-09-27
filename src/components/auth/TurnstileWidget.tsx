@@ -9,14 +9,11 @@ interface Props {
 
 const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
 
+/** true quand la clé de site est configurée : le jeton devient obligatoire. */
+export const TURNSTILE_ENABLED = !!SITE_KEY;
+
 const TurnstileWidget = forwardRef<TurnstileInstance, Props>(({ onToken }, ref) => {
-  if (!SITE_KEY) {
-    return (
-      <p className="font-sans text-xs text-muted-foreground text-center">
-        Vérification anti-robot indisponible pour le moment.
-      </p>
-    );
-  }
+  if (!SITE_KEY) return null;
   return (
     <div className="flex justify-center">
       <Turnstile
