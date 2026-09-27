@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import TurnstileWidget, { type TurnstileInstance } from "@/components/auth/TurnstileWidget";
+import TurnstileWidget, { type TurnstileInstance, TURNSTILE_ENABLED } from "@/components/auth/TurnstileWidget";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AuthLayout from "@/components/auth/AuthLayout";
@@ -39,7 +39,7 @@ const Inscription = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!captchaToken) return;
+    if (TURNSTILE_ENABLED && !captchaToken) return;
     setLoading(true);
 
     const defaultRedirect = role === "prestataire" ? "/pro/charte" : "/";
@@ -49,7 +49,7 @@ const Inscription = () => {
       email,
       password,
       options: {
-        captchaToken,
+        ...(captchaToken ? { captchaToken } : {}),
         emailRedirectTo: `${window.location.origin}${redirectPath}`,
         data: {
           prenom,
@@ -283,7 +283,7 @@ const Inscription = () => {
 
 
         <TurnstileWidget ref={turnstileRef} onToken={setCaptchaToken} />
-        <Button type="submit" disabled={loading || !captchaToken} className="w-full font-sans font-semibold tracking-wide">
+        <Button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="w-full font-sans font-semibold tracking-wide">
           {loading ? "Création…" : "Créer mon compte"}
         </Button>
       </form>
