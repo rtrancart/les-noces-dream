@@ -453,7 +453,8 @@ export default function Prestataires() {
     let errMsg: string | null = null;
     let count = 0;
     if (clientFilterActive) {
-      for (let from = 0; from < 10000; from += 1000) {
+      // Chargement par lots de 1 000 jusqu'à épuisement : jamais de troncature.
+      for (let from = 0; ; from += 1000) {
         const { data: pageRows, error, count: c } = await buildQuery().range(from, from + 999);
         if (error) { errMsg = error.message; break; }
         rows.push(...(pageRows ?? []));
@@ -489,8 +490,9 @@ export default function Prestataires() {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
     return () => clearTimeout(t);
   }, [search]);
-  useEffect(() => { setPage(0); }, [filterStatut, filterCategorie, debouncedSearch, filterEmailVerifie, clientFilterActive]);
-  useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, debouncedSearch, filterEmailVerifie, page, clientFilterActive]);
+  useEffect(() => { setPage(0); }, [filterStatut, filterCategorie, debouncedSearch, filterEmailVerifie, clientFilterActive, filterSousSeuil, filterEmailRejete, locationZones, citySearch]);
+  const fetchPageKey = clientFilterActive ? -1 : page; // en mode filtré, changer de page ne recharge pas
+  useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, debouncedSearch, filterEmailVerifie, fetchPageKey, clientFilterActive]);
   useEffect(() => { fetchSuppressed(); }, []);
   // Reset selection whenever filters/search change (evite d'agir sur des fiches invisibles)
   useEffect(() => { setSelectedIds(new Set()); }, [filterStatut, filterCategorie, search, filterSousSeuil, locationZones, citySearch, filterEmailRejete, filterEmailVerifie]);
@@ -949,6 +951,12 @@ export default function Prestataires() {
     [filteredData, suppressedSet],
   );
   const eligibleIds = useMemo(() => new Set(eligibleInFiltered.map((p) => p.id)), [eligibleInFiltered]);
+  // Pagination : côté serveur sans filtre navigateur, sinon découpage de la liste filtrée.
+  const displayTotal = clientFilterActive ? filteredData.length : serverTotal;
+  const visibleRows = useMemo(
+    () => (clientFilterActive ? filteredData.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE) : filteredData),
+    [clientFilterActive, filteredData, page],
+  );
   const selectedCount = selectedIds.size;
   const overCap = selectedCount > BULK_MAX_PER_RUN;
   const allEligibleSelected = eligibleInFiltered.length > 0 && eligibleInFiltered.every((p) => selectedIds.has(p.id));
@@ -1117,9 +1125,7 @@ export default function Prestataires() {
             </label>
           </div>
           <p className="mt-3 font-sans text-xs text-muted-foreground">
-            {loading ? "Chargement…" : clientFilterActive
-              ? `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`
-              : `${serverTotal} résultat${serverTotal > 1 ? "s" : ""} — ${PAGE_SIZE} par page`}
+            {loading ? "Chargement…" : `${displayTotal} résultat${displayTotal > 1 ? "s" : ""} — ${PAGE_SIZE} par page`}
           </p>
         </CardHeader>
         {selectedCount > 0 && (
@@ -1202,7 +1208,7 @@ export default function Prestataires() {
               ) : filteredData.length === 0 ? (
                 <TableRow><TableCell colSpan={11} className="text-center font-sans text-sm text-muted-foreground py-8">Aucun prestataire trouvé</TableCell></TableRow>
               ) : (
-                filteredData.map((p) => {
+                visibleRows.map((p) => {
                   const ineligibility = getIneligibilityReason(p, suppressedSet);
                   const isSelected = selectedIds.has(p.id);
                   const suppressedReason = p.email_contact
@@ -1318,15 +1324,13 @@ export default function Prestataires() {
               )}
             </TableBody>
           </Table>
-          {!clientFilterActive && (
-            <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 font-sans text-xs text-muted-foreground">
-              <span>Page {page + 1} / {Math.max(1, Math.ceil(serverTotal / PAGE_SIZE))}</span>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={page === 0 || loading} onClick={() => setPage((p) => p - 1)}>Précédent</Button>
-                <Button variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= serverTotal || loading} onClick={() => setPage((p) => p + 1)}>Suivant</Button>
-              </div>
+          <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 font-sans text-xs text-muted-foreground">
+            <span>Page {page + 1} / {Math.max(1, Math.ceil(displayTotal / PAGE_SIZE))}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={page === 0 || loading} onClick={() => setPage((p) => p - 1)}>Précédent</Button>
+              <Button variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= displayTotal || loading} onClick={() => setPage((p) => p + 1)}>Suivant</Button>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 

@@ -1326,7 +1326,7 @@ export type Database = {
       logs_admin: {
         Row: {
           action: string
-          admin_id: string
+          admin_id: string | null
           created_at: string
           details: Json | null
           entite: string | null
@@ -1335,7 +1335,7 @@ export type Database = {
         }
         Insert: {
           action: string
-          admin_id: string
+          admin_id?: string | null
           created_at?: string
           details?: Json | null
           entite?: string | null
@@ -1344,7 +1344,7 @@ export type Database = {
         }
         Update: {
           action?: string
-          admin_id?: string
+          admin_id?: string | null
           created_at?: string
           details?: Json | null
           entite?: string | null
@@ -1422,30 +1422,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      migration_photos_mapping: {
-        Row: {
-          erreurs: string | null
-          galerie: string[] | null
-          legacy_id: number
-          photo_principale: string | null
-          traite: boolean
-        }
-        Insert: {
-          erreurs?: string | null
-          galerie?: string[] | null
-          legacy_id: number
-          photo_principale?: string | null
-          traite?: boolean
-        }
-        Update: {
-          erreurs?: string | null
-          galerie?: string[] | null
-          legacy_id?: number
-          photo_principale?: string | null
-          traite?: boolean
-        }
-        Relationships: []
       }
       monitoring_alertes: {
         Row: {
