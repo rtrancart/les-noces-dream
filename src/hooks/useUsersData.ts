@@ -32,15 +32,25 @@ export function useUsersData() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [profilesRes, rolesRes] = await Promise.all([
+    const [profilesRes, rolesRes, adminRolesRes] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("*"),
+      supabase.from("user_roles").select("user_id").in("role", ["admin", "super_admin"]),
     ]);
     if (profilesRes.error) { toast.error(profilesRes.error.message); setLoading(false); return; }
-    const roles = rolesRes.data ?? [];
-    const users: UserWithRoles[] = (profilesRes.data ?? []).map((p) => ({
+    // Admins chargés directement : ne dépend pas de la limite de 1 000 lignes.
+    const loadedIds = new Set((profilesRes.data ?? []).map((p) => p.id));
+    const missingAdminIds = [...new Set((adminRolesRes.data ?? []).map((r) => r.user_id))].filter((id) => !loadedIds.has(id));
+    const [extraProfiles, extraRoles] = missingAdminIds.length
+      ? await Promise.all([
+          supabase.from("profiles").select("*").in("id", missingAdminIds),
+          supabase.from("user_roles").select("*").in("user_id", missingAdminIds),
+        ])
+      : [{ data: [] as Profile[] }, { data: [] as { user_id: string; role: AppRole }[] }];
+    const roles = [...(rolesRes.data ?? []), ...(extraRoles.data ?? [])];
+    const users: UserWithRoles[] = [...(profilesRes.data ?? []), ...(extraProfiles.data ?? [])].map((p) => ({
       ...p,
-      roles: roles.filter((r) => r.user_id === p.id).map((r) => r.role),
+      roles: [...new Set(roles.filter((r) => r.user_id === p.id).map((r) => r.role))],
     }));
     setData(users);
     setLoading(false);
