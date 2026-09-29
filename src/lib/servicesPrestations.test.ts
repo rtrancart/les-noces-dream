@@ -42,7 +42,7 @@ describe("buildServicesGroups", () => {
     expect(groups.map((g) => g.id)).toEqual(["prestation", "inclus", "livraison", "organisation", "conditions"]);
 
     const prestation = groups.find((g) => g.id === "prestation")!;
-    expect(prestation.fields.map((f) => f.key)).toEqual(["metier", "type_prestation", "style"]);
+    expect(prestation.fields.map((f) => f.key)).toEqual(["type_prestation", "style", "metier"]);
     expect(prestation.summary).toBe("Photographe et vidéaste");
 
     const inclus = groups.find((g) => g.id === "inclus")!;
@@ -58,9 +58,9 @@ describe("buildServicesGroups", () => {
 
     const livraison = groups.find((g) => g.id === "livraison")!;
     expect(livraison.fields.map((f) => f.key)).toEqual([
+      "livraison_fichiers",
       "nombre_photos_livrees",
       "delai_livraison",
-      "livraison_fichiers",
     ]);
 
     const organisation = groups.find((g) => g.id === "organisation")!;
@@ -68,7 +68,7 @@ describe("buildServicesGroups", () => {
     expect(organisation.summary).toBe("France entière");
 
     const conditions = groups.find((g) => g.id === "conditions")!;
-    expect(conditions.fields.map((f) => f.key)).toEqual(["montant_acompte", "moyens_paiement"]);
+    expect(conditions.fields.map((f) => f.key)).toEqual(["moyens_paiement", "montant_acompte"]);
   });
 
   it("skips empty groups and un-filled fields", () => {

@@ -169,6 +169,26 @@ export function buildServicesGroups(
     return a.label.localeCompare(b.label);
   });
 
+  // Ordre par typologie au sein de chaque bloc : choix multiples, listes,
+  // textes, puis booléens. Tri stable → l'ordre_affichage est conservé
+  // à l'intérieur d'une même typologie.
+  const TYPE_WEIGHT: Record<FieldType, number> = {
+    multi: 1,
+    select: 2,
+    text: 3,
+    boolean: 4,
+  };
+  for (const id of Object.keys(buckets) as FieldGroup["id"][]) {
+    buckets[id] = buckets[id]
+      .map((field, index) => ({ field, index }))
+      .sort(
+        (a, b) =>
+          TYPE_WEIGHT[a.field.type] - TYPE_WEIGHT[b.field.type] ||
+          a.index - b.index,
+      )
+      .map(({ field }) => field);
+  }
+
   const groupDefs: { id: FieldGroup["id"]; title: string; icon: LucideIcon }[] = [
     { id: "prestation", title: "La prestation", icon: Camera },
     { id: "inclus", title: "Inclus & options", icon: Check },
