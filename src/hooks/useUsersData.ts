@@ -32,9 +32,19 @@ export function useUsersData() {
 
   const fetchData = async () => {
     setLoading(true);
+    const fetchAllRoles = async () => {
+      const all: { user_id: string; role: AppRole }[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data: page, error } = await supabase.from("user_roles").select("user_id, role").order("id").range(from, from + 999);
+        if (error || !page) break;
+        all.push(...page);
+        if (page.length < 1000) break;
+      }
+      return { data: all };
+    };
     const [profilesRes, rolesRes, adminRolesRes] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-      supabase.from("user_roles").select("*"),
+      fetchAllRoles(),
       supabase.from("user_roles").select("user_id").in("role", ["admin", "super_admin"]),
     ]);
     if (profilesRes.error) { toast.error(profilesRes.error.message); setLoading(false); return; }
