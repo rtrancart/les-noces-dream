@@ -99,7 +99,7 @@ export default function Logs() {
     }
     setTotal(count ?? 0);
 
-    const adminIds = [...new Set((data ?? []).map((l) => l.admin_id))];
+    const adminIds = [...new Set((data ?? []).map((l) => l.admin_id).filter((x): x is string => !!x))];
     const { data: profiles } = adminIds.length
       ? await supabase.from("profiles").select("id, email, prenom, nom").in("id", adminIds)
       : { data: [] as { id: string; email: string; prenom: string | null; nom: string | null }[] };
@@ -110,9 +110,10 @@ export default function Logs() {
 
     const enriched: LogRow[] = (data ?? []).map((l) => ({
       ...l,
+      admin_id: l.admin_id ?? "",
       details: l.details as Record<string, unknown> | null,
-      admin_email: profileMap.get(l.admin_id)?.email ?? "—",
-      admin_name: profileMap.get(l.admin_id)?.name ?? "",
+      admin_email: l.admin_id ? profileMap.get(l.admin_id)?.email ?? "—" : "Action automatique",
+      admin_name: l.admin_id ? profileMap.get(l.admin_id)?.name ?? "" : "Système",
     }));
 
     setLogs(enriched);
