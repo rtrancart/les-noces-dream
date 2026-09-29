@@ -67,6 +67,55 @@ async function record(
   }
 }
 
+
+// Désinscription d'un prestataire migré jamais activé → archivage (refus_migration)
+// + invalidation des tokens d'invitation actifs. Fiche activée : inchangée.
+// Plusieurs fiches sur la même adresse : aucune action, signalement pour décision admin.
+async function archiverMigreNonActive(eventId: string, recipient: string): Promise<void> {
+  const supabase = admin()
+  const email = String(recipient).trim().toLowerCase()
+  if (!email) return
+  const { data, error } = await supabase
+    .from('prestataires')
+    .select('id, email_contact, statut, premier_login_le, origine')
+    .ilike('email_contact', `%${email.replace(/[%_]/g, '\\$&')}%`)
+  if (error) {
+    console.error('archivage migré: lecture', { event_id: eventId, message: error.message })
+    throw new Error('lookup failed')
+  }
+  const fiches = (data ?? []).filter(
+    (p) => String(p.email_contact ?? '').trim().toLowerCase() === email
+  )
+  const cibles = fiches.filter((p) => p.origine === 'migration' && !p.premier_login_le)
+  if (cibles.length === 0) return
+  if (fiches.length > 1) {
+    console.warn('archivage migré: adresse partagée, décision admin requise', {
+      event_id: eventId,
+      fiche_ids: fiches.map((f) => f.id),
+    })
+    return
+  }
+  const cible = cibles[0]
+  if (cible.statut === 'archive') return
+  const now = new Date().toISOString()
+  const { error: upErr } = await supabase
+    .from('prestataires')
+    .update({ statut: 'archive', motif_suspension: 'refus_migration', archive_le: now })
+    .eq('id', cible.id)
+    .is('premier_login_le', null)
+    .select('id')
+  if (upErr) {
+    console.error('archivage migré: update', { event_id: eventId, message: upErr.message })
+    throw new Error('archive failed')
+  }
+  await supabase
+    .from('invitation_tokens')
+    .update({ expires_at: now })
+    .eq('prestataire_id', cible.id)
+    .is('consumed_at', null)
+    .gt('expires_at', now)
+}
+
 const handler = createEmailWebhookHandler({
   apiKey: Deno.env.get('LOVABLE_API_KEY')!,
   on: {
@@ -78,6 +127,7 @@ const handler = createEmailWebhookHandler({
     },
     'email.unsubscribed': async (event) => {
       await record(event.event_id, event.data.recipient, 'unsubscribe', 'suppressed')
+      await archiverMigreNonActive(event.event_id, event.data.recipient)
     },
   },
 })

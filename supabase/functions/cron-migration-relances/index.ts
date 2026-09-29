@@ -144,15 +144,27 @@ Deno.serve(async (req) => {
   }
 
 
-  const { data: rows, error } = await query;
+  query = query.neq("statut", "archive");
+
+  const { data: rawRows, error } = await query;
   if (error) {
     console.error(`cron-migration-relances[${step}]: query error`, error);
     return json({ error: error.message }, 500);
   }
 
+  // Exclusion silencieuse (aucun log d'envoi) des adresses supprimées.
+  const emails = [...new Set((rawRows ?? []).map((r) => String(r.email_contact ?? "").trim().toLowerCase()).filter(Boolean))];
+  const suppressed = new Set<string>();
+  for (let i = 0; i < emails.length; i += 200) {
+    const { data: sup } = await supabase.from("suppressed_emails").select("email").in("email", emails.slice(i, i + 200));
+    (sup ?? []).forEach((s) => suppressed.add(String(s.email).trim().toLowerCase()));
+  }
+  const rows = (rawRows ?? []).filter((r) => !suppressed.has(String(r.email_contact ?? "").trim().toLowerCase()));
+  const excluded = (rawRows?.length ?? 0) - rows.length;
+
   let sent = 0;
   let skipped = 0;
-  for (const row of rows ?? []) {
+  for (const row of rows) {
     // Verrou idempotent : jalon posé AVANT enqueue, avec garde .is(null).
     const { data: locked, error: lockErr } = await supabase
       .from("prestataires")
@@ -243,7 +255,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ ok: true, step, limit, candidates: rows?.length ?? 0, sent, skipped });
+  return json({ ok: true, step, limit, candidates: rows.length, excluded_suppressed: excluded, sent, skipped });
 });
 
 function json(body: unknown, status = 200) {

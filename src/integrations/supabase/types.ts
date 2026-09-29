@@ -1757,6 +1757,7 @@ export type Database = {
         Row: {
           adresse: string | null
           archivage_reporte_a: string | null
+          archive_le: string | null
           brevo_email_hash: string | null
           categorie_fille_id: string | null
           categorie_mere_id: string
@@ -1846,6 +1847,7 @@ export type Database = {
         Insert: {
           adresse?: string | null
           archivage_reporte_a?: string | null
+          archive_le?: string | null
           brevo_email_hash?: string | null
           categorie_fille_id?: string | null
           categorie_mere_id: string
@@ -1935,6 +1937,7 @@ export type Database = {
         Update: {
           adresse?: string | null
           archivage_reporte_a?: string | null
+          archive_le?: string | null
           brevo_email_hash?: string | null
           categorie_fille_id?: string | null
           categorie_mere_id?: string
@@ -3191,6 +3194,7 @@ export type Database = {
         | "archive"
         | "charte_non_signee"
         | "charte_obsolete"
+        | "refus_migration"
       objet_demande: "mariage" | "evenement_entreprise" | "cocktail" | "autre"
       origine_prestataire:
         | "inscription_admin"
@@ -3397,6 +3401,7 @@ export const Constants = {
         "archive",
         "charte_non_signee",
         "charte_obsolete",
+        "refus_migration",
       ],
       objet_demande: ["mariage", "evenement_entreprise", "cocktail", "autre"],
       origine_prestataire: [
