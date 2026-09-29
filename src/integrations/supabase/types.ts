@@ -2782,12 +2782,12 @@ export type Database = {
         }
         Insert: {
           id?: string | null
-          nom?: string | null
+          nom?: never
           prenom?: string | null
         }
         Update: {
           id?: string | null
-          nom?: string | null
+          nom?: never
           prenom?: string | null
         }
         Relationships: []
@@ -2795,7 +2795,7 @@ export type Database = {
     }
     Functions: {
       admin_delete_user_cascade: {
-        Args: { p_user_id: string }
+        Args: { p_admin_id: string; p_user_id: string }
         Returns: undefined
       }
       admin_stats_zones_categories: {
@@ -2814,7 +2814,6 @@ export type Database = {
         }[]
       }
       admin_stats_zones_categories_json: { Args: never; Returns: Json }
-      appliquer_verification_emails: { Args: { p_data: Json }; Returns: number }
       brevo_compteurs_journal: {
         Args: {
           p_ids: string[]
