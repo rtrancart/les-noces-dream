@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -238,6 +239,13 @@ export default function Logs() {
               )}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 font-sans text-xs text-muted-foreground">
+            <span>Page {page + 1} / {pageCount}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={page === 0 || loading} onClick={() => setPage((p) => p - 1)}>Précédent</Button>
+              <Button variant="outline" size="sm" disabled={page + 1 >= pageCount || loading} onClick={() => setPage((p) => p + 1)}>Suivant</Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
