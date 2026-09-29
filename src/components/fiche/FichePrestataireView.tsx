@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import {
   Star,
@@ -49,8 +50,10 @@ export type Prestataire = {
   region: string;
   code_postal: string | null;
   adresse: string | null;
-  telephone: string | null;
-  email_contact: string | null;
+  /** Présent uniquement en prévisualisation (vue non publique). */
+  telephone?: string | null;
+  /** Indicateur public : la fiche a un numéro (le numéro lui-même n'est jamais dans la vue). */
+  a_telephone?: boolean | null;
   site_web: string | null;
   photo_principale_url: string | null;
   urls_galerie: string[] | null;
@@ -76,7 +79,6 @@ export type Prestataire = {
   url_instagram?: string | null;
   url_facebook?: string | null;
   url_pinterest?: string | null;
-  user_id: string | null;
   updated_at: string | null;
   statut?: string | null;
 };
@@ -158,7 +160,9 @@ export default function FichePrestataireView({
   previewMode = false,
   onAvisRefetch,
 }: Props) {
-  const [phoneRevealed, setPhoneRevealed] = useState(false);
+  const [phone, setPhone] = useState<string | null>(null);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+  const hasPhone = previewMode ? !!presta.telephone : !!presta.a_telephone;
   const [devisOpen, setDevisOpen] = useState(false);
   const { trackRevealPhone } = useTracking();
 
@@ -168,12 +172,27 @@ export default function FichePrestataireView({
     return startFicheSession(presta.id);
   }, [previewMode, presta.id]);
 
-  const revealPhone = () => {
-    setPhoneRevealed(true);
-    if (!previewMode) {
-      trackEvent("affichage_telephone", { slug: presta.slug }, presta.id);
-      trackRevealPhone(presta.slug);
+  /** Enregistre le clic côté base et renvoie le numéro (ou le lit directement en preview). */
+  const fetchPhone = async (): Promise<string | null> => {
+    if (phone) return phone;
+    if (previewMode) {
+      setPhone(presta.telephone ?? null);
+      return presta.telephone ?? null;
     }
+    setPhoneLoading(true);
+    const { data, error } = await supabase.rpc("obtenir_telephone_prestataire", {
+      p_prestataire_id: presta.id,
+    });
+    setPhoneLoading(false);
+    if (error || !data) return null;
+    trackEvent("affichage_telephone", { slug: presta.slug });
+    trackRevealPhone(presta.slug);
+    setPhone(data);
+    return data;
+  };
+
+  const revealPhone = () => {
+    void fetchPhone();
   };
 
   const champsSpec = presta.champs_specifiques as Record<string, unknown> | null;
@@ -214,7 +233,7 @@ export default function FichePrestataireView({
                 code_postal: presta.code_postal,
                 latitude: presta.latitude,
                 longitude: presta.longitude,
-                telephone: presta.telephone,
+                telephone: null,
                 site_web: presta.site_web,
                 prix_depart: presta.prix_depart,
                 prix_max: presta.prix_max,
@@ -486,21 +505,22 @@ export default function FichePrestataireView({
               )}
 
               {/* Téléphone */}
-              {presta.telephone && (
+              {hasPhone && (
                 <div>
-                  {phoneRevealed ? (
+                  {phone ? (
                     <a
-                      href={`tel:${presta.telephone.replace(/\s/g, "")}`}
+                      href={`tel:${phone.replace(/\s/g, "")}`}
                       className="flex items-center justify-center gap-2 w-full border border-border rounded-lg px-4 py-3 text-sm font-medium hover:bg-secondary/30 transition-colors"
                     >
                       <Phone size={16} />
-                      {presta.telephone}
+                      {phone}
                     </a>
                   ) : (
                     <Button
                       variant="outline"
                       className="w-full gap-2"
                       onClick={revealPhone}
+                      disabled={phoneLoading}
                     >
                       <Eye size={16} />
                       Voir le téléphone
@@ -544,8 +564,8 @@ export default function FichePrestataireView({
       {/* Sticky mobile CTA — désactivé en preview */}
       {!previewMode && (
         <FicheStickyMobileCTA
-          telephone={presta.telephone}
-          prestataireId={presta.id}
+          hasPhone={hasPhone}
+          onCall={fetchPhone}
           onDevisClick={() => setDevisOpen(true)}
         />
       )}

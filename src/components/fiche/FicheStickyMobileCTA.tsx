@@ -1,19 +1,22 @@
+import { useState } from "react";
 import { Phone, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { trackEvent } from "@/lib/analytics";
-import { useTracking } from "@/hooks/useTracking";
 
 interface Props {
-  telephone: string | null;
-  prestataireId: string;
+  hasPhone: boolean;
+  /** Enregistre le clic et renvoie le numéro de la fiche. */
+  onCall: () => Promise<string | null>;
   onDevisClick: () => void;
 }
 
-export default function FicheStickyMobileCTA({ telephone, prestataireId, onDevisClick }: Props) {
-  const { trackRevealPhone } = useTracking();
-  const handleCall = () => {
-    trackEvent("affichage_telephone", {}, prestataireId);
-    trackRevealPhone(prestataireId);
+export default function FicheStickyMobileCTA({ hasPhone, onCall, onDevisClick }: Props) {
+  const [loading, setLoading] = useState(false);
+
+  const handleCall = async () => {
+    setLoading(true);
+    const tel = await onCall();
+    setLoading(false);
+    if (tel) window.location.href = `tel:${tel.replace(/\s/g, "")}`;
   };
 
   return (
@@ -23,12 +26,10 @@ export default function FicheStickyMobileCTA({ telephone, prestataireId, onDevis
           <FileText size={16} />
           Demander un devis
         </Button>
-        {telephone && (
-          <Button variant="outline" size="lg" className="gap-2 flex-1" asChild onClick={handleCall}>
-            <a href={`tel:${telephone}`}>
-              <Phone size={16} />
-              Appeler
-            </a>
+        {hasPhone && (
+          <Button variant="outline" size="lg" className="gap-2 flex-1" onClick={handleCall} disabled={loading}>
+            <Phone size={16} />
+            Appeler
           </Button>
         )}
       </div>
