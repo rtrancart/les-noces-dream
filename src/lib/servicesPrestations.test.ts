@@ -42,7 +42,7 @@ describe("buildServicesGroups", () => {
     expect(groups.map((g) => g.id)).toEqual(["prestation", "inclus", "livraison", "organisation", "conditions"]);
 
     const prestation = groups.find((g) => g.id === "prestation")!;
-    expect(prestation.fields.map((f) => f.key)).toEqual(["metier", "type_prestation", "style"]);
+    expect(prestation.fields.map((f) => f.key)).toEqual(["type_prestation", "style", "metier"]);
     expect(prestation.summary).toBe("Photographe et vidéaste");
 
     const inclus = groups.find((g) => g.id === "inclus")!;
