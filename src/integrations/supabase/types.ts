@@ -2476,24 +2476,18 @@ export type Database = {
       }
       prestataires_public: {
         Row: {
+          a_telephone: boolean | null
           adresse: string | null
           categorie_fille_id: string | null
           categorie_mere_id: string | null
           champs_specifiques: Json | null
-          charte_version_signee: string | null
           code_postal: string | null
           created_at: string | null
-          cree_par_admin: boolean | null
           date_premiere_publication: string | null
-          demande_reactivation_le: string | null
-          derniere_connexion_le: string | null
           description: string | null
           description_courte: string | null
-          email_contact: string | null
           est_premium: boolean | null
           est_verifie: boolean | null
-          fin_premium: string | null
-          fin_visibilite_boost: string | null
           id: string | null
           latitude: number | null
           longitude: number | null
@@ -2507,24 +2501,20 @@ export type Database = {
           note_qualite_prestation: number | null
           note_rapport_qualite_prix: number | null
           photo_principale_url: string | null
-          premier_login_le: string | null
           prix_depart: number | null
           prix_max: number | null
           region: string | null
-          score_classement: number | null
           score_tri: number | null
           site_web: string | null
           slug: string | null
           statut: Database["public"]["Enums"]["statut_prestataire"] | null
           tags: string[] | null
-          telephone: string | null
           updated_at: string | null
           url_facebook: string | null
           url_instagram: string | null
           url_pinterest: string | null
           url_tiktok: string | null
           urls_galerie: string[] | null
-          user_id: string | null
           video_url: string | null
           videos_json: Json | null
           ville: string | null
@@ -2557,20 +2547,6 @@ export type Database = {
             columns: ["categorie_mere_id"]
             isOneToOne: false
             referencedRelation: "categories_compteurs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "prestataires_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "prestataires_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -3058,6 +3034,10 @@ export type Database = {
       }
       monitoring_symptomes: { Args: never; Returns: Json }
       normaliser_cle_zone: { Args: { p_valeur: string }; Returns: string }
+      obtenir_telephone_prestataire: {
+        Args: { p_prestataire_id: string }
+        Returns: string
+      }
       prerender_orphelins: {
         Args: { p_limit?: number }
         Returns: {
