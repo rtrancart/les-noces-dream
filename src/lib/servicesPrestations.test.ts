@@ -58,9 +58,9 @@ describe("buildServicesGroups", () => {
 
     const livraison = groups.find((g) => g.id === "livraison")!;
     expect(livraison.fields.map((f) => f.key)).toEqual([
+      "livraison_fichiers",
       "nombre_photos_livrees",
       "delai_livraison",
-      "livraison_fichiers",
     ]);
 
     const organisation = groups.find((g) => g.id === "organisation")!;
@@ -68,7 +68,7 @@ describe("buildServicesGroups", () => {
     expect(organisation.summary).toBe("France entière");
 
     const conditions = groups.find((g) => g.id === "conditions")!;
-    expect(conditions.fields.map((f) => f.key)).toEqual(["montant_acompte", "moyens_paiement"]);
+    expect(conditions.fields.map((f) => f.key)).toEqual(["moyens_paiement", "montant_acompte"]);
   });
 
   it("skips empty groups and un-filled fields", () => {
