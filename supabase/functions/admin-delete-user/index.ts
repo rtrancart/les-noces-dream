@@ -54,11 +54,12 @@ Deno.serve(async (req) => {
       throw new Error("Seul un super admin peut supprimer un administrateur");
     }
 
-    // Nettoyage public complet via RPC SECURITY DEFINER, avec le contexte du caller.
+    // Nettoyage public complet via RPC réservée au système ; l'admin vérifié ci-dessus est transmis.
     // Important : ne pas supprimer user_roles/profile avant ce RPC, sinon les FK restantes
     // font échouer la suppression auth avec le message générique "Database error deleting user".
-    const { error: sigErr } = await callerClient.rpc("admin_delete_user_cascade", {
+    const { error: sigErr } = await adminClient.rpc("admin_delete_user_cascade", {
       p_user_id: target_user_id,
+      p_admin_id: caller.id,
     });
     if (sigErr) {
       console.error("admin_delete_user_cascade failed", sigErr);
