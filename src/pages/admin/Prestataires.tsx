@@ -1115,7 +1115,9 @@ export default function Prestataires() {
             </label>
           </div>
           <p className="mt-3 font-sans text-xs text-muted-foreground">
-            {loading ? "Chargement…" : `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`}
+            {loading ? "Chargement…" : clientFilterActive
+              ? `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`
+              : `${serverTotal} résultat${serverTotal > 1 ? "s" : ""} — ${PAGE_SIZE} par page`}
           </p>
         </CardHeader>
         {selectedCount > 0 && (
@@ -1314,6 +1316,15 @@ export default function Prestataires() {
               )}
             </TableBody>
           </Table>
+          {!clientFilterActive && (
+            <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 font-sans text-xs text-muted-foreground">
+              <span>Page {page + 1} / {Math.max(1, Math.ceil(serverTotal / PAGE_SIZE))}</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page === 0 || loading} onClick={() => setPage((p) => p - 1)}>Précédent</Button>
+                <Button variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= serverTotal || loading} onClick={() => setPage((p) => p + 1)}>Suivant</Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
