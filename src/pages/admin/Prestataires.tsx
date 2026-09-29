@@ -50,6 +50,8 @@ type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
 type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
 type Categorie = Database["public"]["Tables"]["categories"]["Row"];
 
+const PAGE_SIZE = 50;
+
 const statutLabels: Record<StatutPrestataire, string> = {
   brouillon: "Brouillon",
   pre_inscrit: "Pré-inscrit",
@@ -319,6 +321,9 @@ export default function Prestataires() {
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [serverTotal, setServerTotal] = useState(0);
   const [filterStatut, setFilterStatut] = useState<string>("tous");
   const [filterCategorie, setFilterCategorie] = useState<string>("toutes");
   const [filterSousSeuil, setFilterSousSeuil] = useState<boolean>(false);
@@ -412,34 +417,58 @@ export default function Prestataires() {
     return true;
   };
 
+  // Filtres calculés dans le navigateur (zones, ville, taux, email rejeté) :
+  // quand l'un d'eux est actif, on charge toutes les fiches correspondant aux
+  // filtres serveur ; sinon, pagination côté serveur.
+  const clientFilterActive = filterSousSeuil || filterEmailRejete || locationZones.length > 0 || !!citySearch;
+
   const fetchData = async () => {
     setLoading(true);
-    let query = supabase
-      .from("prestataires")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(200);
-    if (filterStatut !== "tous") query = query.eq("statut", filterStatut as StatutPrestataire);
-    if (filterCategorie !== "toutes") query = query.eq("categorie_mere_id", filterCategorie);
-    if (filterEmailVerifie === "non_verifie") query = query.is("email_verifie", null);
-    else if (filterEmailVerifie !== "tous") query = query.eq("email_verifie", filterEmailVerifie as "valid" | "unknown" | "invalid" | "accept_all_unverifiable");
-    // Recherche insensible aux accents et à la casse (colonne normalisée côté DB)
-    if (search) {
-      const normalized = search
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase();
-      query = query.or(
-        `nom_commercial_norm.ilike.%${normalized}%,email_contact.ilike.%${normalized}%`,
-      );
-    }
+    const buildQuery = () => {
+      let query = supabase
+        .from("prestataires")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: true });
+      if (filterStatut !== "tous") query = query.eq("statut", filterStatut as StatutPrestataire);
+      if (filterCategorie !== "toutes") query = query.eq("categorie_mere_id", filterCategorie);
+      if (filterEmailVerifie === "non_verifie") query = query.is("email_verifie", null);
+      else if (filterEmailVerifie !== "tous") query = query.eq("email_verifie", filterEmailVerifie as "valid" | "unknown" | "invalid" | "accept_all_unverifiable");
+      // Recherche insensible aux accents et à la casse (colonne normalisée côté DB)
+      if (debouncedSearch) {
+        const normalized = debouncedSearch
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[%,()]/g, " ");
+        query = query.or(
+          `nom_commercial_norm.ilike.%${normalized}%,email_contact.ilike.%${normalized}%`,
+        );
+      }
+      return query;
+    };
 
-    const [{ data: result, error }, { data: cats }] = await Promise.all([
-      query,
-      supabase.from("categories").select("*").order("ordre_affichage"),
-    ]);
-    if (error) toast.error(error.message);
-    else setData(result ?? []);
+    const catsPromise = supabase.from("categories").select("*").order("ordre_affichage");
+    let rows: Prestataire[] = [];
+    let errMsg: string | null = null;
+    let count = 0;
+    if (clientFilterActive) {
+      for (let from = 0; from < 10000; from += 1000) {
+        const { data: pageRows, error, count: c } = await buildQuery().range(from, from + 999);
+        if (error) { errMsg = error.message; break; }
+        rows.push(...(pageRows ?? []));
+        count = c ?? rows.length;
+        if (!pageRows || pageRows.length < 1000) break;
+      }
+    } else {
+      const { data: pageRows, error, count: c } = await buildQuery().range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      if (error) errMsg = error.message;
+      rows = pageRows ?? [];
+      count = c ?? 0;
+    }
+    const { data: cats } = await catsPromise;
+    if (errMsg) toast.error(errMsg);
+    else { setData(rows); setServerTotal(count); }
     setCategories(cats ?? []);
     setLoading(false);
   };
@@ -456,7 +485,12 @@ export default function Prestataires() {
     setSuppressed(map);
   };
 
-  useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, search, filterEmailVerifie]);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+  useEffect(() => { setPage(0); }, [filterStatut, filterCategorie, debouncedSearch, filterEmailVerifie, clientFilterActive]);
+  useEffect(() => { fetchData(); }, [filterStatut, filterCategorie, debouncedSearch, filterEmailVerifie, page, clientFilterActive]);
   useEffect(() => { fetchSuppressed(); }, []);
   // Reset selection whenever filters/search change (evite d'agir sur des fiches invisibles)
   useEffect(() => { setSelectedIds(new Set()); }, [filterStatut, filterCategorie, search, filterSousSeuil, locationZones, citySearch, filterEmailRejete, filterEmailVerifie]);
@@ -1083,7 +1117,9 @@ export default function Prestataires() {
             </label>
           </div>
           <p className="mt-3 font-sans text-xs text-muted-foreground">
-            {loading ? "Chargement…" : `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`}
+            {loading ? "Chargement…" : clientFilterActive
+              ? `${filteredData.length} résultat${filteredData.length > 1 ? "s" : ""}`
+              : `${serverTotal} résultat${serverTotal > 1 ? "s" : ""} — ${PAGE_SIZE} par page`}
           </p>
         </CardHeader>
         {selectedCount > 0 && (
@@ -1282,6 +1318,15 @@ export default function Prestataires() {
               )}
             </TableBody>
           </Table>
+          {!clientFilterActive && (
+            <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 font-sans text-xs text-muted-foreground">
+              <span>Page {page + 1} / {Math.max(1, Math.ceil(serverTotal / PAGE_SIZE))}</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page === 0 || loading} onClick={() => setPage((p) => p - 1)}>Précédent</Button>
+                <Button variant="outline" size="sm" disabled={(page + 1) * PAGE_SIZE >= serverTotal || loading} onClick={() => setPage((p) => p + 1)}>Suivant</Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

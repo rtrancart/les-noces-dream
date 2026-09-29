@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -47,37 +48,61 @@ const actionColors: Record<string, string> = {
   update_roles: "bg-bleu-petrole/10 text-bleu-petrole",
 };
 
+const PAGE_SIZE = 50;
+
 export default function Logs() {
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
   const [filterAction, setFilterAction] = useState("toutes");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [actions, setActions] = useState<string[]>(Object.keys(actionLabels));
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+  useEffect(() => { setPage(0); }, [debounced, filterAction]);
 
   const fetchLogs = async () => {
     setLoading(true);
     let query = supabase
       .from("logs_admin")
-      .select("*")
+      .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(200);
+      .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
-    if (filterAction !== "toutes") {
-      query = query.eq("action", filterAction);
+    if (filterAction !== "toutes") query = query.eq("action", filterAction);
+
+    // Recherche côté serveur : action, entité, identifiant, ou email/nom de l'admin
+    if (debounced) {
+      const s = debounced.replace(/[%,()]/g, " ");
+      const { data: matchProfiles } = await supabase
+        .from("profiles")
+        .select("id")
+        .or(`email.ilike.%${s}%,nom.ilike.%${s}%,prenom.ilike.%${s}%`)
+        .limit(100);
+      const ors = [`action.ilike.%${s}%`, `entite.ilike.%${s}%`];
+      if (/^[0-9a-f-]{36}$/i.test(s)) ors.push(`entite_id.eq.${s}`);
+      const pids = (matchProfiles ?? []).map((p) => p.id);
+      if (pids.length) ors.push(`admin_id.in.(${pids.join(",")})`);
+      query = query.or(ors.join(","));
     }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
     if (error) {
       console.error(error);
       setLoading(false);
       return;
     }
+    setTotal(count ?? 0);
 
-    // Fetch admin profiles for display
     const adminIds = [...new Set((data ?? []).map((l) => l.admin_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, email, prenom, nom")
-      .in("id", adminIds);
+    const { data: profiles } = adminIds.length
+      ? await supabase.from("profiles").select("id, email, prenom, nom").in("id", adminIds)
+      : { data: [] as { id: string; email: string; prenom: string | null; nom: string | null }[] };
 
     const profileMap = new Map(
       (profiles ?? []).map((p) => [p.id, { email: p.email, name: `${p.prenom ?? ""} ${p.nom ?? ""}`.trim() }])
@@ -91,30 +116,24 @@ export default function Logs() {
     }));
 
     setLogs(enriched);
+    setActions((prev) => [...new Set([...prev, ...enriched.map((l) => l.action)])]);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchLogs();
-  }, [filterAction]);
+  }, [filterAction, debounced, page]);
 
-  const filtered = logs.filter(
-    (l) =>
-      !search ||
-      (l.admin_email ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      (l.action ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      (l.entite ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      JSON.stringify(l.details ?? {}).toLowerCase().includes(search.toLowerCase())
-  );
-
-  const uniqueActions = [...new Set(logs.map((l) => l.action))];
+  const filtered = logs;
+  const uniqueActions = actions;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-serif font-semibold text-foreground">Journal d'activité</h1>
         <p className="mt-1 font-sans text-sm text-muted-foreground">
-          Historique des actions administratives ({filtered.length} entrées)
+          Historique des actions administratives ({total} entrées)
         </p>
       </div>
 
@@ -220,6 +239,13 @@ export default function Logs() {
               )}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 font-sans text-xs text-muted-foreground">
+            <span>Page {page + 1} / {pageCount}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={page === 0 || loading} onClick={() => setPage((p) => p - 1)}>Précédent</Button>
+              <Button variant="outline" size="sm" disabled={page + 1 >= pageCount || loading} onClick={() => setPage((p) => p + 1)}>Suivant</Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
