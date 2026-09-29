@@ -50,6 +50,8 @@ type Prestataire = Database["public"]["Tables"]["prestataires"]["Row"];
 type StatutPrestataire = Database["public"]["Enums"]["statut_prestataire"];
 type Categorie = Database["public"]["Tables"]["categories"]["Row"];
 
+const PAGE_SIZE = 50;
+
 const statutLabels: Record<StatutPrestataire, string> = {
   brouillon: "Brouillon",
   pre_inscrit: "Pré-inscrit",
