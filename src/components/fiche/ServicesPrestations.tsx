@@ -186,11 +186,6 @@ function MobileAccordion({ groups }: { groups: FieldGroup[] }) {
                   {group.title}
                 </span>
               </div>
-              {group.summary && group.id !== "prestation" && (
-                <span className="mr-3 hidden max-w-[40%] truncate font-sans text-xs text-muted-foreground sm:inline">
-                  {group.summary}
-                </span>
-              )}
             </AccordionTrigger>
             <AccordionContent className="pb-0 pt-0">
               <GroupContent group={group} />
