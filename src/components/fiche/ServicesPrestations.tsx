@@ -144,11 +144,6 @@ function GroupHeader({
       <span className="flex-1 font-sans text-base font-medium text-foreground">
         {group.title}
       </span>
-      {group.summary && group.id !== "prestation" && (
-        <span className="hidden max-w-[45%] truncate font-sans text-xs text-muted-foreground sm:block">
-          {group.summary}
-        </span>
-      )}
       {onToggle && (
         <ChevronDown
           className={cn(
@@ -191,11 +186,6 @@ function MobileAccordion({ groups }: { groups: FieldGroup[] }) {
                   {group.title}
                 </span>
               </div>
-              {group.summary && group.id !== "prestation" && (
-                <span className="mr-3 hidden max-w-[40%] truncate font-sans text-xs text-muted-foreground sm:inline">
-                  {group.summary}
-                </span>
-              )}
             </AccordionTrigger>
             <AccordionContent className="pb-0 pt-0">
               <GroupContent group={group} />

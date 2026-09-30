@@ -15,9 +15,9 @@ export interface FieldGroup {
   id: string;
   title: string;
   icon: LucideIcon;
-  summary?: string;
   fields: Field[];
 }
+
 
 export interface SourceChamp {
   label: string;
@@ -113,24 +113,6 @@ function bucketFor(ch: SourceChamp): "prestation" | "inclus" | "livraison" | "or
   return "prestation";
 }
 
-function buildSummary(fields: Field[]): string | undefined {
-  const firstSelect = fields.find((f) => f.type === "select" && f.value);
-  if (firstSelect) return String(firstSelect.value);
-
-  const firstMulti = fields.find((f) => f.type === "multi" && Array.isArray(f.value) && f.value.length > 0);
-  if (firstMulti) return (firstMulti.value as string[]).slice(0, 2).join(" · ");
-
-  const booleans = fields.filter((f) => f.type === "boolean");
-  if (booleans.length > 0) {
-    const yes = booleans.filter((f) => f.value === true).length;
-    const no = booleans.length - yes;
-    if (yes > 0 && no > 0) return `${yes} inclus · ${no} non`;
-    if (yes > 0) return `${yes} inclus`;
-    if (no > 0) return `${no} non`;
-  }
-
-  return undefined;
-}
 
 export function buildServicesGroups(
   champsCategorie: SourceChamp[],
@@ -206,7 +188,6 @@ export function buildServicesGroups(
         title,
         icon,
         fields,
-        summary: buildSummary(fields),
       };
       return group;
     })
