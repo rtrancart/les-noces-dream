@@ -188,7 +188,6 @@ export function buildServicesGroups(
         title,
         icon,
         fields,
-        summary: buildSummary(fields),
       };
       return group;
     })

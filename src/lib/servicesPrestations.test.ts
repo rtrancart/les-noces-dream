@@ -43,7 +43,6 @@ describe("buildServicesGroups", () => {
 
     const prestation = groups.find((g) => g.id === "prestation")!;
     expect(prestation.fields.map((f) => f.key)).toEqual(["type_prestation", "style", "metier"]);
-    expect(prestation.summary).toBe("Photographe et vidéaste");
 
     const inclus = groups.find((g) => g.id === "inclus")!;
     expect(inclus.fields.map((f) => f.key)).toEqual([
@@ -54,7 +53,6 @@ describe("buildServicesGroups", () => {
     ]);
     expect(inclus.fields[0].value).toBe(true);
     expect(inclus.fields[2].value).toBe(false);
-    expect(inclus.summary).toBe("2 inclus · 2 non");
 
     const livraison = groups.find((g) => g.id === "livraison")!;
     expect(livraison.fields.map((f) => f.key)).toEqual([
@@ -65,7 +63,6 @@ describe("buildServicesGroups", () => {
 
     const organisation = groups.find((g) => g.id === "organisation")!;
     expect(organisation.fields.map((f) => f.key)).toEqual(["zone_intervention", "experience"]);
-    expect(organisation.summary).toBe("France entière");
 
     const conditions = groups.find((g) => g.id === "conditions")!;
     expect(conditions.fields.map((f) => f.key)).toEqual(["moyens_paiement", "montant_acompte"]);
