@@ -150,7 +150,7 @@ export default function EmailTemplateDrawer({ item, onClose, onSaved }: Props) {
       .upsert(
         {
           template_name: item.templateName,
-          display_name: row?.display_name ?? item.displayName,
+          display_name: item.displayName,
           sujet: row?.sujet ?? item.defaultSubject,
           est_actif: v,
         },

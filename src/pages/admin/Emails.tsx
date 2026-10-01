@@ -226,7 +226,7 @@ export default function Emails() {
       .upsert(
         {
           template_name: it.templateName,
-          display_name: it.dbRow?.display_name ?? it.displayName,
+          display_name: it.displayName,
           sujet: it.dbRow?.sujet ?? it.defaultSubject,
           est_actif: v,
         },
