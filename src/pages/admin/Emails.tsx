@@ -223,8 +223,15 @@ export default function Emails() {
   const toggleActif = async (it: EmailTemplateItem, v: boolean) => {
     const { error } = await supabase
       .from("email_textes")
-      .update({ est_actif: v })
-      .eq("template_name", it.templateName)
+      .upsert(
+        {
+          template_name: it.templateName,
+          display_name: it.displayName,
+          sujet: it.dbRow?.sujet ?? it.defaultSubject,
+          est_actif: v,
+        },
+        { onConflict: "template_name" }
+      )
       .select();
     if (error) {
       toast.error("Erreur : " + error.message);

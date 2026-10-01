@@ -999,7 +999,18 @@ export default function Prestataires() {
   const clearSelection = () => setSelectedIds(new Set());
 
   const runBulkAction = async () => {
-    const targets = data.filter((p) => selectedIds.has(p.id));
+    let targets = data.filter((p) => selectedIds.has(p.id));
+    const missingIds = [...selectedIds].filter((id) => !targets.some((p) => p.id === id));
+    if (missingIds.length > 0) {
+      const { data: extra, error: extraErr } = await supabase
+        .from("prestataires").select("*").in("id", missingIds);
+      if (extraErr || (extra ?? []).length !== missingIds.length) {
+        toast.error("Impossible de charger toutes les fiches sélectionnées. Action annulée.");
+        setBulkConfirmOpen(false);
+        return;
+      }
+      targets = [...targets, ...(extra as Prestataire[])];
+    }
     setBulkConfirmOpen(false);
     bulkCancelRef.current = false;
     setBulkRunning(true);

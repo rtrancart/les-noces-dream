@@ -6,6 +6,11 @@
       "permanent": true
     },
     {
+      "source": "/prestataire-profil/:rest*",
+      "destination": "/recherche",
+      "permanent": true
+    },
+    {
       "source": "/recherche",
       "has": [
         {
