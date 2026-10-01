@@ -56,9 +56,20 @@ export const SITEMAP_HINTS: Record<PageType, { priority: string; changefreq: str
 export async function listerPagesIndexables(
   supabase: SupabaseClient,
 ): Promise<PageIndexable[]> {
-  const { data, error } = await supabase.rpc("prerender_pages_indexables");
-  if (error) throw new Error(`Recensement des pages indexables impossible : ${error.message}`);
-  return (data ?? []) as PageIndexable[];
+  // Pagination obligatoire : l'API de données plafonne chaque réponse à 1 000 lignes.
+  const PAGE = 1000;
+  const toutes: PageIndexable[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .rpc("prerender_pages_indexables")
+      .order("url_path", { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(`Recensement des pages indexables impossible : ${error.message}`);
+    const lot = (data ?? []) as PageIndexable[];
+    toutes.push(...lot);
+    if (lot.length < PAGE) break;
+  }
+  return toutes;
 }
 
 /** Ordre d'affichage stable : même tri que la pagination de la réconciliation. */

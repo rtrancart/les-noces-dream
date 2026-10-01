@@ -136,9 +136,10 @@ Deno.serve(async (req) => {
     const { data: queue, error: readErr } = await admin
       .from("prerender_queue")
       .select(
-        "id, url_path, page_type, source_id, signature_visible, signature_rendue, tentatives",
+        "id, url_path, page_type, source_id, signature_visible, signature_rendue, tentatives, force_rendu",
       )
       .eq("statut", "a_traiter")
+      .order("priorite", { ascending: false })
       .order("updated_at", { ascending: true })
       .limit(batchSize);
 
@@ -171,7 +172,7 @@ Deno.serve(async (req) => {
       const renderedSig = entry.signature_rendue as string | null | undefined;
 
       // 1. Court-circuit si le contenu visible n'a pas changé.
-      if (visibleSig && renderedSig && visibleSig === renderedSig) {
+      if (!entry.force_rendu && visibleSig && renderedSig && visibleSig === renderedSig) {
         ignores++;
         if (!dryRun) {
           await admin
@@ -276,6 +277,7 @@ Deno.serve(async (req) => {
             .from("prerender_queue")
             .update({
               statut: shouldAbandon ? "abandonne" : "a_traiter",
+              ...(shouldAbandon ? { force_rendu: false, priorite: 0 } : {}),
               tentatives: newTentatives,
               dernier_motif: truncate(motif ?? "inconnu"),
               dernier_status: status,
@@ -305,6 +307,8 @@ Deno.serve(async (req) => {
                 signature_rendue: visibleSig,
                 storage_path: storagePath,
                 rendu_le: new Date().toISOString(),
+                force_rendu: false,
+                priorite: 0,
                 tentatives: 0,
                 dernier_motif: null,
                 dernier_status: null,
@@ -323,6 +327,7 @@ Deno.serve(async (req) => {
               .from("prerender_queue")
               .update({
                 statut: shouldAbandon ? "abandonne" : "a_traiter",
+              ...(shouldAbandon ? { force_rendu: false, priorite: 0 } : {}),
                 tentatives: newTentatives,
                 dernier_motif: truncate((e as Error).message ?? "upload_failed"),
                 dernier_status: null,

@@ -6,7 +6,8 @@
 // le repli est toujours l'application normale.
 //
 // En-tête de traçabilité `x-prerender` :
-//   snapshot     — snapshot servi depuis le bucket
+//   snapshot         — snapshot à jour servi depuis le bucket
+//   snapshot-ancien  — snapshot servi malgré son âge/empreinte, remis en file
 //   passthrough  — application servie (humain, snapshot absent, doute, erreur)
 //   notfound     — page inconnue du recensement : vraie absence (404)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -16,9 +17,8 @@ const SITE_URL = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://lesnoces.net").rep
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const BUCKET = "prerender-snapshots";
 /**
- * Âge maximal d'un snapshot servi. Au-delà, on préfère l'application normale :
- * la réconciliation tourne chaque nuit, donc un snapshot de plus de 7 jours
- * signale un renouvellement en panne, pas un contenu stable.
+ * Âge au-delà duquel un snapshot est marqué « ancien » (toujours servi, mais
+ * remis en file de rendu prioritaire).
  */
 const AGE_MAX_HEURES = 168;
 
@@ -127,28 +127,35 @@ Deno.serve(async (req) => {
     const storagePath = data.storage_path ?? cheminStockageDepuisUrl(chemin);
     if (!data.storage_path) return servirApplication("passthrough-snapshot-absent");
 
-    // ── Garde-fous de fraîcheur : un snapshot n'est servi que s'il est
-    // formellement à jour. Toute incertitude ⇒ application normale, jamais
-    // un HTML périmé (c'est ce qui avait produit une page à 16 fiches).
-    if (data.statut !== "a_jour") {
-      return servirApplication("passthrough-snapshot-non-a-jour");
-    }
-    if (data.dernier_motif) {
-      return servirApplication("passthrough-snapshot-en-erreur");
-    }
-    if (
+    // Un snapshot existant est TOUJOURS servi : un HTML un peu ancien vaut
+    // mieux qu'une coquille vide pour un robot. S'il est ancien, en erreur ou
+    // d'empreinte différente, on le sert quand même et on le remet en tête de
+    // file pour qu'il soit re-rendu.
+    const ageHeures = data.rendu_le
+      ? (Date.now() - new Date(data.rendu_le).getTime()) / 3_600_000
+      : Infinity;
+    const ancien =
+      !Number.isFinite(ageHeures) ||
+      ageHeures > AGE_MAX_HEURES ||
+      data.statut !== "a_jour" ||
+      !!data.dernier_motif ||
       !data.signature_visible ||
-      !data.signature_rendue ||
-      data.signature_visible !== data.signature_rendue
-    ) {
-      return servirApplication("passthrough-snapshot-empreinte-differente");
-    }
-    if (!data.rendu_le) {
-      return servirApplication("passthrough-snapshot-sans-date");
-    }
-    const ageHeures = (Date.now() - new Date(data.rendu_le).getTime()) / 3_600_000;
-    if (!Number.isFinite(ageHeures) || ageHeures > AGE_MAX_HEURES) {
-      return servirApplication("passthrough-snapshot-perime");
+      data.signature_visible !== data.signature_rendue;
+
+    if (ancien && data.statut === "a_jour") {
+      // Écriture conditionnelle : une seule remise en file, même sous forte charge robots.
+      supabase
+        .from("prerender_queue")
+        .update({
+          statut: "a_traiter",
+          force_rendu: true,
+          tentatives: 0,
+          priorite: 10,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("url_path", chemin)
+        .eq("statut", "a_jour")
+        .then(() => {}, () => {});
     }
 
     const objectUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${storagePath}`;
@@ -160,7 +167,7 @@ Deno.serve(async (req) => {
 
     return new Response(html, {
       status: 200,
-      headers: enTetesHtml("snapshot", "public, max-age=300, s-maxage=600", {
+      headers: enTetesHtml(ancien ? "snapshot-ancien" : "snapshot", "public, max-age=300, s-maxage=600", {
         "x-prerender-path": storagePath,
       }),
     });
