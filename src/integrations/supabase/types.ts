@@ -1683,8 +1683,10 @@ export type Database = {
           created_at: string
           dernier_motif: string | null
           dernier_status: number | null
+          force_rendu: boolean
           id: string
           page_type: string
+          priorite: number
           rendu_le: string | null
           signature_rendue: string | null
           signature_visible: string | null
@@ -1699,8 +1701,10 @@ export type Database = {
           created_at?: string
           dernier_motif?: string | null
           dernier_status?: number | null
+          force_rendu?: boolean
           id?: string
           page_type: string
+          priorite?: number
           rendu_le?: string | null
           signature_rendue?: string | null
           signature_visible?: string | null
@@ -1715,8 +1719,10 @@ export type Database = {
           created_at?: string
           dernier_motif?: string | null
           dernier_status?: number | null
+          force_rendu?: boolean
           id?: string
           page_type?: string
+          priorite?: number
           rendu_le?: string | null
           signature_rendue?: string | null
           signature_visible?: string | null
@@ -3056,6 +3062,11 @@ export type Database = {
           url_path: string
         }[]
       }
+      prerender_planifier_rafraichissement: {
+        Args: { p_age: string; p_limit: number }
+        Returns: number
+      }
+      prerender_priorite_type: { Args: { p_type: string }; Returns: number }
       prerender_reconcilier: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: {

@@ -28,6 +28,14 @@ const BUDGET_MS = 40_000;
 const MAX_HOPS = 400;
 const BATCH_SIZE = 5;
 const COOLDOWN_MS = 1_500;
+/**
+ * Rafraîchissement par l'âge : snapshots rendus il y a plus de ~6 jours
+ * (seuil 5 j 22 h pour qu'un rendu de 03:00 soit éligible 6 nuits plus tard),
+ * par lots tournants. 240/nuit couvre 1 398 pages en 6 nuits (~233/nuit)
+ * avec une marge de croissance, sous la capacité Browserless.
+ */
+const LOT_AGE = 240;
+const SEUIL_AGE = "5 days 22 hours";
 
 type Phase = "reconcile" | "render";
 
@@ -58,7 +66,7 @@ Deno.serve(async (req) => {
     return json({ ok: false, message: "Non autorisé" }, 401);
   }
 
-  let body: { phase?: Phase; offset?: number; hop?: number } = {};
+  let body: { phase?: Phase; offset?: number; hop?: number; lot_age?: number } = {};
   try {
     body = await req.json();
   } catch {
@@ -106,6 +114,15 @@ Deno.serve(async (req) => {
       } else {
         phase = "render";
         offset = 0;
+        // Fin de réconciliation : on ajoute le lot tournant par l'âge
+        // (accueil/régions/catégories d'abord, puis articles/pages, puis fiches).
+        const lotAge = Math.max(0, Number(body.lot_age ?? LOT_AGE));
+        const { data: nAge, error: eAge } = await admin.rpc(
+          "prerender_planifier_rafraichissement",
+          { p_limit: lotAge, p_age: SEUIL_AGE },
+        );
+        if (eAge) console.error("[cron-prerender-nightly] planification par l'âge", eAge.message);
+        else console.log(`[cron-prerender-nightly] ${nAge} snapshot(s) anciens remis en file`);
       }
     }
 
