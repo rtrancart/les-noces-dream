@@ -214,6 +214,25 @@ Deno.serve(async (req) => {
     }
   }
 
+  // 1b. Liste d'opposition du projet (désinscriptions, rebonds, plaintes
+  // historiques). Fermé en cas d'erreur : on n'envoie pas sans vérification.
+  {
+    const { data: supp, error: suppErr } = await supabase
+      .from('suppressed_emails')
+      .select('id')
+      .eq('email', effectiveRecipient.trim().toLowerCase())
+      .limit(1)
+      .maybeSingle()
+    if (suppErr) {
+      console.error('Suppression check failed', { templateName, error: suppErr.message })
+      return jsonResponse({ error: 'Failed to verify suppression status' }, 500)
+    }
+    if (supp) {
+      await logSend('suppressed', 'project suppression list')
+      return jsonResponse({ success: false, reason: 'email_suppressed' })
+    }
+  }
+
   // 2. Resolve content — DB (email_textes) is source of truth if active,
   // otherwise fall back to the React Email component (safety net).
   const { data: dbTexte, error: dbTexteError } = await supabase
