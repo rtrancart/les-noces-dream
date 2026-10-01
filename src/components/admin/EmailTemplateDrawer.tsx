@@ -147,8 +147,15 @@ export default function EmailTemplateDrawer({ item, onClose, onSaved }: Props) {
     setTogglingActif(true);
     const { error } = await supabase
       .from("email_textes")
-      .update({ est_actif: v })
-      .eq("template_name", item.templateName)
+      .upsert(
+        {
+          template_name: item.templateName,
+          display_name: row?.display_name ?? item.displayName,
+          sujet: row?.sujet ?? item.defaultSubject,
+          est_actif: v,
+        },
+        { onConflict: "template_name" }
+      )
       .select();
     setTogglingActif(false);
     if (error) {
