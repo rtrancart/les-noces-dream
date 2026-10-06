@@ -8,6 +8,7 @@ import { ZonesProvider } from "@/contexts/ZonesContext";
 import ScrollToTop from "@/components/ScrollToTop";
 import ConsentManager from "@/components/ConsentManager";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import AuthHashHandler from "@/components/auth/AuthHashHandler";
 import PublicLayout from "@/components/layout/PublicLayout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -83,6 +84,7 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
+          <AuthHashHandler />
           <ZonesProvider>
           <ChartePendingGuard>
           <Routes>
