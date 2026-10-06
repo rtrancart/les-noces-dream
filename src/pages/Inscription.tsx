@@ -49,7 +49,7 @@ const Inscription = () => {
     if (turnstileActif && !captchaToken) return;
     setLoading(true);
 
-    const defaultRedirect = role === "prestataire" ? "/pro/charte" : "/";
+    const defaultRedirect = role === "prestataire" ? "/pro/charte" : "/mon-compte";
     const redirectPath = nextTarget ?? defaultRedirect;
 
     const { data, error } = await supabase.functions.invoke("inscription", {

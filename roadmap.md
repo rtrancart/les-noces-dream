@@ -22,3 +22,7 @@
 - [ ] Séquence stricte : M-03 exige migration_m02_envoye_le ≤ now()-5j ; M-04 exige migration_m03_envoye_le ≤ now()-5j
 - [ ] pg_cron : migration-relance-m02 (08h15 UTC), m03 (08h20 UTC), m04 (08h25 UTC) avec secret Vault email_queue_service_role_key
 
+
+# Roadmap — Confirmation d'email des mariés
+- [x] Après confirmation : message de bienvenue + arrivée dans l'espace marié (/mon-compte)
+- [x] Lien déjà utilisé / expiré : message clair au lieu de l'erreur brute dans l'adresse
