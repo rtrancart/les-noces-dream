@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -51,6 +51,12 @@ export default function Footer() {
               de mariage haut de gamme.
             </p>
             <div className="mt-4 space-y-1 text-card/60 text-sm font-sans">
+              <p className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-primary" />
+                <a href="mailto:contact@lesnoces.net" className="hover:text-card transition-colors">
+                  contact@lesnoces.net
+                </a>
+              </p>
               <p className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-primary" />
                 <span>02 96 01 00 17</span>
