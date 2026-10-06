@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import TurnstileWidget, { type TurnstileInstance, TURNSTILE_ENABLED } from "@/components/auth/TurnstileWidget";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,17 +37,12 @@ const Connexion = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (TURNSTILE_ENABLED && !captchaToken) return;
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password, options: captchaToken ? { captchaToken } : undefined });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    setCaptchaToken(null);
-    turnstileRef.current?.reset();
     if (error) {
       toast.error(error.message === "Invalid login credentials"
         ? "Email ou mot de passe incorrect."
@@ -119,8 +113,7 @@ const Connexion = () => {
             />
           </div>
         </div>
-        <TurnstileWidget ref={turnstileRef} onToken={setCaptchaToken} />
-        <Button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="w-full font-sans font-semibold tracking-wide">
+        <Button type="submit" disabled={loading} className="w-full font-sans font-semibold tracking-wide">
           {loading ? "Connexion…" : "Se connecter"}
         </Button>
       </form>

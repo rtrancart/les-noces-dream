@@ -7,26 +7,22 @@ interface Props {
   onToken: (token: string | null) => void;
 }
 
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+/** Clé de site publique (valeur par défaut si la variable d'env est absente). */
+export const TURNSTILE_SITE_KEY =
+  (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined) || "0x4AAAAAAFPd39OfotSu2iy4";
 
-/** true quand la clé de site est configurée : le jeton devient obligatoire. */
-export const TURNSTILE_ENABLED = !!SITE_KEY;
-
-const TurnstileWidget = forwardRef<TurnstileInstance, Props>(({ onToken }, ref) => {
-  if (!SITE_KEY) return null;
-  return (
-    <div className="flex justify-center">
-      <Turnstile
-        ref={ref}
-        siteKey={SITE_KEY}
-        options={{ language: "fr", theme: "light" }}
-        onSuccess={(t) => onToken(t)}
-        onExpire={() => onToken(null)}
-        onError={() => onToken(null)}
-      />
-    </div>
-  );
-});
+const TurnstileWidget = forwardRef<TurnstileInstance, Props>(({ onToken }, ref) => (
+  <div className="flex justify-center">
+    <Turnstile
+      ref={ref}
+      siteKey={TURNSTILE_SITE_KEY}
+      options={{ language: "fr", theme: "light" }}
+      onSuccess={(t) => onToken(t)}
+      onExpire={() => onToken(null)}
+      onError={() => onToken(null)}
+    />
+  </div>
+));
 TurnstileWidget.displayName = "TurnstileWidget";
 
 export default TurnstileWidget;
