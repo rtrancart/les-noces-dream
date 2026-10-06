@@ -30,7 +30,7 @@
 
 ## 2bis. Réponses aux quatre précisions
 - **Google ou autre fournisseur** : aucun. Le site ne propose que l'email et le mot de passe : il n'y a aucun bouton Google ni autre fournisseur dans le code. Couper l'inscription publique ne bloque donc aucun autre parcours. Si Google est ajouté un jour, il faudra revoir ce réglage.
-- **Limite par IP** : stockée dans une petite table en base, `inscriptions_tentatives`, avec l'IP sous forme d'empreinte et la date. Règle : 5 tentatives par IP et par heure. Seule la fonction serveur peut lire et écrire cette table. Les lignes de plus de 24 h sont purgées par la tâche de nuit.
+- **Limite par IP** : stockée dans une petite table en base, `inscriptions_tentatives`, avec l'IP sous forme d'empreinte et la date. Règle : 10 tentatives par IP et par heure. Seule la fonction serveur peut lire et écrire cette table. Les lignes de plus de 24 h sont purgées par la tâche de nuit.
 - **Mot de passe** : le formulaire et la page de nouveau mot de passe exigent 6 caractères. La fonction applique donc aussi 6 caractères, et non 8, pour rester identique. Je vérifierai le réglage de l'authentification avant de coder. Le contrôle des mots de passe piratés reste actif.
 - **Email de confirmation** : créer le compte depuis la fonction n'envoie pas d'email automatiquement. La fonction enverra donc elle-même l'email, avec le même gabarit « Confirmez votre adresse email », le même expéditeur (notify.lesnoces.net) et le même canal d'envoi qu'aujourd'hui. Le lien est fourni par l'authentification, avec la même durée de validité. Test prévu : comparer l'email reçu avec l'email actuel.
 
