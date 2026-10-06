@@ -1287,6 +1287,24 @@ export type Database = {
           },
         ]
       }
+      inscriptions_tentatives: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string
+        }
+        Relationships: []
+      }
       invitation_tokens: {
         Row: {
           action: string
