@@ -28,6 +28,12 @@
 
 **On retire le contrôle de la page Connexion** (plus de jeton, bouton jamais grisé par le contrôle). Mot de passe oublié, Paramètres et activation des migrés restent intacts.
 
+## 2bis. Réponses aux quatre précisions
+- **Google ou autre fournisseur** : aucun. Le site ne propose que l'email et le mot de passe : il n'y a aucun bouton Google ni autre fournisseur dans le code. Couper l'inscription publique ne bloque donc aucun autre parcours. Si Google est ajouté un jour, il faudra revoir ce réglage.
+- **Limite par IP** : stockée dans une petite table en base, `inscriptions_tentatives`, avec l'IP sous forme d'empreinte et la date. Règle : 5 tentatives par IP et par heure. Seule la fonction serveur peut lire et écrire cette table. Les lignes de plus de 24 h sont purgées par la tâche de nuit.
+- **Mot de passe** : le formulaire et la page de nouveau mot de passe exigent 6 caractères. La fonction applique donc aussi 6 caractères, et non 8, pour rester identique. Je vérifierai le réglage de l'authentification avant de coder. Le contrôle des mots de passe piratés reste actif.
+- **Email de confirmation** : créer le compte depuis la fonction n'envoie pas d'email automatiquement. La fonction enverra donc elle-même l'email, avec le même gabarit « Confirmez votre adresse email », le même expéditeur (notify.lesnoces.net) et le même canal d'envoi qu'aujourd'hui. Le lien est fourni par l'authentification, avec la même durée de validité. Test prévu : comparer l'email reçu avec l'email actuel.
+
 ## 3. Retour arrière immédiat
 
 Deux interrupteurs, du plus léger au plus complet :
@@ -50,10 +56,11 @@ La connexion ne dépend plus du tout de Turnstile, donc le blocage du 27/09 ne p
 - Sur Vercel, ajouter `VITE_TURNSTILE_SITE_KEY = 0x4AAAAAAFPd39OfotSu2iy4`, puis redéployer. La clé de site est publique : je l'ajoute aussi dans le code comme valeur par défaut, pour que l'aperçu fonctionne.
 
 ## Détails techniques
-- Nouvelle fonction `supabase/functions/inscription/index.ts`. Données validées avec Zod (email, mot de passe d'au moins 8 caractères, rôle client ou prestataire, champs optionnels).
+- Nouvelle fonction `supabase/functions/inscription/index.ts`. Données validées avec Zod (email, mot de passe d'au moins 6 caractères, rôle client ou prestataire, champs optionnels).
 - Vérification par POST sur `challenges.cloudflare.com/turnstile/v0/siteverify` avec `secret`, `response` et `remoteip`.
 - Création du compte via `admin.generateLink({ type: "signup", email, password, options: { data, redirectTo } })`, avec les mêmes métadonnées qu'aujourd'hui pour que les triggers restent inchangés. Le lien est envoyé avec le gabarit d'email de confirmation existant. Une adresse déjà utilisée renvoie le même message qu'aujourd'hui.
-- Limite simple par adresse IP pour éviter les rafales.
+- Limite par IP : table `inscriptions_tentatives` (ip_hash, created_at). Règles d'accès actives sans aucune autorisation publique, accès réservé à la fonction serveur. La purge est ajoutée à la tâche de nuit.
+- Email : rendu du gabarit partagé `signup.tsx`, puis envoi par le même client d'envoi Lovable que la fonction d'email d'authentification, avec le lien de confirmation fourni par l'authentification.
 - `Inscription.tsx` : remplacer `supabase.auth.signUp` par `supabase.functions.invoke("inscription")`. `Connexion.tsx` : retirer le widget et le `captchaToken`.
 - Le formulaire lit l'interrupteur via une petite réponse de la fonction (GET de configuration), ce qui évite de republier pour l'activer.
 - Réglage de l'authentification : `disable_signup = true`. Les appels avec la clé de service (`createUser`, `generateLink`) restent autorisés.
