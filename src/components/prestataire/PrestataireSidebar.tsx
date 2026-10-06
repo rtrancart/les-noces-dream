@@ -11,6 +11,7 @@ import {
   ClipboardList,
   AlertCircle,
   Eye,
+  Mail,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -159,6 +160,23 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
           </NavLink>
         );
       })}
+
+      {/* Nous contacter — bloc non cliquable, jamais actif */}
+      <div
+        className="flex items-center gap-3 px-4 py-2.5 rounded-sm font-sans text-sm text-muted-foreground select-none"
+        aria-disabled="true"
+      >
+        <Mail className="h-4 w-4 shrink-0" />
+        <div className="min-w-0">
+          <p className="leading-tight">Nous contacter</p>
+          <a
+            href="mailto:contact@lesnoces.net"
+            className="block text-xs text-muted-foreground hover:text-foreground select-text"
+          >
+            contact@lesnoces.net
+          </a>
+        </div>
+      </div>
 
       <div className="border-t border-border mt-2 pt-2">
         {prestataire && (
