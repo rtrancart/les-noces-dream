@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import TurnstileWidget, { type TurnstileInstance, TURNSTILE_ENABLED } from "@/components/auth/TurnstileWidget";
+import { useState, useRef, useEffect } from "react";
+import TurnstileWidget, { type TurnstileInstance } from "@/components/auth/TurnstileWidget";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AuthLayout from "@/components/auth/AuthLayout";
@@ -35,58 +35,53 @@ const Inscription = () => {
   const [success, setSuccess] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance>(null);
+  // Interrupteur serveur : si la protection est coupée, le jeton n'est plus exigé.
+  const [turnstileActif, setTurnstileActif] = useState(true);
+  useEffect(() => {
+    supabase.functions.invoke("inscription", { method: "GET" })
+      .then(({ data }) => { if (data && data.turnstile_actif === false) setTurnstileActif(false); })
+      .catch(() => {});
+  }, []);
 
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (TURNSTILE_ENABLED && !captchaToken) return;
+    if (turnstileActif && !captchaToken) return;
     setLoading(true);
 
     const defaultRedirect = role === "prestataire" ? "/pro/charte" : "/";
     const redirectPath = nextTarget ?? defaultRedirect;
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        ...(captchaToken ? { captchaToken } : {}),
-        emailRedirectTo: `${window.location.origin}${redirectPath}`,
-        data: {
-          prenom,
-          nom,
-          role_souhaite: role,
-          ...(role === "client" && { consentement_marketing: consentMarketing }),
-          ...(role === "prestataire" && {
-            nom_commercial: nomCommercial.trim(),
-            raison_sociale: raisonSociale.trim() || nomCommercial.trim(),
-          }),
-        },
+    const { data, error } = await supabase.functions.invoke("inscription", {
+      body: {
+        email,
+        password,
+        prenom,
+        nom,
+        role,
+        consentement_marketing: role === "client" ? consentMarketing : false,
+        nom_commercial: role === "prestataire" ? nomCommercial.trim() : "",
+        raison_sociale: role === "prestataire" ? (raisonSociale.trim() || nomCommercial.trim()) : "",
+        redirect_to: `${window.location.origin}${redirectPath}`,
+        captcha_token: captchaToken,
       },
     });
 
-
     setLoading(false);
-    if (error) {
+    if (error || !data?.success) {
       setCaptchaToken(null);
       turnstileRef.current?.reset();
-      toast.error(error.message);
+      let message = data?.error as string | undefined;
+      const ctx = (error as { context?: Response } | null)?.context;
+      if (!message && ctx && typeof ctx.json === "function") {
+        try { message = (await ctx.json())?.error; } catch { /* ignore */ }
+      }
+      toast.error(message || "L'inscription a échoué. Merci de réessayer.");
       return;
     }
 
     trackEvent("inscription", { role });
     trackSignUp("password", role);
-
-    // Session immédiate (auto-confirm)
-    if (data.session) {
-      if (nextTarget) {
-        window.location.href = nextTarget;
-        return;
-      }
-      if (role === "prestataire") {
-        navigate("/pro/charte", { replace: true });
-        return;
-      }
-    }
 
     setSuccess(true);
   };
@@ -282,8 +277,8 @@ const Inscription = () => {
         )}
 
 
-        <TurnstileWidget ref={turnstileRef} onToken={setCaptchaToken} />
-        <Button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="w-full font-sans font-semibold tracking-wide">
+        {turnstileActif && <TurnstileWidget ref={turnstileRef} onToken={setCaptchaToken} />}
+        <Button type="submit" disabled={loading || (turnstileActif && !captchaToken)} className="w-full font-sans font-semibold tracking-wide">
           {loading ? "Création…" : "Créer mon compte"}
         </Button>
       </form>
