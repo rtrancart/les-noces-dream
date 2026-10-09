@@ -66,4 +66,4 @@
 7. Les deux formulaires fonctionnent toujours ; une insertion directe dans la table est refusée.
 
 ## Point à confirmer
-- Adresse de l'alerte admin (votre message indiquait « [ADRESSE] »).
+- Adresse de l'alerte admin rodolphe@lesnoces.net.
