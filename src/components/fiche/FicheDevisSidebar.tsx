@@ -147,7 +147,12 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
       form.reset();
     } catch (e) {
       console.error("Devis submit error:", e);
-      toast.error("Erreur lors de l'envoi. Veuillez réessayer.");
+      const err = e as { message?: string; code?: string };
+      if (err?.code === "LN409" || err?.message?.includes("DEMANDE_DOUBLON")) {
+        toast.info("Vous avez déjà contacté ce prestataire, il reviendra vers vous rapidement.");
+      } else {
+        toast.error("Erreur lors de l'envoi. Veuillez réessayer.");
+      }
     } finally {
       setSubmitting(false);
     }

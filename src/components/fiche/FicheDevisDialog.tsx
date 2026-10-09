@@ -97,7 +97,7 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
           ? parseInt(values.budget_indicatif.trim(), 10)
           : null;
 
-      const { data: demandeId, error } = await supabase.rpc("soumettre_demande_devis", {
+      const { error } = await supabase.rpc("soumettre_demande_devis", {
         p_prestataire_id: prestataireId,
         p_nom: values.nom,
         p_email: values.email.toLowerCase().trim(),
@@ -112,12 +112,7 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
 
       if (error) throw error;
 
-      // Notification email au prestataire (variante selon compte / sans compte)
-      if (demandeId) {
-        void supabase.functions
-          .invoke("notify-nouveau-contact-presta", { body: { demande_id: demandeId } })
-          .catch((e) => console.error("notify-nouveau-contact-presta failed", e));
-      }
+      // Email au prestataire : envoyé par la base après modération.
 
       toast.success("Votre demande de devis a été envoyée !");
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);
@@ -126,7 +121,12 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
       onOpenChange(false);
     } catch (e) {
       console.error("Devis submit error:", e);
-      toast.error("Erreur lors de l'envoi. Veuillez réessayer.");
+      const err = e as { message?: string; code?: string };
+      if (err?.code === "LN409" || err?.message?.includes("DEMANDE_DOUBLON")) {
+        toast.info("Vous avez déjà contacté ce prestataire, il reviendra vers vous rapidement.");
+      } else {
+        toast.error("Erreur lors de l'envoi. Veuillez réessayer.");
+      }
     } finally {
       setSubmitting(false);
     }

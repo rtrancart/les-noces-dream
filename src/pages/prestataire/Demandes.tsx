@@ -76,6 +76,7 @@ export default function PrestataireDemandes() {
       .from("demandes_devis")
       .select("id, nom_contact, email_contact, telephone_contact, message, statut, date_evenement, lieu_evenement, nombre_invites_rang, budget_indicatif, created_at")
       .eq("prestataire_id", prestataire.id)
+      .eq("moderation", "valide")
       .order("created_at", { ascending: false });
 
     // Check for unread messages per demande
