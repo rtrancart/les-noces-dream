@@ -1,2 +1,4 @@
 
 - Les inscriptions en libre-service passent uniquement par la fonction `inscription` (Turnstile vérifié côté serveur, inscription directe coupée dans l’authentification) — empêche les robots de créer des comptes via l’API ; le secret TURNSTILE_DESACTIVE=true coupe la vérification sans republier.
+- Les demandes de devis ne sont insérées que via `soumettre_demande_devis` ; un trigger BEFORE INSERT calcule `moderation`, et les emails prestataire/admin partent depuis la base (trigger + rattrapage dans la tâche nocturne des scores) avec réservation atomique de la date d'envoi — évite les envois non modérés, les doublons et les pertes d'email.
+- Tout ce que voit ou compte un prestataire (accès, tableaux de bord, taux de réponse, score, compteurs) se limite aux demandes `moderation = 'valide'` — une demande suspecte ne doit jamais l'atteindre ni le pénaliser.
