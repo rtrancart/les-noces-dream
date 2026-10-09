@@ -62,11 +62,13 @@ export default function PrestataireDashboard() {
         supabase
           .from("demandes_devis")
           .select("id", { count: "exact", head: true })
-          .eq("prestataire_id", prestataire!.id),
+          .eq("prestataire_id", prestataire!.id)
+          .eq("moderation", "valide"),
         supabase
           .from("demandes_devis")
           .select("id", { count: "exact", head: true })
           .eq("prestataire_id", prestataire!.id)
+          .eq("moderation", "valide")
           .eq("statut", "nouveau"),
         supabase
           .from("avis")

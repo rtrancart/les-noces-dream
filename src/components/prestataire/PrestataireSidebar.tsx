@@ -55,6 +55,7 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
       .from("demandes_devis")
       .select("id", { count: "exact", head: true })
       .eq("prestataire_id", prestataire.id)
+      .eq("moderation", "valide")
       .eq("statut", "nouveau");
 
     // Also get demandes with unread messages
@@ -62,6 +63,7 @@ export function PrestataireSidebar({ onNavigate }: PrestataireSidebarProps) {
       .from("demandes_devis")
       .select("id")
       .eq("prestataire_id", prestataire.id)
+      .eq("moderation", "valide")
       .neq("statut", "nouveau");
 
     let unreadMsgCount = 0;
