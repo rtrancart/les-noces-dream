@@ -792,15 +792,22 @@ export type Database = {
           contact_id: string
           created_at: string
           date_evenement: string | null
+          email_admin_envoye_le: string | null
           email_contact: string
+          email_prestataire_envoye_le: string | null
           id: string
           lieu_evenement: string | null
           message: string
+          moderation: string
+          moderee_le: string | null
+          moderee_par: string | null
           nom_contact: string
           nombre_invites_rang: string | null
           objet: Database["public"]["Enums"]["objet_demande"]
           prestataire_id: string
           profile_id: string | null
+          raisons_suspicion: string[]
+          score_suspicion: number
           source: string | null
           statut: Database["public"]["Enums"]["statut_demande"]
           telephone_contact: string | null
@@ -811,15 +818,22 @@ export type Database = {
           contact_id: string
           created_at?: string
           date_evenement?: string | null
+          email_admin_envoye_le?: string | null
           email_contact: string
+          email_prestataire_envoye_le?: string | null
           id?: string
           lieu_evenement?: string | null
           message: string
+          moderation?: string
+          moderee_le?: string | null
+          moderee_par?: string | null
           nom_contact: string
           nombre_invites_rang?: string | null
           objet?: Database["public"]["Enums"]["objet_demande"]
           prestataire_id: string
           profile_id?: string | null
+          raisons_suspicion?: string[]
+          score_suspicion?: number
           source?: string | null
           statut?: Database["public"]["Enums"]["statut_demande"]
           telephone_contact?: string | null
@@ -830,15 +844,22 @@ export type Database = {
           contact_id?: string
           created_at?: string
           date_evenement?: string | null
+          email_admin_envoye_le?: string | null
           email_contact?: string
+          email_prestataire_envoye_le?: string | null
           id?: string
           lieu_evenement?: string | null
           message?: string
+          moderation?: string
+          moderee_le?: string | null
+          moderee_par?: string | null
           nom_contact?: string
           nombre_invites_rang?: string | null
           objet?: Database["public"]["Enums"]["objet_demande"]
           prestataire_id?: string
           profile_id?: string | null
+          raisons_suspicion?: string[]
+          score_suspicion?: number
           source?: string | null
           statut?: Database["public"]["Enums"]["statut_demande"]
           telephone_contact?: string | null
@@ -888,6 +909,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      domaines_email_jetables: {
+        Row: {
+          created_at: string
+          domaine: string
+        }
+        Insert: {
+          created_at?: string
+          domaine: string
+        }
+        Update: {
+          created_at?: string
+          domaine?: string
+        }
+        Relationships: []
       }
       email_send_log: {
         Row: {
@@ -2814,6 +2850,10 @@ export type Database = {
         }[]
       }
       admin_stats_zones_categories_json: { Args: never; Returns: Json }
+      appeler_notification_demandes: {
+        Args: { p_ids: string[]; p_kind: string }
+        Returns: undefined
+      }
       brevo_compteurs_journal: {
         Args: {
           p_ids: string[]
@@ -3058,6 +3098,7 @@ export type Database = {
       }
       monitoring_symptomes: { Args: never; Returns: Json }
       normaliser_cle_zone: { Args: { p_valeur: string }; Returns: string }
+      normaliser_telephone: { Args: { p: string }; Returns: string }
       obtenir_telephone_prestataire: {
         Args: { p_prestataire_id: string }
         Returns: string
@@ -3105,6 +3146,7 @@ export type Database = {
       }
       purge_sessions_fiche_expirees: { Args: never; Returns: number }
       purger_historique_navigation: { Args: never; Returns: number }
+      rattraper_emails_demandes: { Args: never; Returns: Json }
       reactiver_prestataire_paiement: {
         Args: { p_prestataire_id: string }
         Returns: undefined
