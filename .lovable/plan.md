@@ -28,37 +28,42 @@
 - `calculer_score_classement_for_row` ne lit pas directement la table : il se sert de `taux_reponse` déjà stocké.
 
 ## 1. Modèle de données (migration)
-- `demandes_devis` : `moderation` (text, CHECK valide/a_verifier/rejete, NOT NULL, default 'valide'), `score_suspicion` int default 0, `raisons_suspicion` text[] default '{}', `moderee_le`, `moderee_par`, plus `email_prestataire_envoye_le` et `email_admin_envoye_le`. `statut` n'est pas modifié.
-- Les lignes existantes restent en 'valide' (valeur par défaut), et `email_prestataire_envoye_le = created_at` pour qu'elles ne soient jamais renvoyées.
-- Index : (lower(email_contact), created_at), (telephone normalisé, created_at), (prestataire_id, lower(email_contact), created_at).
+- `demandes_devis` : `moderation` (text, CHECK valide/a_verifier/rejete, NOT NULL, default 'valide'), `score_suspicion` int default 0, `raisons_suspicion` text[] default '{}', `moderee_le`, `moderee_par`, `email_prestataire_envoye_le`, `email_admin_envoye_le`. `statut` n'est pas modifié.
+- La règle d'accès « Anyone can create demande for active prestataire » est supprimée. L'insertion passe uniquement par `soumettre_demande_devis`, et les deux formulaires sont testés.
+- La seule ligne existante passe en 'rejete', avec `email_prestataire_envoye_le = created_at`. On recalcule ensuite `taux_reponse` et `score_classement` du prestataire concerné.
+- Index : (lower(email_contact), created_at), (téléphone normalisé, created_at), (prestataire_id, lower(email_contact), created_at).
 - Table `domaines_email_jetables (domaine text primary key)`, préremplie avec une trentaine de domaines courants. Lecture et écriture réservées aux admins.
 
 ## 2. Trigger BEFORE INSERT : doublon et suspicion
-- **Doublon** : même prestataire, même email OU même téléphone normalisé, dans les 24 dernières heures → erreur dédiée `DEMANDE_DOUBLON` (code d'erreur propre). Les deux formulaires affichent : « Vous avez déjà contacté ce prestataire, il reviendra vers vous rapidement. » C'est la seule modification des formulaires.
-- **Normalisation du téléphone** : suppression des espaces, points et tirets ; `00` remplacé par `+` ; `0` suivi de 9 chiffres (10 chiffres en tout) → +33. On compare ensuite au préfixe le plus long de la liste autorisée (+33, +262, +590, +594, +596, +508, +681, +687, +689, +32, +41, +352, +377).
-- **Barème** : indicatif hors liste +3 ; domaine jetable +3 ; plus de 40 demandes du même email en 24 h +2 ; moins de 15 s depuis la dernière demande du même email +2 ; invités > 500 +1 (le plus grand nombre lu dans la tranche) ; message sans espace +2. Chaque point ajouté enregistre sa raison en clair.
-- Score ≥ 3 → 'a_verifier', sinon 'valide'. Une valeur imposée par l'appelant est ignorée : seul le trigger décide.
+- **Doublon** : même prestataire, même email OU même téléphone normalisé, dans les 24 dernières heures → erreur dédiée `DEMANDE_DOUBLON`. Les deux formulaires affichent : « Vous avez déjà contacté ce prestataire, il reviendra vers vous rapidement. » C'est la seule modification des formulaires, en plus du retrait de l'appel d'envoi d'email.
+- **Normalisation du téléphone** : suppression des espaces, points et tirets ; `00` remplacé par `+` ; un `0` suivi de 9 chiffres → +33. Le numéro est comparé au préfixe le plus long de la liste autorisée (+33, +262, +590, +594, +596, +508, +681, +687, +689, +32, +41, +352, +377).
+- **Barème** : indicatif hors liste +3 ; domaine jetable +3 ; plus de 40 demandes du même email en 24 h +2 ; moins de 15 s depuis la dernière demande du même email +2 ; plus de 500 invités +1 (le plus grand nombre lu dans la tranche) ; message sans espace +2. Chaque point ajouté enregistre sa raison en clair.
+- Score ≥ 3 → 'a_verifier', sinon 'valide'. Seul le trigger décide.
 
-## 3. Envoi des emails, géré par la base et non plus par le navigateur
-- Nouveau trigger AFTER INSERT/UPDATE OF moderation : si 'valide' et `email_prestataire_envoye_le` vide, il appelle `notify-nouveau-contact-presta` en tâche de fond.
-- La fonction pose d'abord `email_prestataire_envoye_le` de façon atomique (« seulement si vide »), puis envoie. Un double appel ne peut donc pas produire deux emails.
-- La fonction n'accepte plus que l'appel interne (clé de service). L'appel depuis `FicheDevisDialog` est retiré, ce qui comble aussi l'absence d'email pour la colonne latérale.
-- Passage en 'a_verifier' : envoi d'un email admin récapitulatif (prestataire, contact, raisons, lien `/admin/demandes?demande=<id>`), avec un nouveau gabarit `alerte_demande_suspecte` et le garde-fou `email_admin_envoye_le`.
-- Brevo : `trg_brevo_sync_contact` n'est déclenché que pour 'valide', y compris lors d'un passage ultérieur à 'valide'. Ainsi, les adresses de robots n'entrent pas dans le CRM.
+## 3. Envoi des emails, géré par la base
+- Trigger AFTER INSERT/UPDATE OF moderation :
+  - 'valide' et `email_prestataire_envoye_le` vide → appel en tâche de fond de `notify-nouveau-contact-presta` ;
+  - 'a_verifier' et `email_admin_envoye_le` vide → appel de l'envoi de l'alerte admin.
+- **Garde-fou** : la fonction réserve d'abord l'envoi de façon atomique (« pose la date seulement si vide », sinon arrêt). Elle met ensuite l'email en file. Si la mise en file échoue, elle remet le champ à NULL. La date ne reste donc posée que si l'envoi a réussi.
+- La fonction n'accepte que l'appel interne (clé de service). L'appel depuis `FicheDevisDialog` est retiré, ce qui comble aussi l'absence d'email pour la colonne latérale.
+- **Alerte admin** : nouveau gabarit `alerte_demande_suspecte` (prestataire, contact, raisons, lien `/admin/demandes?demande=<id>`), envoyé à **[adresse à confirmer]**.
+- **Brevo** : synchronisation uniquement pour les demandes 'valide', à l'insertion ou lors d'un passage ultérieur à 'valide'.
+- **Rattrapage sans nouveau cron** : la tâche nocturne existante `recalcul-scores-nightly` (03:20 UTC) appelle aussi une nouvelle fonction `rattraper_emails_demandes()`. Celle-ci cherche les demandes 'valide' sans `email_prestataire_envoye_le` et les demandes 'a_verifier' sans `email_admin_envoye_le`. Elle n'appelle la fonction d'envoi que s'il y a au moins une ligne, avec le même garde-fou anti-doublon.
 
 ## 4. Visibilité et score limités à 'valide'
-- Règles d'accès : la branche « propriétaire de la fiche » exige `moderation = 'valide'` pour la lecture et la mise à jour des demandes, pour les messages et pour le canal temps réel. Le client auteur et l'admin gardent l'accès.
-- Les 3 requêtes du dashboard prestataire ajoutent aussi le filtre (défense en profondeur).
+- Règles d'accès : pour le propriétaire de la fiche, il faut `moderation = 'valide'` pour lire et mettre à jour les demandes, pour les messages et pour le canal temps réel. Le client auteur et l'admin gardent l'accès.
+- Les 3 requêtes du dashboard prestataire ajoutent aussi le filtre.
 - `calculer_taux_reponse`, `brevo_compteurs_prestataires` et `can_review_prestataire` ne comptent que les demandes 'valide'.
-- Changement de modération : on recalcule `taux_reponse` et `taux_reponse_nb_demandes_90j` du prestataire, puis `score_classement`. À l'insertion, `trg_score_demandes` ne s'exécute que pour une demande 'valide'.
+- Changement de modération : recalcul de `taux_reponse` et `taux_reponse_nb_demandes_90j`, puis de `score_classement`. À l'insertion, le score n'est recalculé que pour une demande 'valide'.
 
 ## 5. Tests (sur l'aperçu, données de test supprimées ensuite)
-1. +33, Bordeaux, 120 invités, message normal → 'valide', email prestataire dans le journal d'envoi.
-2. +226 et message d'un seul mot → 'a_verifier' (score 5), pas d'email prestataire, email admin envoyé, invisible avec une session prestataire.
-3. Même email, même prestataire, deux fois → la deuxième est refusée avec `DEMANDE_DOUBLON`.
+1. +33, Bordeaux, 120 invités, message normal → 'valide', email prestataire envoyé.
+2. +226 et message d'un seul mot → 'a_verifier' (score 5), pas d'email prestataire, alerte admin envoyée, demande invisible avec une session prestataire.
+3. Même email, même prestataire, deux fois → la deuxième est refusée avec le message de doublon.
 4. Même email vers 5 prestataires à une minute d'intervalle → les 5 sont 'valide'.
-5. Passage manuel en base de 'a_verifier' à 'valide' → un seul email prestataire (une seconde mise à jour n'en renvoie pas), taux et score recalculés.
+5. Passage manuel de 'a_verifier' à 'valide' → un seul email prestataire, taux et score recalculés.
+6. Échec d'envoi simulé → champ remis à NULL ; le rattrapage lancé à la main envoie l'email, et un second lancement n'envoie rien.
+7. Les deux formulaires fonctionnent toujours ; une insertion directe dans la table est refusée.
 
-## Points à confirmer
-- **Destinataire de l'alerte admin** : contact@lesnoces.net ou rodolphe.trancart@gmail.com ?
-- Je propose de ne pas pousser vers Brevo les demandes en attente ou rejetées (voir le point 3). D'accord ?
+## Point à confirmer
+- Adresse de l'alerte admin (votre message indiquait « [ADRESSE] »).
