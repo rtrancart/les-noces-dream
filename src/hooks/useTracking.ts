@@ -71,12 +71,19 @@ export function useTracking() {
       event_type: string,
       has_account: boolean,
       budget?: string | number,
+      extra?: { lead_valide: boolean; sha256_email_address: string },
     ) =>
       push("demande_devis", {
         item_id,
         event_type,
         has_account,
         ...(budget !== undefined && budget !== "" ? { budget } : {}),
+        ...(extra
+          ? {
+              lead_valide: extra.lead_valide,
+              user_data: { sha256_email_address: extra.sha256_email_address },
+            }
+          : {}),
       }),
 
     /** Inscription. */
