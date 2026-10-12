@@ -8,6 +8,13 @@
       "when": 1791537208364,
       "tag": "0000_moderation_demandes_devis",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791825910475,
+      "tag": "0001_soumettre_demande_devis_retour_moderation",
+      "breakpoints": true
     }
   ]
 }
