@@ -3191,7 +3191,7 @@ export type Database = {
           p_prestataire_id: string
           p_telephone: string
         }
-        Returns: string
+        Returns: Json
       }
       valider_prestataire_migre: {
         Args: { p_prestataire_id: string }

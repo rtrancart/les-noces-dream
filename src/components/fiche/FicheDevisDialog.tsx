@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
+import { sha256EmailHex } from "@/lib/sha256";
 import {
   Dialog,
   DialogContent,
@@ -97,7 +98,7 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
           ? parseInt(values.budget_indicatif.trim(), 10)
           : null;
 
-      const { error } = await supabase.rpc("soumettre_demande_devis", {
+      const { data, error } = await supabase.rpc("soumettre_demande_devis", {
         p_prestataire_id: prestataireId,
         p_nom: values.nom,
         p_email: values.email.toLowerCase().trim(),
@@ -113,10 +114,15 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
       if (error) throw error;
 
       // Email au prestataire : envoyé par la base après modération.
+      const moderation = (data as { moderation?: string } | null)?.moderation;
+      const emailHash = await sha256EmailHex(values.email);
 
       toast.success("Votre demande de devis a été envoyée !");
       trackEvent("premier_contact", { objet: values.objet }, prestataireId);
-      trackDemandeDevis(prestataireId, values.objet, !!user, budgetNum ?? undefined);
+      trackDemandeDevis(prestataireId, values.objet, !!user, budgetNum ?? undefined, {
+        lead_valide: moderation !== "a_verifier",
+        sha256_email_address: emailHash,
+      });
       form.reset();
       onOpenChange(false);
     } catch (e) {
