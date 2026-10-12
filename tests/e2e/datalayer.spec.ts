@@ -81,6 +81,9 @@ test.describe("GTM dataLayer — 13 events GA4", () => {
   test("conteneur GTM chargé + tous les events présents avec payload valide", async ({
     page,
   }) => {
+    // Events relevés avant un rechargement de document, conservés pour la vérification.
+    const captured: DLEntry[] = [];
+
     // ---------- Chargement GTM ----------
     await page.goto(`${BASE_URL}/`, { waitUntil: "networkidle" });
     await waitForEvent(page, "gtm.js");
@@ -98,14 +101,23 @@ test.describe("GTM dataLayer — 13 events GA4", () => {
     await waitForEvent(page, "page_view");
 
     await page.goto(`${BASE_URL}/recherche?lieu=paris`, {
-      waitUntil: "networkidle",
+      waitUntil: "domcontentloaded",
     });
     await waitForEvent(page, "page_view");
     await waitForEvent(page, "search").catch(() => {
       /* tolérant : selon état UI */
     });
+    // La navigation suivante recharge le document et vide window.dataLayer :
+    // on capture ici les events vus sur la page de recherche.
+    captured.push(
+      ...(await getDataLayer(page)).filter((e) =>
+        Object.keys(EXPECTED_EVENTS).includes(e.event as string),
+      ),
+    );
 
-    await page.goto(`${BASE_URL}/inscription`, { waitUntil: "networkidle" });
+    await page.goto(`${BASE_URL}/inscription`, {
+      waitUntil: "domcontentloaded",
+    });
     await waitForEvent(page, "page_view");
 
     // ---------- Events simulés (auth/Stripe/UI complexe) ----------
@@ -162,8 +174,11 @@ test.describe("GTM dataLayer — 13 events GA4", () => {
 
     // ---------- Vérification : présence + payload non vide ----------
     const dl = await getDataLayer(page);
+    // window.dataLayer est remis à zéro à chaque navigation complète : on ajoute
+    // les events déjà observés sur les pages précédentes.
+    const all = [...captured, ...dl];
     const seen = new Set(
-      dl.map((e) => e.event).filter((n): n is string => typeof n === "string"),
+      all.map((e) => e.event).filter((n): n is string => typeof n === "string"),
     );
 
     const missing: string[] = [];
@@ -175,7 +190,7 @@ test.describe("GTM dataLayer — 13 events GA4", () => {
         continue;
       }
       // Premier match avec ce nom d'event
-      const entry = dl.find((e) => e.event === eventName)!;
+      const entry = all.find((e) => e.event === eventName)!;
       const payloadKeys = Object.keys(entry).filter((k) => k !== "event");
       if (payloadKeys.length === 0) {
         invalidPayload.push(`${eventName} (payload vide)`);
@@ -190,7 +205,7 @@ test.describe("GTM dataLayer — 13 events GA4", () => {
     }
 
     // ---------- demande_devis : contrôles spécifiques ----------
-    const devis = dl.find((e) => e.event === "demande_devis")!;
+    const devis = all.find((e) => e.event === "demande_devis")!;
     expect(typeof devis.lead_valide).toBe("boolean");
     const ud = devis.user_data as { sha256_email_address?: string };
     expect(ud?.sha256_email_address).toMatch(/^[0-9a-f]{64}$/);
@@ -202,7 +217,7 @@ test.describe("GTM dataLayer — 13 events GA4", () => {
 
     // ---------- Rapport console ----------
     const report = Object.keys(EXPECTED_EVENTS).map((name) => {
-      const found = dl.find((e) => e.event === name);
+      const found = all.find((e) => e.event === name);
       return {
         event: name,
         present: !!found,
