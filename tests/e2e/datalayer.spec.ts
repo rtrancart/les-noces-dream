@@ -98,14 +98,16 @@ test.describe("GTM dataLayer — 13 events GA4", () => {
     await waitForEvent(page, "page_view");
 
     await page.goto(`${BASE_URL}/recherche?lieu=paris`, {
-      waitUntil: "networkidle",
+      waitUntil: "domcontentloaded",
     });
     await waitForEvent(page, "page_view");
     await waitForEvent(page, "search").catch(() => {
       /* tolérant : selon état UI */
     });
 
-    await page.goto(`${BASE_URL}/inscription`, { waitUntil: "networkidle" });
+    await page.goto(`${BASE_URL}/inscription`, {
+      waitUntil: "domcontentloaded",
+    });
     await waitForEvent(page, "page_view");
 
     // ---------- Events simulés (auth/Stripe/UI complexe) ----------
