@@ -44,3 +44,4 @@ Disallow: /prestataire/id/
 Disallow: /admin
 
 Sitemap: https://lesnoces.net/sitemap.xml
+Sitemap: https://les-noces.lovable.app/sitemap.xml
