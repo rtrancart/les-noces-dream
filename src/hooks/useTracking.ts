@@ -71,7 +71,7 @@ export function useTracking() {
       event_type: string,
       has_account: boolean,
       budget?: string | number,
-      extra?: { lead_valide: boolean; sha256_email_address: string },
+      extra?: { lead_valide: boolean; sha256_email_address?: string },
     ) =>
       push("demande_devis", {
         item_id,
@@ -81,7 +81,9 @@ export function useTracking() {
         ...(extra
           ? {
               lead_valide: extra.lead_valide,
-              user_data: { sha256_email_address: extra.sha256_email_address },
+              ...(extra.sha256_email_address
+                ? { user_data: { sha256_email_address: extra.sha256_email_address } }
+                : {}),
             }
           : {}),
       }),

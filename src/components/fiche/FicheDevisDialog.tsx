@@ -115,14 +115,26 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
 
       // Email au prestataire : envoyé par la base après modération.
       const moderation = (data as { moderation?: string } | null)?.moderation;
-      const emailHash = await sha256EmailHex(values.email);
+
+      // Le hachage ne doit jamais bloquer le parcours : en cas d'échec,
+      // l'événement part quand même, sans user_data.
+      let emailHash: string | undefined;
+      try {
+        emailHash = await sha256EmailHex(values.email);
+      } catch {
+        emailHash = undefined;
+      }
 
       toast.success("Votre demande de devis a été envoyée !");
-      trackEvent("premier_contact", { objet: values.objet }, prestataireId);
-      trackDemandeDevis(prestataireId, values.objet, !!user, budgetNum ?? undefined, {
-        lead_valide: moderation !== "a_verifier",
-        sha256_email_address: emailHash,
-      });
+      try {
+        trackEvent("premier_contact", { objet: values.objet }, prestataireId);
+        trackDemandeDevis(prestataireId, values.objet, !!user, budgetNum ?? undefined, {
+          lead_valide: moderation === "valide",
+          ...(emailHash ? { sha256_email_address: emailHash } : {}),
+        });
+      } catch {
+        // Une erreur de tracking reste silencieuse : le succès utilisateur prime.
+      }
       form.reset();
       onOpenChange(false);
     } catch (e) {
