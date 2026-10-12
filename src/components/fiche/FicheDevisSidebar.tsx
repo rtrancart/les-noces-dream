@@ -28,6 +28,7 @@ import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { Send } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
+import { sha256EmailHex } from "@/lib/sha256";
 
 const countryCodes = [
   { code: "+33", label: "🇫🇷 +33", country: "FR" },
