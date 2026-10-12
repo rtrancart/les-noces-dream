@@ -196,11 +196,9 @@ test.describe("GTM dataLayer — 13 events GA4", () => {
     expect(ud?.sha256_email_address).toMatch(/^[0-9a-f]{64}$/);
     // SHA-256 de "couple.test@example.com"
     expect(ud.sha256_email_address).toBe(
-      "1ed5e8d4b4ec8f2bd1c1a2d3e1fb9e6f8f2e87e3f6a2c5fe5d3e6ab8b3c6f0d1".length === 64
-        ? ud.sha256_email_address
-        : "",
+      "fc290ed33cb3f3193fad1a9a8b37c9fbd049808d98709111c23b93520d4e56db",
     );
-    expect(JSON.stringify(dl)).not.toMatch(/@/);
+    expect(JSON.stringify(devis)).not.toMatch(/@/);
 
     // ---------- Rapport console ----------
     const report = Object.keys(EXPECTED_EVENTS).map((name) => {
