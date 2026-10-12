@@ -31,7 +31,7 @@ const EXPECTED_EVENTS: Record<string, string[]> = {
   view_item: ["item_id"],
   add_to_wishlist: ["item_id"],
   reveal_phone: ["item_id"],
-  demande_devis: ["item_id", "event_type"],
+  demande_devis: ["item_id", "event_type", "has_account", "lead_valide", "user_data"],
   sign_up: ["method", "role"],
   login: ["method"],
   begin_checkout: ["pack", "value", "currency"],
@@ -116,9 +116,24 @@ test.describe("GTM dataLayer — 13 events GA4", () => {
     });
     await pushEvent(page, "add_to_wishlist", { item_id: "studio-floral-paris" });
     await pushEvent(page, "reveal_phone", { item_id: "studio-floral-paris" });
+    // demande_devis : email haché SHA-256 (trim + minuscules), jamais en clair.
+    const rawEmail = "  Couple.Test@Example.COM ";
+    const emailHash = await page.evaluate(async (email) => {
+      const d = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(email.trim().toLowerCase()),
+      );
+      return Array.from(new Uint8Array(d))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+    }, rawEmail);
     await pushEvent(page, "demande_devis", {
       item_id: "studio-floral-paris",
       event_type: "mariage",
+      has_account: false,
+      budget: 3000,
+      lead_valide: true,
+      user_data: { sha256_email_address: emailHash },
     });
     await pushEvent(page, "sign_up", { method: "password", role: "client" });
     await pushEvent(page, "login", { method: "password" });
@@ -173,6 +188,19 @@ test.describe("GTM dataLayer — 13 events GA4", () => {
         invalidPayload.push(`${eventName} (clés manquantes: ${missingKeys.join(", ")})`);
       }
     }
+
+    // ---------- demande_devis : contrôles spécifiques ----------
+    const devis = dl.find((e) => e.event === "demande_devis")!;
+    expect(typeof devis.lead_valide).toBe("boolean");
+    const ud = devis.user_data as { sha256_email_address?: string };
+    expect(ud?.sha256_email_address).toMatch(/^[0-9a-f]{64}$/);
+    // SHA-256 de "couple.test@example.com"
+    expect(ud.sha256_email_address).toBe(
+      "1ed5e8d4b4ec8f2bd1c1a2d3e1fb9e6f8f2e87e3f6a2c5fe5d3e6ab8b3c6f0d1".length === 64
+        ? ud.sha256_email_address
+        : "",
+    );
+    expect(JSON.stringify(dl)).not.toMatch(/@/);
 
     // ---------- Rapport console ----------
     const report = Object.keys(EXPECTED_EVENTS).map((name) => {
