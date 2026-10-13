@@ -6,11 +6,6 @@
       "permanent": true
     },
     {
-      "source": "/prestataire-profil/:rest*",
-      "destination": "/recherche",
-      "permanent": true
-    },
-    {
       "source": "/recherche",
       "has": [
         {
@@ -935,6 +930,14 @@
     }
   ],
   "headers": [
+    {
+      "source": "/recherche",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }]
+    },
+    {
+      "source": "/recherche/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }]
+    },
     {
       "source": "/admin",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
