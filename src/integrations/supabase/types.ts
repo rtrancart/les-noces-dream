@@ -792,6 +792,7 @@ export type Database = {
           contact_id: string
           created_at: string
           date_evenement: string | null
+          date_precision: string | null
           email_admin_envoye_le: string | null
           email_contact: string
           email_prestataire_envoye_le: string | null
@@ -818,6 +819,7 @@ export type Database = {
           contact_id: string
           created_at?: string
           date_evenement?: string | null
+          date_precision?: string | null
           email_admin_envoye_le?: string | null
           email_contact: string
           email_prestataire_envoye_le?: string | null
@@ -844,6 +846,7 @@ export type Database = {
           contact_id?: string
           created_at?: string
           date_evenement?: string | null
+          date_precision?: string | null
           email_admin_envoye_le?: string | null
           email_contact?: string
           email_prestataire_envoye_le?: string | null
@@ -3182,6 +3185,7 @@ export type Database = {
         Args: {
           p_budget_indicatif?: number
           p_date_evenement?: string
+          p_date_precision?: string
           p_email: string
           p_lieu_evenement?: string
           p_message: string

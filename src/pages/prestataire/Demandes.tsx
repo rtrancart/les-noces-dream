@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import ConversationThread from "@/components/messaging/ConversationThread";
+import { formaterDateEvenement } from "@/lib/dateDemande";
 
 interface Demande {
   id: string;
@@ -32,6 +33,7 @@ interface Demande {
   message: string;
   statut: string;
   date_evenement: string | null;
+  date_precision: string | null;
   lieu_evenement: string | null;
   nombre_invites_rang: string | null;
   budget_indicatif: number | null;
@@ -74,7 +76,7 @@ export default function PrestataireDemandes() {
     if (!prestataire?.id) return;
     const { data } = await supabase
       .from("demandes_devis")
-      .select("id, nom_contact, email_contact, telephone_contact, message, statut, date_evenement, lieu_evenement, nombre_invites_rang, budget_indicatif, created_at")
+      .select("id, nom_contact, email_contact, telephone_contact, message, statut, date_evenement, date_precision, lieu_evenement, nombre_invites_rang, budget_indicatif, created_at")
       .eq("prestataire_id", prestataire.id)
       .eq("moderation", "valide")
       .order("created_at", { ascending: false });
@@ -175,12 +177,10 @@ export default function PrestataireDemandes() {
                   <Phone className="h-3 w-3" /> {selected.telephone_contact}
                 </span>
               )}
-              {selected.date_evenement && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {format(new Date(selected.date_evenement), "d MMMM yyyy", { locale: fr })}
-                </span>
-              )}
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {formaterDateEvenement(selected.date_evenement, selected.date_precision)}
+              </span>
               {selected.lieu_evenement && (
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" /> {selected.lieu_evenement}

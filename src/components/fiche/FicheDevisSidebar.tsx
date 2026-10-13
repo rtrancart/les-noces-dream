@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
+import DateEvenementField, { versParametresDate } from "./DateEvenementField";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -76,11 +77,6 @@ const objets = [
   { value: "autre", label: "Autre" },
 ];
 
-const moisOptions = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
-];
-
 interface Props {
   prestataireId: string;
   prestataireName: string;
@@ -92,10 +88,6 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [dateMode, setDateMode] = useState<"precise" | "mois">("precise");
-
-  const currentYear = new Date().getFullYear();
-  const annees = useMemo(() => [currentYear, currentYear + 1, currentYear + 2], [currentYear]);
 
   const form = useForm<DevisFormValues>({
     resolver: zodResolver(devisSchema),
@@ -133,7 +125,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
         p_telephone: fullPhone,
         p_objet: values.objet,
         p_message: values.message,
-        p_date_evenement: values.date_evenement || null,
+        ...versParametresDate(values.date_evenement),
         p_lieu_evenement: values.lieu_evenement || null,
         p_nombre_invites_rang: values.nombre_invites_rang || null,
         p_budget_indicatif: budgetNum,
@@ -283,54 +275,9 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
                 <div className="grid grid-cols-2 gap-2">
                   <FormField control={form.control} name="date_evenement" render={({ field }) => (
                     <FormItem className="col-span-2">
-                      <div className="flex items-center justify-between">
-                        <FormLabel className="text-xs">Date</FormLabel>
-                        <button
-                          type="button"
-                          className="text-[10px] text-primary hover:underline"
-                          onClick={() => {
-                            setDateMode(prev => prev === "precise" ? "mois" : "precise");
-                            field.onChange("");
-                          }}
-                        >
-                          {dateMode === "precise" ? "Je connais juste le mois" : "Date précise"}
-                        </button>
-                      </div>
+                      <FormLabel className="text-xs">Date de l'événement (optionnelle)</FormLabel>
                       <FormControl>
-                        {dateMode === "precise" ? (
-                          <Input type="date" className="h-9 text-sm" {...field} />
-                        ) : (
-                          <div className="grid grid-cols-2 gap-1.5">
-                            <Select
-                              onValueChange={(m) => {
-                                const annee = field.value?.split(" ")[1] || String(currentYear);
-                                field.onChange(`${m} ${annee}`);
-                              }}
-                              value={field.value?.split(" ")[0] || ""}
-                            >
-                              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Mois" /></SelectTrigger>
-                              <SelectContent>
-                                {moisOptions.map((m) => (
-                                  <SelectItem key={m} value={m}>{m}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Select
-                              onValueChange={(a) => {
-                                const mois = field.value?.split(" ")[0] || "";
-                                field.onChange(`${mois} ${a}`);
-                              }}
-                              value={field.value?.split(" ")[1] || ""}
-                            >
-                              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Année" /></SelectTrigger>
-                              <SelectContent>
-                                {annees.map((a) => (
-                                  <SelectItem key={a} value={String(a)}>{a}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
+                        <DateEvenementField compact value={field.value} onChange={field.onChange} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
