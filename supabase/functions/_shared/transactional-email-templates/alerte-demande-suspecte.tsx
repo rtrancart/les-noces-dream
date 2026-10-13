@@ -11,6 +11,7 @@ interface Props {
   contactEmail?: string
   contactTelephone?: string
   lieuEvenement?: string
+  dateEvenement?: string
   nombreInvites?: string
   message?: string
   score?: number
@@ -35,6 +36,7 @@ const Email = (p: Props) => (
         <Text style={text}>
           <strong>Contact :</strong> {p.contactNom ?? '—'} · {p.contactEmail ?? '—'} · {p.contactTelephone ?? 'sans téléphone'}
         </Text>
+        <Text style={text}><strong>Date de l'événement :</strong> {p.dateEvenement ?? 'Non précisée'}</Text>
         {p.lieuEvenement && <Text style={text}><strong>Lieu :</strong> {p.lieuEvenement}</Text>}
         {p.nombreInvites && <Text style={text}><strong>Invités :</strong> {p.nombreInvites}</Text>}
         <Text style={alerte}>Score de suspicion : {p.score ?? 0}</Text>

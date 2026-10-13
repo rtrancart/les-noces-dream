@@ -6,6 +6,7 @@
 // avant l'envoi, puis remise à NULL si la mise en file échoue. L'appel ne transporte donc
 // aucun secret : un appel répété ou externe ne peut ni dupliquer ni contourner la modération.
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { formaterDateEvenement } from "../_shared/date-demande.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -86,7 +87,7 @@ Deno.serve(async (req) => {
         .from("demandes_devis")
         .select(`
           id, profile_id, nom_contact, email_contact, telephone_contact, objet, message,
-          date_evenement, lieu_evenement, nombre_invites_rang, score_suspicion, raisons_suspicion,
+          date_evenement, date_precision, lieu_evenement, nombre_invites_rang, score_suspicion, raisons_suspicion,
           prestataire:prestataires!demandes_devis_prestataire_id_fkey (
             id, nom_commercial, email_contact,
             categorie:categories!prestataires_categorie_mere_id_fkey ( nom )
@@ -114,6 +115,7 @@ Deno.serve(async (req) => {
           contactTelephone: d.telephone_contact ?? undefined,
           lieuEvenement: d.lieu_evenement ?? undefined,
           nombreInvites: d.nombre_invites_rang ?? undefined,
+          dateEvenement: formaterDateEvenement(d.date_evenement, d.date_precision),
           message: d.message,
           score: d.score_suspicion,
           raisons: d.raisons_suspicion ?? [],
@@ -129,7 +131,7 @@ Deno.serve(async (req) => {
           categorie: presta.categorie?.nom ?? undefined,
           objet: OBJET_LABEL[d.objet] ?? d.objet,
           message: d.message,
-          dateEvenement: formatDateFr(d.date_evenement),
+          dateEvenement: formaterDateEvenement(d.date_evenement, d.date_precision),
           lieuEvenement: d.lieu_evenement ?? undefined,
           lienConversation: `${SITE_URL}/espace-pro/demandes?demande=${d.id}`,
         };

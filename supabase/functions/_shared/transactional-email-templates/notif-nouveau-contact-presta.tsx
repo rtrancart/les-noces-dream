@@ -67,10 +67,10 @@ const Email = ({
             </>
           )}
 
-          {dateEvenement && (
+          {(
             <>
               <Text style={cardLabel}>Date de l'événement</Text>
-              <Text style={cardValue}>{dateEvenement}</Text>
+              <Text style={cardValue}>{dateEvenement ?? 'Non précisée'}</Text>
             </>
           )}
 
