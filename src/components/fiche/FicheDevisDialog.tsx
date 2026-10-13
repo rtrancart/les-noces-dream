@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DateEvenementField, { versParametresDate } from "./DateEvenementField";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -105,7 +106,7 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
         p_telephone: values.telephone || null,
         p_objet: values.objet,
         p_message: values.message,
-        p_date_evenement: values.date_evenement || null,
+        ...versParametresDate(values.date_evenement),
         p_lieu_evenement: values.lieu_evenement || null,
         p_nombre_invites_rang: values.nombre_invites_rang || null,
         p_budget_indicatif: budgetNum,
@@ -199,8 +200,8 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField control={form.control} name="date_evenement" render={({ field }) => (
             <FormItem>
-              <FormLabel>Date de l'événement</FormLabel>
-              <FormControl><Input type="date" {...field} /></FormControl>
+              <FormLabel>Date de l'événement (optionnelle)</FormLabel>
+              <FormControl><DateEvenementField value={field.value} onChange={field.onChange} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
