@@ -172,7 +172,7 @@ export default function Demandes() {
               <Separator />
               <InfoRow label="Objet" value={selected.objet.replace(/_/g, " ")} />
               <Separator />
-              <InfoRow label="Date événement" value={selected.date_evenement} />
+              <InfoRow label="Date de l'événement" value={formaterDateEvenement(selected.date_evenement, selected.date_precision)} />
               <Separator />
               <InfoRow label="Lieu" value={selected.lieu_evenement} />
               <Separator />

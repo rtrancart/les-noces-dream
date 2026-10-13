@@ -175,12 +175,10 @@ export default function PrestataireDemandes() {
                   <Phone className="h-3 w-3" /> {selected.telephone_contact}
                 </span>
               )}
-              {selected.date_evenement && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  {format(new Date(selected.date_evenement), "d MMMM yyyy", { locale: fr })}
-                </span>
-              )}
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {formaterDateEvenement(selected.date_evenement, selected.date_precision)}
+              </span>
               {selected.lieu_evenement && (
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" /> {selected.lieu_evenement}

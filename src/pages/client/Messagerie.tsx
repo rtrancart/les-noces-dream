@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import ConversationThread from "@/components/messaging/ConversationThread";
+import { formaterDateEvenement } from "@/lib/dateDemande";
 
 interface DemandeMessage {
   id: string;
@@ -52,7 +53,7 @@ export default function ClientMessagerie() {
     if (!user?.id) return;
     const { data } = await supabase
       .from("demandes_devis")
-      .select("id, nom_contact, email_contact, message, statut, created_at, prestataire:prestataires_public!demandes_devis_prestataire_id_fkey(nom_commercial, slug)")
+      .select("id, nom_contact, email_contact, message, statut, created_at, date_evenement, date_precision, prestataire:prestataires_public!demandes_devis_prestataire_id_fkey(nom_commercial, slug)")
       .eq("profile_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -72,6 +73,8 @@ export default function ClientMessagerie() {
         message: d.message,
         statut: d.statut,
         created_at: d.created_at,
+        date_evenement: d.date_evenement,
+        date_precision: d.date_precision,
         prestataire: {
           nom_commercial: (d.prestataire as any)?.nom_commercial ?? "",
           slug: (d.prestataire as any)?.slug ?? "",
@@ -128,6 +131,9 @@ export default function ClientMessagerie() {
               </Link>
               <Badge className={visualLabels[vs].className}>{visualLabels[vs].label}</Badge>
             </div>
+            <p className="font-sans text-xs text-muted-foreground mt-0.5">
+              Date de l'événement : {formaterDateEvenement(selected.date_evenement, selected.date_precision)}
+            </p>
           </div>
         </div>
 
