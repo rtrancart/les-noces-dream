@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import ConversationThread from "@/components/messaging/ConversationThread";
+import { formaterDateEvenement } from "@/lib/dateDemande";
 
 interface Demande {
   id: string;
@@ -32,6 +33,7 @@ interface Demande {
   message: string;
   statut: string;
   date_evenement: string | null;
+  date_precision: string | null;
   lieu_evenement: string | null;
   nombre_invites_rang: string | null;
   budget_indicatif: number | null;
@@ -74,7 +76,7 @@ export default function PrestataireDemandes() {
     if (!prestataire?.id) return;
     const { data } = await supabase
       .from("demandes_devis")
-      .select("id, nom_contact, email_contact, telephone_contact, message, statut, date_evenement, lieu_evenement, nombre_invites_rang, budget_indicatif, created_at")
+      .select("id, nom_contact, email_contact, telephone_contact, message, statut, date_evenement, date_precision, lieu_evenement, nombre_invites_rang, budget_indicatif, created_at")
       .eq("prestataire_id", prestataire.id)
       .eq("moderation", "valide")
       .order("created_at", { ascending: false });

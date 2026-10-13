@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Eye, Search, MessageSquare } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
+import { formaterDateEvenement } from "@/lib/dateDemande";
 
 type Demande = Database["public"]["Tables"]["demandes_devis"]["Row"];
 type StatutDemande = Database["public"]["Enums"]["statut_demande"];
