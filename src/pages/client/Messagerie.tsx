@@ -19,6 +19,8 @@ interface DemandeMessage {
   message: string;
   statut: string;
   created_at: string;
+  date_evenement: string | null;
+  date_precision: string | null;
   prestataire: {
     nom_commercial: string;
     slug: string;
