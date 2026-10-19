@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import DateEvenementField, { versParametresDate } from "./DateEvenementField";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,6 +80,7 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
   const isMobile = useIsMobile();
   const [submitting, setSubmitting] = useState(false);
 
+  const piegeRef = useRef<HTMLInputElement>(null);
   const form = useForm<DevisFormValues>({
     resolver: zodResolver(devisSchema),
     defaultValues: {
