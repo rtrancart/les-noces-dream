@@ -797,6 +797,8 @@ export type Database = {
           email_contact: string
           email_prestataire_envoye_le: string | null
           id: string
+          ip_client: string | null
+          ip_pays: string | null
           lieu_evenement: string | null
           message: string
           moderation: string
@@ -824,6 +826,8 @@ export type Database = {
           email_contact: string
           email_prestataire_envoye_le?: string | null
           id?: string
+          ip_client?: string | null
+          ip_pays?: string | null
           lieu_evenement?: string | null
           message: string
           moderation?: string
@@ -851,6 +855,8 @@ export type Database = {
           email_contact?: string
           email_prestataire_envoye_le?: string | null
           id?: string
+          ip_client?: string | null
+          ip_pays?: string | null
           lieu_evenement?: string | null
           message?: string
           moderation?: string
