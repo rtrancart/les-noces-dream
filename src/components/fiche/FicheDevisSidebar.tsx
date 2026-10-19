@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import DateEvenementField, { versParametresDate } from "./DateEvenementField";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -89,6 +89,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
   const [sent, setSent] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
+  const piegeRef = useRef<HTMLInputElement>(null);
   const form = useForm<DevisFormValues>({
     resolver: zodResolver(devisSchema),
     defaultValues: {
@@ -106,6 +107,12 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
   };
 
   const onSubmit = async (values: DevisFormValues) => {
+    // Champ piège invisible : rempli uniquement par les robots → faux succès, rien n'est envoyé.
+    if (piegeRef.current?.value) {
+      setSent(true);
+      form.reset();
+      return;
+    }
     setSubmitting(true);
     try {
       // Build full phone number with country code
@@ -195,6 +202,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+            <input ref={piegeRef} type="text" name="site_web" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 opacity-0" />
             {/* Always visible fields */}
             <FormField control={form.control} name="nom" render={({ field }) => (
               <FormItem>
