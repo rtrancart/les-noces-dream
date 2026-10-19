@@ -92,6 +92,13 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
   });
 
   const onSubmit = async (values: DevisFormValues) => {
+    // Champ piège invisible : rempli uniquement par les robots → faux succès, rien n'est envoyé.
+    if (piegeRef.current?.value) {
+      toast.success("Votre demande de devis a été envoyée !");
+      form.reset();
+      onOpenChange(false);
+      return;
+    }
     setSubmitting(true);
     try {
       const budgetNum =
@@ -154,6 +161,7 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
   const formContent = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <input ref={piegeRef} type="text" name="site_web" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 opacity-0" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField control={form.control} name="nom" render={({ field }) => (
             <FormItem>
