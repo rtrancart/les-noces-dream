@@ -114,9 +114,12 @@ Deno.serve(async (req) => {
     });
   }
 
-  // 4. Pages coincées dans la file de capture : abandonnées, ou en attente
-  // depuis plus de 12 h alors que la capture tourne chaque nuit.
+  // 4. Vrai blocage de la file : pages abandonnées après échecs, ou pages en
+  // attente depuis > 12 h ALORS QUE plus aucun rendu n'a réussi depuis 26 h
+  // (la file ne progresse plus). Une simple attente de capacité, pendant que
+  // la tâche nocturne rend bien des pages, n'est pas une alerte.
   const limite12h = new Date(Date.now() - SEUIL_FILE_HEURES * 3_600_000).toISOString();
+  const fileProgresse = heuresPrerender !== null && heuresPrerender <= 26;
   const [{ count: nbAbandon }, { count: nbEnAttente }] = await Promise.all([
     admin
       .from("prerender_queue")
@@ -128,14 +131,14 @@ Deno.serve(async (req) => {
       .eq("statut", "a_traiter")
       .lt("updated_at", limite12h),
   ]);
-  const nbCoincees = (nbAbandon ?? 0) + (nbEnAttente ?? 0);
-  if (nbCoincees > 0) {
+  const enAttenteBloquees = fileProgresse ? 0 : (nbEnAttente ?? 0);
+  if ((nbAbandon ?? 0) > 0 || enAttenteBloquees > 0) {
     alertes.push({
       cle: "prerender_file_bloquee",
       symptome: "Pages bloquées avant publication aux moteurs",
       explication:
-        "Des pages ne parviennent pas à être capturées pour les moteurs de recherche. Tant que la capture échoue, les robots voient la version applicative et non la page complète.",
-      detail: `${nbAbandon ?? 0} page(s) abandonnée(s) après plusieurs échecs et ${nbEnAttente ?? 0} page(s) en attente depuis plus de ${SEUIL_FILE_HEURES} h.`,
+        "Des pages échouent réellement à la capture, ou la file ne progresse plus. Les robots continuent de recevoir l'ancienne version disponible de ces pages.",
+      detail: `${nbAbandon ?? 0} page(s) abandonnée(s) après plusieurs échecs ; ${enAttenteBloquees} page(s) en attente sans aucun rendu réussi depuis plus de 26 h. Dernier rendu réussi : ${heureParis(sym.prerender_dernier_rendu as string)} (heure de Paris).`,
       lien: `${SITE_URL}/admin/categories`,
     });
   }
