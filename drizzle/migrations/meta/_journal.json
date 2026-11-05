@@ -29,6 +29,13 @@
       "when": 1792428698112,
       "tag": "0003_anti_troll_demandes_devis",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793905142905,
+      "tag": "0004_prerender_snapshot_version",
+      "breakpoints": true
     }
   ]
 }
