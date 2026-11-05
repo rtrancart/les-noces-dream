@@ -39,6 +39,31 @@ export function PrerenderSnapshotsPanel() {
   const [startedAt, setStartedAt] = useState<string | null>(null);
   const [progress, setProgress] = useState<Progress>(initialProgress);
   const stopRef = useRef(false);
+  const [perimetre, setPerimetre] = useState<"socle" | "page" | "tout">("socle");
+  const [urlPage, setUrlPage] = useState("");
+  const [forcing, setForcing] = useState(false);
+
+  /** Force la recapture d'un périmètre, puis lance le traitement (sauf « tout », laissé au cron). */
+  const forcerRecapture = async () => {
+    if (perimetre === "tout" && !window.confirm(
+      "Remettre TOUTES les pages (dont ~2 300 fiches) en file ? Le rendu se fera progressivement, la nuit.",
+    )) return;
+    setForcing(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase.rpc("prerender_forcer_recapture", {
+        p_perimetre: perimetre,
+        p_url_path: perimetre === "page" ? urlPage.trim() : null,
+      });
+      if (error) throw error;
+      setResult(`${data} page(s) remise(s) en file avec rendu forcé.`);
+      if (perimetre !== "tout" && Number(data) > 0) await run(true);
+    } catch (e: any) {
+      setError(e?.message ?? String(e));
+    } finally {
+      setForcing(false);
+    }
+  };
 
   const invoke = async (taille: number) => {
     const { data, error } = await supabase.functions.invoke("prerender-snapshots-batch", {
@@ -181,6 +206,43 @@ export function PrerenderSnapshotsPanel() {
               Arrêter après le lot en cours
             </Button>
           )}
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3 border-t border-border pt-3">
+          <div className="space-y-1">
+            <Label htmlFor="prerender-perimetre" className="font-sans text-xs">
+              Forcer la recapture
+            </Label>
+            <select
+              id="prerender-perimetre"
+              className="h-10 rounded-md border border-input bg-background px-3 font-sans text-sm"
+              value={perimetre}
+              disabled={loading || syncing || forcing}
+              onChange={(e) => setPerimetre(e.target.value as typeof perimetre)}
+            >
+              <option value="socle">Socle : accueil, régions, catégories</option>
+              <option value="page">Une page</option>
+              <option value="tout">Tout (fiches rendues la nuit)</option>
+            </select>
+          </div>
+          {perimetre === "page" && (
+            <Input
+              className="w-72"
+              placeholder="/mariage/bretagne"
+              value={urlPage}
+              disabled={loading || syncing || forcing}
+              onChange={(e) => setUrlPage(e.target.value)}
+            />
+          )}
+          <Button
+            variant="outline"
+            onClick={forcerRecapture}
+            disabled={loading || syncing || forcing || (perimetre === "page" && !urlPage.trim().startsWith("/"))}
+            className="gap-2"
+          >
+            {forcing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Forcer la recapture
+          </Button>
         </div>
 
         {startedAt && (
