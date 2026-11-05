@@ -42,6 +42,7 @@ export default function ConsentManager() {
         event: "consent_update",
         consent_analytics: granted(analytics),
         consent_ads: granted(ads),
+        consent_chatgpt_ads: granted(choices?.chatgpt_pixel === true),
       });
     };
 
