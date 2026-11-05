@@ -1751,6 +1751,8 @@ export type Database = {
           page_type: string
           priorite: number
           rendu_le: string | null
+          signature_donnees: string | null
+          signature_donnees_rendue: string | null
           signature_rendue: string | null
           signature_visible: string | null
           source_id: string | null
@@ -1769,6 +1771,8 @@ export type Database = {
           page_type: string
           priorite?: number
           rendu_le?: string | null
+          signature_donnees?: string | null
+          signature_donnees_rendue?: string | null
           signature_rendue?: string | null
           signature_visible?: string | null
           source_id?: string | null
@@ -1787,6 +1791,8 @@ export type Database = {
           page_type?: string
           priorite?: number
           rendu_le?: string | null
+          signature_donnees?: string | null
+          signature_donnees_rendue?: string | null
           signature_rendue?: string | null
           signature_visible?: string | null
           source_id?: string | null
@@ -3112,6 +3118,10 @@ export type Database = {
         Args: { p_prestataire_id: string }
         Returns: string
       }
+      prerender_forcer_recapture: {
+        Args: { p_perimetre: string; p_url_path?: string }
+        Returns: number
+      }
       prerender_orphelins: {
         Args: { p_limit?: number }
         Returns: {
@@ -3144,6 +3154,7 @@ export type Database = {
           traitees: number
         }[]
       }
+      prerender_snapshot_version: { Args: never; Returns: string }
       prerender_stats: {
         Args: never
         Returns: {

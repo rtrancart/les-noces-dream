@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase
       .from("prerender_queue")
       .select(
-        "url_path, storage_path, statut, dernier_motif, signature_visible, signature_rendue, rendu_le",
+        "url_path, page_type, storage_path, statut, dernier_motif, signature_visible, signature_rendue, signature_donnees, signature_donnees_rendue, rendu_le",
       )
       .eq("url_path", chemin)
       .maybeSingle();
@@ -142,7 +142,19 @@ Deno.serve(async (req) => {
       !data.signature_visible ||
       data.signature_visible !== data.signature_rendue;
 
-    if (ancien && data.statut === "a_jour") {
+    // Fiche dont seule la version globale du pré-rendu a changé (données
+    // identiques, snapshot récent) : servie telle quelle, sans remise en file —
+    // le rafraîchissement nocturne par l'âge la recapture par lots.
+    const seulementVersion =
+      data.page_type === "prestataire" &&
+      data.statut === "a_jour" &&
+      !data.dernier_motif &&
+      Number.isFinite(ageHeures) &&
+      ageHeures <= AGE_MAX_HEURES &&
+      !!data.signature_donnees &&
+      data.signature_donnees === data.signature_donnees_rendue;
+
+    if (ancien && !seulementVersion && data.statut === "a_jour") {
       // Écriture conditionnelle : une seule remise en file, même sous forte charge robots.
       supabase
         .from("prerender_queue")

@@ -16,6 +16,15 @@
 //   exclus  : `/connexion`, `/inscription` (pages de compte, non indexables),
 //             `/recherche` (canonicalisée vers les pages catégorie),
 //             toute page d'espace privé, admin, ou de tunnel.
+//
+// VERSION GLOBALE DU PRÉ-RENDU (SNAPSHOT_VERSION)
+//   Fonction SQL `prerender_snapshot_version()`. L'empreinte stockée en file
+//   (`signature_visible`) = md5(empreinte données || '|v' || version).
+//   À INCRÉMENTER (par migration) à chaque modification d'un composant global
+//   rendu dans le pré-rendu (footer, header/nav, layout, home). Puis, dans
+//   l'admin : « Synchroniser la file » → le socle (accueil, régions,
+//   catégories, blog, pages) est rendu tout de suite ; les fiches sont
+//   recapturées par lots par le rafraîchissement nocturne par l'âge.
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export type PageType =
