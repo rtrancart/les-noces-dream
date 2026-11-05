@@ -229,7 +229,7 @@ function HeroSection() {
 function CategoryCard({ cat }: { cat: CategoryData }) {
   return (
     <Link
-      to={`/recherche?categorie=${encodeURIComponent(cat.slug)}`}
+      to={`/prestataires/${cat.slug}`}
       className="relative overflow-hidden rounded-md block group aspect-square"
     >
       {/* Background photo */}
