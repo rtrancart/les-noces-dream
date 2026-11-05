@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
     const { data: queue, error: readErr } = await admin
       .from("prerender_queue")
       .select(
-        "id, url_path, page_type, source_id, signature_visible, signature_rendue, tentatives, force_rendu",
+        "id, url_path, page_type, source_id, signature_visible, signature_rendue, signature_donnees, tentatives, force_rendu",
       )
       .eq("statut", "a_traiter")
       .order("priorite", { ascending: false })
@@ -305,6 +305,7 @@ Deno.serve(async (req) => {
               .update({
                 statut: "a_jour",
                 signature_rendue: visibleSig,
+                signature_donnees_rendue: (entry.signature_donnees as string | null) ?? null,
                 storage_path: storagePath,
                 rendu_le: new Date().toISOString(),
                 force_rendu: false,
