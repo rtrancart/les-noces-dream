@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Mail, Phone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { REGIONS } from "@/lib/regions";
 
 const INFO_LINKS = [
   { label: "À propos", href: "/a-propos" },
@@ -13,27 +14,23 @@ const INFO_LINKS = [
   { label: "Confidentialité", href: "/confidentialite" },
 ];
 
-const REGIONS = [
-  "Île-de-France",
-  "Provence-Alpes-Côte d'Azur",
-  "Auvergne-Rhône-Alpes",
-  "Nouvelle-Aquitaine",
-  "Occitanie",
-];
+type Cat = { id: string; nom: string; slug: string; parent_id: string | null; ordre_affichage: number | null };
+type Mere = Cat & { enfants: Cat[] };
 
 export default function Footer() {
-  const [categories, setCategories] = useState<{ nom: string; slug: string }[]>([]);
+  const [meres, setMeres] = useState<Mere[]>([]);
 
   useEffect(() => {
     supabase
       .from("categories")
-      .select("nom, slug")
-      .is("parent_id", null)
+      .select("id, nom, slug, parent_id, ordre_affichage")
       .eq("est_active", true)
       .order("ordre_affichage")
-      .limit(5)
       .then(({ data }) => {
-        if (data) setCategories(data);
+        if (!data) return;
+        const all = data as Cat[];
+        const roots = all.filter((c) => !c.parent_id);
+        setMeres(roots.map((m) => ({ ...m, enfants: all.filter((c) => c.parent_id === m.id) })));
       });
   }, []);
 
@@ -66,32 +63,16 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Catégories */}
-          <div>
-            <h4 className="text-base font-medium font-serif mb-4 text-primary">
-              Catégories
-            </h4>
-            <ul className="space-y-2 text-card/60 text-sm font-sans">
-              {categories.map((c) => (
-                <li key={c.slug}>
-                  <Link to={`/categories/${c.slug}`} className="hover:text-card transition-colors">
-                    {c.nom}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           {/* Régions */}
           <div>
             <h4 className="text-base font-medium font-serif mb-4 text-primary">
-              Régions
+              Mariage par région
             </h4>
             <ul className="space-y-2 text-card/60 text-sm font-sans">
               {REGIONS.map((r) => (
-                <li key={r}>
-                  <Link to={`/regions/${encodeURIComponent(r.toLowerCase())}`} className="hover:text-card transition-colors">
-                    {r}
+                <li key={r.slug}>
+                  <Link to={`/mariage/${r.slug}`} className="hover:text-card transition-colors">
+                    {r.nom}
                   </Link>
                 </li>
               ))}
@@ -99,7 +80,7 @@ export default function Footer() {
           </div>
 
           {/* Informations */}
-          <div>
+          <div className="lg:col-span-2">
             <h4 className="text-base font-medium font-serif mb-4 text-primary">
               Informations
             </h4>
@@ -114,6 +95,41 @@ export default function Footer() {
             </ul>
           </div>
         </div>
+
+        {/* Catégories */}
+        {meres.length > 0 && (
+          <div className="border-t border-card/10 pt-10 mb-12">
+            <h4 className="text-base font-medium font-serif mb-6 text-primary">
+              Catégories de prestataires
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-6 text-sm font-sans">
+              {meres.map((m) => (
+                <div key={m.id}>
+                  <Link
+                    to={`/prestataires/${m.slug}`}
+                    className="text-card/85 font-medium hover:text-card transition-colors"
+                  >
+                    {m.nom}
+                  </Link>
+                  {m.enfants.length > 0 && (
+                    <ul className="mt-1.5 space-y-1 text-card/55">
+                      {m.enfants.map((e) => (
+                        <li key={e.id}>
+                          <Link
+                            to={`/prestataires/${m.slug}/${e.slug}`}
+                            className="hover:text-card transition-colors"
+                          >
+                            {e.nom}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Bottom */}
         <div className="border-t border-card/10 pt-8 flex items-center justify-between">
