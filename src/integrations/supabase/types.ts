@@ -1081,6 +1081,43 @@ export type Database = {
         }
         Relationships: []
       }
+      embeddings_a_recalculer: {
+        Row: {
+          demande_le: string
+          prestataire_id: string
+        }
+        Insert: {
+          demande_le?: string
+          prestataire_id: string
+        }
+        Update: {
+          demande_le?: string
+          prestataire_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embeddings_a_recalculer_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: true
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embeddings_a_recalculer_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: true
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embeddings_a_recalculer_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: true
+            referencedRelation: "prestataires_public_all"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evenements_prestataire: {
         Row: {
           created_at: string
@@ -1831,6 +1868,7 @@ export type Database = {
           email_verifie:
             | Database["public"]["Enums"]["verification_email"]
             | null
+          embedding: string | null
           est_premium: boolean | null
           est_verifie: boolean | null
           fin_premium: string | null
@@ -1878,6 +1916,7 @@ export type Database = {
           slug: string
           statut: Database["public"]["Enums"]["statut_prestataire"]
           tags: string[] | null
+          tags_ia: string[]
           taux_reponse: number | null
           taux_reponse_alerte_envoyee_le: string | null
           taux_reponse_calcule_le: string | null
@@ -1921,6 +1960,7 @@ export type Database = {
           email_verifie?:
             | Database["public"]["Enums"]["verification_email"]
             | null
+          embedding?: string | null
           est_premium?: boolean | null
           est_verifie?: boolean | null
           fin_premium?: string | null
@@ -1968,6 +2008,7 @@ export type Database = {
           slug: string
           statut?: Database["public"]["Enums"]["statut_prestataire"]
           tags?: string[] | null
+          tags_ia?: string[]
           taux_reponse?: number | null
           taux_reponse_alerte_envoyee_le?: string | null
           taux_reponse_calcule_le?: string | null
@@ -2011,6 +2052,7 @@ export type Database = {
           email_verifie?:
             | Database["public"]["Enums"]["verification_email"]
             | null
+          embedding?: string | null
           est_premium?: boolean | null
           est_verifie?: boolean | null
           fin_premium?: string | null
@@ -2058,6 +2100,7 @@ export type Database = {
           slug?: string
           statut?: Database["public"]["Enums"]["statut_prestataire"]
           tags?: string[] | null
+          tags_ia?: string[]
           taux_reponse?: number | null
           taux_reponse_alerte_envoyee_le?: string | null
           taux_reponse_calcule_le?: string | null
