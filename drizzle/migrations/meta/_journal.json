@@ -43,6 +43,13 @@
       "when": 1794250502271,
       "tag": "0005_atelier_ia_lot1_donnees_prestataires",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794263289729,
+      "tag": "0006_enrichissement_champs_style_lot1",
+      "breakpoints": true
     }
   ]
 }
