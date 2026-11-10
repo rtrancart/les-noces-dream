@@ -1369,6 +1369,70 @@ export type Database = {
           },
         ]
       }
+      ia_logs: {
+        Row: {
+          created_at: string
+          duree_ms: number | null
+          erreur: string | null
+          id: string
+          model: string
+          prestataire_id: string | null
+          provider: string
+          statut: string
+          tokens_entree: number | null
+          tokens_sortie: number | null
+          usage: string
+        }
+        Insert: {
+          created_at?: string
+          duree_ms?: number | null
+          erreur?: string | null
+          id?: string
+          model: string
+          prestataire_id?: string | null
+          provider: string
+          statut?: string
+          tokens_entree?: number | null
+          tokens_sortie?: number | null
+          usage: string
+        }
+        Update: {
+          created_at?: string
+          duree_ms?: number | null
+          erreur?: string | null
+          id?: string
+          model?: string
+          prestataire_id?: string | null
+          provider?: string
+          statut?: string
+          tokens_entree?: number | null
+          tokens_sortie?: number | null
+          usage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ia_logs_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ia_logs_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ia_logs_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: false
+            referencedRelation: "prestataires_public_all"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ia_tarifs: {
         Row: {
           created_at: string
@@ -1959,6 +2023,8 @@ export type Database = {
             | Database["public"]["Enums"]["verification_email"]
             | null
           embedding: string | null
+          embedding_hash: string | null
+          embedding_le: string | null
           est_premium: boolean | null
           est_verifie: boolean | null
           fin_premium: string | null
@@ -2004,9 +2070,11 @@ export type Database = {
           siret: string | null
           site_web: string | null
           slug: string
+          sources_hash: string | null
           statut: Database["public"]["Enums"]["statut_prestataire"]
           tags: string[] | null
           tags_ia: string[]
+          tags_ia_hash: string | null
           taux_reponse: number | null
           taux_reponse_alerte_envoyee_le: string | null
           taux_reponse_calcule_le: string | null
@@ -2051,6 +2119,8 @@ export type Database = {
             | Database["public"]["Enums"]["verification_email"]
             | null
           embedding?: string | null
+          embedding_hash?: string | null
+          embedding_le?: string | null
           est_premium?: boolean | null
           est_verifie?: boolean | null
           fin_premium?: string | null
@@ -2096,9 +2166,11 @@ export type Database = {
           siret?: string | null
           site_web?: string | null
           slug: string
+          sources_hash?: string | null
           statut?: Database["public"]["Enums"]["statut_prestataire"]
           tags?: string[] | null
           tags_ia?: string[]
+          tags_ia_hash?: string | null
           taux_reponse?: number | null
           taux_reponse_alerte_envoyee_le?: string | null
           taux_reponse_calcule_le?: string | null
@@ -2143,6 +2215,8 @@ export type Database = {
             | Database["public"]["Enums"]["verification_email"]
             | null
           embedding?: string | null
+          embedding_hash?: string | null
+          embedding_le?: string | null
           est_premium?: boolean | null
           est_verifie?: boolean | null
           fin_premium?: string | null
@@ -2188,9 +2262,11 @@ export type Database = {
           siret?: string | null
           site_web?: string | null
           slug?: string
+          sources_hash?: string | null
           statut?: Database["public"]["Enums"]["statut_prestataire"]
           tags?: string[] | null
           tags_ia?: string[]
+          tags_ia_hash?: string | null
           taux_reponse?: number | null
           taux_reponse_alerte_envoyee_le?: string | null
           taux_reponse_calcule_le?: string | null
