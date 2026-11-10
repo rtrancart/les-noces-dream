@@ -1,0 +1,2 @@
+UPDATE public.champs_categories SET usage_ia = true WHERE cle IN ('approche_des_fleurs','type_de_fleurs_travaillees','types_de_robes_proposees','type_de_costume_propose','type_d_artisanat','materiaux_proposes','types_de_vins_proposes','type_de_bar_propose','type_d_hebergement','rituels_symboliques_proposes','creations_proposees');
+UPDATE public.champs_categories SET usage_ia = true WHERE cle = 'approche' AND categorie_id IN (SELECT id FROM public.categories WHERE nom = 'Caviste / Domaine viticole');

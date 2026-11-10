@@ -78,6 +78,13 @@
       "when": 1794332812199,
       "tag": "0010_champs_categories_usage_ia",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794333275392,
+      "tag": "0011_usage_ia_champs_supplementaires",
+      "breakpoints": true
     }
   ]
 }
