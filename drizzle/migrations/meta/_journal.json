@@ -57,6 +57,13 @@
       "when": 1794301853276,
       "tag": "0007_rattacher_champs_photo_categorie_mere",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794319301086,
+      "tag": "0008_ia_playground",
+      "breakpoints": true
     }
   ]
 }

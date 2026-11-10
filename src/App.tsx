@@ -72,6 +72,7 @@ import AdminRegions from "./pages/admin/Regions";
 import { Navigate } from "react-router-dom";
 import ChartePendingGuard from "@/components/auth/ChartePendingGuard";
 import AdminChartes from "./pages/admin/Chartes";
+import AdminTestIA from "./pages/admin/TestIA";
 
 const queryClient = new QueryClient();
 
@@ -183,6 +184,7 @@ const App = () => (
               <Route path="prestataires-pre-inscrits" element={<Navigate to="/admin/prestataires" replace />} />
               <Route path="chartes" element={<AdminChartes />} />
               <Route path="connecteurs" element={<AdminConnecteurs />} />
+              <Route path="test-ia" element={<AdminTestIA />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
