@@ -73,6 +73,7 @@ import { Navigate } from "react-router-dom";
 import ChartePendingGuard from "@/components/auth/ChartePendingGuard";
 import AdminChartes from "./pages/admin/Chartes";
 import AdminTestIA from "./pages/admin/TestIA";
+import AdminTagsIA from "./pages/admin/TagsIA";
 
 const queryClient = new QueryClient();
 
@@ -185,6 +186,7 @@ const App = () => (
               <Route path="chartes" element={<AdminChartes />} />
               <Route path="connecteurs" element={<AdminConnecteurs />} />
               <Route path="test-ia" element={<AdminTestIA />} />
+              <Route path="tags-ia" element={<AdminTagsIA />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
