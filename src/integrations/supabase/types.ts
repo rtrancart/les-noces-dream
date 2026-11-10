@@ -621,6 +621,7 @@ export type Database = {
           id: string
           label: string
           obligatoire: boolean | null
+          options_exclues_ia: string[]
           options_liste: string[] | null
           ordre_affichage: number | null
           type_champ: Database["public"]["Enums"]["type_champ"]
@@ -639,6 +640,7 @@ export type Database = {
           id?: string
           label: string
           obligatoire?: boolean | null
+          options_exclues_ia?: string[]
           options_liste?: string[] | null
           ordre_affichage?: number | null
           type_champ?: Database["public"]["Enums"]["type_champ"]
@@ -657,6 +659,7 @@ export type Database = {
           id?: string
           label?: string
           obligatoire?: boolean | null
+          options_exclues_ia?: string[]
           options_liste?: string[] | null
           ordre_affichage?: number | null
           type_champ?: Database["public"]["Enums"]["type_champ"]

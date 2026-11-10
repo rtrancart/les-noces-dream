@@ -85,6 +85,13 @@
       "when": 1794333275392,
       "tag": "0011_usage_ia_champs_supplementaires",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794333541129,
+      "tag": "0012_options_exclues_ia",
+      "breakpoints": true
     }
   ]
 }
