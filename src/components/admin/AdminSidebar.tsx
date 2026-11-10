@@ -56,6 +56,7 @@ const systemItems = [
   { title: "Connecteurs", url: "/admin/connecteurs", icon: Plug },
   { title: "Suivi des emails", url: "/admin/emails-suivi", icon: MailCheck },
   { title: "Test IA", url: "/admin/test-ia", icon: Sparkles },
+  { title: "Étiquettes IA", url: "/admin/tags-ia", icon: Sparkles },
 ];
 
 export function AdminSidebar() {

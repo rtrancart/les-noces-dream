@@ -625,6 +625,7 @@ export type Database = {
           ordre_affichage: number | null
           type_champ: Database["public"]["Enums"]["type_champ"]
           updated_at: string
+          usage_ia: boolean
           visible_public: boolean | null
         }
         Insert: {
@@ -642,6 +643,7 @@ export type Database = {
           ordre_affichage?: number | null
           type_champ?: Database["public"]["Enums"]["type_champ"]
           updated_at?: string
+          usage_ia?: boolean
           visible_public?: boolean | null
         }
         Update: {
@@ -659,6 +661,7 @@ export type Database = {
           ordre_affichage?: number | null
           type_champ?: Database["public"]["Enums"]["type_champ"]
           updated_at?: string
+          usage_ia?: boolean
           visible_public?: boolean | null
         }
         Relationships: [
