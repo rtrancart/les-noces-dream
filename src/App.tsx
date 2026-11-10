@@ -73,6 +73,7 @@ import { Navigate } from "react-router-dom";
 import ChartePendingGuard from "@/components/auth/ChartePendingGuard";
 import AdminChartes from "./pages/admin/Chartes";
 import AdminTestIA from "./pages/admin/TestIA";
+import AdminCoutsIA from "./pages/admin/CoutsIA";
 import AdminTagsIA from "./pages/admin/TagsIA";
 
 const queryClient = new QueryClient();
@@ -186,6 +187,7 @@ const App = () => (
               <Route path="chartes" element={<AdminChartes />} />
               <Route path="connecteurs" element={<AdminConnecteurs />} />
               <Route path="test-ia" element={<AdminTestIA />} />
+              <Route path="couts-ia" element={<AdminCoutsIA />} />
               <Route path="tags-ia" element={<AdminTagsIA />} />
             </Route>
 

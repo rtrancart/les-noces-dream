@@ -55,6 +55,7 @@ const contentItems = [
 const systemItems = [
   { title: "Connecteurs", url: "/admin/connecteurs", icon: Plug },
   { title: "Suivi des emails", url: "/admin/emails-suivi", icon: MailCheck },
+  { title: "Coûts IA", url: "/admin/couts-ia", icon: Sparkles },
   { title: "Test IA", url: "/admin/test-ia", icon: Sparkles },
   { title: "Étiquettes IA", url: "/admin/tags-ia", icon: Sparkles },
 ];

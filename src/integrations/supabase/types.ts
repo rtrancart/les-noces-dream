@@ -1375,8 +1375,36 @@ export type Database = {
           },
         ]
       }
+      ia_budget_mois: {
+        Row: {
+          alerte_envoyee_le: string | null
+          mois: string
+          nb_appels: number
+          suspension_levee_le: string | null
+          total_eur: number
+          updated_at: string
+        }
+        Insert: {
+          alerte_envoyee_le?: string | null
+          mois: string
+          nb_appels?: number
+          suspension_levee_le?: string | null
+          total_eur?: number
+          updated_at?: string
+        }
+        Update: {
+          alerte_envoyee_le?: string | null
+          mois?: string
+          nb_appels?: number
+          suspension_levee_le?: string | null
+          total_eur?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ia_logs: {
         Row: {
+          cout_eur: number | null
           created_at: string
           duree_ms: number | null
           erreur: string | null
@@ -1385,11 +1413,14 @@ export type Database = {
           prestataire_id: string | null
           provider: string
           statut: string
+          stop_reason: string | null
           tokens_entree: number | null
           tokens_sortie: number | null
           usage: string
+          user_id: string | null
         }
         Insert: {
+          cout_eur?: number | null
           created_at?: string
           duree_ms?: number | null
           erreur?: string | null
@@ -1398,11 +1429,14 @@ export type Database = {
           prestataire_id?: string | null
           provider: string
           statut?: string
+          stop_reason?: string | null
           tokens_entree?: number | null
           tokens_sortie?: number | null
           usage: string
+          user_id?: string | null
         }
         Update: {
+          cout_eur?: number | null
           created_at?: string
           duree_ms?: number | null
           erreur?: string | null
@@ -1411,9 +1445,11 @@ export type Database = {
           prestataire_id?: string | null
           provider?: string
           statut?: string
+          stop_reason?: string | null
           tokens_entree?: number | null
           tokens_sortie?: number | null
           usage?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1437,7 +1473,105 @@ export type Database = {
             referencedRelation: "prestataires_public_all"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ia_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ia_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      ia_quotas: {
+        Row: {
+          assistant_jour: number
+          bonus_assistant: number
+          bonus_charte: number
+          bonus_filtres: number
+          bonus_livret: number
+          bonus_vision: number
+          charte_total: number
+          filtres_jour: number
+          jour: string
+          livret_total: number
+          updated_at: string
+          user_id: string
+          vision_total: number
+        }
+        Insert: {
+          assistant_jour?: number
+          bonus_assistant?: number
+          bonus_charte?: number
+          bonus_filtres?: number
+          bonus_livret?: number
+          bonus_vision?: number
+          charte_total?: number
+          filtres_jour?: number
+          jour?: string
+          livret_total?: number
+          updated_at?: string
+          user_id: string
+          vision_total?: number
+        }
+        Update: {
+          assistant_jour?: number
+          bonus_assistant?: number
+          bonus_charte?: number
+          bonus_filtres?: number
+          bonus_livret?: number
+          bonus_vision?: number
+          charte_total?: number
+          filtres_jour?: number
+          jour?: string
+          livret_total?: number
+          updated_at?: string
+          user_id?: string
+          vision_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ia_quotas_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ia_quotas_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ia_reglages: {
+        Row: {
+          cle: string
+          description: string | null
+          updated_at: string
+          valeur: Json
+        }
+        Insert: {
+          cle: string
+          description?: string | null
+          updated_at?: string
+          valeur: Json
+        }
+        Update: {
+          cle?: string
+          description?: string | null
+          updated_at?: string
+          valeur?: Json
+        }
+        Relationships: []
       }
       ia_tarifs: {
         Row: {
@@ -2450,6 +2584,45 @@ export type Database = {
         }
         Relationships: []
       }
+      prompts_ia: {
+        Row: {
+          actif: boolean
+          contenu: string
+          created_at: string
+          format_json: boolean
+          id: string
+          max_tokens: number
+          titre: string
+          updated_at: string
+          usage: string
+          version: number
+        }
+        Insert: {
+          actif?: boolean
+          contenu: string
+          created_at?: string
+          format_json?: boolean
+          id?: string
+          max_tokens?: number
+          titre: string
+          updated_at?: string
+          usage: string
+          version?: number
+        }
+        Update: {
+          actif?: boolean
+          contenu?: string
+          created_at?: string
+          format_json?: boolean
+          id?: string
+          max_tokens?: number
+          titre?: string
+          updated_at?: string
+          usage?: string
+          version?: number
+        }
+        Relationships: []
+      }
       sessions_fiche: {
         Row: {
           created_at: string
@@ -3080,6 +3253,10 @@ export type Database = {
         }[]
       }
       admin_stats_zones_categories_json: { Args: never; Returns: Json }
+      annuler_quota_ia: {
+        Args: { p_usage: string; p_user_id: string }
+        Returns: undefined
+      }
       appeler_notification_demandes: {
         Args: { p_ids: string[]; p_kind: string }
         Returns: undefined
@@ -3389,6 +3566,10 @@ export type Database = {
       recalculer_tous_les_scores: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: number
+      }
+      reserver_quota_ia: {
+        Args: { p_usage: string; p_user_id: string }
+        Returns: boolean
       }
       resoudre_region_label: { Args: { p_region: string }; Returns: string }
       resoudre_zone_intervention: {
