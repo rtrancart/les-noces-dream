@@ -7,7 +7,7 @@ import { z } from "npm:zod@3";
 // Aucun nom de modèle en dur : lus depuis les secrets AI_MODEL_LIGHT et EMBEDDING_MODEL.
 const CLAUDE_MODEL = Deno.env.get("AI_MODEL_LIGHT") ?? "";
 const EMBED_MODEL = Deno.env.get("EMBEDDING_MODEL") ?? "";
-const LOT = 50;
+const LOT = 25;
 // Rythme lent (traitement de nuit) : pause entre deux fiches pour rester sous la limite de débit Mistral.
 const PAUSE_MS = 1200;
 const MAX_TEXTE = 6000;
