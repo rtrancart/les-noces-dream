@@ -68,13 +68,13 @@ export default function CoutsIA() {
       parJour.set(j, (parJour.get(j) ?? 0) + c);
       parUsage.set(l.usage, (parUsage.get(l.usage) ?? 0) + c);
       parModele.set(l.model, (parModele.get(l.model) ?? 0) + c);
-      if (l.user_id) parCouple.set(l.user_id, (parCouple.get(l.user_id) ?? 0) + c);
+      if (l.user_id && !(emails.get(l.user_id) ?? "").toLowerCase().endsWith("@lesnoces.test")) parCouple.set(l.user_id, (parCouple.get(l.user_id) ?? 0) + c);
       if (j === auj) { coutJour += c; tokensJour += (l.tokens_entree ?? 0) + (l.tokens_sortie ?? 0); }
     }
     const couples = [...parCouple.entries()].sort((a, b) => b[1] - a[1]);
     const moyen = couples.length ? couples.reduce((s, [, c]) => s + c, 0) / couples.length : 0;
     return { coutJour, tokensJour, sansCout, parJour: [...parJour.entries()].sort().reverse(), parUsage: [...parUsage.entries()], parModele: [...parModele.entries()], top: couples.slice(0, 20), moyen, nbCouples: couples.length };
-  }, [logs]);
+  }, [logs, emails]);
 
   const atteints = quotas.filter((q) => {
     const today = jourParis(new Date());

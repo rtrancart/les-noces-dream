@@ -104,10 +104,10 @@ Deno.serve(async (req) => {
   const mois = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit" }).format(new Date()).slice(0, 7);
   const { data: bm } = await db.from("ia_budget_mois").select("total_eur, suspension_levee_le").eq("mois", mois).maybeSingle();
   const pct = budget > 0 ? (Number(bm?.total_eur ?? 0) / budget) * 100 : 100;
-  if (pct >= (seuils.bloque ?? 120) && !bm?.suspension_levee_le) {
+  if (!estAdmin && pct >= (seuils.bloque ?? 120) && !bm?.suspension_levee_le) {
     return erreur("budget_suspendu", "L'assistant IA est momentanément indisponible", 503);
   }
-  if (pct >= (seuils.degrade ?? 100) && !AUTORISES_EN_DEGRADE.includes(usage)) {
+  if (!estAdmin && pct >= (seuils.degrade ?? 100) && !AUTORISES_EN_DEGRADE.includes(usage)) {
     return erreur("mode_degrade", "Cette fonction est momentanément indisponible", 503);
   }
 
