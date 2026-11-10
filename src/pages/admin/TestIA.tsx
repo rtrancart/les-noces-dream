@@ -25,6 +25,7 @@ interface Resultat {
   tokens_entree?: number | null;
   tokens_sortie?: number | null;
   duree_ms?: number | null;
+  motif_arret?: string | null;
 }
 
 const nomFournisseur = (p: Provider) => (p === "mistral" ? "Mistral" : "Claude (Anthropic)");
@@ -103,6 +104,12 @@ function CarteReponse({ titre, res, revele, tarifs }: { titre: string; res: Resu
             </p>
             {res.id && <Notation id={res.id} />}
           </>
+        )}
+        {!res.loading && res.motif_arret && (
+          <p className="text-xs text-muted-foreground">arrêt : {res.motif_arret}</p>
+        )}
+        {!res.loading && (res.motif_arret === "max_tokens" || res.motif_arret === "length") && (
+          <p className="text-sm font-medium text-destructive">réponse coupée : limite de longueur atteinte</p>
         )}
         {revele && res.provider === "anthropic" && (
           <p className="text-xs text-muted-foreground">température : non applicable</p>
