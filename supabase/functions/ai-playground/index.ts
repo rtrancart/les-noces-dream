@@ -46,6 +46,7 @@ Deno.serve(async (req) => {
   let reponse: string | null = null, erreur: string | null = null;
   let tin: number | null = null, tout: number | null = null;
   let code: string | undefined;
+  let motif: string | null = null;
 
   try {
     let res: Response;
@@ -65,7 +66,7 @@ Deno.serve(async (req) => {
         signal: ctrl.signal,
         headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: b.model, max_tokens: 4000,
+          model: b.model, max_tokens: 8000,
           ...(b.system ? { system: b.system } : {}),
           messages: [{ role: "user", content: b.message }],
         }),
@@ -76,10 +77,17 @@ Deno.serve(async (req) => {
       erreur = data?.error?.message ?? data?.message ?? JSON.stringify(data) ?? `HTTP ${res.status}`;
     } else if (b.provider === "mistral") {
       reponse = data?.choices?.[0]?.message?.content ?? "";
+      motif = data?.choices?.[0]?.finish_reason ?? null;
       tin = data?.usage?.prompt_tokens ?? null;
       tout = data?.usage?.completion_tokens ?? null;
     } else {
-      reponse = (data?.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("");
+      const blocs = (data?.content ?? []).filter((c: { type: string }) => c.type === "text");
+      motif = data?.stop_reason ?? null;
+      if (blocs.length === 0) {
+        erreur = `Aucun bloc texte dans la réponse d'Anthropic (arrêt : ${motif ?? "inconnu"}).`;
+      } else {
+        reponse = blocs.map((c: { text: string }) => c.text).join("");
+      }
       tin = data?.usage?.input_tokens ?? null;
       tout = data?.usage?.output_tokens ?? null;
     }
@@ -98,5 +106,5 @@ Deno.serve(async (req) => {
     reponse, erreur, tokens_entree: tin, tokens_sortie: tout, duree_ms: duree,
   }).select("id").single();
 
-  return json({ id: row?.id ?? null, reponse, error: erreur, code, tokens_entree: tin, tokens_sortie: tout, duree_ms: duree });
+  return json({ id: row?.id ?? null, reponse, error: erreur, code, motif_arret: motif, tokens_entree: tin, tokens_sortie: tout, duree_ms: duree });
 });
