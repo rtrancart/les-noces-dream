@@ -1369,6 +1369,96 @@ export type Database = {
           },
         ]
       }
+      ia_tarifs: {
+        Row: {
+          created_at: string
+          model: string
+          prix_entree_eur_par_million: number | null
+          prix_sortie_eur_par_million: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          model: string
+          prix_entree_eur_par_million?: number | null
+          prix_sortie_eur_par_million?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          model?: string
+          prix_entree_eur_par_million?: number | null
+          prix_sortie_eur_par_million?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ia_tests: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          demande_numero: string | null
+          duree_ms: number | null
+          erreur: string | null
+          id: string
+          message: string
+          model: string
+          note_francais: number | null
+          note_pertinence: number | null
+          note_regles: number | null
+          prompt_label: string | null
+          provider: string
+          remarque: string | null
+          reponse: string | null
+          system: string | null
+          temperature: number | null
+          tokens_entree: number | null
+          tokens_sortie: number | null
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          demande_numero?: string | null
+          duree_ms?: number | null
+          erreur?: string | null
+          id?: string
+          message: string
+          model: string
+          note_francais?: number | null
+          note_pertinence?: number | null
+          note_regles?: number | null
+          prompt_label?: string | null
+          provider: string
+          remarque?: string | null
+          reponse?: string | null
+          system?: string | null
+          temperature?: number | null
+          tokens_entree?: number | null
+          tokens_sortie?: number | null
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          demande_numero?: string | null
+          duree_ms?: number | null
+          erreur?: string | null
+          id?: string
+          message?: string
+          model?: string
+          note_francais?: number | null
+          note_pertinence?: number | null
+          note_regles?: number | null
+          prompt_label?: string | null
+          provider?: string
+          remarque?: string | null
+          reponse?: string | null
+          system?: string | null
+          temperature?: number | null
+          tokens_entree?: number | null
+          tokens_sortie?: number | null
+        }
+        Relationships: []
+      }
       inscriptions_tentatives: {
         Row: {
           created_at: string
