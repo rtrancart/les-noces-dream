@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
         signal: ctrl.signal,
         headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: b.model, max_tokens: 4000, temperature: b.temperature,
+          model: b.model, max_tokens: 4000,
           ...(b.system ? { system: b.system } : {}),
           messages: [{ role: "user", content: b.message }],
         }),
@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
   const { data: row } = await service.from("ia_tests").insert({
     admin_id: u.user.id, provider: b.provider, model: b.model,
     prompt_label: b.prompt_label ?? null, demande_numero: b.demande_numero ?? null,
-    temperature: b.temperature, system: b.system, message: b.message,
+    temperature: b.provider === "anthropic" ? null : b.temperature, system: b.system, message: b.message,
     reponse, erreur, tokens_entree: tin, tokens_sortie: tout, duree_ms: duree,
   }).select("id").single();
 
