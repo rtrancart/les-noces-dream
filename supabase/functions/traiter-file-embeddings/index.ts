@@ -9,9 +9,9 @@ const EMBED_MODEL = "mistral-embed";
 const LOT = 50;
 const MAX_TEXTE = 6000;
 const AMBIANCES = [
-  "Bohème", "Champêtre", "Chic", "Classique", "Contemporain", "Élégant", "Festif", "Intimiste",
-  "Luxe", "Minimaliste", "Moderne", "Naturel", "Romantique", "Rétro / vintage",
-  "Bord de mer", "Château", "Sur mesure", "Haut de gamme", "Familial", "Original",
+  "Champêtre", "Bohème", "Romantique", "Chic / classique", "Minimaliste", "Moderne / contemporain",
+  "Vintage / rétro", "Baroque", "Art déco", "Industriel", "Méditerranéen", "Tropical / exotique",
+  "Nature / forêt", "Bord de mer", "Glamour", "Sobre / corporate",
 ];
 const ETIQUETTES_FIXES = ["Éco-responsable"];
 const MAX_TAGS = 12;
