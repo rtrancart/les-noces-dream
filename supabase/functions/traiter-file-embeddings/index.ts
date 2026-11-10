@@ -10,9 +10,11 @@ const LOT = 50;
 const MAX_TEXTE = 6000;
 const AMBIANCES = [
   "Bohème", "Champêtre", "Chic", "Classique", "Contemporain", "Élégant", "Festif", "Intimiste",
-  "Luxe", "Minimaliste", "Moderne", "Naturel", "Romantique", "Rétro / vintage", "Rock",
-  "Écoresponsable", "Bord de mer", "Château", "Sur mesure", "Haut de gamme", "Familial", "Original",
+  "Luxe", "Minimaliste", "Moderne", "Naturel", "Romantique", "Rétro / vintage",
+  "Bord de mer", "Château", "Sur mesure", "Haut de gamme", "Familial", "Original",
 ];
+const ETIQUETTES_FIXES = ["Éco-responsable"];
+const MAX_TAGS = 12;
 
 const Body = z.object({ test_ids: z.array(z.string().uuid()).max(50).optional() });
 const json = (d: unknown, s = 200) =>
@@ -72,7 +74,7 @@ Deno.serve(async (req) => {
 
   const { data: cats } = await db.from("categories").select("id, nom");
   const nomCat = new Map((cats ?? []).map((c: { id: string; nom: string }) => [c.id, c.nom]));
-  const { data: champs } = await db.from("champs_categories").select("categorie_id, cle, label, options_liste");
+  const { data: champs } = await db.from("champs_categories").select("categorie_id, cle, label, options_liste, usage_ia");
 
   const resultats: unknown[] = [];
   const log = (row: Record<string, unknown>) => db.from("ia_logs").insert(row);
@@ -88,7 +90,9 @@ Deno.serve(async (req) => {
     const champsFiche = (champs ?? []).filter((c: { categorie_id: string | null }) =>
       c.categorie_id === null || catIds.includes(c.categorie_id));
     const labels = new Map(champsFiche.map((c: { cle: string; label: string }) => [c.cle, c.label]));
-    const vocab = [...new Set([...AMBIANCES, ...champsFiche.flatMap((c: { options_liste: string[] | null }) => c.options_liste ?? [])])];
+    const vocab = [...new Set([...AMBIANCES, ...ETIQUETTES_FIXES, ...champsFiche
+      .filter((c: { usage_ia: boolean }) => c.usage_ia)
+      .flatMap((c: { options_liste: string[] | null }) => c.options_liste ?? [])])];
     const categorie = [nomCat.get(f.categorie_mere_id), f.categorie_fille_id ? nomCat.get(f.categorie_fille_id) : null].filter(Boolean).join(" / ");
     const cs = champsEnTexte(f.champs_specifiques as Record<string, unknown> | null, labels);
     const sansContenu = vide(f.description) && vide(f.description_courte) && cs === "";
@@ -98,7 +102,7 @@ Deno.serve(async (req) => {
     let tagsIa: string[] = f.tags_ia ?? [];
 
     try {
-      if (sourcesHash !== f.tags_ia_hash) {
+      if (testIds || sourcesHash !== f.tags_ia_hash) {
         if (sansContenu) {
           tagsIa = [];
         } else {
@@ -119,8 +123,9 @@ Deno.serve(async (req) => {
           const m = texte.match(/\[[\s\S]*\]/);
           const brut: unknown[] = m ? JSON.parse(m[0]) : [];
           const permis = new Set(vocab);
-          tagsIa = [...new Set(brut.filter((x): x is string => typeof x === "string" && permis.has(x)))];
+          tagsIa = [...new Set(brut.filter((x): x is string => typeof x === "string" && permis.has(x)))].slice(0, MAX_TAGS);
           res.tags_rejetes = brut.filter((x) => !permis.has(x as string));
+          res.taille_vocabulaire = vocab.length;
           res.tokens_claude = [d.usage?.input_tokens, d.usage?.output_tokens];
           res.duree_claude_ms = duree;
           await log({ usage: "tags_ia", provider: "anthropic", model: CLAUDE_MODEL, prestataire_id: f.id, tokens_entree: d.usage?.input_tokens, tokens_sortie: d.usage?.output_tokens, duree_ms: duree });
@@ -129,7 +134,7 @@ Deno.serve(async (req) => {
         maj.tags_ia_hash = sourcesHash;
       }
       const embHash = await sha256(sourcesHash + "|" + tagsIa.join(","));
-      if (embHash !== f.embedding_hash) {
+      if (testIds || embHash !== f.embedding_hash) {
         const texteVec = (sansContenu
           ? [f.nom_commercial, categorie, f.ville].join("\n")
           : [sources, tagsIa.length ? `Style : ${tagsIa.join(", ")}` : ""].join("\n")).slice(0, MAX_TEXTE);
@@ -153,7 +158,7 @@ Deno.serve(async (req) => {
       const { error: uErr } = await db.from("prestataires").update(maj).eq("id", f.id).select("id").single();
       if (uErr) throw new Error(uErr.message);
       await db.from("embeddings_a_recalculer").delete().eq("prestataire_id", f.id);
-      resultats.push({ ...res, tags_ia: tagsIa, sans_contenu: sansContenu });
+      resultats.push({ ...res, categorie, extrait: (f.description ?? f.description_courte ?? "").slice(0, 200), tags_ia: tagsIa, sans_contenu: sansContenu });
     } catch (e) {
       const usage = (e as { usage?: string }).usage ?? "embedding";
       await log({ usage, provider: usage === "tags_ia" ? "anthropic" : "mistral", model: usage === "tags_ia" ? CLAUDE_MODEL : EMBED_MODEL, prestataire_id: f.id, statut: "erreur", erreur: String((e as Error).message).slice(0, 1000) });
