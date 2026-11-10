@@ -15,6 +15,7 @@ import {
   UserPlus,
   FileSignature,
   Plug,
+  Sparkles,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -54,6 +55,7 @@ const contentItems = [
 const systemItems = [
   { title: "Connecteurs", url: "/admin/connecteurs", icon: Plug },
   { title: "Suivi des emails", url: "/admin/emails-suivi", icon: MailCheck },
+  { title: "Test IA", url: "/admin/test-ia", icon: Sparkles },
 ];
 
 export function AdminSidebar() {
