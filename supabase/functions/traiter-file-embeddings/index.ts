@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     const vocab = [...new Set([...AMBIANCES, ...ETIQUETTES_FIXES, ...champsFiche
       .filter((c: { usage_ia: boolean }) => c.usage_ia)
       .flatMap((c: { options_liste: string[] | null; options_exclues_ia: string[] | null }) =>
-        (c.options_liste ?? []).filter((o) => !(c.options_exclues_ia ?? []).includes(o))))])];
+        (c.options_liste ?? []).filter((o) => !(c.options_exclues_ia ?? []).includes(o)))])];
     const categorie = [nomCat.get(f.categorie_mere_id), f.categorie_fille_id ? nomCat.get(f.categorie_fille_id) : null].filter(Boolean).join(" / ");
     const cs = champsEnTexte(f.champs_specifiques as Record<string, unknown> | null, labels);
     const sansContenu = vide(f.description) && vide(f.description_courte) && cs === "";
