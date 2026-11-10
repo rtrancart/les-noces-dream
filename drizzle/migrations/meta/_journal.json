@@ -64,6 +64,13 @@
       "when": 1794319301086,
       "tag": "0008_ia_playground",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794332394787,
+      "tag": "0009_atelier_ia_etape1b_file_embeddings",
+      "breakpoints": true
     }
   ]
 }
