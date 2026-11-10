@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
 
   const { data: cats } = await db.from("categories").select("id, nom");
   const nomCat = new Map((cats ?? []).map((c: { id: string; nom: string }) => [c.id, c.nom]));
-  const { data: champs } = await db.from("champs_categories").select("categorie_id, cle, label, options_liste, usage_ia");
+  const { data: champs } = await db.from("champs_categories").select("categorie_id, cle, label, options_liste, usage_ia, options_exclues_ia");
 
   const resultats: unknown[] = [];
   const log = (row: Record<string, unknown>) => db.from("ia_logs").insert(row);
@@ -92,7 +92,8 @@ Deno.serve(async (req) => {
     const labels = new Map(champsFiche.map((c: { cle: string; label: string }) => [c.cle, c.label]));
     const vocab = [...new Set([...AMBIANCES, ...ETIQUETTES_FIXES, ...champsFiche
       .filter((c: { usage_ia: boolean }) => c.usage_ia)
-      .flatMap((c: { options_liste: string[] | null }) => c.options_liste ?? [])])];
+      .flatMap((c: { options_liste: string[] | null; options_exclues_ia: string[] | null }) =>
+        (c.options_liste ?? []).filter((o) => !(c.options_exclues_ia ?? []).includes(o)))])];
     const categorie = [nomCat.get(f.categorie_mere_id), f.categorie_fille_id ? nomCat.get(f.categorie_fille_id) : null].filter(Boolean).join(" / ");
     const cs = champsEnTexte(f.champs_specifiques as Record<string, unknown> | null, labels);
     const sansContenu = vide(f.description) && vide(f.description_courte) && cs === "";
