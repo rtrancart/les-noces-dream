@@ -4,9 +4,12 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
 
-const CLAUDE_MODEL = "claude-haiku-4-5";
-const EMBED_MODEL = "mistral-embed";
+// Aucun nom de modèle en dur : lus depuis les secrets AI_MODEL_LIGHT et EMBEDDING_MODEL.
+const CLAUDE_MODEL = Deno.env.get("AI_MODEL_LIGHT") ?? "";
+const EMBED_MODEL = Deno.env.get("EMBEDDING_MODEL") ?? "";
 const LOT = 50;
+// Rythme lent (traitement de nuit) : pause entre deux fiches pour rester sous la limite de débit Mistral.
+const PAUSE_MS = 1200;
 const MAX_TEXTE = 6000;
 const AMBIANCES = [
   "Champêtre", "Bohème", "Romantique", "Chic / classique", "Minimaliste", "Moderne / contemporain",
@@ -58,6 +61,7 @@ Deno.serve(async (req) => {
   const anthKey = Deno.env.get("ANTHROPIC_API_KEY");
   const mistralKey = Deno.env.get("MISTRAL_API_KEY");
   if (!anthKey || !mistralKey) return json({ error: "Clé API manquante" }, 500);
+  if (!CLAUDE_MODEL || !EMBED_MODEL) return json({ error: "Secret AI_MODEL_LIGHT ou EMBEDDING_MODEL manquant" }, 500);
 
   let ids: string[];
   if (testIds) ids = testIds;
