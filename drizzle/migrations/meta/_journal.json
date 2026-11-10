@@ -71,6 +71,13 @@
       "when": 1794332394787,
       "tag": "0009_atelier_ia_etape1b_file_embeddings",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794332812199,
+      "tag": "0010_champs_categories_usage_ia",
+      "breakpoints": true
     }
   ]
 }
