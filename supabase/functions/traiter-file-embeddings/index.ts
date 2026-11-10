@@ -83,7 +83,10 @@ Deno.serve(async (req) => {
   const resultats: unknown[] = [];
   const log = (row: Record<string, unknown>) => db.from("ia_logs").insert(row);
 
+  let premier = true;
   for (const f of fiches ?? []) {
+    if (!premier) await new Promise((r) => setTimeout(r, PAUSE_MS));
+    premier = false;
     const res: Record<string, unknown> = { id: f.id, nom: f.nom_commercial };
     if (f.statut !== "actif") {
       await db.from("embeddings_a_recalculer").delete().eq("prestataire_id", f.id);
