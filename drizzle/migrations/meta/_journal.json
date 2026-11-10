@@ -50,6 +50,13 @@
       "when": 1794263289729,
       "tag": "0006_enrichissement_champs_style_lot1",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794301853276,
+      "tag": "0007_rattacher_champs_photo_categorie_mere",
+      "breakpoints": true
     }
   ]
 }

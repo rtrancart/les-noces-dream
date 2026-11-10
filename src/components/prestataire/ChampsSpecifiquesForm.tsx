@@ -121,7 +121,20 @@ export default function ChampsSpecifiquesForm({
         .order("ordre_affichage", { ascending: true });
       if (cancelled) return;
       if (error) console.error(error);
-      const rows = (data ?? []) as ChampCategorie[];
+      // Déduplication par clé : sous-catégorie > catégorie mère > champ commun.
+      const rang = (c: ChampCategorie) =>
+        c.categorie_id && c.categorie_id === categorieFilleId
+          ? 0
+          : c.categorie_id && c.categorie_id === categorieMereId
+            ? 1
+            : 2;
+      const parCle = new Map<string, ChampCategorie>();
+      for (const c of (data ?? []) as ChampCategorie[]) {
+        const existant = parCle.get(c.cle);
+        if (!existant || rang(c) < rang(existant)) parCle.set(c.cle, c);
+      }
+      const gardes = new Set(parCle.values());
+      const rows = ((data ?? []) as ChampCategorie[]).filter((c) => gardes.has(c));
       setChamps(rows);
       onChampsLoaded(rows);
       setLoading(false);
