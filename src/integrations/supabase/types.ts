@@ -350,6 +350,36 @@ export type Database = {
           },
         ]
       }
+      bibliotheque_polices: {
+        Row: {
+          actif: boolean
+          categorie: string
+          created_at: string
+          fichier_ttf: string | null
+          nom: string
+          par_defaut: boolean
+          usage: string
+        }
+        Insert: {
+          actif?: boolean
+          categorie: string
+          created_at?: string
+          fichier_ttf?: string | null
+          nom: string
+          par_defaut?: boolean
+          usage: string
+        }
+        Update: {
+          actif?: boolean
+          categorie?: string
+          created_at?: string
+          fichier_ttf?: string | null
+          nom?: string
+          par_defaut?: boolean
+          usage?: string
+        }
+        Relationships: []
+      }
       boosts_visibilite: {
         Row: {
           capacite_max: number | null
@@ -680,6 +710,89 @@ export type Database = {
             columns: ["categorie_id"]
             isOneToOne: false
             referencedRelation: "categories_compteurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chartes_mariage: {
+        Row: {
+          active: boolean
+          created_at: string
+          explication: string | null
+          id: string
+          idees: string[]
+          logo_perso_url: string | null
+          monogramme: Json | null
+          mots_cles: string[]
+          nom_style: string
+          palette: Json
+          police_texte: string
+          police_titre: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          explication?: string | null
+          id?: string
+          idees?: string[]
+          logo_perso_url?: string | null
+          monogramme?: Json | null
+          mots_cles?: string[]
+          nom_style: string
+          palette: Json
+          police_texte: string
+          police_titre: string
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          explication?: string | null
+          id?: string
+          idees?: string[]
+          logo_perso_url?: string | null
+          monogramme?: Json | null
+          mots_cles?: string[]
+          nom_style?: string
+          palette?: Json
+          police_texte?: string
+          police_titre?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chartes_mariage_police_texte_fkey"
+            columns: ["police_texte"]
+            isOneToOne: false
+            referencedRelation: "bibliotheque_polices"
+            referencedColumns: ["nom"]
+          },
+          {
+            foreignKeyName: "chartes_mariage_police_titre_fkey"
+            columns: ["police_titre"]
+            isOneToOne: false
+            referencedRelation: "bibliotheque_polices"
+            referencedColumns: ["nom"]
+          },
+          {
+            foreignKeyName: "chartes_mariage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chartes_mariage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1999,6 +2112,30 @@ export type Database = {
         }
         Relationships: []
       }
+      ornements_monogramme: {
+        Row: {
+          actif: boolean
+          ambiances: string[]
+          id: string
+          nom: string
+          ordre: number
+        }
+        Insert: {
+          actif?: boolean
+          ambiances?: string[]
+          id: string
+          nom: string
+          ordre?: number
+        }
+        Update: {
+          actif?: boolean
+          ambiances?: string[]
+          id?: string
+          nom?: string
+          ordre?: number
+        }
+        Relationships: []
+      }
       pages_contenu: {
         Row: {
           builder_io_content_id: string | null
@@ -2106,6 +2243,69 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      photos_inspiration: {
+        Row: {
+          analyse_ia: Json | null
+          analyse_le: string | null
+          couleurs_dominantes: string[]
+          created_at: string
+          fichier_nom: string
+          format: string
+          hauteur: number | null
+          id: string
+          largeur: number | null
+          storage_path: string
+          taille_octets: number
+          type: string
+          user_id: string
+        }
+        Insert: {
+          analyse_ia?: Json | null
+          analyse_le?: string | null
+          couleurs_dominantes?: string[]
+          created_at?: string
+          fichier_nom: string
+          format: string
+          hauteur?: number | null
+          id?: string
+          largeur?: number | null
+          storage_path: string
+          taille_octets: number
+          type?: string
+          user_id: string
+        }
+        Update: {
+          analyse_ia?: Json | null
+          analyse_le?: string | null
+          couleurs_dominantes?: string[]
+          created_at?: string
+          fichier_nom?: string
+          format?: string
+          hauteur?: number | null
+          id?: string
+          largeur?: number | null
+          storage_path?: string
+          taille_octets?: number
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photos_inspiration_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "photos_inspiration_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       planificateur: {
         Row: {
@@ -2666,6 +2866,96 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      profils_mariage: {
+        Row: {
+          ambiances: string[]
+          budget_fourchette: string | null
+          cadre: string | null
+          couleurs_aimees: string[]
+          couleurs_evitees: string[]
+          created_at: string
+          date_annee: number | null
+          date_mariage: string | null
+          date_mois: number | null
+          departements: string[]
+          description_libre: string | null
+          formalite: number | null
+          lieu_code: string | null
+          lieu_libelle: string | null
+          lieu_type: string | null
+          matieres: string[]
+          nb_invites: string | null
+          questionnaire_termine_le: string | null
+          region: string | null
+          types_ceremonie: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ambiances?: string[]
+          budget_fourchette?: string | null
+          cadre?: string | null
+          couleurs_aimees?: string[]
+          couleurs_evitees?: string[]
+          created_at?: string
+          date_annee?: number | null
+          date_mariage?: string | null
+          date_mois?: number | null
+          departements?: string[]
+          description_libre?: string | null
+          formalite?: number | null
+          lieu_code?: string | null
+          lieu_libelle?: string | null
+          lieu_type?: string | null
+          matieres?: string[]
+          nb_invites?: string | null
+          questionnaire_termine_le?: string | null
+          region?: string | null
+          types_ceremonie?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ambiances?: string[]
+          budget_fourchette?: string | null
+          cadre?: string | null
+          couleurs_aimees?: string[]
+          couleurs_evitees?: string[]
+          created_at?: string
+          date_annee?: number | null
+          date_mariage?: string | null
+          date_mois?: number | null
+          departements?: string[]
+          description_libre?: string | null
+          formalite?: number | null
+          lieu_code?: string | null
+          lieu_libelle?: string | null
+          lieu_type?: string | null
+          matieres?: string[]
+          nb_invites?: string | null
+          questionnaire_termine_le?: string | null
+          region?: string | null
+          types_ceremonie?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profils_mariage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profils_mariage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prompts_ia: {
         Row: {
