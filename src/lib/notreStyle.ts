@@ -79,8 +79,13 @@ export const ESPACE_MAX = 50 * 1024 * 1024;
 export const FICHIER_MAX = 10 * 1024 * 1024;
 
 async function lireCode(error: unknown) {
-  try { const ctx = (error as { context?: Response }).context; const j = ctx ? await ctx.json() : null; return { code: j?.error ?? "erreur", message: j?.message as string | undefined }; }
-  catch { return { code: "erreur", message: undefined }; }
+  const ctx = (error as { context?: Response }).context;
+  try { const j = ctx ? await ctx.clone().json() : null; return { code: j?.error ?? "erreur", message: j?.message as string | undefined }; }
+  catch {
+    // Réponse non JSON : la protection du serveur a bloqué le fichier avant notre fonction (code caché dans un SVG, etc.).
+    if (ctx?.status === 403) return { code: "fichier_bloque", message: "Ce fichier a été refusé par mesure de sécurité : il contient du code (script, entité…). Enregistrez-le à nouveau en SVG simple, ou envoyez-le en PNG." };
+    return { code: "erreur", message: undefined };
+  }
 }
 
 const MESSAGES_STYLE: Record<string, string> = {
