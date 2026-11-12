@@ -134,6 +134,13 @@
       "when": 1794481070573,
       "tag": "0018_atelier_etiquettes_courtes",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794489293529,
+      "tag": "0019_atelier_url_fiche_singulier",
+      "breakpoints": true
     }
   ]
 }

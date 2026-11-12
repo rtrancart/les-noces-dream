@@ -10,7 +10,10 @@ const vus = new Set<string>();
 
 function chemin(url?: string) {
   if (!url) return null;
-  try { return new URL(url).pathname; } catch { return url.startsWith("/") ? url : null; }
+  let p: string | null;
+  try { p = new URL(url).pathname; } catch { p = url.startsWith("/") ? url : null; }
+  // Anciennes recommandations enregistrées avec /prestataires/<slug> (page catégorie) au lieu de la fiche.
+  return p ? p.replace(/^\/prestataires\/([^/]+)\/?$/, "/prestataire/$1") : null;
 }
 
 export default function CarteReco({ reco, cleAffichage }: { reco: RecoAtelier; cleAffichage: string }) {
