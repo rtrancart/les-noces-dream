@@ -3472,6 +3472,10 @@ export type Database = {
         Args: { p_prestataire_id: string }
         Returns: undefined
       }
+      formater_champs_specifiques_ia: {
+        Args: { p_cat_fille: string; p_cat_mere: string; p_champs: Json }
+        Returns: string
+      }
       formater_champs_specifiques_texte: {
         Args: { p_cat_fille: string; p_cat_mere: string; p_champs: Json }
         Returns: string
@@ -3642,6 +3646,7 @@ export type Database = {
         Returns: number
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      libelle_zone_courte: { Args: { p_zi: string[] }; Returns: string }
       mark_prestataire_first_login: { Args: never; Returns: undefined }
       marquer_derniere_connexion: {
         Args: { p_prestataire_id: string }
@@ -3653,6 +3658,7 @@ export type Database = {
         Returns: boolean
       }
       monitoring_symptomes: { Args: never; Returns: Json }
+      mots_significatifs: { Args: { p: string }; Returns: string[] }
       normaliser_cle_zone: { Args: { p_valeur: string }; Returns: string }
       normaliser_telephone: { Args: { p: string }; Returns: string }
       obtenir_telephone_prestataire: {
@@ -3722,6 +3728,7 @@ export type Database = {
           p_categorie?: string
           p_departements?: string[]
           p_embedding_intention?: string
+          p_intention_texte?: string
           p_limite?: number
           p_sous_categorie?: string
         }

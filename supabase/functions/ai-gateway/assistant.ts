@@ -2,7 +2,7 @@
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
 
-export const CHAMPS_INTERNES = ["sim_brute", "pertinence_norm", "score_classement", "score", "meme_region"];
+export const CHAMPS_INTERNES = ["sim_brute", "pertinence_norm", "score_classement", "score", "meme_region", "etiquettes_trouvees"];
 const MAX_APPELS_OUTIL = 2;
 const TIMEOUT_MS = 120_000;
 
@@ -58,15 +58,22 @@ export async function rechercher(ctx: Ctx, p: ParamsRecherche) {
     p_embedding_intention: JSON.stringify(vec),
     p_budget_max_eur: typeof p.budget_max_eur === "number" ? p.budget_max_eur : null,
     p_limite: 10,
+    p_intention_texte: intention,
   });
   if (error) throw new Error(`recherche: ${error.message}`);
   return { brut: data as { resultats?: Record<string, unknown>[]; erreur?: string }, duree_sql_ms: Date.now() - t0 };
 }
 
 /** Version envoyée à l'IA : sans les champs de classement internes. */
-export function pourIA(brut: { resultats?: Record<string, unknown>[]; erreur?: string }) {
+export function pourIA(brut: { resultats?: Record<string, unknown>[]; erreur?: string }, dejaEnvoyes?: Set<string>) {
   if (!brut.resultats) return brut;
-  return { resultats: brut.resultats.map((r) => Object.fromEntries(Object.entries(r).filter(([k]) => !CHAMPS_INTERNES.includes(k)))) };
+  return { resultats: brut.resultats.map((r) => {
+    const id = String(r.id);
+    // Fiche déjà fournie plus haut dans ce message : on ne la renvoie pas en entier.
+    if (dejaEnvoyes?.has(id)) return { id: r.id, nom_commercial: r.nom_commercial, hors_zone: r.hors_zone, deja_fournie_plus_haut: true };
+    dejaEnvoyes?.add(id);
+    return Object.fromEntries(Object.entries(r).filter(([k]) => !CHAMPS_INTERNES.includes(k)));
+  }) };
 }
 
 function outil(reglesFiltres: string) {
@@ -126,6 +133,7 @@ export async function executerAssistant(ctx: Ctx, opts: {
   const tools = [outil(opts.reglesFiltres)];
   const conv: { role: string; content: unknown }[] = [...opts.messages];
   const fiches = new Map<string, Record<string, unknown>>();
+  const envoyees = new Set<string>();
   let appelsOutil = 0, tin = 0, tout = 0, stop: string | null = null, effortIgnore = false;
   let texte = "";
   for (let tour = 0; tour < MAX_APPELS_OUTIL + 2; tour++) {
@@ -148,7 +156,7 @@ export async function executerAssistant(ctx: Ctx, opts: {
         try {
           const { brut } = await rechercher(ctx, (u.input ?? {}) as ParamsRecherche);
           for (const f of brut.resultats ?? []) fiches.set(String(f.id), f);
-          resultats.push({ type: "tool_result", tool_use_id: u.id, content: JSON.stringify(pourIA(brut)) });
+          resultats.push({ type: "tool_result", tool_use_id: u.id, content: JSON.stringify(pourIA(brut, envoyees)) });
         } catch (e) {
           resultats.push({ type: "tool_result", tool_use_id: u.id, is_error: true, content: `Recherche indisponible : ${(e as Error).message}` });
         }
