@@ -34,7 +34,7 @@
 - [ ] Écrans /atelier + entrée de menu + suivi GTM — en attente de la maquette de Rodolphe
 
 ## Atelier – interface (maquette PDF LesNoces.net reçue le 12/11)
-- [ ] Étiquettes courtes entières (« DJ ») dans le bonus + nouveau test DJ
-- [ ] Détail des tokens du test château (système, outil, historique, résultat)
-- [ ] /atelier : accueil + barre d'onglets (mobile) / colonne (ordinateur), assistant, onglets Notre style / Planning / Livret « Bientôt disponible »
-- [ ] Captures 390 px et ordinateur
+- [x] Étiquettes courtes entières (« DJ ») dans le bonus + nouveau test DJ
+- [x] Détail des tokens du test château (système, outil, historique, résultat)
+- [x] /atelier : accueil + barre d'onglets (mobile) / colonne (ordinateur), assistant, onglets Notre style / Planning / Livret « Bientôt disponible »
+- [x] Captures 390 px et ordinateur
