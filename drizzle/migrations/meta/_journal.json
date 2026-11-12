@@ -113,6 +113,13 @@
       "when": 1794479001407,
       "tag": "0015_atelier_recherche_search_path",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794479564891,
+      "tag": "0016_atelier_droits_stricts",
+      "breakpoints": true
     }
   ]
 }

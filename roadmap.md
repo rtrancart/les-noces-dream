@@ -26,3 +26,9 @@
 # Roadmap — Confirmation d'email des mariés
 - [x] Après confirmation : message de bienvenue + arrivée dans l'espace marié (/mon-compte)
 - [x] Lien déjà utilisé / expiré : message clair au lieu de l'erreur brute dans l'adresse
+
+# Roadmap — Atelier IA étape 3 (assistant)
+- [x] Tables conversations/messages/retours, droits stricts, recherche CTE min-max, complément hors zone
+- [x] Assistant dans la passerelle (outil de recherche, garde-fou id_invente, résumé toutes les 10 réponses)
+- [x] Onglet « Retours Atelier » dans Coûts IA ; tests de comportement
+- [ ] Écrans /atelier + entrée de menu + suivi GTM — en attente de la maquette de Rodolphe
