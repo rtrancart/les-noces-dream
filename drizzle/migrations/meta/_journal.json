@@ -120,6 +120,13 @@
       "when": 1794479564891,
       "tag": "0016_atelier_droits_stricts",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794480597488,
+      "tag": "0017_atelier_bonus_etiquettes_fiches_allegees",
+      "breakpoints": true
     }
   ]
 }
