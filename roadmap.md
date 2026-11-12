@@ -31,7 +31,7 @@
 - [x] Tables conversations/messages/retours, droits stricts, recherche CTE min-max, complément hors zone
 - [x] Assistant dans la passerelle (outil de recherche, garde-fou id_invente, résumé toutes les 10 réponses)
 - [x] Onglet « Retours Atelier » dans Coûts IA ; tests de comportement
-- [ ] Écrans /atelier + entrée de menu + suivi GTM — en attente de la maquette de Rodolphe
+- [x] Écrans /atelier + entrée de menu + suivi GTM — en attente de la maquette de Rodolphe
 
 ## Atelier – interface (maquette PDF LesNoces.net reçue le 12/11)
 - [x] Étiquettes courtes entières (« DJ ») dans le bonus + nouveau test DJ
