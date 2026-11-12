@@ -108,6 +108,9 @@ Deno.serve(async (req) => {
   if (corps?.action === "quota_assistant") {
     return json({ messages_restants: estAdmin ? null : await messagesRestants(db, userId) });
   }
+  if (corps?.action === "quotas_style") {
+    return json(estAdmin ? { charte: null, vision: null } : { charte: await restantsTotal(db, userId, "charte"), vision: await restantsTotal(db, userId, "vision") });
+  }
   if (corps?.action === "test_recherche") {
     if (!estAdmin) return erreur("acces_refuse", "Réservé aux admins", 403);
     const t = TestBody.safeParse(corps);
