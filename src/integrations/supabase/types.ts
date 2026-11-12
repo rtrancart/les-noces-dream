@@ -3658,6 +3658,8 @@ export type Database = {
         Returns: boolean
       }
       monitoring_symptomes: { Args: never; Returns: Json }
+      mots_etiquette: { Args: { p: string }; Returns: string[] }
+      mots_intention: { Args: { p: string }; Returns: string[] }
       mots_significatifs: { Args: { p: string }; Returns: string[] }
       normaliser_cle_zone: { Args: { p_valeur: string }; Returns: string }
       normaliser_telephone: { Args: { p: string }; Returns: string }

@@ -32,3 +32,9 @@
 - [x] Assistant dans la passerelle (outil de recherche, garde-fou id_invente, résumé toutes les 10 réponses)
 - [x] Onglet « Retours Atelier » dans Coûts IA ; tests de comportement
 - [ ] Écrans /atelier + entrée de menu + suivi GTM — en attente de la maquette de Rodolphe
+
+## Atelier – interface (maquette PDF LesNoces.net reçue le 12/11)
+- [ ] Étiquettes courtes entières (« DJ ») dans le bonus + nouveau test DJ
+- [ ] Détail des tokens du test château (système, outil, historique, résultat)
+- [ ] /atelier : accueil + barre d'onglets (mobile) / colonne (ordinateur), assistant, onglets Notre style / Planning / Livret « Bientôt disponible »
+- [ ] Captures 390 px et ordinateur

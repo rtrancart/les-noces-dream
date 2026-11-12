@@ -127,6 +127,13 @@
       "when": 1794480597488,
       "tag": "0017_atelier_bonus_etiquettes_fiches_allegees",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794481070573,
+      "tag": "0018_atelier_etiquettes_courtes",
+      "breakpoints": true
     }
   ]
 }
