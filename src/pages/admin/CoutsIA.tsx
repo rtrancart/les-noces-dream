@@ -9,6 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RetoursAtelier } from "@/components/admin/RetoursAtelier";
 
 const db = supabase as any;
 const eur = (n: number) => n.toLocaleString("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 4 });
@@ -117,6 +119,10 @@ export default function CoutsIA() {
   return (
     <div className="space-y-6 p-4 md:p-6">
       <h1 className="font-serif text-2xl">Coûts IA</h1>
+      <Tabs defaultValue="couts">
+        <TabsList><TabsTrigger value="couts">Coûts et réglages</TabsTrigger><TabsTrigger value="retours">Retours Atelier</TabsTrigger></TabsList>
+        <TabsContent value="retours" className="mt-4"><RetoursAtelier /></TabsContent>
+        <TabsContent value="couts" className="mt-4 space-y-6">
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Budget {mois}</CardTitle></CardHeader>
@@ -181,6 +187,8 @@ export default function CoutsIA() {
               <Button size="sm" onClick={() => nouvelleVersion(p)}>Enregistrer comme nouvelle version</Button>
             </div></div>; })}
       </CardContent></Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

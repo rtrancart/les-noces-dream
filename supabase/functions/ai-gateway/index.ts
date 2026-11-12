@@ -3,6 +3,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
+import { executerAssistant, rechercher } from "./assistant.ts";
 
 const TIMEOUT_MS = 120_000;
 const USAGES = ["assistant", "filtres", "livret", "charte", "vision"] as const;
@@ -18,6 +19,16 @@ const Body = z.object({
   donnees: z.object({
     message: z.string().trim().min(1).max(4000),
     historique: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) })).max(20).optional(),
+    conversation_id: z.string().uuid().optional(),
+  }),
+});
+// Test admin de la recherche (renvoie les champs de classement internes).
+const TestBody = z.object({
+  action: z.literal("test_recherche"),
+  params: z.object({
+    categorie: z.string().nullable().optional(), sous_categorie: z.string().nullable().optional(),
+    departements: z.array(z.string()).optional(), budget_max_eur: z.number().nullable().optional(),
+    intention: z.string().min(1).max(500),
   }),
 });
 
@@ -89,12 +100,23 @@ Deno.serve(async (req) => {
     return erreur("acces_refuse", "Réservé aux futurs mariés", 403);
   }
 
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const corps = await req.json().catch(() => null);
+  if (corps?.action === "test_recherche") {
+    if (!estAdmin) return erreur("acces_refuse", "Réservé aux admins", 403);
+    const t = TestBody.safeParse(corps);
+    if (!t.success) return json({ error: "donnees_invalides", details: t.error.flatten().fieldErrors }, 400);
+    const ctxT = await contexte(db, userId, "test");
+    if ("err" in ctxT) return ctxT.err as Response;
+    const t0 = Date.now();
+    const { brut, duree_sql_ms } = await rechercher(ctxT.ctx, t.data.params);
+    return json({ ...brut, duree_sql_ms, duree_totale_ms: Date.now() - t0 });
+  }
+  const parsed = Body.safeParse(corps);
   if (!parsed.success) return json({ error: "donnees_invalides", details: parsed.error.flatten().fieldErrors }, 400);
   const { usage, donnees } = parsed.data;
 
   const log = (l: Record<string, unknown>) =>
-    db.from("ia_logs").insert({ usage, user_id: userId, ...l }).then(({ error }) => error && console.error("log", error));
+    db.from("ia_logs").insert({ usage, user_id: userId, ...l }).then(({ error }: { error: unknown }) => error && console.error("log", error));
 
   // 2. Budget mensuel
   const { data: reg } = await db.from("ia_reglages").select("cle, valeur");
@@ -112,7 +134,7 @@ Deno.serve(async (req) => {
   }
 
   // 3. Prompt actif
-  const { data: prompt } = await db.from("prompts_ia").select("contenu, max_tokens, format_json")
+  const { data: prompt } = await db.from("prompts_ia").select("contenu, max_tokens, format_json, effort")
     .eq("usage", usage).eq("actif", true).maybeSingle();
   if (!prompt) return erreur("usage_indisponible", "Cette fonction n'est pas encore disponible", 503);
 
@@ -135,6 +157,15 @@ Deno.serve(async (req) => {
     const { data: ok, error: qErr } = await db.rpc("reserver_quota_ia", { p_user_id: userId, p_usage: usage });
     if (qErr) return erreur("erreur_interne", "Erreur de quota", 500);
     if (ok !== true) return erreur("quota_atteint", "Vous avez atteint la limite d'utilisation", 429);
+  }
+
+  // 6 bis. Assistant conversationnel (tool calling, conversation persistée)
+  if (usage === "assistant") {
+    if (p !== "anthropic") {
+      if (!estAdmin) await db.rpc("annuler_quota_ia", { p_user_id: userId, p_usage: usage });
+      return erreur("configuration_incomplete", "L'assistant nécessite un modèle Claude", 500);
+    }
+    return await assistant({ db, userId, estAdmin, model, tarifOk, tarif, prompt, donnees, log });
   }
 
   // 6. Appel (1 nouvel essai si le JSON attendu est invalide)
@@ -183,3 +214,129 @@ Deno.serve(async (req) => {
 
   return json({ resultat: sortie, stop_reason: stop, tronque: stop === "max_tokens" || stop === "length" });
 });
+
+
+// ───────────────────────── Assistant ─────────────────────────
+// deno-lint-ignore no-explicit-any
+type Db = any;
+
+async function lireTarif(db: Db, m: string) {
+  const { data } = await db.from("ia_tarifs").select("prix_entree_eur_par_million, prix_sortie_eur_par_million").eq("model", m).maybeSingle();
+  if (data?.prix_entree_eur_par_million == null) return null;
+  return { e: Number(data.prix_entree_eur_par_million), s: Number(data.prix_sortie_eur_par_million ?? 0) };
+}
+
+async function contexte(db: Db, userId: string, usageLog: string) {
+  const embedModel = Deno.env.get("EMBEDDING_MODEL") ?? "";
+  const model = Deno.env.get("AI_MODEL_LIGHT") ?? "";
+  if (!embedModel) return { err: erreur("configuration_incomplete", "EMBEDDING_MODEL absent", 500) };
+  const log = (l: Record<string, unknown>) =>
+    db.from("ia_logs").insert({ usage: usageLog, user_id: userId, ...l }).then(({ error }: { error: unknown }) => error && console.error("log", error));
+  return { ctx: { db: db as never, userId, model, embedModel, tarif: (m: string) => lireTarif(db, m), log } };
+}
+
+const dateDuJour = () => new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
+
+async function assistant(a: {
+  db: Db; userId: string; estAdmin: boolean; model: string; tarifOk: boolean;
+  tarif: { prix_entree_eur_par_million: number; prix_sortie_eur_par_million: number } | null;
+  prompt: { contenu: string; max_tokens: number; effort?: string | null };
+  donnees: { message: string; conversation_id?: string };
+  log: (l: Record<string, unknown>) => PromiseLike<unknown>;
+}) {
+  const { db, userId, donnees } = a;
+  const annuler = () => a.estAdmin ? null : db.rpc("annuler_quota_ia", { p_user_id: userId, p_usage: "assistant" });
+
+  // Conversation : existante (appartenant au couple) ou nouvelle
+  let conv: { id: string; resume: string | null; nb_messages: number; nb_reponses_depuis_resume: number } | null = null;
+  if (donnees.conversation_id) {
+    const { data } = await db.from("conversations_atelier").select("id, resume, nb_messages, nb_reponses_depuis_resume")
+      .eq("id", donnees.conversation_id).eq("user_id", userId).maybeSingle();
+    if (!data) { await annuler(); return erreur("conversation_introuvable", "Conversation introuvable", 404); }
+    conv = data;
+  }
+  const { data: hist } = conv
+    ? await db.from("messages_atelier").select("role, contenu").eq("conversation_id", conv.id).order("created_at", { ascending: false }).limit(10)
+    : { data: [] };
+  const historique = (hist ?? []).reverse().map((m: { role: "user" | "assistant"; contenu: string }) => ({ role: m.role, content: m.contenu }));
+  // L'API exige un premier message 'user' et une alternance : on retire un éventuel 'assistant' en tête.
+  while (historique.length && historique[0].role !== "user") historique.shift();
+
+  const { data: pf } = await db.from("prompts_ia").select("contenu").eq("usage", "filtres").eq("actif", true).maybeSingle();
+  const regles = (pf?.contenu ?? "").split("Catégories et sous-catégories autorisées")[1];
+  const reglesFiltres = regles ? `Catégories et sous-catégories autorisées${regles}` : "";
+  let system = a.prompt.contenu.replaceAll("{date_du_jour}", dateDuJour());
+  if (conv?.resume) system += `\n\nRésumé de la conversation jusqu'ici :\n${conv.resume}`;
+
+  const c = await contexte(db, userId, "assistant");
+  if ("err" in c) { await annuler(); return c.err as Response; }
+  const debut = Date.now();
+  let r;
+  try {
+    r = await executerAssistant({ ...c.ctx, model: a.model }, {
+      system, maxTokens: a.prompt.max_tokens, effort: a.prompt.effort ?? null, reglesFiltres,
+      messages: [...historique, { role: "user", content: donnees.message }],
+    });
+  } catch (e) {
+    await annuler();
+    await a.log({ provider: "anthropic", model: a.model, statut: "erreur", erreur: (e as Error).message.slice(0, 500), duree_ms: Date.now() - debut });
+    return erreur("erreur_ia", "Le service IA n'a pas pu répondre, réessayez", 502);
+  }
+  const coutClaude = a.tarifOk ? (r.tin * Number(a.tarif!.prix_entree_eur_par_million) + r.tout * Number(a.tarif!.prix_sortie_eur_par_million)) / 1e6 : null;
+  await a.log({ provider: "anthropic", model: a.model, statut: "succes", tokens_entree: r.tin, tokens_sortie: r.tout, duree_ms: Date.now() - debut, cout_eur: coutClaude, stop_reason: r.stop });
+  for (const id of r.inventes) {
+    await a.log({ provider: "anthropic", model: a.model, statut: "erreur", erreur: "id_invente" });
+  }
+
+  // Persistance (service_role)
+  if (!conv) {
+    const titre = donnees.message.replace(/\s+/g, " ").trim().slice(0, 60) || "Nouvelle conversation";
+    const { data, error } = await db.from("conversations_atelier").insert({ user_id: userId, titre })
+      .select("id, resume, nb_messages, nb_reponses_depuis_resume").single();
+    if (error) return erreur("erreur_interne", "Conversation non enregistrée", 500);
+    conv = data;
+  }
+  const recommandations = r.recos.map((x) => {
+    const f = x.fiche;
+    return { prestataire_id: x.prestataire_id, raison: x.raison, nom_commercial: f.nom_commercial, url: f.url,
+      photo_principale: f.photo_principale, categorie: f.categorie, sous_categorie: f.sous_categorie, ville: f.ville, hors_zone: f.hors_zone };
+  });
+  const maintenant = Date.now();
+  const { error: e1 } = await db.from("messages_atelier").insert({ conversation_id: conv!.id, role: "user", contenu: donnees.message, created_at: new Date(maintenant).toISOString() });
+  const { data: msgA, error: e2 } = await db.from("messages_atelier").insert({ conversation_id: conv!.id, role: "assistant", contenu: r.message, recommandations, created_at: new Date(maintenant + 1).toISOString() }).select("id").single();
+  if (e1 || e2) console.error("messages", e1, e2);
+  const nbRep = conv!.nb_reponses_depuis_resume + 1;
+  await db.from("conversations_atelier").update({ nb_messages: conv!.nb_messages + 2, nb_reponses_depuis_resume: nbRep }).eq("id", conv!.id);
+
+  // Résumé toutes les 10 réponses (compté dans le budget, pas dans le quota)
+  if (nbRep >= 10) await resumer(db, userId, conv!.id, conv!.resume);
+
+  let restants: number | null = null;
+  if (!a.estAdmin) {
+    const { data: q } = await db.from("ia_quotas").select("assistant_jour, bonus_assistant").eq("user_id", userId).maybeSingle();
+    const { data: rq } = await db.from("ia_reglages").select("valeur").eq("cle", "quotas_defaut").maybeSingle();
+    const max = Number((rq?.valeur as Record<string, number>)?.assistant_par_jour ?? 0) + Number(q?.bonus_assistant ?? 0);
+    restants = Math.max(0, max - Number(q?.assistant_jour ?? 0));
+  }
+  return json({ conversation_id: conv!.id, message_id: msgA?.id ?? null, message: r.message, recommandations,
+    messages_restants: restants, appels_outil: r.appelsOutil, effort_ignore: r.effortIgnore || undefined });
+}
+
+async function resumer(db: Db, userId: string, convId: string, ancien: string | null) {
+  const { data: p } = await db.from("prompts_ia").select("contenu, max_tokens").eq("usage", "resume").eq("actif", true).maybeSingle();
+  const model = Deno.env.get("AI_MODEL_LIGHT") ?? "";
+  if (!p || !model.startsWith("claude-")) return;
+  const { data: msgs } = await db.from("messages_atelier").select("role, contenu").eq("conversation_id", convId).order("created_at", { ascending: false }).limit(24);
+  const fil = (msgs ?? []).reverse().map((m: { role: string; contenu: string }) => `${m.role === "user" ? "Couple" : "Assistant"} : ${m.contenu}`).join("\n\n");
+  const contenu = `${ancien ? `Résumé précédent :\n${ancien}\n\n` : ""}Conversation récente :\n${fil}`.slice(0, 30000);
+  const t0 = Date.now();
+  const log = (l: Record<string, unknown>) => db.from("ia_logs").insert({ usage: "resume", user_id: userId, provider: "anthropic", model, ...l });
+  try {
+    const res = await appeler("anthropic", model, p.contenu, p.max_tokens, [{ role: "user", content: contenu }]);
+    const tar = await lireTarif(db, model);
+    await log({ statut: "succes", tokens_entree: res.tin, tokens_sortie: res.tout, duree_ms: Date.now() - t0, stop_reason: res.stop, cout_eur: tar ? (res.tin * tar.e + res.tout * tar.s) / 1e6 : null });
+    await db.from("conversations_atelier").update({ resume: res.texte.trim().split("\n").slice(0, 10).join("\n"), nb_reponses_depuis_resume: 0 }).eq("id", convId);
+  } catch (e) {
+    await log({ statut: "erreur", erreur: (e as Error).message.slice(0, 500), duree_ms: Date.now() - t0 });
+  }
+}

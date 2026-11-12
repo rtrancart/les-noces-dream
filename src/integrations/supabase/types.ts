@@ -792,6 +792,54 @@ export type Database = {
           },
         ]
       }
+      conversations_atelier: {
+        Row: {
+          created_at: string
+          id: string
+          nb_messages: number
+          nb_reponses_depuis_resume: number
+          resume: string | null
+          titre: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nb_messages?: number
+          nb_reponses_depuis_resume?: number
+          resume?: string | null
+          titre?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nb_messages?: number
+          nb_reponses_depuis_resume?: number
+          resume?: string | null
+          titre?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_atelier_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_atelier_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demandes_devis: {
         Row: {
           budget_indicatif: number | null
@@ -1817,6 +1865,41 @@ export type Database = {
           },
         ]
       }
+      messages_atelier: {
+        Row: {
+          contenu: string
+          conversation_id: string
+          created_at: string
+          id: string
+          recommandations: Json
+          role: string
+        }
+        Insert: {
+          contenu: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          recommandations?: Json
+          role: string
+        }
+        Update: {
+          contenu?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          recommandations?: Json
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_atelier_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations_atelier"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monitoring_alertes: {
         Row: {
           cle: string
@@ -2589,6 +2672,7 @@ export type Database = {
           actif: boolean
           contenu: string
           created_at: string
+          effort: string | null
           format_json: boolean
           id: string
           max_tokens: number
@@ -2601,6 +2685,7 @@ export type Database = {
           actif?: boolean
           contenu: string
           created_at?: string
+          effort?: string | null
           format_json?: boolean
           id?: string
           max_tokens?: number
@@ -2613,6 +2698,7 @@ export type Database = {
           actif?: boolean
           contenu?: string
           created_at?: string
+          effort?: string | null
           format_json?: boolean
           id?: string
           max_tokens?: number
@@ -2622,6 +2708,64 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      retours_atelier: {
+        Row: {
+          commentaire: string | null
+          copie_question: string | null
+          copie_recommandations: Json
+          copie_reponse: string | null
+          created_at: string
+          id: string
+          message_id: string | null
+          note: string
+          user_id: string
+        }
+        Insert: {
+          commentaire?: string | null
+          copie_question?: string | null
+          copie_recommandations?: Json
+          copie_reponse?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          note: string
+          user_id?: string
+        }
+        Update: {
+          commentaire?: string | null
+          copie_question?: string | null
+          copie_recommandations?: Json
+          copie_reponse?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          note?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retours_atelier_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages_atelier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retours_atelier_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retours_atelier_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sessions_fiche: {
         Row: {
@@ -3323,9 +3467,14 @@ export type Database = {
         Args: { p_consent: boolean }
         Returns: boolean
       }
+      departement_depuis_cp: { Args: { p_cp: string }; Returns: string }
       enregistrer_consultation_prestataire: {
         Args: { p_prestataire_id: string }
         Returns: undefined
+      }
+      formater_champs_specifiques_texte: {
+        Args: { p_cat_fille: string; p_cat_mere: string; p_champs: Json }
+        Returns: string
       }
       get_email_dashboard: {
         Args: {
@@ -3566,6 +3715,17 @@ export type Database = {
       recalculer_tous_les_scores: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: number
+      }
+      rechercher_prestataires: {
+        Args: {
+          p_budget_max_eur?: number
+          p_categorie?: string
+          p_departements?: string[]
+          p_embedding_intention?: string
+          p_limite?: number
+          p_sous_categorie?: string
+        }
+        Returns: Json
       }
       reserver_quota_ia: {
         Args: { p_usage: string; p_user_id: string }
