@@ -284,7 +284,7 @@ async function assistant(a: {
   const coutClaude = a.tarifOk ? (r.tin * Number(a.tarif!.prix_entree_eur_par_million) + r.tout * Number(a.tarif!.prix_sortie_eur_par_million)) / 1e6 : null;
   await a.log({ provider: "anthropic", model: a.model, statut: "succes", tokens_entree: r.tin, tokens_sortie: r.tout, duree_ms: Date.now() - debut, cout_eur: coutClaude, stop_reason: r.stop });
   for (const id of r.inventes) {
-    await a.log({ provider: "anthropic", model: a.model, statut: "erreur", erreur: "id_invente", stop_reason: id.slice(0, 60) });
+    await a.log({ provider: "anthropic", model: a.model, statut: "erreur", erreur: "id_invente" });
   }
 
   // Persistance (service_role)
