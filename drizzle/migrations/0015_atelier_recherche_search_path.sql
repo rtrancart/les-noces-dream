@@ -1,0 +1,1 @@
+ALTER FUNCTION public.rechercher_prestataires(text, text, text[], extensions.vector, numeric, integer) SET search_path = public, extensions;
