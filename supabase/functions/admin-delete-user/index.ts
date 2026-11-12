@@ -66,6 +66,16 @@ Deno.serve(async (req) => {
       throw sigErr;
     }
     
+    // Atelier : suppression réelle de tout le dossier du couple dans maries-assets
+    for (const dossier of ["inspiration", "logo"]) {
+      for (;;) {
+        const { data: objets } = await adminClient.storage.from("maries-assets").list(`${target_user_id}/${dossier}`, { limit: 100 });
+        if (!objets?.length) break;
+        const { error: rmErr } = await adminClient.storage.from("maries-assets").remove(objets.map((o: { name: string }) => `${target_user_id}/${dossier}/${o.name}`));
+        if (rmErr) { console.error("maries-assets remove", rmErr); break; }
+      }
+    }
+
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(target_user_id);
     if (deleteError) {
       console.error("auth.admin.deleteUser failed", deleteError);
