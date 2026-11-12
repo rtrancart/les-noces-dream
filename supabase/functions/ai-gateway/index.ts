@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
   const { usage, donnees } = parsed.data;
 
   const log = (l: Record<string, unknown>) =>
-    db.from("ia_logs").insert({ usage, user_id: userId, ...l }).then(({ error }) => error && console.error("log", error));
+    db.from("ia_logs").insert({ usage, user_id: userId, ...l }).then(({ error }: { error: unknown }) => error && console.error("log", error));
 
   // 2. Budget mensuel
   const { data: reg } = await db.from("ia_reglages").select("cle, valeur");
@@ -231,7 +231,7 @@ async function contexte(db: Db, userId: string, usageLog: string) {
   const model = Deno.env.get("AI_MODEL_LIGHT") ?? "";
   if (!embedModel) return { err: erreur("configuration_incomplete", "EMBEDDING_MODEL absent", 500) };
   const log = (l: Record<string, unknown>) =>
-    db.from("ia_logs").insert({ usage: usageLog, user_id: userId, ...l }).then(({ error }) => error && console.error("log", error));
+    db.from("ia_logs").insert({ usage: usageLog, user_id: userId, ...l }).then(({ error }: { error: unknown }) => error && console.error("log", error));
   return { ctx: { db: db as never, userId, model, embedModel, tarif: (m: string) => lireTarif(db, m), log } };
 }
 
@@ -242,7 +242,7 @@ async function assistant(a: {
   tarif: { prix_entree_eur_par_million: number; prix_sortie_eur_par_million: number } | null;
   prompt: { contenu: string; max_tokens: number; effort?: string | null };
   donnees: { message: string; conversation_id?: string };
-  log: (l: Record<string, unknown>) => Promise<unknown>;
+  log: (l: Record<string, unknown>) => PromiseLike<unknown>;
 }) {
   const { db, userId, donnees } = a;
   const annuler = () => a.estAdmin ? null : db.rpc("annuler_quota_ia", { p_user_id: userId, p_usage: "assistant" });

@@ -10,7 +10,7 @@ type Tarif = { e: number; s: number } | null;
 type Ctx = {
   db: SupabaseClient; userId: string; model: string; embedModel: string;
   tarif: (m: string) => Promise<Tarif>;
-  log: (l: Record<string, unknown>) => Promise<unknown>;
+  log: (l: Record<string, unknown>) => PromiseLike<unknown>;
 };
 
 async function fetchTimeout(url: string, init: RequestInit) {
