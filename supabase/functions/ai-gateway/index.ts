@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     const t = TestBody.safeParse(corps);
     if (!t.success) return json({ error: "donnees_invalides", details: t.error.flatten().fieldErrors }, 400);
     const ctxT = await contexte(db, userId, "test");
-    if ("err" in ctxT) return ctxT.err;
+    if ("err" in ctxT) return ctxT.err as Response;
     const t0 = Date.now();
     const { brut, duree_sql_ms } = await rechercher(ctxT.ctx, t.data.params);
     return json({ ...brut, duree_sql_ms, duree_totale_ms: Date.now() - t0 });
@@ -269,7 +269,7 @@ async function assistant(a: {
   if (conv?.resume) system += `\n\nRésumé de la conversation jusqu'ici :\n${conv.resume}`;
 
   const c = await contexte(db, userId, "assistant");
-  if ("err" in c) { await annuler(); return c.err; }
+  if ("err" in c) { await annuler(); return c.err as Response; }
   const debut = Date.now();
   let r;
   try {
