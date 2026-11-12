@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
 import { executerAssistant, rechercher } from "./assistant.ts";
+import { blocProfil, corriger, famillesPastilles, libellesPastilles, nettoyerVision, problemes, type Police } from "./charte.ts";
 
 const TIMEOUT_MS = 120_000;
 const USAGES = ["assistant", "filtres", "livret", "charte", "vision"] as const;
@@ -17,7 +18,8 @@ const AUTORISES_EN_DEGRADE: Usage[] = ["assistant", "filtres"];
 const Body = z.object({
   usage: z.enum(USAGES),
   donnees: z.object({
-    message: z.string().trim().min(1).max(4000),
+    message: z.string().trim().min(1).max(4000).optional(),
+    photo_id: z.string().uuid().optional(),
     historique: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) })).max(20).optional(),
     conversation_id: z.string().uuid().optional(),
     mesurer_tokens: z.boolean().optional(),
@@ -51,7 +53,7 @@ function extraireJson(t: string): unknown {
 type Resultat = { texte: string; tin: number; tout: number; stop: string | null };
 
 async function appeler(p: "anthropic" | "mistral", model: string, system: string, maxTokens: number,
-  messages: { role: string; content: string }[]): Promise<Resultat> {
+  messages: { role: string; content: unknown }[]): Promise<Resultat> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
@@ -106,6 +108,9 @@ Deno.serve(async (req) => {
   if (corps?.action === "quota_assistant") {
     return json({ messages_restants: estAdmin ? null : await messagesRestants(db, userId) });
   }
+  if (corps?.action === "quotas_style") {
+    return json(estAdmin ? { charte: null, vision: null } : { charte: await restantsTotal(db, userId, "charte"), vision: await restantsTotal(db, userId, "vision") });
+  }
   if (corps?.action === "test_recherche") {
     if (!estAdmin) return erreur("acces_refuse", "Réservé aux admins", 403);
     const t = TestBody.safeParse(corps);
@@ -119,6 +124,21 @@ Deno.serve(async (req) => {
   const parsed = Body.safeParse(corps);
   if (!parsed.success) return json({ error: "donnees_invalides", details: parsed.error.flatten().fieldErrors }, 400);
   const { usage, donnees } = parsed.data;
+  if ((usage === "assistant" || usage === "filtres" || usage === "livret") && !donnees.message) {
+    return json({ error: "donnees_invalides", details: { message: ["Message requis"] } }, 400);
+  }
+  // Vision : la photo doit appartenir au couple et être une image analysable (pas de SVG)
+  let photo: { id: string; storage_path: string; format: string } | null = null;
+  if (usage === "vision") {
+    if (!donnees.photo_id) return json({ error: "donnees_invalides", details: { photo_id: ["Photo requise"] } }, 400);
+    const { data: ph } = await db.from("photos_inspiration").select("id, storage_path, format, type")
+      .eq("id", donnees.photo_id).eq("user_id", userId).maybeSingle();
+    if (!ph) return erreur("photo_introuvable", "Photo introuvable", 404);
+    if (!["image/jpeg", "image/png", "image/webp"].includes(ph.format) || ph.type !== "inspiration") {
+      return erreur("format_non_analysable", "Seules les photos JPG, PNG et WEBP peuvent être analysées", 400);
+    }
+    photo = ph;
+  }
 
   const log = (l: Record<string, unknown>) =>
     db.from("ia_logs").insert({ usage, user_id: userId, ...l }).then(({ error }: { error: unknown }) => error && console.error("log", error));
@@ -173,8 +193,11 @@ Deno.serve(async (req) => {
     return await assistant({ db, userId, estAdmin, model, tarifOk, tarif, prompt, donnees, log });
   }
 
+  if (usage === "vision") return await vision({ db, userId, estAdmin, p, model, tarifOk, tarif, prompt, photo: photo!, log });
+  if (usage === "charte") return await charte({ db, userId, estAdmin, p, model, tarifOk, tarif, prompt, log });
+
   // 6. Appel (1 nouvel essai si le JSON attendu est invalide)
-  const messages = [...(donnees.historique ?? []), { role: "user", content: donnees.message }];
+  const messages = [...(donnees.historique ?? []), { role: "user", content: donnees.message! }];
   const debut = Date.now();
   let tin = 0, tout = 0, stop: string | null = null, sortie: unknown = null;
   try {
@@ -255,7 +278,7 @@ async function assistant(a: {
   db: Db; userId: string; estAdmin: boolean; model: string; tarifOk: boolean;
   tarif: { prix_entree_eur_par_million: number; prix_sortie_eur_par_million: number } | null;
   prompt: { contenu: string; max_tokens: number; effort?: string | null };
-  donnees: { message: string; conversation_id?: string; mesurer_tokens?: boolean };
+  donnees: { message?: string; conversation_id?: string; mesurer_tokens?: boolean };
   log: (l: Record<string, unknown>) => PromiseLike<unknown>;
 }) {
   const { db, userId, donnees } = a;
@@ -286,6 +309,13 @@ async function assistant(a: {
   const regles = (pf?.contenu ?? "").split("Catégories et sous-catégories autorisées")[1];
   const reglesFiltres = regles ? `Catégories et sous-catégories autorisées${regles}` : "";
   let system = a.prompt.contenu.replaceAll("{date_du_jour}", dateDuJour());
+  // Profil du couple et style de la charte active (questionnaire « Notre style »)
+  const [{ data: pm }, { data: ch }] = await Promise.all([
+    db.from("profils_mariage").select("*").eq("user_id", userId).maybeSingle(),
+    db.from("chartes_mariage").select("nom_style").eq("user_id", userId).eq("active", true).maybeSingle(),
+  ]);
+  const profil = blocProfil(pm, ch?.nom_style);
+  if (profil) system += `\n\nProfil du couple (déjà connu, ne le redemande pas ; utilise ses départements pour chercher sauf si le couple demande une autre zone) :\n${profil}`;
   if (conv?.resume) system += `\n\nRésumé de la conversation jusqu'ici :\n${conv.resume}`;
 
   const c = await contexte(db, userId, "assistant");
@@ -295,7 +325,7 @@ async function assistant(a: {
   try {
     r = await executerAssistant({ ...c.ctx, model: a.model }, {
       system, maxTokens: a.prompt.max_tokens, effort: a.prompt.effort ?? null, reglesFiltres,
-      messages: [...historique, { role: "user", content: donnees.message }],
+      messages: [...historique, { role: "user", content: donnees.message! }],
       mesurer: a.estAdmin && donnees.mesurer_tokens === true,
     });
   } catch (e) {
@@ -311,7 +341,7 @@ async function assistant(a: {
 
   // Persistance (service_role)
   if (!conv) {
-    const titre = donnees.message.replace(/\s+/g, " ").trim().slice(0, 60) || "Nouvelle conversation";
+    const titre = donnees.message!.replace(/\s+/g, " ").trim().slice(0, 60) || "Nouvelle conversation";
     const { data, error } = await db.from("conversations_atelier").insert({ user_id: userId, titre })
       .select("id, resume, nb_messages, nb_reponses_depuis_resume").single();
     if (error) return erreur("erreur_interne", "Conversation non enregistrée", 500);
@@ -323,7 +353,7 @@ async function assistant(a: {
       photo_principale: f.photo_principale, categorie: f.categorie, sous_categorie: f.sous_categorie, ville: f.ville, hors_zone: f.hors_zone };
   });
   const maintenant = Date.now();
-  const { error: e1 } = await db.from("messages_atelier").insert({ conversation_id: conv!.id, role: "user", contenu: donnees.message, created_at: new Date(maintenant).toISOString() });
+  const { error: e1 } = await db.from("messages_atelier").insert({ conversation_id: conv!.id, role: "user", contenu: donnees.message!, created_at: new Date(maintenant).toISOString() });
   const { data: msgA, error: e2 } = await db.from("messages_atelier").insert({ conversation_id: conv!.id, role: "assistant", contenu: r.message, recommandations, created_at: new Date(maintenant + 1).toISOString() }).select("id").single();
   if (e1 || e2) console.error("messages", e1, e2);
   const nbRep = conv!.nb_reponses_depuis_resume + 1;
@@ -355,4 +385,118 @@ async function resumer(db: Db, userId: string, convId: string, ancien: string | 
   } catch (e) {
     await log({ statut: "erreur", erreur: (e as Error).message.slice(0, 500), duree_ms: Date.now() - t0 });
   }
+}
+
+// ───────────────────────── Charte et vision ─────────────────────────
+type ArgsSimple = {
+  db: Db; userId: string; estAdmin: boolean; p: "anthropic" | "mistral"; model: string; tarifOk: boolean;
+  tarif: { prix_entree_eur_par_million: number; prix_sortie_eur_par_million: number } | null;
+  prompt: { contenu: string; max_tokens: number };
+  log: (l: Record<string, unknown>) => PromiseLike<unknown>;
+};
+const coutDe = (a: ArgsSimple, tin: number, tout: number) =>
+  a.tarifOk ? (tin * Number(a.tarif!.prix_entree_eur_par_million) + tout * Number(a.tarif!.prix_sortie_eur_par_million)) / 1e6 : null;
+
+function enBase64(o: Uint8Array) {
+  let s = "";
+  for (let i = 0; i < o.length; i += 0x8000) s += String.fromCharCode(...o.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+async function vision(a: ArgsSimple & { photo: { id: string; storage_path: string; format: string } }) {
+  const annuler = () => a.estAdmin ? null : a.db.rpc("annuler_quota_ia", { p_user_id: a.userId, p_usage: "vision" });
+  const { data: blob, error } = await a.db.storage.from("maries-assets").download(a.photo.storage_path);
+  if (error || !blob) { await annuler(); return erreur("photo_introuvable", "Photo introuvable", 404); }
+  const b64 = enBase64(new Uint8Array(await blob.arrayBuffer()));
+  const consigne = { type: "text", text: "Analyse cette photo d'inspiration." };
+  const contenu = a.p === "anthropic"
+    ? [{ type: "image", source: { type: "base64", media_type: a.photo.format, data: b64 } }, consigne]
+    : [{ type: "image_url", image_url: `data:${a.photo.format};base64,${b64}` }, consigne];
+  const debut = Date.now();
+  let tin = 0, tout = 0, stop: string | null = null, sortie: unknown = null;
+  try {
+    for (let essai = 0; essai < 2; essai++) {
+      const res = await appeler(a.p, a.model, a.prompt.contenu, a.prompt.max_tokens, [{ role: "user", content: contenu }]);
+      tin += res.tin; tout += res.tout; stop = res.stop;
+      try { sortie = extraireJson(res.texte); break; } catch { if (essai === 1) throw new Error("JSON invalide après 2 essais"); }
+    }
+  } catch (e) {
+    await annuler();
+    await a.log({ provider: a.p, model: a.model, statut: "erreur", erreur: (e as Error).message.slice(0, 500), tokens_entree: tin, tokens_sortie: tout, duree_ms: Date.now() - debut, cout_eur: coutDe(a, tin, tout), stop_reason: stop });
+    return erreur("erreur_ia", "L'analyse n'a pas pu aboutir, réessayez", 502);
+  }
+  const analyse = nettoyerVision(sortie);
+  await a.log({ provider: a.p, model: a.model, statut: "succes", tokens_entree: tin, tokens_sortie: tout, duree_ms: Date.now() - debut, cout_eur: coutDe(a, tin, tout), stop_reason: stop });
+  // Seule la passerelle écrit analyse_ia (le couple n'a aucun droit d'écriture sur cette table)
+  await a.db.from("photos_inspiration").update({ analyse_ia: analyse, analyse_le: new Date().toISOString() }).eq("id", a.photo.id);
+  return json({ analyse, restants: a.estAdmin ? null : await restantsTotal(a.db, a.userId, "vision") });
+}
+
+async function restantsTotal(db: Db, userId: string, usage: "charte" | "vision") {
+  const [{ data: q }, { data: rq }] = await Promise.all([
+    db.from("ia_quotas").select("charte_total, vision_total, bonus_charte, bonus_vision").eq("user_id", userId).maybeSingle(),
+    db.from("ia_reglages").select("valeur").eq("cle", "quotas_defaut").maybeSingle(),
+  ]);
+  const v = (rq?.valeur ?? {}) as Record<string, number>;
+  const max = Number(v[`${usage}_total`] ?? 0) + Number(q?.[`bonus_${usage}`] ?? 0);
+  return Math.max(0, max - Number(q?.[`${usage}_total`] ?? 0));
+}
+
+async function charte(a: ArgsSimple) {
+  const annuler = () => a.estAdmin ? null : a.db.rpc("annuler_quota_ia", { p_user_id: a.userId, p_usage: "charte" });
+  const [{ data: pm }, { data: photos }, { data: pol }] = await Promise.all([
+    a.db.from("profils_mariage").select("*").eq("user_id", a.userId).maybeSingle(),
+    a.db.from("photos_inspiration").select("analyse_ia, couleurs_dominantes").eq("user_id", a.userId).eq("type", "inspiration")
+      .not("analyse_ia", "is", null).order("created_at", { ascending: false }).limit(6),
+    a.db.from("bibliotheque_polices").select("nom, categorie, usage, par_defaut").eq("actif", true),
+  ]);
+  const polices = (pol ?? []) as Police[];
+  const evitees = famillesPastilles(pm?.couleurs_evitees ?? []);
+  const groupes: Record<string, string> = { serif_elegant: "Serif élégant", capitales_classiques: "Capitales classiques", script: "Script (titres uniquement)", sans_serif: "Sans-serif", manuscrit_decontracte: "Manuscrit décontracté (titres uniquement)" };
+  const listePolices = Object.entries(groupes).map(([k, l]) =>
+    `- ${l} : ${polices.filter((x) => x.categorie === k).map((x) => x.nom + (x.usage === "titre" && k !== "script" && k !== "manuscrit_decontracte" ? " (titres seulement)" : "")).join(", ")}`).join("\n");
+  const analyses = (photos ?? []).map((ph: { analyse_ia: { description?: string; ambiances?: string[]; matieres?: string[] }; couleurs_dominantes: string[] }, i: number) =>
+    `- Photo ${i + 1} : ${ph.analyse_ia?.description ?? ""}${ph.analyse_ia?.ambiances?.length ? ` Ambiances : ${ph.analyse_ia.ambiances.join(", ")}.` : ""}${ph.analyse_ia?.matieres?.length ? ` Matières : ${ph.analyse_ia.matieres.join(", ")}.` : ""}${ph.couleurs_dominantes?.length ? ` Couleurs dominantes : ${ph.couleurs_dominantes.join(", ")}.` : ""}`).join("\n");
+  const message = [
+    `Profil du couple :\n${blocProfil(pm) || "(questionnaire non rempli)"}`,
+    pm?.couleurs_evitees?.length ? `Couleurs à ne jamais utiliser, même en nuance : ${libellesPastilles(pm.couleurs_evitees).join(", ")}.` : "",
+    analyses ? `Analyse de leurs photos d'inspiration :\n${analyses}` : "",
+    `Polices autorisées (nom exact) :\n${listePolices}`,
+  ].filter(Boolean).join("\n\n");
+
+  const messages: { role: string; content: unknown }[] = [{ role: "user", content: message }];
+  const debut = Date.now();
+  let tin = 0, tout = 0, stop: string | null = null, sortie: unknown = null, essais = 0;
+  try {
+    for (; essais < 2; essais++) {
+      const res = await appeler(a.p, a.model, a.prompt.contenu, a.prompt.max_tokens, messages);
+      tin += res.tin; tout += res.tout; stop = res.stop;
+      let pb: string[];
+      try { sortie = extraireJson(res.texte); pb = problemes(sortie, polices, evitees); }
+      catch { pb = ["la réponse n'est pas un objet JSON valide"]; }
+      if (!pb.length) break;
+      if (essais === 1) { if (!sortie) throw new Error("JSON invalide après 2 essais"); break; }
+      messages.push({ role: "assistant", content: res.texte }, { role: "user", content: `Corrige ta proposition : ${pb.join(" ; ")}. Réponds uniquement avec l'objet JSON complet.` });
+    }
+  } catch (e) {
+    await annuler();
+    await a.log({ provider: a.p, model: a.model, statut: "erreur", erreur: (e as Error).message.slice(0, 500), tokens_entree: tin, tokens_sortie: tout, duree_ms: Date.now() - debut, cout_eur: coutDe(a, tin, tout), stop_reason: stop });
+    return erreur("erreur_ia", "La charte n'a pas pu être créée, réessayez", 502);
+  }
+  const { charte: c, corrections } = corriger(sortie, polices, evitees);
+  await a.log({ provider: a.p, model: a.model, statut: "succes", tokens_entree: tin, tokens_sortie: tout, duree_ms: Date.now() - debut, cout_eur: coutDe(a, tin, tout), stop_reason: stop,
+    erreur: corrections.length || essais ? `essais ${Math.min(essais, 1) + 1} ; corrections : ${corrections.join(", ") || "aucune"}`.slice(0, 500) : null });
+
+  // L'ancienne charte active garde son monogramme et son logo ; on les reprend
+  const { data: ancienne } = await a.db.from("chartes_mariage").select("id, monogramme, logo_perso_url").eq("user_id", a.userId).eq("active", true).maybeSingle();
+  if (ancienne) await a.db.from("chartes_mariage").update({ active: false }).eq("id", ancienne.id);
+  const { data: ligne, error } = await a.db.from("chartes_mariage").insert({
+    user_id: a.userId, ...c, active: true, source: "ia", monogramme: ancienne?.monogramme ?? null, logo_perso_url: ancienne?.logo_perso_url ?? null,
+  }).select("*").single();
+  if (error) {
+    console.error("charte", error);
+    if (ancienne) await a.db.from("chartes_mariage").update({ active: true }).eq("id", ancienne.id);
+    return erreur("erreur_interne", "La charte n'a pas pu être enregistrée", 500);
+  }
+  return json({ charte: ligne, corrections, restants: a.estAdmin ? null : await restantsTotal(a.db, a.userId, "charte") });
 }

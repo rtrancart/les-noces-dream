@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Info, Send, Plus, MessagesSquare, Pencil, Trash2, Check, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -122,7 +123,9 @@ export default function AtelierAssistant() {
   const { trackAtelierMessage } = useTracking();
   const [convId, setConvId] = useState<string | null>(null);
   const [locaux, setLocaux] = useState<MessageAtelier[]>([]);
-  const [texte, setTexte] = useState("");
+  const location = useLocation();
+  // Message prérempli (ex. « Trouver des prestataires dans ce style » depuis Notre style)
+  const [texte, setTexte] = useState(() => String((location.state as { message?: string } | null)?.message ?? "").slice(0, 4000));
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [restants, setRestants] = useState<number | null>(null);
