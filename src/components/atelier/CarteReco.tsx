@@ -48,7 +48,7 @@ export default function CarteReco({ reco, cleAffichage }: { reco: RecoAtelier; c
         <p className="font-serif text-lg leading-snug text-foreground">{reco.nom_commercial}</p>
         {reco.ville && <p className="flex items-center gap-1 font-sans text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{reco.ville}</p>}
         {reco.raison && <p className="font-sans text-sm text-foreground/80 leading-relaxed">{reco.raison}</p>}
-        <div className="mt-auto pt-2 grid grid-cols-2 gap-2">
+        <div className="mt-auto pt-2 flex flex-wrap gap-2 [&>*]:flex-1 [&>*]:min-w-fit">
           {lien ? (
             <Button asChild variant="outline" size="sm" className="rounded-full">
               <Link to={lien} onClick={() => trackAtelierRecoClic(reco.prestataire_id, "fiche")}>Voir la fiche</Link>

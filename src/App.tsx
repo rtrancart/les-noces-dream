@@ -41,6 +41,7 @@ import AtelierLayout from "./pages/atelier/AtelierLayout";
 import AtelierAccueil from "./pages/atelier/AtelierAccueil";
 import AtelierAssistant from "./pages/atelier/AtelierAssistant";
 import AtelierBientot from "./pages/atelier/AtelierBientot";
+import AtelierStyle from "./pages/atelier/AtelierStyle";
 import ClientMessagerie from "./pages/client/Messagerie";
 import ClientFavoris from "./pages/client/Favoris";
 import ClientHistorique from "./pages/client/Historique";
@@ -135,7 +136,7 @@ const App = () => (
             <Route path="/atelier" element={<AtelierLayout />}>
               <Route index element={<AtelierAccueil />} />
               <Route path="assistant" element={<AtelierAssistant />} />
-              <Route path="style" element={<AtelierBientot titre="Notre style" description="Votre charte de couleurs et de polices, votre monogramme et vos inspirations, créés à partir de vos goûts." />} />
+              <Route path="style" element={<AtelierStyle />} />
               <Route path="planning" element={<AtelierBientot titre="Planning" description="Vos tâches mois par mois jusqu'au jour J, avec un accès direct à l'assistant pour trouver chaque prestataire." />} />
               <Route path="livret" element={<AtelierBientot titre="Livret" description="Préparez votre livret de cérémonie aux couleurs de votre charte, puis téléchargez-le prêt à imprimer." />} />
             </Route>
