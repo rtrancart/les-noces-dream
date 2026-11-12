@@ -81,6 +81,12 @@
     --header-ivoire:  40 60% 98%;     /* #FDFBF7 */
     --header-creme:   40 50% 96%;     /* #FBF8F3 */
 
+    /* L'Atelier (espace mariés) */
+    --atelier-fond: 40 50% 97%;       /* #FBF8F2 */
+    --atelier-lin: 38 42% 92%;        /* #F3EBDD */
+    --atelier-or: 37 64% 32%;         /* #855E1D, boutons or foncé */
+    --atelier-filet: 39 45% 82%;      /* filet doré des cartes */
+
     /* Shadows */
     --shadow-soft: 0 4px 24px -4px hsl(42 62% 40% / 0.08);
     --shadow-card: 0 2px 12px -2px hsl(220 30% 7% / 0.06);

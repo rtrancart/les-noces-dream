@@ -117,6 +117,33 @@ async function claude(model: string, body: Record<string, unknown>, effort: stri
   return { content: (d.content ?? []) as Bloc[], tin: d.usage?.input_tokens ?? 0, tout: d.usage?.output_tokens ?? 0, stop: d.stop_reason as string | null, effortIgnore };
 }
 
+/** Mesure (admin) : répartition des tokens d'entrée d'un appel via l'API count_tokens. */
+async function compter(model: string, b: Record<string, unknown>) {
+  const res = await fetchTimeout("https://api.anthropic.com/v1/messages/count_tokens", {
+    method: "POST",
+    headers: { "x-api-key": Deno.env.get("ANTHROPIC_API_KEY") ?? "", "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+    body: JSON.stringify({ model, ...b }),
+  });
+  const d = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(`count_tokens ${res.status}: ${d?.error?.message ?? ""}`);
+  return Number(d.input_tokens ?? 0);
+}
+async function detailTokens(model: string, system: string, tools: unknown[], conv: { role: string; content: unknown }[]) {
+  const x = [{ role: "user", content: "x" }];
+  const base = await compter(model, { messages: x });
+  const sys = await compter(model, { system, messages: x }) - base;
+  const outils = await compter(model, { tools, messages: x }) - base;
+  const total = await compter(model, { system, tools, messages: conv });
+  // Les blocs de réflexion signés ne peuvent pas être recomptés dans une conversation modifiée : on les retire des deux variantes.
+  const sansReflexion = conv.map((m) => Array.isArray(m.content)
+    ? { ...m, content: (m.content as Record<string, unknown>[]).filter((b) => b.type !== "thinking" && b.type !== "redacted_thinking") } : m);
+  const vide = sansReflexion.map((m) => Array.isArray(m.content)
+    ? { ...m, content: (m.content as Record<string, unknown>[]).map((b) => b.type === "tool_result" ? { ...b, content: "" } : b) } : m);
+  const totalSans = await compter(model, { system, tools, messages: sansReflexion });
+  const resultats = totalSans - await compter(model, { system, tools, messages: vide });
+  return { total, prompt_systeme: sys, definition_outil: outils, resultats_outil: resultats, reflexion_precedente: total - totalSans, historique_et_message: totalSans - sys - outils - resultats };
+}
+
 function extraireJson(t: string): unknown {
   const s = t.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
   try { return JSON.parse(s); } catch {
@@ -128,8 +155,9 @@ export type Reco = { prestataire_id: string; raison: string };
 
 export async function executerAssistant(ctx: Ctx, opts: {
   system: string; maxTokens: number; effort: string | null; reglesFiltres: string;
-  messages: { role: "user" | "assistant"; content: string }[];
+  messages: { role: "user" | "assistant"; content: string }[]; mesurer?: boolean;
 }) {
+  const mesures: unknown[] = [];
   const tools = [outil(opts.reglesFiltres)];
   const conv: { role: string; content: unknown }[] = [...opts.messages];
   const fiches = new Map<string, Record<string, unknown>>();
@@ -138,6 +166,7 @@ export async function executerAssistant(ctx: Ctx, opts: {
   let texte = "";
   for (let tour = 0; tour < MAX_APPELS_OUTIL + 2; tour++) {
     const limite = appelsOutil >= MAX_APPELS_OUTIL;
+    if (opts.mesurer) mesures.push(await detailTokens(ctx.model, opts.system, tools, conv).catch((e) => ({ erreur: (e as Error).message })));
     const r = await claude(ctx.model, {
       max_tokens: opts.maxTokens, system: opts.system, messages: conv, tools,
       ...(limite ? { tool_choice: { type: "none" } } : {}),
@@ -190,5 +219,5 @@ export async function executerAssistant(ctx: Ctx, opts: {
     recos.push({ prestataire_id: id, raison: String(r.raison ?? "").slice(0, 400), fiche: f });
     if (recos.length >= 4) break;
   }
-  return { message, recos, inventes, appelsOutil, tin, tout, stop, effortIgnore };
+  return { message, recos, inventes, appelsOutil, tin, tout, stop, effortIgnore, mesures };
 }

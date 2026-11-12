@@ -20,6 +20,7 @@ const Body = z.object({
     message: z.string().trim().min(1).max(4000),
     historique: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) })).max(20).optional(),
     conversation_id: z.string().uuid().optional(),
+    mesurer_tokens: z.boolean().optional(),
   }),
 });
 // Test admin de la recherche (renvoie les champs de classement internes).
@@ -101,6 +102,10 @@ Deno.serve(async (req) => {
   }
 
   const corps = await req.json().catch(() => null);
+  // Compteur affiché dans l'Atelier (aucun appel IA, aucun quota consommé)
+  if (corps?.action === "quota_assistant") {
+    return json({ messages_restants: estAdmin ? null : await messagesRestants(db, userId) });
+  }
   if (corps?.action === "test_recherche") {
     if (!estAdmin) return erreur("acces_refuse", "Réservé aux admins", 403);
     const t = TestBody.safeParse(corps);
@@ -237,11 +242,20 @@ async function contexte(db: Db, userId: string, usageLog: string) {
 
 const dateDuJour = () => new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
 
+async function messagesRestants(db: Db, userId: string): Promise<number> {
+  const { data: q } = await db.from("ia_quotas").select("jour, assistant_jour, bonus_assistant").eq("user_id", userId).maybeSingle();
+  const aujourdhui = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(new Date());
+  const utilises = q?.jour && String(q.jour) >= aujourdhui ? Number(q.assistant_jour ?? 0) : 0; // remise à zéro à minuit (Paris)
+  const { data: rq } = await db.from("ia_reglages").select("valeur").eq("cle", "quotas_defaut").maybeSingle();
+  const max = Number((rq?.valeur as Record<string, number>)?.assistant_par_jour ?? 0) + Number(q?.bonus_assistant ?? 0);
+  return Math.max(0, max - utilises);
+}
+
 async function assistant(a: {
   db: Db; userId: string; estAdmin: boolean; model: string; tarifOk: boolean;
   tarif: { prix_entree_eur_par_million: number; prix_sortie_eur_par_million: number } | null;
   prompt: { contenu: string; max_tokens: number; effort?: string | null };
-  donnees: { message: string; conversation_id?: string };
+  donnees: { message: string; conversation_id?: string; mesurer_tokens?: boolean };
   log: (l: Record<string, unknown>) => PromiseLike<unknown>;
 }) {
   const { db, userId, donnees } = a;
@@ -282,6 +296,7 @@ async function assistant(a: {
     r = await executerAssistant({ ...c.ctx, model: a.model }, {
       system, maxTokens: a.prompt.max_tokens, effort: a.prompt.effort ?? null, reglesFiltres,
       messages: [...historique, { role: "user", content: donnees.message }],
+      mesurer: a.estAdmin && donnees.mesurer_tokens === true,
     });
   } catch (e) {
     await annuler();
@@ -317,15 +332,10 @@ async function assistant(a: {
   // Résumé toutes les 10 réponses (compté dans le budget, pas dans le quota)
   if (nbRep >= 10) await resumer(db, userId, conv!.id, conv!.resume);
 
-  let restants: number | null = null;
-  if (!a.estAdmin) {
-    const { data: q } = await db.from("ia_quotas").select("assistant_jour, bonus_assistant").eq("user_id", userId).maybeSingle();
-    const { data: rq } = await db.from("ia_reglages").select("valeur").eq("cle", "quotas_defaut").maybeSingle();
-    const max = Number((rq?.valeur as Record<string, number>)?.assistant_par_jour ?? 0) + Number(q?.bonus_assistant ?? 0);
-    restants = Math.max(0, max - Number(q?.assistant_jour ?? 0));
-  }
+  const restants = a.estAdmin ? null : await messagesRestants(db, userId);
   return json({ conversation_id: conv!.id, message_id: msgA?.id ?? null, message: r.message, recommandations,
-    messages_restants: restants, appels_outil: r.appelsOutil, effort_ignore: r.effortIgnore || undefined });
+    messages_restants: restants, appels_outil: r.appelsOutil, effort_ignore: r.effortIgnore || undefined,
+    detail_tokens: r.mesures.length ? r.mesures : undefined });
 }
 
 async function resumer(db: Db, userId: string, convId: string, ancien: string | null) {

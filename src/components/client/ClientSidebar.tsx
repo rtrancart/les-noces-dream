@@ -4,6 +4,7 @@ import {
   Heart,
   Clock,
   Settings,
+  Sparkles,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const mainItems = [
   { title: "Tableau de bord", url: "/mon-compte", icon: BarChart3 },
+  { title: "Atelier", url: "/atelier", icon: Sparkles },
   { title: "Messagerie", url: "/mon-compte/messagerie", icon: MessageSquare },
   { title: "Favoris", url: "/mon-compte/favoris", icon: Heart },
   { title: "Historique", url: "/mon-compte/historique", icon: Clock },
