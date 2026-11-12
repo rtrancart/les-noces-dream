@@ -64,6 +64,12 @@ export default {
         },
         // LesNoces custom palette
         "or-riche": "hsl(var(--or-riche))",
+        atelier: {
+          fond: "hsl(var(--atelier-fond))",
+          lin: "hsl(var(--atelier-lin))",
+          or: "hsl(var(--atelier-or))",
+          filet: "hsl(var(--atelier-filet))",
+        },
         champagne: "hsl(var(--champagne))",
         "bleu-petrole": "hsl(var(--bleu-petrole))",
         terracotta: "hsl(var(--terracotta))",

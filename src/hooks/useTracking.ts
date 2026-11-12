@@ -71,10 +71,11 @@ export function useTracking() {
       event_type: string,
       has_account: boolean,
       budget?: string | number,
-      extra?: { lead_valide: boolean; sha256_email_address?: string },
+      extra?: { lead_valide: boolean; sha256_email_address?: string; source?: string },
     ) =>
       push("demande_devis", {
         item_id,
+        ...(extra?.source ? { source: extra.source } : {}),
         event_type,
         has_account,
         ...(budget !== undefined && budget !== "" ? { budget } : {}),
@@ -87,6 +88,13 @@ export function useTracking() {
             }
           : {}),
       }),
+
+    /** Atelier : message envoyé à l'assistant. */
+    trackAtelierMessage: () => push("atelier_message_envoye"),
+    /** Atelier : recommandation affichée. */
+    trackAtelierRecoAffichee: (item_id: string) => push("atelier_reco_affichee", { item_id }),
+    /** Atelier : clic sur une recommandation. */
+    trackAtelierRecoClic: (item_id: string, action: "fiche" | "devis") => push("atelier_reco_clic", { item_id, action }),
 
     /** Inscription. */
     trackSignUp: (method: string, role: "client" | "prestataire") =>

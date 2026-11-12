@@ -65,6 +65,8 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   prestataireId: string;
   prestataireName: string;
+  /** Origine de la demande pour le suivi (ex. "atelier"). */
+  source?: string;
 }
 
 const objets = [
@@ -74,7 +76,7 @@ const objets = [
   { value: "autre", label: "Autre" },
 ];
 
-export default function FicheDevisDialog({ open, onOpenChange, prestataireId, prestataireName }: Props) {
+export default function FicheDevisDialog({ open, onOpenChange, prestataireId, prestataireName, source }: Props) {
   const { user, profile } = useAuth();
   const { trackDemandeDevis } = useTracking();
   const isMobile = useIsMobile();
@@ -139,6 +141,7 @@ export default function FicheDevisDialog({ open, onOpenChange, prestataireId, pr
         trackEvent("premier_contact", { objet: values.objet }, prestataireId);
         trackDemandeDevis(prestataireId, values.objet, !!user, budgetNum ?? undefined, {
           lead_valide: moderation === "valide",
+          ...(source ? { source } : {}),
           ...(emailHash ? { sha256_email_address: emailHash } : {}),
         });
       } catch {
