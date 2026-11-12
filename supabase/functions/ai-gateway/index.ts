@@ -243,10 +243,12 @@ async function contexte(db: Db, userId: string, usageLog: string) {
 const dateDuJour = () => new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date());
 
 async function messagesRestants(db: Db, userId: string): Promise<number> {
-  const { data: q } = await db.from("ia_quotas").select("assistant_jour, bonus_assistant").eq("user_id", userId).maybeSingle();
+  const { data: q } = await db.from("ia_quotas").select("jour, assistant_jour, bonus_assistant").eq("user_id", userId).maybeSingle();
+  const aujourdhui = new Intl.DateTimeFormat("fr-CA", { timeZone: "Europe/Paris" }).format(new Date());
+  const utilises = q?.jour && String(q.jour) >= aujourdhui ? Number(q.assistant_jour ?? 0) : 0; // remise à zéro à minuit (Paris)
   const { data: rq } = await db.from("ia_reglages").select("valeur").eq("cle", "quotas_defaut").maybeSingle();
   const max = Number((rq?.valeur as Record<string, number>)?.assistant_par_jour ?? 0) + Number(q?.bonus_assistant ?? 0);
-  return Math.max(0, max - Number(q?.assistant_jour ?? 0));
+  return Math.max(0, max - utilises);
 }
 
 async function assistant(a: {
