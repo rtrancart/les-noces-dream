@@ -5,7 +5,7 @@ import { useInfosCouple } from "@/components/atelier/useInfosCouple";
 
 const MODULES = [
   { ...ONGLETS[1], etat: "Trouvez vos prestataires", pret: true },
-  { ...ONGLETS[2], etat: "Votre charte et votre monogramme · bientôt", pret: false },
+  { ...ONGLETS[2], etat: "Votre charte et votre monogramme", pret: true },
   { ...ONGLETS[3], etat: "Vos tâches mois par mois · bientôt", pret: false },
   { ...ONGLETS[4], etat: "Préparez votre livret de cérémonie · bientôt", pret: false },
 ];
@@ -20,7 +20,7 @@ export default function AtelierAccueil() {
           <h1 className="font-serif text-4xl lg:text-5xl text-foreground mt-1 break-words">{infos.nom}</h1>
           <p className="font-sans text-sm text-muted-foreground mt-2">
             {infos.dateTexte ?? (
-              <>Date du mariage à définir · <Link to="/mon-compte" className="text-atelier-or font-medium hover:underline">l'ajouter</Link></>
+              <>Date du mariage à définir · <Link to="/atelier/style" className="text-atelier-or font-medium hover:underline">l'ajouter</Link></>
             )}
           </p>
         </div>
@@ -50,7 +50,7 @@ export default function AtelierAccueil() {
         <h2 className="font-serif text-2xl text-foreground">Commencez par l'assistant</h2>
         <p className="font-sans text-sm text-muted-foreground mt-2 leading-relaxed">
           Décrivez votre projet avec vos mots : lieu, style, nombre d'invités, budget. L'assistant vous propose des prestataires
-          de LesNoces.net qui y correspondent. Le planning, la charte et le livret arrivent bientôt.
+          de LesNoces.net qui y correspondent. Dans « Notre style », créez votre charte et votre monogramme ; le planning et le livret arrivent bientôt.
         </p>
         <Link to="/atelier/assistant"
           className="mt-4 inline-flex items-center gap-2 rounded-full bg-atelier-or px-6 py-3 font-sans text-sm font-semibold text-primary-foreground hover:bg-atelier-or/90">
