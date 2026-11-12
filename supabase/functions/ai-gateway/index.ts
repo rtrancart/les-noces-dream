@@ -217,7 +217,8 @@ Deno.serve(async (req) => {
 
 
 // ───────────────────────── Assistant ─────────────────────────
-type Db = ReturnType<typeof createClient>;
+// deno-lint-ignore no-explicit-any
+type Db = any;
 
 async function lireTarif(db: Db, m: string) {
   const { data } = await db.from("ia_tarifs").select("prix_entree_eur_par_million, prix_sortie_eur_par_million").eq("model", m).maybeSingle();

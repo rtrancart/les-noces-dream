@@ -1,5 +1,6 @@
 // ─── Usage 'assistant' : tool calling Anthropic + recherche sémantique ───
-import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+// deno-lint-ignore no-explicit-any
+type SupabaseClient = any;
 
 export const CHAMPS_INTERNES = ["sim_brute", "pertinence_norm", "score_classement", "score", "meme_region"];
 const MAX_APPELS_OUTIL = 2;
