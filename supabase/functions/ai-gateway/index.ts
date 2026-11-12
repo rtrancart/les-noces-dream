@@ -383,3 +383,117 @@ async function resumer(db: Db, userId: string, convId: string, ancien: string | 
     await log({ statut: "erreur", erreur: (e as Error).message.slice(0, 500), duree_ms: Date.now() - t0 });
   }
 }
+
+// ───────────────────────── Charte et vision ─────────────────────────
+type ArgsSimple = {
+  db: Db; userId: string; estAdmin: boolean; p: "anthropic" | "mistral"; model: string; tarifOk: boolean;
+  tarif: { prix_entree_eur_par_million: number; prix_sortie_eur_par_million: number } | null;
+  prompt: { contenu: string; max_tokens: number };
+  log: (l: Record<string, unknown>) => PromiseLike<unknown>;
+};
+const coutDe = (a: ArgsSimple, tin: number, tout: number) =>
+  a.tarifOk ? (tin * Number(a.tarif!.prix_entree_eur_par_million) + tout * Number(a.tarif!.prix_sortie_eur_par_million)) / 1e6 : null;
+
+function enBase64(o: Uint8Array) {
+  let s = "";
+  for (let i = 0; i < o.length; i += 0x8000) s += String.fromCharCode(...o.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+async function vision(a: ArgsSimple & { photo: { id: string; storage_path: string; format: string } }) {
+  const annuler = () => a.estAdmin ? null : a.db.rpc("annuler_quota_ia", { p_user_id: a.userId, p_usage: "vision" });
+  const { data: blob, error } = await a.db.storage.from("maries-assets").download(a.photo.storage_path);
+  if (error || !blob) { await annuler(); return erreur("photo_introuvable", "Photo introuvable", 404); }
+  const b64 = enBase64(new Uint8Array(await blob.arrayBuffer()));
+  const consigne = { type: "text", text: "Analyse cette photo d'inspiration." };
+  const contenu = a.p === "anthropic"
+    ? [{ type: "image", source: { type: "base64", media_type: a.photo.format, data: b64 } }, consigne]
+    : [{ type: "image_url", image_url: `data:${a.photo.format};base64,${b64}` }, consigne];
+  const debut = Date.now();
+  let tin = 0, tout = 0, stop: string | null = null, sortie: unknown = null;
+  try {
+    for (let essai = 0; essai < 2; essai++) {
+      const res = await appeler(a.p, a.model, a.prompt.contenu, a.prompt.max_tokens, [{ role: "user", content: contenu }]);
+      tin += res.tin; tout += res.tout; stop = res.stop;
+      try { sortie = extraireJson(res.texte); break; } catch { if (essai === 1) throw new Error("JSON invalide après 2 essais"); }
+    }
+  } catch (e) {
+    await annuler();
+    await a.log({ provider: a.p, model: a.model, statut: "erreur", erreur: (e as Error).message.slice(0, 500), tokens_entree: tin, tokens_sortie: tout, duree_ms: Date.now() - debut, cout_eur: coutDe(a, tin, tout), stop_reason: stop });
+    return erreur("erreur_ia", "L'analyse n'a pas pu aboutir, réessayez", 502);
+  }
+  const analyse = nettoyerVision(sortie);
+  await a.log({ provider: a.p, model: a.model, statut: "succes", tokens_entree: tin, tokens_sortie: tout, duree_ms: Date.now() - debut, cout_eur: coutDe(a, tin, tout), stop_reason: stop });
+  // Seule la passerelle écrit analyse_ia (le couple n'a aucun droit d'écriture sur cette table)
+  await a.db.from("photos_inspiration").update({ analyse_ia: analyse, analyse_le: new Date().toISOString() }).eq("id", a.photo.id);
+  return json({ analyse, restants: a.estAdmin ? null : await restantsTotal(a.db, a.userId, "vision") });
+}
+
+async function restantsTotal(db: Db, userId: string, usage: "charte" | "vision") {
+  const [{ data: q }, { data: rq }] = await Promise.all([
+    db.from("ia_quotas").select("charte_total, vision_total, bonus_charte, bonus_vision").eq("user_id", userId).maybeSingle(),
+    db.from("ia_reglages").select("valeur").eq("cle", "quotas_defaut").maybeSingle(),
+  ]);
+  const v = (rq?.valeur ?? {}) as Record<string, number>;
+  const max = Number(v[`${usage}_total`] ?? 0) + Number(q?.[`bonus_${usage}`] ?? 0);
+  return Math.max(0, max - Number(q?.[`${usage}_total`] ?? 0));
+}
+
+async function charte(a: ArgsSimple) {
+  const annuler = () => a.estAdmin ? null : a.db.rpc("annuler_quota_ia", { p_user_id: a.userId, p_usage: "charte" });
+  const [{ data: pm }, { data: photos }, { data: pol }] = await Promise.all([
+    a.db.from("profils_mariage").select("*").eq("user_id", a.userId).maybeSingle(),
+    a.db.from("photos_inspiration").select("analyse_ia, couleurs_dominantes").eq("user_id", a.userId).eq("type", "inspiration")
+      .not("analyse_ia", "is", null).order("created_at", { ascending: false }).limit(6),
+    a.db.from("bibliotheque_polices").select("nom, categorie, usage, par_defaut").eq("actif", true),
+  ]);
+  const polices = (pol ?? []) as Police[];
+  const evitees = famillesPastilles(pm?.couleurs_evitees ?? []);
+  const groupes: Record<string, string> = { serif_elegant: "Serif élégant", capitales_classiques: "Capitales classiques", script: "Script (titres uniquement)", sans_serif: "Sans-serif", manuscrit_decontracte: "Manuscrit décontracté (titres uniquement)" };
+  const listePolices = Object.entries(groupes).map(([k, l]) =>
+    `- ${l} : ${polices.filter((x) => x.categorie === k).map((x) => x.nom + (x.usage === "titre" && k !== "script" && k !== "manuscrit_decontracte" ? " (titres seulement)" : "")).join(", ")}`).join("\n");
+  const analyses = (photos ?? []).map((ph: { analyse_ia: { description?: string; ambiances?: string[]; matieres?: string[] }; couleurs_dominantes: string[] }, i: number) =>
+    `- Photo ${i + 1} : ${ph.analyse_ia?.description ?? ""}${ph.analyse_ia?.ambiances?.length ? ` Ambiances : ${ph.analyse_ia.ambiances.join(", ")}.` : ""}${ph.analyse_ia?.matieres?.length ? ` Matières : ${ph.analyse_ia.matieres.join(", ")}.` : ""}${ph.couleurs_dominantes?.length ? ` Couleurs dominantes : ${ph.couleurs_dominantes.join(", ")}.` : ""}`).join("\n");
+  const message = [
+    `Profil du couple :\n${blocProfil(pm) || "(questionnaire non rempli)"}`,
+    pm?.couleurs_evitees?.length ? `Couleurs à ne jamais utiliser, même en nuance : ${libellesPastilles(pm.couleurs_evitees).join(", ")}.` : "",
+    analyses ? `Analyse de leurs photos d'inspiration :\n${analyses}` : "",
+    `Polices autorisées (nom exact) :\n${listePolices}`,
+  ].filter(Boolean).join("\n\n");
+
+  const messages: { role: string; content: unknown }[] = [{ role: "user", content: message }];
+  const debut = Date.now();
+  let tin = 0, tout = 0, stop: string | null = null, sortie: unknown = null, essais = 0;
+  try {
+    for (; essais < 2; essais++) {
+      const res = await appeler(a.p, a.model, a.prompt.contenu, a.prompt.max_tokens, messages);
+      tin += res.tin; tout += res.tout; stop = res.stop;
+      let pb: string[];
+      try { sortie = extraireJson(res.texte); pb = problemes(sortie, polices, evitees); }
+      catch { pb = ["la réponse n'est pas un objet JSON valide"]; }
+      if (!pb.length) break;
+      if (essais === 1) { if (!sortie) throw new Error("JSON invalide après 2 essais"); break; }
+      messages.push({ role: "assistant", content: res.texte }, { role: "user", content: `Corrige ta proposition : ${pb.join(" ; ")}. Réponds uniquement avec l'objet JSON complet.` });
+    }
+  } catch (e) {
+    await annuler();
+    await a.log({ provider: a.p, model: a.model, statut: "erreur", erreur: (e as Error).message.slice(0, 500), tokens_entree: tin, tokens_sortie: tout, duree_ms: Date.now() - debut, cout_eur: coutDe(a, tin, tout), stop_reason: stop });
+    return erreur("erreur_ia", "La charte n'a pas pu être créée, réessayez", 502);
+  }
+  const { charte: c, corrections } = corriger(sortie, polices, evitees);
+  await a.log({ provider: a.p, model: a.model, statut: "succes", tokens_entree: tin, tokens_sortie: tout, duree_ms: Date.now() - debut, cout_eur: coutDe(a, tin, tout), stop_reason: stop,
+    erreur: corrections.length || essais ? `essais ${Math.min(essais, 1) + 1} ; corrections : ${corrections.join(", ") || "aucune"}`.slice(0, 500) : null });
+
+  // L'ancienne charte active garde son monogramme et son logo ; on les reprend
+  const { data: ancienne } = await a.db.from("chartes_mariage").select("id, monogramme, logo_perso_url").eq("user_id", a.userId).eq("active", true).maybeSingle();
+  if (ancienne) await a.db.from("chartes_mariage").update({ active: false }).eq("id", ancienne.id);
+  const { data: ligne, error } = await a.db.from("chartes_mariage").insert({
+    user_id: a.userId, ...c, active: true, source: "ia", monogramme: ancienne?.monogramme ?? null, logo_perso_url: ancienne?.logo_perso_url ?? null,
+  }).select("*").single();
+  if (error) {
+    console.error("charte", error);
+    if (ancienne) await a.db.from("chartes_mariage").update({ active: true }).eq("id", ancienne.id);
+    return erreur("erreur_interne", "La charte n'a pas pu être enregistrée", 500);
+  }
+  return json({ charte: ligne, corrections, restants: a.estAdmin ? null : await restantsTotal(a.db, a.userId, "charte") });
+}
