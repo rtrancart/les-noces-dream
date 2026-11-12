@@ -256,9 +256,15 @@ async function assistant(a: {
     conv = data;
   }
   const { data: hist } = conv
-    ? await db.from("messages_atelier").select("role, contenu").eq("conversation_id", conv.id).order("created_at", { ascending: false }).limit(10)
+    ? await db.from("messages_atelier").select("role, contenu, recommandations").eq("conversation_id", conv.id).order("created_at", { ascending: false }).limit(10)
     : { data: [] };
-  const historique = (hist ?? []).reverse().map((m: { role: "user" | "assistant"; contenu: string }) => ({ role: m.role, content: m.contenu }));
+  // Les fiches des tours précédents ne sont pas rechargées : on rappelle seulement quels prestataires avaient été proposés.
+  const historique = (hist ?? []).reverse().map((m: { role: "user" | "assistant"; contenu: string; recommandations: { nom_commercial?: string; ville?: string }[] | null }) => {
+    const recos = m.role === "assistant" && Array.isArray(m.recommandations) && m.recommandations.length
+      ? `\n\n[Prestataires proposés dans cette réponse, issus d'une recherche : ${m.recommandations.map((r) => `${r.nom_commercial ?? "?"} (${r.ville ?? "?"})`).join(", ")}. Pour en reparler ou les recommander à nouveau, relance une recherche.]`
+      : "";
+    return { role: m.role, content: m.contenu + recos };
+  });
   // L'API exige un premier message 'user' et une alternance : on retire un éventuel 'assistant' en tête.
   while (historique.length && historique[0].role !== "user") historique.shift();
 
@@ -332,7 +338,7 @@ async function resumer(db: Db, userId: string, convId: string, ancien: string | 
   const t0 = Date.now();
   const log = (l: Record<string, unknown>) => db.from("ia_logs").insert({ usage: "resume", user_id: userId, provider: "anthropic", model, ...l });
   try {
-    const res = await appeler("anthropic", model, p.contenu, p.max_tokens, [{ role: "user", content: contenu }]);
+    const res = await appeler("anthropic", model, p.contenu, Math.max(p.max_tokens, 1500), [{ role: "user", content: contenu }]);
     const tar = await lireTarif(db, model);
     await log({ statut: "succes", tokens_entree: res.tin, tokens_sortie: res.tout, duree_ms: Date.now() - t0, stop_reason: res.stop, cout_eur: tar ? (res.tin * tar.e + res.tout * tar.s) / 1e6 : null });
     await db.from("conversations_atelier").update({ resume: res.texte.trim().split("\n").slice(0, 10).join("\n"), nb_reponses_depuis_resume: 0 }).eq("id", convId);
