@@ -47,7 +47,7 @@ export function dessinerOrnement(id: string, c: string): string {
         f += feuille(200 + 160 * Math.cos(g), 200 + 160 * Math.sin(g), (g * 180) / Math.PI + 90 + 28, 26, 9);
         f += feuille(200 + 160 * Math.cos(d), 200 + 160 * Math.sin(d), (d * 180) / Math.PI - 90 - 28, 26, 9);
       }
-      return `<path d="M 200 360 m -150 -80 A 160 160 0 0 0 200 360 A 160 160 0 0 0 350 280" ${trait} stroke-width="1.5"/><g fill="${c}">${f}</g>`;
+      return `<path d="M 61 280 A 160 160 0 0 0 200 360 A 160 160 0 0 0 339 280" ${trait} stroke-width="1.5"/><g fill="${c}">${f}</g>`;
     }
     case "branche_feuillage": {
       let f = "";
