@@ -42,16 +42,12 @@ export function dessinerOrnement(id: string, c: string): string {
     case "losange": return `<polygon points="200,30 370,200 200,370 30,200" ${trait} stroke-width="2.5" stroke-linejoin="round"/><polygon points="200,48 352,200 200,352 48,200" ${trait} stroke-width="1"/>`;
     case "couronne_laurier": {
       let f = "";
-      for (const cote of [-1, 1]) {
-        for (let i = 0; i < 9; i++) {
-          const a = (110 + i * 16) * Math.PI / 180;
-          const x = 200 + cote * 165 * Math.cos(a - Math.PI / 2 + Math.PI / 2) * -1, y = 200 + 165 * Math.sin(a);
-          const deg = (a * 180) / Math.PI;
-          f += feuille(cote < 0 ? 200 - 165 * Math.sin(a - Math.PI / 2 + Math.PI) : 200 + 165 * Math.sin(a - Math.PI / 2 + Math.PI), y, cote < 0 ? deg + 90 + 35 : -(deg + 90 + 35), 26, 9);
-          void x;
-        }
+      for (let i = 0; i < 9; i++) {
+        const g = (100 + i * 15) * Math.PI / 180, d = (80 - i * 15) * Math.PI / 180;
+        f += feuille(200 + 160 * Math.cos(g), 200 + 160 * Math.sin(g), (g * 180) / Math.PI + 90 + 28, 26, 9);
+        f += feuille(200 + 160 * Math.cos(d), 200 + 160 * Math.sin(d), (d * 180) / Math.PI - 90 - 28, 26, 9);
       }
-      return `<path d="M 200 ${200 + 165} m -6 0 a 6 6 0 1 0 12 0" ${trait} stroke-width="1.5"/><g fill="${c}">${f}</g>`;
+      return `<path d="M 200 360 m -150 -80 A 160 160 0 0 0 200 360 A 160 160 0 0 0 350 280" ${trait} stroke-width="1.5"/><g fill="${c}">${f}</g>`;
     }
     case "branche_feuillage": {
       let f = "";
