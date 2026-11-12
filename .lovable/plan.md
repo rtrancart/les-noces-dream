@@ -23,9 +23,10 @@ Les 14 catégories prestataire citées existent toutes à l'identique dans le ca
 - Barre de progression : faites / actives (non masquées).
 - Sections : « À rattraper » (non faites, échéance passée, triées priorité puis échéance d'origine, facultatives repliées dans « N tâches facultatives »), puis frise par mois jusqu'au mariage, puis « Après le mariage ». Les tâches cochées restent à leur place, barrées.
 - Chaque tâche : case à cocher, titre, description dépliable, échéance modifiable (sélecteur de date), menu « … » avec Masquer (et Supprimer pour une tâche perso), lien « Tâches masquées (N) » pour les réafficher.
-- « Trouver un prestataire » : ouvre l'assistant avec « Je cherche [catégorie en minuscules] pour notre mariage » prérempli (mécanisme déjà en place).
+- « Trouver un prestataire » : ouvre l'assistant avec le message propre au modèle (nouveau champ « message pour l'assistant », vos 17 phrases initiales, modifiable dans le back-office), ex. « Nous cherchons un photographe pour notre mariage. »
 - « Ouvrir » : Notre style → /atelier/style ; Livret → onglet Livret (encore « Bientôt disponible »).
 - « Ajouter une tâche » : titre, date, catégorie (liste des catégories existantes).
+- Mariage passé : seule la section « Après le mariage » s'affiche, avec un lien « Voir tout le planning » pour consulter le reste (À rattraper masquée).
 - Sans date de mariage : message « Indiquez la date de votre mariage pour obtenir votre planning » + lien vers le questionnaire (étape date).
 
 ## 3. Accueil de l'Atelier
@@ -55,6 +56,7 @@ CREATE TABLE public.modeles_retroplanning (
   types_ceremonie text[] NOT NULL DEFAULT '{}'
     CHECK (types_ceremonie <@ ARRAY['civile','religieuse','laique']),
   categorie_prestataire text,
+  message_assistant text,
   lien_module text CHECK (lien_module IN ('style','livret')),
   actif boolean NOT NULL DEFAULT true,
   ordre int NOT NULL DEFAULT 0,
