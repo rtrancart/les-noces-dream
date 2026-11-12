@@ -134,10 +134,14 @@ async function detailTokens(model: string, system: string, tools: unknown[], con
   const sys = await compter(model, { system, messages: x }) - base;
   const outils = await compter(model, { tools, messages: x }) - base;
   const total = await compter(model, { system, tools, messages: conv });
-  const vide = conv.map((m) => Array.isArray(m.content)
+  // Les blocs de réflexion signés ne peuvent pas être recomptés dans une conversation modifiée : on les retire des deux variantes.
+  const sansReflexion = conv.map((m) => Array.isArray(m.content)
+    ? { ...m, content: (m.content as Record<string, unknown>[]).filter((b) => b.type !== "thinking" && b.type !== "redacted_thinking") } : m);
+  const vide = sansReflexion.map((m) => Array.isArray(m.content)
     ? { ...m, content: (m.content as Record<string, unknown>[]).map((b) => b.type === "tool_result" ? { ...b, content: "" } : b) } : m);
-  const resultats = total - await compter(model, { system, tools, messages: vide });
-  return { total, prompt_systeme: sys, definition_outil: outils, resultats_outil: resultats, historique_et_message: total - sys - outils - resultats };
+  const totalSans = await compter(model, { system, tools, messages: sansReflexion });
+  const resultats = totalSans - await compter(model, { system, tools, messages: vide });
+  return { total, prompt_systeme: sys, definition_outil: outils, resultats_outil: resultats, reflexion_precedente: total - totalSans, historique_et_message: totalSans - sys - outils - resultats };
 }
 
 function extraireJson(t: string): unknown {
