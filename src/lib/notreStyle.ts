@@ -119,7 +119,12 @@ export async function envoyerFichier(f: Blob, nom: string, type: "inspiration" |
   if (meta.hauteur) fd.append("hauteur", String(meta.hauteur));
   if (meta.couleurs) fd.append("couleurs", JSON.stringify(meta.couleurs));
   const { data, error } = await supabase.functions.invoke("upload-asset", { body: fd });
-  if (error) { const e = await lireCode(error); throw new ErreurStyle(e.code, e.message ?? "L'envoi a échoué, réessayez."); }
+  if (error) {
+    const e = await lireCode(error);
+    // La protection du serveur bloque un SVG contenant du code avant notre fonction (réponse sans en-têtes CORS → erreur réseau).
+    const svgBloque = e.code === "erreur" && /\.svg$/i.test(nom);
+    throw new ErreurStyle(svgBloque ? "fichier_bloque" : e.code, svgBloque ? "Ce SVG a été refusé par mesure de sécurité : il contient du code (script, entité…). Enregistrez-le à nouveau en SVG simple, ou envoyez-le en PNG." : e.message ?? "L'envoi a échoué, réessayez.");
+  }
   return data as { fichier: PhotoInspiration; espace_utilise: number; espace_max: number };
 }
 
