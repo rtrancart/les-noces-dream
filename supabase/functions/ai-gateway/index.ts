@@ -20,6 +20,7 @@ const Body = z.object({
     message: z.string().trim().min(1).max(4000),
     historique: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) })).max(20).optional(),
     conversation_id: z.string().uuid().optional(),
+    mesurer_tokens: z.boolean().optional(),
   }),
 });
 // Test admin de la recherche (renvoie les champs de classement internes).
@@ -241,7 +242,7 @@ async function assistant(a: {
   db: Db; userId: string; estAdmin: boolean; model: string; tarifOk: boolean;
   tarif: { prix_entree_eur_par_million: number; prix_sortie_eur_par_million: number } | null;
   prompt: { contenu: string; max_tokens: number; effort?: string | null };
-  donnees: { message: string; conversation_id?: string };
+  donnees: { message: string; conversation_id?: string; mesurer_tokens?: boolean };
   log: (l: Record<string, unknown>) => PromiseLike<unknown>;
 }) {
   const { db, userId, donnees } = a;
@@ -282,6 +283,7 @@ async function assistant(a: {
     r = await executerAssistant({ ...c.ctx, model: a.model }, {
       system, maxTokens: a.prompt.max_tokens, effort: a.prompt.effort ?? null, reglesFiltres,
       messages: [...historique, { role: "user", content: donnees.message }],
+      mesurer: a.estAdmin && donnees.mesurer_tokens === true,
     });
   } catch (e) {
     await annuler();
@@ -325,7 +327,8 @@ async function assistant(a: {
     restants = Math.max(0, max - Number(q?.assistant_jour ?? 0));
   }
   return json({ conversation_id: conv!.id, message_id: msgA?.id ?? null, message: r.message, recommandations,
-    messages_restants: restants, appels_outil: r.appelsOutil, effort_ignore: r.effortIgnore || undefined });
+    messages_restants: restants, appels_outil: r.appelsOutil, effort_ignore: r.effortIgnore || undefined,
+    detail_tokens: r.mesures.length ? r.mesures : undefined });
 }
 
 async function resumer(db: Db, userId: string, convId: string, ancien: string | null) {
