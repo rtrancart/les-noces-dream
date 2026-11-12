@@ -154,7 +154,7 @@ export function blocProfil(p: any, nomStyle?: string | null): string {
   if (p?.types_ceremonie?.length) l.push(`Cérémonie : ${p.types_ceremonie.join(", ")}`);
   const style = [p?.ambiances?.length ? p.ambiances.join(", ") : "", p?.cadre ? `cadre ${p.cadre}` : ""].filter(Boolean).join(" ; ");
   if (style) l.push(`Ambiances : ${style}`);
-  const coul = [p?.couleurs_aimees?.length ? `aimées ${p.couleurs_aimees.join(", ")}` : "", p?.couleurs_evitees?.length ? `à éviter ${p.couleurs_evitees.join(", ")}` : ""].filter(Boolean).join(" ; ");
+  const coul = [p?.couleurs_aimees?.length ? `aimées ${libellesPastilles(p.couleurs_aimees).join(", ")}` : "", p?.couleurs_evitees?.length ? `à éviter ${libellesPastilles(p.couleurs_evitees).join(", ")}` : ""].filter(Boolean).join(" ; ");
   if (coul) l.push(`Couleurs : ${coul}`);
   const mat = [p?.matieres?.length ? p.matieres.join(", ") : "", p?.formalite ? `tenue ${FORMALITE[p.formalite]}` : ""].filter(Boolean).join(" ; ");
   if (mat) l.push(`Matières : ${mat}`);
@@ -174,3 +174,29 @@ export function nettoyerVision(brut: unknown) {
     description: String(o.description ?? "").trim().slice(0, 300) || "Photo sans élément de décoration identifiable",
   };
 }
+
+/** Pastilles du questionnaire (copie identique dans src/lib/notreStyle.ts). */
+export const PASTILLES: { id: string; label: string; hex: string; famille: string }[] = [
+  { id: "blanc", label: "Blanc", hex: "#FFFFFF", famille: "blanc" },
+  { id: "ivoire", label: "Ivoire", hex: "#F3EBDD", famille: "blanc" },
+  { id: "gris", label: "Gris", hex: "#9A9A9A", famille: "gris" },
+  { id: "noir", label: "Noir", hex: "#1C1C1C", famille: "noir" },
+  { id: "dore", label: "Doré", hex: "#C9A24B", famille: "jaune" },
+  { id: "jaune", label: "Jaune", hex: "#E9C84A", famille: "jaune" },
+  { id: "orange", label: "Orange", hex: "#E58A3A", famille: "orange" },
+  { id: "terracotta", label: "Terracotta", hex: "#C07A55", famille: "orange" },
+  { id: "marron", label: "Marron", hex: "#6B4A33", famille: "marron" },
+  { id: "rouge", label: "Rouge", hex: "#C0392B", famille: "rouge" },
+  { id: "bordeaux", label: "Bordeaux", hex: "#6D1A2C", famille: "rouge" },
+  { id: "rose_poudre", label: "Rose poudré", hex: "#E8C4C4", famille: "rose" },
+  { id: "fuchsia", label: "Fuchsia", hex: "#C2337A", famille: "rose" },
+  { id: "lavande", label: "Lavande", hex: "#B9A7D6", famille: "violet" },
+  { id: "violet", label: "Violet", hex: "#6C3F8F", famille: "violet" },
+  { id: "bleu_ciel", label: "Bleu ciel", hex: "#A9CBE3", famille: "bleu" },
+  { id: "bleu_marine", label: "Bleu marine", hex: "#1F2F4D", famille: "bleu" },
+  { id: "sauge", label: "Vert sauge", hex: "#9CAF88", famille: "vert" },
+  { id: "vert", label: "Vert", hex: "#3E7C4A", famille: "vert" },
+  { id: "olive", label: "Vert olive", hex: "#4F5A3A", famille: "vert" },
+];
+export const libellesPastilles = (ids: string[] = []) => ids.map((i) => PASTILLES.find((p) => p.id === i)?.label ?? i);
+export const famillesPastilles = (ids: string[] = []) => [...new Set(ids.map((i) => PASTILLES.find((p) => p.id === i)?.famille).filter(Boolean) as string[])];
