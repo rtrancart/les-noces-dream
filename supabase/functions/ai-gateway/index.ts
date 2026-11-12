@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
 import { executerAssistant, rechercher } from "./assistant.ts";
+import { blocProfil, corriger, famillesPastilles, libellesPastilles, nettoyerVision, problemes, type Police } from "./charte.ts";
 
 const TIMEOUT_MS = 120_000;
 const USAGES = ["assistant", "filtres", "livret", "charte", "vision"] as const;
@@ -17,7 +18,8 @@ const AUTORISES_EN_DEGRADE: Usage[] = ["assistant", "filtres"];
 const Body = z.object({
   usage: z.enum(USAGES),
   donnees: z.object({
-    message: z.string().trim().min(1).max(4000),
+    message: z.string().trim().min(1).max(4000).optional(),
+    photo_id: z.string().uuid().optional(),
     historique: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) })).max(20).optional(),
     conversation_id: z.string().uuid().optional(),
     mesurer_tokens: z.boolean().optional(),
@@ -51,7 +53,7 @@ function extraireJson(t: string): unknown {
 type Resultat = { texte: string; tin: number; tout: number; stop: string | null };
 
 async function appeler(p: "anthropic" | "mistral", model: string, system: string, maxTokens: number,
-  messages: { role: string; content: string }[]): Promise<Resultat> {
+  messages: { role: string; content: unknown }[]): Promise<Resultat> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
@@ -119,6 +121,21 @@ Deno.serve(async (req) => {
   const parsed = Body.safeParse(corps);
   if (!parsed.success) return json({ error: "donnees_invalides", details: parsed.error.flatten().fieldErrors }, 400);
   const { usage, donnees } = parsed.data;
+  if ((usage === "assistant" || usage === "filtres" || usage === "livret") && !donnees.message) {
+    return json({ error: "donnees_invalides", details: { message: ["Message requis"] } }, 400);
+  }
+  // Vision : la photo doit appartenir au couple et être une image analysable (pas de SVG)
+  let photo: { id: string; storage_path: string; format: string } | null = null;
+  if (usage === "vision") {
+    if (!donnees.photo_id) return json({ error: "donnees_invalides", details: { photo_id: ["Photo requise"] } }, 400);
+    const { data: ph } = await db.from("photos_inspiration").select("id, storage_path, format, type")
+      .eq("id", donnees.photo_id).eq("user_id", userId).maybeSingle();
+    if (!ph) return erreur("photo_introuvable", "Photo introuvable", 404);
+    if (!["image/jpeg", "image/png", "image/webp"].includes(ph.format) || ph.type !== "inspiration") {
+      return erreur("format_non_analysable", "Seules les photos JPG, PNG et WEBP peuvent être analysées", 400);
+    }
+    photo = ph;
+  }
 
   const log = (l: Record<string, unknown>) =>
     db.from("ia_logs").insert({ usage, user_id: userId, ...l }).then(({ error }: { error: unknown }) => error && console.error("log", error));
@@ -173,8 +190,11 @@ Deno.serve(async (req) => {
     return await assistant({ db, userId, estAdmin, model, tarifOk, tarif, prompt, donnees, log });
   }
 
+  if (usage === "vision") return await vision({ db, userId, estAdmin, p, model, tarifOk, tarif, prompt, photo: photo!, log });
+  if (usage === "charte") return await charte({ db, userId, estAdmin, p, model, tarifOk, tarif, prompt, log });
+
   // 6. Appel (1 nouvel essai si le JSON attendu est invalide)
-  const messages = [...(donnees.historique ?? []), { role: "user", content: donnees.message }];
+  const messages = [...(donnees.historique ?? []), { role: "user", content: donnees.message! }];
   const debut = Date.now();
   let tin = 0, tout = 0, stop: string | null = null, sortie: unknown = null;
   try {
@@ -255,7 +275,7 @@ async function assistant(a: {
   db: Db; userId: string; estAdmin: boolean; model: string; tarifOk: boolean;
   tarif: { prix_entree_eur_par_million: number; prix_sortie_eur_par_million: number } | null;
   prompt: { contenu: string; max_tokens: number; effort?: string | null };
-  donnees: { message: string; conversation_id?: string; mesurer_tokens?: boolean };
+  donnees: { message?: string; conversation_id?: string; mesurer_tokens?: boolean };
   log: (l: Record<string, unknown>) => PromiseLike<unknown>;
 }) {
   const { db, userId, donnees } = a;
@@ -286,6 +306,13 @@ async function assistant(a: {
   const regles = (pf?.contenu ?? "").split("Catégories et sous-catégories autorisées")[1];
   const reglesFiltres = regles ? `Catégories et sous-catégories autorisées${regles}` : "";
   let system = a.prompt.contenu.replaceAll("{date_du_jour}", dateDuJour());
+  // Profil du couple et style de la charte active (questionnaire « Notre style »)
+  const [{ data: pm }, { data: ch }] = await Promise.all([
+    db.from("profils_mariage").select("*").eq("user_id", userId).maybeSingle(),
+    db.from("chartes_mariage").select("nom_style").eq("user_id", userId).eq("active", true).maybeSingle(),
+  ]);
+  const profil = blocProfil(pm, ch?.nom_style);
+  if (profil) system += `\n\nProfil du couple (déjà connu, ne le redemande pas ; utilise ses départements pour chercher sauf si le couple demande une autre zone) :\n${profil}`;
   if (conv?.resume) system += `\n\nRésumé de la conversation jusqu'ici :\n${conv.resume}`;
 
   const c = await contexte(db, userId, "assistant");
@@ -295,7 +322,7 @@ async function assistant(a: {
   try {
     r = await executerAssistant({ ...c.ctx, model: a.model }, {
       system, maxTokens: a.prompt.max_tokens, effort: a.prompt.effort ?? null, reglesFiltres,
-      messages: [...historique, { role: "user", content: donnees.message }],
+      messages: [...historique, { role: "user", content: donnees.message! }],
       mesurer: a.estAdmin && donnees.mesurer_tokens === true,
     });
   } catch (e) {
@@ -311,7 +338,7 @@ async function assistant(a: {
 
   // Persistance (service_role)
   if (!conv) {
-    const titre = donnees.message.replace(/\s+/g, " ").trim().slice(0, 60) || "Nouvelle conversation";
+    const titre = donnees.message!.replace(/\s+/g, " ").trim().slice(0, 60) || "Nouvelle conversation";
     const { data, error } = await db.from("conversations_atelier").insert({ user_id: userId, titre })
       .select("id, resume, nb_messages, nb_reponses_depuis_resume").single();
     if (error) return erreur("erreur_interne", "Conversation non enregistrée", 500);
@@ -323,7 +350,7 @@ async function assistant(a: {
       photo_principale: f.photo_principale, categorie: f.categorie, sous_categorie: f.sous_categorie, ville: f.ville, hors_zone: f.hors_zone };
   });
   const maintenant = Date.now();
-  const { error: e1 } = await db.from("messages_atelier").insert({ conversation_id: conv!.id, role: "user", contenu: donnees.message, created_at: new Date(maintenant).toISOString() });
+  const { error: e1 } = await db.from("messages_atelier").insert({ conversation_id: conv!.id, role: "user", contenu: donnees.message!, created_at: new Date(maintenant).toISOString() });
   const { data: msgA, error: e2 } = await db.from("messages_atelier").insert({ conversation_id: conv!.id, role: "assistant", contenu: r.message, recommandations, created_at: new Date(maintenant + 1).toISOString() }).select("id").single();
   if (e1 || e2) console.error("messages", e1, e2);
   const nbRep = conv!.nb_reponses_depuis_resume + 1;
