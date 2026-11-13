@@ -64,7 +64,6 @@ export default function AtelierAccueil() {
             ? <div key={m.to} aria-disabled="true" className={cn(classe, "opacity-70 cursor-default")}>{contenu}</div>
             : <Link key={m.to} to={m.to} className={cn(classe, "hover:shadow-[var(--shadow-soft)] transition-shadow")}>{contenu}</Link>;
         })}
-        ))}
       </div>
 
       {sections && (
