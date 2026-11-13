@@ -50,9 +50,9 @@ export function libelleMois(cle: string): string {
   const [a, m] = cle.split("-").map(Number);
   return `${MOIS[m - 1].charAt(0).toUpperCase()}${MOIS[m - 1].slice(1)} ${a}`;
 }
-export function dateCourte(iso: string): string {
-  const [, m, j] = iso.split("-").map(Number);
-  return `${j === 1 ? "1er" : j} ${MOIS[m - 1]}`;
+export function dateCourte(iso: string, jour = aujourdhui()): string {
+  const [a, m, j] = iso.split("-").map(Number);
+  return `${j === 1 ? "1er" : j} ${MOIS[m - 1]}${String(a) !== jour.slice(0, 4) ? ` ${a}` : ""}`;
 }
 
 export function construireSections(taches: Tache[], ref: string, jour = aujourdhui()): Sections {
