@@ -60,6 +60,12 @@ export default function AtelierPlanning() {
   const jourMariage = Number(data.ref.slice(8, 10));
   const montrerAvant = !s.mariagePasse || voirTout;
 
+  const premierVisible = s.mois.findIndex((g) => !(g.passe && g.taches.length > 0 && g.taches.every((t) => t.faite)));
+  const moisFaits = premierVisible < 0 ? s.mois : s.mois.slice(0, premierVisible);
+  const moisAffiches = premierVisible < 0 ? [] : s.mois.slice(premierVisible);
+  const nbFaitsPrec = moisFaits.reduce((n, g) => n + g.taches.length, 0);
+  const precOuvert = ouverts["__prec"] ?? false;
+
   const groupe = (g: GroupeMois) => {
     const restantes = g.taches.filter((t) => !t.faite);
     const ouvert = ouverts[g.cle] ?? g.courant;
@@ -126,7 +132,19 @@ export default function AtelierPlanning() {
         </section>
       )}
 
-      {montrerAvant && <ol className="mt-8 relative before:absolute before:left-[7px] before:top-3 before:bottom-8 before:w-0.5 before:bg-atelier-or/40">{s.mois.map(groupe)}</ol>}
+      {montrerAvant && <ol className="mt-8 relative before:absolute before:left-[7px] before:top-3 before:bottom-8 before:w-0.5 before:bg-atelier-or/40">
+        {moisFaits.length > 0 && (
+          <li className="relative pl-8 pb-6">
+            <span className="absolute left-0 top-1.5 h-4 w-4 rounded-full border-2 border-atelier-or bg-atelier-fond" />
+            <button type="button" onClick={() => setOuverts({ ...ouverts, __prec: !precOuvert })}
+              className="w-full flex items-center justify-between gap-2 rounded-xl border border-atelier-filet bg-card px-4 py-3 text-left font-sans text-sm text-muted-foreground hover:border-atelier-or/60">
+              <span>Mois précédents ({nbFaitsPrec} tâche{nbFaitsPrec > 1 ? "s" : ""} faite{nbFaitsPrec > 1 ? "s" : ""})</span>
+              <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", precOuvert && "rotate-180")} />
+            </button>
+            {precOuvert && <ol className="mt-4">{moisFaits.map(groupe)}</ol>}
+          </li>
+        )}
+        {moisAffiches.map(groupe)}</ol>}
 
       {s.apres.length > 0 && (
         <section className="mt-4">
