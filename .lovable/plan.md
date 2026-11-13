@@ -6,7 +6,8 @@
 - Les bounces qui arrivent par Brevo sont déjà bien traités. On n'y touche pas.
 
 ## Ce qui change
-1. **Règle commune** : une adresse qui a eu un bounce ou une plainte compte comme une opposition marketing. Les désinscriptions des emails de l'application (« unsubscribe ») ne sont pas concernées : elles portent sur les emails de service, pas sur le marketing.
+1. **Règle commune** : une adresse qui a eu un bounce définitif (hard bounce) ou une plainte compte comme une opposition marketing. Les désinscriptions des emails de l'application (« unsubscribe ») ne sont pas concernées : elles portent sur les emails de service, pas sur le marketing.
+   Les échecs temporaires (soft bounces : boîte pleine, serveur indisponible) ne sont jamais enregistrés comme blocage, ni par l'application ni par Brevo : ils ne déclenchent rien.
 2. **Synchro en temps réel** (une fiche est modifiée) : ces contacts partent dans la liste technique « desinscrits_marketing », avec le consentement marketing à faux. Ils ne vont jamais dans la liste « prestataires ».
 3. **Synchro de nuit** (compteurs) : même règle.
 4. **Nouveaux bounces** : quand l'application enregistre un nouveau bounce ou une nouvelle plainte, le contact Brevo est mis à jour au prochain passage de nuit au plus tard.
