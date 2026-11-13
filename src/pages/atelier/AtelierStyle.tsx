@@ -50,7 +50,7 @@ export default function AtelierStyle() {
     },
   });
   const { data: quotas, refetch: relireQuotas } = useQuery({ queryKey: ["atelier-quotas-style", user?.id], enabled: !!user, queryFn: lireQuotasStyle });
-  const recharger = () => { qc.invalidateQueries({ queryKey: cle }); qc.invalidateQueries({ queryKey: ["atelier-infos"] }); };
+  const recharger = () => { qc.invalidateQueries({ queryKey: cle }); qc.invalidateQueries({ queryKey: ["atelier-infos"] }); qc.invalidateQueries({ queryKey: ["atelier-taches"] }); };
 
   useEffect(() => { if (data && questionnaire === null) setQuestionnaire(etapeDemandee !== undefined || !data.profil?.questionnaire_termine_le); }, [data, questionnaire]);
 
