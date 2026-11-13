@@ -4141,6 +4141,7 @@ export type Database = {
           total_orphelins: number
         }[]
       }
+      prestataire_est_actif: { Args: { _id: string }; Returns: boolean }
       purge_sessions_fiche_expirees: { Args: never; Returns: number }
       purger_historique_navigation: { Args: never; Returns: number }
       rattraper_emails_demandes: { Args: never; Returns: Json }
