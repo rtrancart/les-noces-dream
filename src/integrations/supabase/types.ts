@@ -2013,6 +2013,57 @@ export type Database = {
           },
         ]
       }
+      modeles_retroplanning: {
+        Row: {
+          actif: boolean
+          categorie: string
+          categorie_prestataire: string | null
+          created_at: string
+          description: string | null
+          id: string
+          lien_module: string | null
+          message_assistant: string | null
+          mois_avant: number
+          ordre: number
+          priorite: number
+          titre: string
+          types_ceremonie: string[]
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          categorie: string
+          categorie_prestataire?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lien_module?: string | null
+          message_assistant?: string | null
+          mois_avant: number
+          ordre?: number
+          priorite?: number
+          titre: string
+          types_ceremonie?: string[]
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          categorie?: string
+          categorie_prestataire?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lien_module?: string | null
+          message_assistant?: string | null
+          mois_avant?: number
+          ordre?: number
+          priorite?: number
+          titre?: string
+          types_ceremonie?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       monitoring_alertes: {
         Row: {
           cle: string
@@ -3230,6 +3281,88 @@ export type Database = {
         }
         Relationships: []
       }
+      taches_couple: {
+        Row: {
+          categorie: string
+          created_at: string
+          date_echeance: string
+          description: string | null
+          echeance_modifiee: boolean
+          echeance_origine: string | null
+          faite: boolean
+          faite_le: string | null
+          id: string
+          masquee: boolean
+          masquee_auto: boolean
+          modele_id: string | null
+          perso: boolean
+          priorite: number
+          titre: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categorie: string
+          created_at?: string
+          date_echeance: string
+          description?: string | null
+          echeance_modifiee?: boolean
+          echeance_origine?: string | null
+          faite?: boolean
+          faite_le?: string | null
+          id?: string
+          masquee?: boolean
+          masquee_auto?: boolean
+          modele_id?: string | null
+          perso?: boolean
+          priorite?: number
+          titre: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categorie?: string
+          created_at?: string
+          date_echeance?: string
+          description?: string | null
+          echeance_modifiee?: boolean
+          echeance_origine?: string | null
+          faite?: boolean
+          faite_le?: string | null
+          id?: string
+          masquee?: boolean
+          masquee_auto?: boolean
+          modele_id?: string | null
+          perso?: boolean
+          priorite?: number
+          titre?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taches_couple_modele_id_fkey"
+            columns: ["modele_id"]
+            isOneToOne: false
+            referencedRelation: "modeles_retroplanning"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taches_couple_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "taches_couple_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -3753,11 +3886,16 @@ export type Database = {
         Returns: boolean
       }
       cle_zone_normalisee: { Args: { p_valeur: string }; Returns: string }
+      date_reference_mariage: { Args: { _uid: string }; Returns: string }
       definir_consentement_marketing: {
         Args: { p_consent: boolean }
         Returns: boolean
       }
       departement_depuis_cp: { Args: { p_cp: string }; Returns: string }
+      echeance_retroplanning: {
+        Args: { _mois_avant: number; _ref: string }
+        Returns: string
+      }
       enregistrer_consultation_prestataire: {
         Args: { p_prestataire_id: string }
         Returns: undefined
@@ -4069,6 +4207,7 @@ export type Database = {
         }
         Returns: Json
       }
+      synchroniser_taches_couple: { Args: { _uid: string }; Returns: undefined }
       valider_prestataire_migre: {
         Args: { p_prestataire_id: string }
         Returns: {
