@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { ONGLETS } from "./AtelierLayout";
 import { useInfosCouple } from "@/components/atelier/useInfosCouple";
 import { useTaches } from "@/components/atelier/planning/useTaches";
@@ -13,12 +14,14 @@ export default function AtelierAccueil() {
   const ref = planning?.ref ?? null;
   const sections = planning && ref ? construireSections(planning.taches, ref) : null;
   const aFaire = planning && ref ? aFaireCeMois(planning.taches, ref) : [];
-  const nbMois = sections ? (sections.mois.find((g) => g.courant)?.taches.filter((t) => !t.faite).length ?? 0) + sections.rattraper.length : 0;
+  const nbMois = sections ? (sections.mois.find((g) => g.courant)?.taches.filter((t) => !t.faite).length ?? 0) : 0;
+  const nbRetard = sections && !sections.mariagePasse ? sections.rattraper.length + sections.rattraperFacultatives.length : 0;
+  const etatPlanning = [nbRetard ? `${nbRetard} tâche${nbRetard > 1 ? "s" : ""} à rattraper` : "", nbMois ? `${nbMois} ce mois-ci` : ""].filter(Boolean).join(" · ");
   const MODULES = [
     { ...ONGLETS[1], etat: "Trouvez vos prestataires" },
     { ...ONGLETS[2], etat: "Votre charte et votre monogramme" },
-    { ...ONGLETS[3], etat: !ref ? "Indiquez votre date pour obtenir vos tâches" : nbMois ? `${nbMois} tâche${nbMois > 1 ? "s" : ""} à faire maintenant` : "Vos tâches mois par mois" },
-    { ...ONGLETS[4], etat: "Préparez votre livret de cérémonie · bientôt" },
+    { ...ONGLETS[3], etat: !ref ? "Indiquez votre date pour obtenir vos tâches" : etatPlanning || "Vos tâches mois par mois" },
+    { ...ONGLETS[4], etat: "Préparez votre livret de cérémonie", bientot: true },
   ];
   return (
     <div className="px-4 py-6 lg:px-12 lg:py-12 space-y-6 lg:space-y-8 max-w-6xl">
@@ -41,16 +44,26 @@ export default function AtelierAccueil() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-5">
-        {MODULES.map((m) => (
-          <Link key={m.to} to={m.to}
-            className="group rounded-2xl border border-atelier-filet bg-card p-4 lg:p-6 flex flex-col gap-3 hover:shadow-[var(--shadow-soft)] transition-shadow">
-            <span className="h-10 w-10 rounded-full bg-atelier-lin text-atelier-or grid place-items-center"><m.icon className="h-5 w-5" /></span>
-            <span className="font-serif text-xl text-foreground">{m.label}</span>
-            <span className="font-sans text-sm text-muted-foreground leading-snug">{m.etat}</span>
-            <span className="hidden lg:inline-flex mt-auto items-center gap-2 font-sans text-sm font-semibold text-atelier-or">
-              Ouvrir <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </span>
-          </Link>
+        {MODULES.map((m) => {
+          const contenu = (
+            <>
+              <span className="h-10 w-10 rounded-full bg-atelier-lin text-atelier-or grid place-items-center"><m.icon className="h-5 w-5" /></span>
+              <span className="font-serif text-xl text-foreground">{m.label}</span>
+              <span className="font-sans text-sm text-muted-foreground leading-snug">{m.etat}</span>
+              {"bientot" in m && m.bientot ? (
+                <span className="mt-auto font-sans text-xs lg:text-sm font-semibold text-muted-foreground">Bientôt disponible</span>
+              ) : (
+                <span className="hidden lg:inline-flex mt-auto items-center gap-2 font-sans text-sm font-semibold text-atelier-or">
+                  Ouvrir <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              )}
+            </>
+          );
+          const classe = "group rounded-2xl border border-atelier-filet bg-card p-4 lg:p-6 flex flex-col gap-3";
+          return "bientot" in m && m.bientot
+            ? <div key={m.to} aria-disabled="true" className={cn(classe, "opacity-70 cursor-default")}>{contenu}</div>
+            : <Link key={m.to} to={m.to} className={cn(classe, "hover:shadow-[var(--shadow-soft)] transition-shadow")}>{contenu}</Link>;
+        })}
         ))}
       </div>
 

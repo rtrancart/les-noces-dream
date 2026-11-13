@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, MoreHorizontal, Search, ArrowRight } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { dateCourte, type ModeleLien, type Tache } from "@/lib/planning";
+import { aujourdhui, dateCourte, type ModeleLien, type Tache } from "@/lib/planning";
 
 type Props = {
   tache: Tache; lien?: ModeleLien; compacte?: boolean;
@@ -27,9 +27,19 @@ export default function LigneTache({ tache: t, lien, compacte, onCocher, onEchea
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
           <button type="button" onClick={() => t.description && setOuverte(!ouverte)} className="text-left min-w-0 flex-1">
-            <span className={cn("font-sans text-[15px] font-medium leading-snug", t.faite ? "line-through text-muted-foreground" : "text-foreground")}>{t.titre}</span>
-            {t.priorite === 3 && <span className="ml-2 align-middle font-sans text-[11px] text-muted-foreground">facultatif</span>}
-            {t.description && !compacte && <ChevronDown className={cn("inline ml-1 h-3.5 w-3.5 text-muted-foreground transition-transform", ouverte && "rotate-180")} />}
+            {(() => {
+              const i = t.titre.lastIndexOf(" ");
+              const debut = i > 0 ? t.titre.slice(0, i + 1) : "";
+              const fin = i > 0 ? t.titre.slice(i + 1) : t.titre;
+              return (
+                <span className={cn("font-sans text-[15px] font-medium leading-snug", t.faite ? "line-through text-muted-foreground" : "text-foreground")}>
+                  {debut}<span className="whitespace-nowrap">{fin}
+                    {t.priorite === 3 && <span className="ml-2 align-middle font-sans text-[11px] font-normal text-muted-foreground no-underline">facultatif</span>}
+                    {t.description && !compacte && <ChevronDown className={cn("inline ml-1 h-3.5 w-3.5 align-[-2px] text-muted-foreground transition-transform", ouverte && "rotate-180")} />}
+                  </span>
+                </span>
+              );
+            })()}
           </button>
           {!compacte && (onMasquer || onSupprimer) && (
             <DropdownMenu>
@@ -50,7 +60,7 @@ export default function LigneTache({ tache: t, lien, compacte, onCocher, onEchea
         ) : (
           <button type="button" disabled={!onEcheance || compacte} onClick={() => setEdition(true)}
             className="block font-sans text-xs text-muted-foreground mt-0.5 enabled:hover:text-atelier-or">
-            {t.faite && t.faite_le ? `Fait le ${dateCourte(t.faite_le.slice(0, 10))}` : `Avant le ${dateCourte(t.date_echeance)}`}
+            {t.faite && t.faite_le ? `Fait le ${dateCourte(t.faite_le.slice(0, 10))}` : `${t.date_echeance < aujourdhui() ? "Idéalement avant le" : "Avant le"} ${dateCourte(t.date_echeance)}`}
           </button>
         )}
         {ouverte && t.description && !compacte && <p className="font-sans text-sm text-muted-foreground mt-1.5 leading-relaxed">{t.description}</p>}
