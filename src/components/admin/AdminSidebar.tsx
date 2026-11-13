@@ -50,6 +50,7 @@ const contentItems = [
   { title: "Pages contenu", url: "/admin/pages", icon: FileText },
   { title: "Pages région", url: "/admin/regions", icon: MapPin },
   { title: "Emails", url: "/admin/emails", icon: Mail },
+  { title: "Modèles de planning", url: "/admin/modeles-planning", icon: ClipboardList },
 ];
 
 const systemItems = [

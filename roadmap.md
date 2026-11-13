@@ -38,3 +38,8 @@
 - [x] Détail des tokens du test château (système, outil, historique, résultat)
 - [x] /atelier : accueil + barre d'onglets (mobile) / colonne (ordinateur), assistant, onglets Notre style / Planning / Livret « Bientôt disponible »
 - [x] Captures 390 px et ordinateur
+
+## Atelier IA – Étape 5 Planning
+- [x] Tables modèles + tâches couple, synchro en base, 38 modèles avec messages assistant
+- [x] Onglet Planning, accueil (progression + À faire ce mois-ci), back-office Modèles de planning
+- [x] Tests sur le compte couple de test + captures

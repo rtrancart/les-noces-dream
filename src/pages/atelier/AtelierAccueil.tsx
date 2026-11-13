@@ -2,16 +2,24 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { ONGLETS } from "./AtelierLayout";
 import { useInfosCouple } from "@/components/atelier/useInfosCouple";
-
-const MODULES = [
-  { ...ONGLETS[1], etat: "Trouvez vos prestataires", pret: true },
-  { ...ONGLETS[2], etat: "Votre charte et votre monogramme", pret: true },
-  { ...ONGLETS[3], etat: "Vos tâches mois par mois · bientôt", pret: false },
-  { ...ONGLETS[4], etat: "Préparez votre livret de cérémonie · bientôt", pret: false },
-];
+import { useTaches } from "@/components/atelier/planning/useTaches";
+import LigneTache from "@/components/atelier/planning/LigneTache";
+import { BarreProgression } from "./AtelierPlanning";
+import { aFaireCeMois, construireSections } from "@/lib/planning";
 
 export default function AtelierAccueil() {
   const infos = useInfosCouple();
+  const { data: planning, modifier } = useTaches();
+  const ref = planning?.ref ?? null;
+  const sections = planning && ref ? construireSections(planning.taches, ref) : null;
+  const aFaire = planning && ref ? aFaireCeMois(planning.taches, ref) : [];
+  const nbMois = sections ? (sections.mois.find((g) => g.courant)?.taches.filter((t) => !t.faite).length ?? 0) + sections.rattraper.length : 0;
+  const MODULES = [
+    { ...ONGLETS[1], etat: "Trouvez vos prestataires" },
+    { ...ONGLETS[2], etat: "Votre charte et votre monogramme" },
+    { ...ONGLETS[3], etat: !ref ? "Indiquez votre date pour obtenir vos tâches" : nbMois ? `${nbMois} tâche${nbMois > 1 ? "s" : ""} à faire maintenant` : "Vos tâches mois par mois" },
+    { ...ONGLETS[4], etat: "Préparez votre livret de cérémonie · bientôt" },
+  ];
   return (
     <div className="px-4 py-6 lg:px-12 lg:py-12 space-y-6 lg:space-y-8 max-w-6xl">
       <div className="flex items-start justify-between gap-4">
@@ -46,11 +54,27 @@ export default function AtelierAccueil() {
         ))}
       </div>
 
+      {sections && (
+        <div className="rounded-2xl border border-atelier-filet bg-card p-5 lg:p-7">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="font-serif text-2xl text-foreground">À faire ce mois-ci</h2>
+            <Link to="/atelier/planning" className="shrink-0 font-sans text-sm font-semibold text-atelier-or hover:underline">Voir tout le planning ›</Link>
+          </div>
+          <p className="font-sans text-xs text-muted-foreground mt-1">{sections.faites} tâche{sections.faites > 1 ? "s" : ""} faite{sections.faites > 1 ? "s" : ""} sur {sections.actives}</p>
+          <BarreProgression faites={sections.faites} actives={sections.actives} className="mt-2" />
+          {aFaire.length ? (
+            <div className="mt-2 divide-y divide-atelier-filet">
+              {aFaire.map((t) => <LigneTache key={t.id} compacte tache={t} lien={t.modele_id ? planning!.liens.get(t.modele_id) : undefined} onCocher={(x) => modifier(x, { faite: !x.faite })} />)}
+            </div>
+          ) : <p className="font-sans text-sm text-muted-foreground mt-3">Rien d'urgent ce mois-ci. Profitez-en !</p>}
+        </div>
+      )}
+
       <div className="rounded-2xl border border-atelier-filet bg-card p-5 lg:p-7">
         <h2 className="font-serif text-2xl text-foreground">Commencez par l'assistant</h2>
         <p className="font-sans text-sm text-muted-foreground mt-2 leading-relaxed">
           Décrivez votre projet avec vos mots : lieu, style, nombre d'invités, budget. L'assistant vous propose des prestataires
-          de LesNoces.net qui y correspondent. Dans « Notre style », créez votre charte et votre monogramme ; le planning et le livret arrivent bientôt.
+          de LesNoces.net qui y correspondent. Dans « Notre style », créez votre charte et votre monogramme ; le planning vous guide mois par mois et le livret arrive bientôt.
         </p>
         <Link to="/atelier/assistant"
           className="mt-4 inline-flex items-center gap-2 rounded-full bg-atelier-or px-6 py-3 font-sans text-sm font-semibold text-primary-foreground hover:bg-atelier-or/90">

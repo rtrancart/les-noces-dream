@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -22,6 +23,8 @@ type SousOnglet = typeof SOUS_ONGLETS[number]["id"];
 const MOIS = ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"];
 
 export default function AtelierStyle() {
+  const location = useLocation();
+  const etapeDemandee = (location.state as { questionnaireEtape?: number } | null)?.questionnaireEtape;
   const { user, profile } = useAuth();
   const qc = useQueryClient();
   const infos = useInfosCouple();
@@ -47,9 +50,9 @@ export default function AtelierStyle() {
     },
   });
   const { data: quotas, refetch: relireQuotas } = useQuery({ queryKey: ["atelier-quotas-style", user?.id], enabled: !!user, queryFn: lireQuotasStyle });
-  const recharger = () => { qc.invalidateQueries({ queryKey: cle }); qc.invalidateQueries({ queryKey: ["atelier-infos"] }); };
+  const recharger = () => { qc.invalidateQueries({ queryKey: cle }); qc.invalidateQueries({ queryKey: ["atelier-infos"] }); qc.invalidateQueries({ queryKey: ["atelier-taches"] }); };
 
-  useEffect(() => { if (data && questionnaire === null) setQuestionnaire(!data.profil?.questionnaire_termine_le); }, [data, questionnaire]);
+  useEffect(() => { if (data && questionnaire === null) setQuestionnaire(etapeDemandee !== undefined || !data.profil?.questionnaire_termine_le); }, [data, questionnaire]);
 
   const charte = data?.chartes.find((c) => c.active) ?? null;
   const generer = async () => {
@@ -69,7 +72,7 @@ export default function AtelierStyle() {
   if (isLoading || !data) return <div className="p-10 grid place-items-center"><Loader2 className="h-6 w-6 animate-spin text-atelier-or" /></div>;
 
   if (questionnaire) {
-    return <Questionnaire profil={data.profil} onFermer={() => { setQuestionnaire(false); recharger(); }}
+    return <Questionnaire profil={data.profil} etapeInitiale={etapeDemandee ?? 0} onFermer={() => { setQuestionnaire(false); recharger(); }}
       onTermine={() => { setQuestionnaire(false); recharger(); if (!charte) generer(); }} />;
   }
 
