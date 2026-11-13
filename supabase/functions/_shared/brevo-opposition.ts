@@ -86,16 +86,22 @@ export function ensureListeDesinscrits(): Promise<number> {
 }
 
 type AdminLike = {
-  from: (table: string) => {
-    select: (cols: string) => {
-      eq: (col: string, val: unknown) => {
-        maybeSingle: () => Promise<{ data: unknown }>;
-      };
-    };
-  };
+  // deno-lint-ignore no-explicit-any
+  from: (table: string) => any;
 };
 
-/** true si l'adresse s'est opposée au marketing (toute origine confondue). */
+/** Raisons de suppressed_emails qui valent opposition marketing (hard bounce, plainte). */
+export const RAISONS_BLOCAGE_MARKETING = ["bounce", "complaint"] as const;
+
+/** true si la raison d'un blocage email vaut opposition marketing. */
+export function raisonBloqueMarketing(raison: string | null | undefined): boolean {
+  return (RAISONS_BLOCAGE_MARKETING as readonly string[]).includes(raison ?? "");
+}
+
+/**
+ * true si l'adresse s'est opposée au marketing (toute origine confondue),
+ * ou si elle a eu un hard bounce / une plainte (suppressed_emails).
+ */
 export async function estOppose(admin: AdminLike, email: string): Promise<boolean> {
   const normalise = email.toLowerCase().trim();
   if (!normalise) return false;
@@ -104,5 +110,12 @@ export async function estOppose(admin: AdminLike, email: string): Promise<boolea
     .select("email")
     .eq("email", normalise)
     .maybeSingle();
-  return Boolean(data);
+  if (data) return true;
+  const { data: blocages } = await admin
+    .from("suppressed_emails")
+    .select("reason")
+    .eq("email", normalise)
+    .in("reason", [...RAISONS_BLOCAGE_MARKETING])
+    .limit(1);
+  return Array.isArray(blocages) && blocages.length > 0;
 }
