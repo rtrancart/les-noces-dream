@@ -153,7 +153,7 @@ export default function AtelierPlanning() {
         </div>
       )}
 
-      <AjoutTache ouvert={ajout} onFermer={() => setAjout(false)} userId={userId} dateDefaut={jour > data.ref ? jour : data.ref} onAjout={recharger} />
+      <AjoutTache ouvert={ajout} onFermer={() => setAjout(false)} userId={userId} dateDefaut={jour} onAjout={recharger} />
     </div>
   );
 }
@@ -164,9 +164,10 @@ function AjoutTache({ ouvert, onFermer, userId, dateDefaut, onAjout }: { ouvert:
   const [categorie, setCategorie] = useState("Organisation");
   const [envoi, setEnvoi] = useState(false);
   const valider = async () => {
-    if (!userId || !titre.trim() || !date) return;
+    const d = date || dateDefaut;
+    if (!userId || !titre.trim() || !d) return;
     setEnvoi(true);
-    const { data, error } = await supabase.from("taches_couple").insert({ user_id: userId, titre: titre.trim().slice(0, 200), date_echeance: date, categorie, perso: true, priorite: 2 }).select("id");
+    const { data, error } = await supabase.from("taches_couple").insert({ user_id: userId, titre: titre.trim().slice(0, 200), date_echeance: d, categorie, perso: true, priorite: 2 }).select("id");
     setEnvoi(false);
     if (error || !data?.length) { toast.error("La tâche n'a pas pu être ajoutée."); return; }
     setTitre(""); setDate(""); onAjout(); onFermer();
@@ -190,7 +191,7 @@ function AjoutTache({ ouvert, onFermer, userId, dateDefaut, onAjout }: { ouvert:
         </div>
         <DialogFooter>
           <Button variant="outline" className="rounded-full" onClick={onFermer}>Annuler</Button>
-          <Button className="rounded-full bg-atelier-or hover:bg-atelier-or/90" disabled={!titre.trim() || envoi} onClick={() => { if (!date) setDate(dateDefaut); void valider(); }}>Ajouter</Button>
+          <Button className="rounded-full bg-atelier-or hover:bg-atelier-or/90" disabled={!titre.trim() || envoi} onClick={() => void valider()}>Ajouter</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

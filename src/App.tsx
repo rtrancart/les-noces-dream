@@ -41,6 +41,8 @@ import AtelierLayout from "./pages/atelier/AtelierLayout";
 import AtelierAccueil from "./pages/atelier/AtelierAccueil";
 import AtelierAssistant from "./pages/atelier/AtelierAssistant";
 import AtelierBientot from "./pages/atelier/AtelierBientot";
+import AtelierPlanning from "./pages/atelier/AtelierPlanning";
+import AdminModelesPlanning from "./pages/admin/ModelesPlanning";
 import AtelierStyle from "./pages/atelier/AtelierStyle";
 import ClientMessagerie from "./pages/client/Messagerie";
 import ClientFavoris from "./pages/client/Favoris";
@@ -137,7 +139,7 @@ const App = () => (
               <Route index element={<AtelierAccueil />} />
               <Route path="assistant" element={<AtelierAssistant />} />
               <Route path="style" element={<AtelierStyle />} />
-              <Route path="planning" element={<AtelierBientot titre="Planning" description="Vos tâches mois par mois jusqu'au jour J, avec un accès direct à l'assistant pour trouver chaque prestataire." />} />
+              <Route path="planning" element={<AtelierPlanning />} />
               <Route path="livret" element={<AtelierBientot titre="Livret" description="Préparez votre livret de cérémonie aux couleurs de votre charte, puis téléchargez-le prêt à imprimer." />} />
             </Route>
 
@@ -203,6 +205,7 @@ const App = () => (
               <Route path="test-ia" element={<AdminTestIA />} />
               <Route path="couts-ia" element={<AdminCoutsIA />} />
               <Route path="tags-ia" element={<AdminTagsIA />} />
+              <Route path="modeles-planning" element={<AdminModelesPlanning />} />
             </Route>
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

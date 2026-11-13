@@ -87,10 +87,10 @@ function ChoixLieu({ valeur, onChoisir }: { valeur: string | null; onChoisir: (l
   );
 }
 
-export default function Questionnaire({ profil, onFermer, onTermine }: { profil: ProfilMariage | null; onFermer: () => void; onTermine: () => void }) {
+export default function Questionnaire({ profil, onFermer, onTermine, etapeInitiale = 0 }: { profil: ProfilMariage | null; onFermer: () => void; onTermine: () => void; etapeInitiale?: number }) {
   const { user } = useAuth();
   const [p, setP] = useState<Patch>(profil ?? {});
-  const [etape, setEtape] = useState(0);
+  const [etape, setEtape] = useState(etapeInitiale);
   const [modeDate, setModeDate] = useState<"jour" | "mois">(profil?.date_mois && !profil?.date_mariage ? "mois" : "jour");
   const [enregistrement, setEnregistrement] = useState(false);
   const minuteur = useRef<ReturnType<typeof setTimeout>>();
