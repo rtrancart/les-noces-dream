@@ -42,4 +42,4 @@
 ## Atelier IA – Étape 5 Planning
 - [x] Tables modèles + tâches couple, synchro en base, 38 modèles avec messages assistant
 - [x] Onglet Planning, accueil (progression + À faire ce mois-ci), back-office Modèles de planning
-- [ ] Tests sur le compte couple de test + captures
+- [x] Tests sur le compte couple de test + captures

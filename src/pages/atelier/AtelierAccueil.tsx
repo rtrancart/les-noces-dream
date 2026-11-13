@@ -17,7 +17,7 @@ export default function AtelierAccueil() {
   const MODULES = [
     { ...ONGLETS[1], etat: "Trouvez vos prestataires" },
     { ...ONGLETS[2], etat: "Votre charte et votre monogramme" },
-    { ...ONGLETS[3], etat: !ref ? "Indiquez votre date pour obtenir vos tâches" : nbMois ? `${nbMois} tâche${nbMois > 1 ? "s" : ""} ce mois-ci` : "Vos tâches mois par mois" },
+    { ...ONGLETS[3], etat: !ref ? "Indiquez votre date pour obtenir vos tâches" : nbMois ? `${nbMois} tâche${nbMois > 1 ? "s" : ""} à faire maintenant` : "Vos tâches mois par mois" },
     { ...ONGLETS[4], etat: "Préparez votre livret de cérémonie · bientôt" },
   ];
   return (
