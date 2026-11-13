@@ -162,6 +162,13 @@
       "when": 1794560997065,
       "tag": "0022_resserrer_politiques_ouvertes",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794566752285,
+      "tag": "0023_brevo_opposition_bounces",
+      "breakpoints": true
     }
   ]
 }

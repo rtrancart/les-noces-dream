@@ -229,7 +229,11 @@ Deno.serve(async (req) => {
               {
                 method: "POST",
                 body: JSON.stringify({
-                  jsonBody: sousLot.lignes.map(versPayload),
+                  jsonBody: sousLot.lignes.map((l) =>
+                    l.oppose
+                      ? { ...versPayload(l), attributes: { ...versPayload(l).attributes, CONSENTEMENT_MKT: false } }
+                      : versPayload(l)
+                  ),
                   listIds: [await sousLot.liste()],
                   updateExistingContacts: true,
                   emptyContactsAttributes: false,
@@ -241,6 +245,24 @@ Deno.serve(async (req) => {
             console.log(
               `[brevo-sync-compteurs] lot offset=${offset} liste=${sousLot.nom} taille=${sousLot.lignes.length} processId=${imported?.processId ?? "?"}`,
             );
+            // Un contact opposé (opposition, hard bounce, plainte) sort de la liste marketing.
+            if (sousLot.nom !== LISTE_PRESTATAIRES) {
+              const idPrestataires = await resoudreListePrestataires();
+              const emails = sousLot.lignes.map((l) => l.email);
+              for (let i = 0; i < emails.length; i += 150) {
+                try {
+                  await brevoFetch(
+                    `/contacts/lists/${idPrestataires}/contacts/remove`,
+                    { method: "POST", body: JSON.stringify({ emails: emails.slice(i, i + 150) }) },
+                    CALL_OPTIONS,
+                  );
+                  appelsBrevo++;
+                } catch (err) {
+                  // Brevo répond 400 si aucun des contacts n'est dans la liste : sans gravité.
+                  console.warn(`[brevo-sync-compteurs] retrait liste prestataires : ${describeError(err).motif}`);
+                }
+              }
+            }
             await admin.rpc("brevo_compteurs_journal", {
               p_ids: sousLot.lignes.map((l) => l.prestataire_id),
               p_statut: "reussi",
