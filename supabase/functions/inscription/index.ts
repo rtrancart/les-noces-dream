@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   }
 
   // Création du compte (non confirmé) — mêmes métadonnées qu'auparavant
-  const metadata: Record<string, unknown> = { prenom: d.prenom, nom: d.nom, role_souhaite: d.role }
+  const metadata: Record<string, unknown> = { prenom: d.prenom, nom: d.nom, role_souhaite: d.role, origine: 'auto_inscription' }
   if (d.role === 'client') metadata.consentement_marketing = d.consentement_marketing
   if (d.role === 'prestataire') {
     metadata.nom_commercial = d.nom_commercial
