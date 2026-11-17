@@ -100,6 +100,8 @@ Deno.serve(async (req) => {
         email: cleanEmail,
         email_confirm: true,
         user_metadata: { prenom: prenom ?? null, nom: nom ?? null, role_souhaite: "prestataire" },
+        // Compte créé côté équipe : jamais compté comme auto-inscription
+        app_metadata: { origine: "inscription_admin" },
       });
       if (createError) {
         // Race / already exists — retry lookup across all pages

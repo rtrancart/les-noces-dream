@@ -71,6 +71,8 @@ Deno.serve(async (req) => {
       password,
       email_confirm: true,
       user_metadata: { prenom: prenom || null, nom: nom || null, role_souhaite: role },
+        // Compte créé côté équipe : jamais compté comme auto-inscription
+        app_metadata: { origine: "inscription_admin" },
     });
 
     if (createError) throw createError;
