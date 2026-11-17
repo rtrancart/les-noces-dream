@@ -1328,6 +1328,33 @@ export type Database = {
           },
         ]
       }
+      evenements_prestataire_backup_purge: {
+        Row: {
+          archive_le: string
+          created_at: string | null
+          id: string
+          motif: string
+          prestataire_id: string | null
+          type: string | null
+        }
+        Insert: {
+          archive_le?: string
+          created_at?: string | null
+          id: string
+          motif: string
+          prestataire_id?: string | null
+          type?: string | null
+        }
+        Update: {
+          archive_le?: string
+          created_at?: string | null
+          id?: string
+          motif?: string
+          prestataire_id?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
       factures_pennylane: {
         Row: {
           created_at: string
@@ -3803,6 +3830,16 @@ export type Database = {
       admin_delete_user_cascade: {
         Args: { p_admin_id: string; p_user_id: string }
         Returns: undefined
+      }
+      admin_statistiques_activite_hebdo: {
+        Args: never
+        Returns: {
+          demandes_devis: number
+          est_partielle: boolean
+          semaine_debut: string
+          telephones: number
+          visites: number
+        }[]
       }
       admin_stats_zones_categories: {
         Args: never
