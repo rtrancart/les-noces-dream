@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
 import CarteRepartitionPanel from "@/components/admin/CarteRepartitionPanel";
+import ActiviteGlobalePanel from "@/components/admin/ActiviteGlobalePanel";
 
 
 
@@ -196,6 +197,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Activité globale */}
+      <ActiviteGlobalePanel />
 
       {/* Répartition géographique */}
       <CarteRepartitionPanel />

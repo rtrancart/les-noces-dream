@@ -32,11 +32,22 @@ export function initGA4() {
  * @param params      - Optional GA4 event parameters
  * @param prestataireId - If provided, also inserts into evenements_prestataire
  */
+const BOT_UA = /bot|crawl|spider|slurp|headless|lighthouse|preview/i;
+
+/** Robots, navigateurs pilotés et pré-rendu : aucun événement ne doit partir. */
+export function estVisiteAutomatisee(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return true;
+  if (navigator.webdriver) return true;
+  if (window.location.search.includes("__prerender_bypass")) return true;
+  return BOT_UA.test(navigator.userAgent || "");
+}
+
 export function trackEvent(
   name: string,
   params?: Record<string, unknown>,
   prestataireId?: string
 ) {
+  if (estVisiteAutomatisee()) return;
   // GA4
   if (ga4Loaded && window.gtag) {
     window.gtag("event", name, params ?? {});

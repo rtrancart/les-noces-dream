@@ -169,6 +169,13 @@
       "when": 1794566752285,
       "tag": "0023_brevo_opposition_bounces",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794917795049,
+      "tag": "0024_migration",
+      "breakpoints": true
     }
   ]
 }

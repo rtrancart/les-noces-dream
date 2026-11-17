@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, estVisiteAutomatisee } from "@/lib/analytics";
 import { useTracking } from "@/hooks/useTracking";
 import { useTrackVisitePrestataire } from "@/hooks/useHistoriqueNavigation";
 import FichePrestataireView, {
@@ -24,7 +24,9 @@ import { champsCategoriesFilter } from "@/lib/champsCategories";
  */
 export default function FichePrestataire() {
   const { slug } = useParams<{ slug: string }>();
-  const { user } = useAuth();
+  const { user, isAdmin, hasRole } = useAuth();
+  const vueEnvoyeeRef = useRef<string | null>(null);
+  const viewItemEnvoyeRef = useRef<string | null>(null);
 
   const [presta, setPresta] = useState<Prestataire | null>(null);
   const [catMere, setCatMere] = useState<Categorie | null>(null);
@@ -100,14 +102,37 @@ export default function FichePrestataire() {
     fetchData();
   }, [fetchData, user?.id]);
 
-  // Track vue_profil
+  // Une seule vue_profil et un seul view_item par fiche affichée.
+  // Ignorés : robots/pré-rendu, admins, prestataire propriétaire de la fiche.
   useEffect(() => {
-    if (presta) {
-      trackEvent("vue_profil", { slug: presta.slug }, presta.id);
-      trackViewItem(presta.slug, catMere?.slug);
-    }
+    if (!presta || loading) return;
+    if (estVisiteAutomatisee() || isAdmin || hasRole("super_admin")) return;
+    let annule = false;
+    (async () => {
+      if (user && hasRole("prestataire")) {
+        const { data } = await supabase
+          .from("prestataires")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("id", presta.id)
+          .maybeSingle();
+        if (data || annule) return;
+      }
+      if (annule) return;
+      if (vueEnvoyeeRef.current !== presta.id) {
+        vueEnvoyeeRef.current = presta.id;
+        trackEvent("vue_profil", { slug: presta.slug }, presta.id);
+      }
+      if (viewItemEnvoyeRef.current !== presta.id) {
+        viewItemEnvoyeRef.current = presta.id;
+        trackViewItem(presta.slug, catMere?.slug);
+      }
+    })();
+    return () => {
+      annule = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presta?.id, catMere?.slug]);
+  }, [presta?.id, loading, user?.id, isAdmin]);
 
   if (loading) {
     return (
