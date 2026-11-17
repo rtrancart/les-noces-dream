@@ -172,23 +172,33 @@ export default function FichePrestataireView({
     return startFicheSession(presta.id);
   }, [previewMode, presta.id]);
 
+  const phoneEnCoursRef = useRef<Promise<string | null> | null>(null);
+
   /** Enregistre le clic côté base et renvoie le numéro (ou le lit directement en preview). */
   const fetchPhone = async (): Promise<string | null> => {
     if (phone) return phone;
+    if (phoneEnCoursRef.current) return phoneEnCoursRef.current;
     if (previewMode) {
       setPhone(presta.telephone ?? null);
       return presta.telephone ?? null;
     }
     setPhoneLoading(true);
-    const { data, error } = await supabase.rpc("obtenir_telephone_prestataire", {
-      p_prestataire_id: presta.id,
-    });
-    setPhoneLoading(false);
-    if (error || !data) return null;
-    trackEvent("affichage_telephone", { slug: presta.slug });
-    trackRevealPhone(presta.slug);
-    setPhone(data);
-    return data;
+    const p = (async () => {
+      const { data, error } = await supabase.rpc("obtenir_telephone_prestataire", {
+        p_prestataire_id: presta.id,
+      });
+      setPhoneLoading(false);
+      if (error || !data) {
+        phoneEnCoursRef.current = null;
+        return null;
+      }
+      trackEvent("affichage_telephone", { slug: presta.slug });
+      trackRevealPhone(presta.slug);
+      setPhone(data);
+      return data as string;
+    })();
+    phoneEnCoursRef.current = p;
+    return p;
   };
 
   const revealPhone = () => {
