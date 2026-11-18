@@ -38,6 +38,9 @@ const NON_RECOPIES = new Set([
   "set-cookie",
 ]);
 
+const CSP =
+  "object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com; upgrade-insecure-requests";
+
 export const config = {
   matcher: "/((?!assets/|api/|functions/).*)",
 };
@@ -65,6 +68,11 @@ export default async function middleware(request: Request) {
       if (!NON_RECOPIES.has(k.toLowerCase())) entetes.set(k, v);
     });
     entetes.set("content-type", "text/html; charset=utf-8");
+    // Politique adaptée à une page publique : n'empêche ni le rendu ni les
+    // ressources externes (images, polices, cartes), mais bloque plugins,
+    // détournement de <base> et contenu mixte.
+    entetes.set("content-security-policy", CSP);
+    entetes.set("x-content-type-options", "nosniff");
 
     return new Response(request.method === "HEAD" ? null : amont.body, {
       status: amont.status,
