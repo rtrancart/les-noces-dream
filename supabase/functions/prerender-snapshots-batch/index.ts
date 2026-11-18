@@ -4,6 +4,7 @@
 // prerender-snapshots. Modèle de tolérance aux pannes calqué sur
 // migrate-photos-batch et brevo-sync-compteurs.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { preserveSnapshotStyles } from "../_shared/prerender-styles.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -231,6 +232,8 @@ Deno.serve(async (req) => {
         if (!html || html.length === 0) {
           throw new Error("Rendu vide");
         }
+        // Keep the exact captured CSS: future publications remove hashed assets.
+        html = await preserveSnapshotStyles(html, siteUrl);
       } catch (e) {
         motif = (e as Error).message;
         if (motif === "dry_run") {

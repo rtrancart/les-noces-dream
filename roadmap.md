@@ -1,5 +1,11 @@
 # Roadmap — Gabarit de page catégorie SEO/GEO/UX
 
+## Réparation CSS du pré-rendu (18 novembre)
+- [x] Confirmer les liens CSS, HTTP, MIME, robots et CSP sur accueil, catégorie et fiche.
+- [x] Rendre les snapshots indépendants des anciens fichiers CSS de publication et réparer les snapshots existants sans changer le design.
+- [x] Déployer, vérifier le rendu des trois pages et distinguer les contrôles de Search Console restant à faire.
+- [ ] Nouvelle capture dans Search Console : nécessite le test en direct côté Google.
+
 ## Fait
 - [x] A. Modèle de données catégories : seo_intro, seo_body, faq, meta_title, meta_description, nom_singulier, genre (+ vue categories_compteurs, GRANT anon/authenticated)
 - [x] A bis. Seed nom_singulier/genre des 47 catégories + contenu éditorial « Lieux de réception »

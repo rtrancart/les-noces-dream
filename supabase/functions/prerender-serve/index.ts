@@ -12,6 +12,7 @@
 //   notfound     — page inconnue du recensement : vraie absence (404)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { estRobot, cheminStockageDepuisUrl } from "../_shared/bots.ts";
+import { preserveSnapshotStyles } from "../_shared/prerender-styles.ts";
 
 const SITE_URL = (Deno.env.get("PUBLIC_SITE_URL") ?? "https://lesnoces.net").replace(/\/$/, "");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -174,8 +175,16 @@ Deno.serve(async (req) => {
     const snap = await fetch(objectUrl);
     if (!snap.ok) return servirApplication("passthrough-snapshot-illisible");
 
-    const html = await snap.text();
+    let html = await snap.text();
     if (!html || html.length < 200) return servirApplication("passthrough-snapshot-vide");
+
+    // Legacy snapshots can reference CSS removed by a later deployment.
+    // Repair at serving time without recapturing thousands of provider pages.
+    try {
+      html = await preserveSnapshotStyles(html, SITE_URL);
+    } catch {
+      return servirApplication("passthrough-styles-indisponibles");
+    }
 
     return new Response(html, {
       status: 200,
