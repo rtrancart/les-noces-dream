@@ -1,5 +1,13 @@
 # Export KPI quotidien vers Google Sheets — plan ajusté
 
+## 0. Derniers ajustements validés
+
+- **Fiches de test :** les 6 fiches listées plus bas sont confirmées.
+- **`nombre_demandes` :** avant le rattrapage, la colonne est retirée des vues et aperçus publics (anon / authenticated non-admin). Elle reste lisible par l'admin et par le prestataire propriétaire (table `prestataires`, accès existant). Je vous montrerai le diff des vues (avant/après) dans le compte rendu.
+- **Liens internes et nouvel onglet (point 4, vérifié) :** aucun lien public vers une fiche, une catégorie ou un résultat de recherche ne s'ouvre dans un nouvel onglet. Seuls l'admin et l'espace prestataire en ont (aperçus), et ils ne portent pas de source de conversion.
+  - **Risque restant :** un visiteur qui fait clic-molette ou Ctrl+clic ouvre un nouvel onglet. Selon le navigateur, ce nouvel onglet ne reçoit pas de copie du sessionStorage.
+  - **Solution proposée (sans cookie) :** la source est aussi recopiée dans le stockage local du navigateur, avec une durée de 30 minutes. Un nouvel onglet qui n'a pas de source la reprend s'il trouve une copie récente. Elle n'écrase jamais une source déjà présente. Ce stockage ne sert qu'à cela : pas d'identifiant, pas de valeur gclid.
+
 ## A. Réponses préalables (vérifiées, rien de modifié)
 
 ### Où `nombre_demandes` est utilisé
@@ -36,16 +44,18 @@ Il fonctionne depuis une fonction du backend lancée par un cron, sans session u
 2. **Source des conversions (nouveau) :**
    - À la première page de la session, le site enregistre en sessionStorage, sans jamais l'écraser : `utm_source`, `utm_medium`, `utm_campaign`, le **domaine** du referrer et `gclid_present` (vrai/faux, jamais la valeur).
    - Nouvelles colonnes, toutes facultatives, sur `demandes_devis` et `evenements_prestataire`, remplies seulement pour les nouvelles demandes et les nouveaux `affichage_telephone`. Les lignes existantes ne sont pas touchées. Ces champs passent par `soumettre_demande_devis` et par l'enregistrement des événements.
-   - Règle de regroupement (documentée dans AGENTS.md), appliquée dans cet ordre :
-     - google_ads : `gclid_present` ou utm_source google avec medium cpc/ppc/paid
-     - chatgpt : referrer chatgpt.com/openai.com ou utm_source chatgpt
-     - meta : facebook, instagram, fb, ig, meta (utm ou referrer)
-     - pinterest : pinterest (utm ou referrer)
-     - email : utm_medium email/newsletter, ou referrer d'un webmail
-     - seo : referrer google, bing, duckduckgo, ecosia, qwant, yahoo sans utm payant
-     - direct : ni utm ni referrer externe
-     - autre : tout le reste
-   - Export : `demandes_valides_<source>` et `affichages_telephone_<source>`. Les jours antérieurs à la mise en place restent vides, jamais à 0.
+   - Règle de regroupement (documentée dans AGENTS.md) :
+     - **Payant** = `gclid_present`, ou utm_medium parmi cpc, ppc, paid, paid_social, display. `fbclid` n'est jamais un signal de payant.
+     - Dans cet ordre :
+       - google_ads : payant + (gclid ou source google)
+       - chatgpt_ads / chatgpt_organique : source ou referrer chatgpt.com/openai ; ads si payant, sinon organique. `utm_source=chatgpt.com` sans medium payant donne chatgpt_organique.
+       - meta_ads / meta_organique : facebook, instagram, fb, ig, meta
+       - pinterest_ads / pinterest_organique : pinterest
+       - email : utm_medium email/newsletter ou referrer d'un webmail
+       - seo : referrer d'un moteur (google, bing, duckduckgo, ecosia, qwant, yahoo), sans payant
+       - direct : ni utm ni referrer externe
+       - autre : tout le reste, y compris un payant non reconnu
+   - Export : `demandes_valides_<source>` et `affichages_telephone_<source>` pour les 11 sources. Les jours antérieurs à la mise en place restent vides, jamais à 0.
 3. **`get_kpi_quotidiens(date)`** en SECURITY DEFINER, exécutable par service_role seul. Elle renvoie une ligne avec tous les indicateurs de l'audit, avec les exclusions de test.
 4. **Fonction `kpi-export-sheets`** : par défaut la veille. Écriture idempotente dans l'onglet `kpi_quotidiens`, en-tête créée si besoin. Mode rattrapage réservé aux admins, du 01/10/2026 à hier, uniquement pour les indicateurs recalculables (photos du jour et sources vides pour le passé).
 5. **Branchement** dans `cron-prerender-nightly`, dans un bloc `finally` isolé (son propre try/catch et un délai maximal) : l'export tourne même si le pré-rendu échoue, sans jamais changer son résultat. Le statut est journalisé.
