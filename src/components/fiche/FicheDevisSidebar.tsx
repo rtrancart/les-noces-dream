@@ -1,3 +1,4 @@
+import { obtenirSourceVisite } from "@/lib/sourceVisite";
 import { useRef, useState } from "react";
 import DateEvenementField, { versParametresDate } from "./DateEvenementField";
 import { useForm } from "react-hook-form";
@@ -136,6 +137,7 @@ export default function FicheDevisSidebar({ prestataireId, prestataireName }: Pr
         p_lieu_evenement: values.lieu_evenement || null,
         p_nombre_invites_rang: values.nombre_invites_rang || null,
         p_budget_indicatif: budgetNum,
+        p_source: (obtenirSourceVisite() ?? undefined) as never,
       });
 
       if (error) throw error;

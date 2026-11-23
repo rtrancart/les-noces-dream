@@ -1,0 +1,1 @@
+ALTER FUNCTION public.get_kpi_quotidiens(date, boolean) VOLATILE;

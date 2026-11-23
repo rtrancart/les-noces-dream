@@ -979,6 +979,12 @@ export type Database = {
           raisons_suspicion: string[]
           score_suspicion: number
           source: string | null
+          source_gclid_present: boolean | null
+          source_groupe: string | null
+          source_referrer_domaine: string | null
+          source_utm_campaign: string | null
+          source_utm_medium: string | null
+          source_utm_source: string | null
           statut: Database["public"]["Enums"]["statut_demande"]
           telephone_contact: string | null
           updated_at: string
@@ -1008,6 +1014,12 @@ export type Database = {
           raisons_suspicion?: string[]
           score_suspicion?: number
           source?: string | null
+          source_gclid_present?: boolean | null
+          source_groupe?: string | null
+          source_referrer_domaine?: string | null
+          source_utm_campaign?: string | null
+          source_utm_medium?: string | null
+          source_utm_source?: string | null
           statut?: Database["public"]["Enums"]["statut_demande"]
           telephone_contact?: string | null
           updated_at?: string
@@ -1037,6 +1049,12 @@ export type Database = {
           raisons_suspicion?: string[]
           score_suspicion?: number
           source?: string | null
+          source_gclid_present?: boolean | null
+          source_groupe?: string | null
+          source_referrer_domaine?: string | null
+          source_utm_campaign?: string | null
+          source_utm_medium?: string | null
+          source_utm_source?: string | null
           statut?: Database["public"]["Enums"]["statut_demande"]
           telephone_contact?: string | null
           updated_at?: string
@@ -1290,18 +1308,36 @@ export type Database = {
           created_at: string
           id: string
           prestataire_id: string
+          source_gclid_present: boolean | null
+          source_groupe: string | null
+          source_referrer_domaine: string | null
+          source_utm_campaign: string | null
+          source_utm_medium: string | null
+          source_utm_source: string | null
           type: string
         }
         Insert: {
           created_at?: string
           id?: string
           prestataire_id: string
+          source_gclid_present?: boolean | null
+          source_groupe?: string | null
+          source_referrer_domaine?: string | null
+          source_utm_campaign?: string | null
+          source_utm_medium?: string | null
+          source_utm_source?: string | null
           type: string
         }
         Update: {
           created_at?: string
           id?: string
           prestataire_id?: string
+          source_gclid_present?: boolean | null
+          source_groupe?: string | null
+          source_referrer_domaine?: string | null
+          source_utm_campaign?: string | null
+          source_utm_medium?: string | null
+          source_utm_source?: string | null
           type?: string
         }
         Relationships: [
@@ -1904,6 +1940,46 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      kpi_fiches_test: {
+        Row: {
+          created_at: string
+          motif: string | null
+          prestataire_id: string
+        }
+        Insert: {
+          created_at?: string
+          motif?: string | null
+          prestataire_id: string
+        }
+        Update: {
+          created_at?: string
+          motif?: string | null
+          prestataire_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_fiches_test_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: true
+            referencedRelation: "prestataires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_fiches_test_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: true
+            referencedRelation: "prestataires_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_fiches_test_prestataire_id_fkey"
+            columns: ["prestataire_id"]
+            isOneToOne: true
+            referencedRelation: "prestataires_public_all"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       logs_admin: {
         Row: {
@@ -3551,7 +3627,6 @@ export type Database = {
           metadonnees_seo: Json | null
           nom_commercial: string | null
           nombre_avis: number | null
-          nombre_demandes: number | null
           note_flexibilite: number | null
           note_moyenne: number | null
           note_professionnalisme: number | null
@@ -3827,6 +3902,7 @@ export type Database = {
       }
     }
     Functions: {
+      _source_txt: { Args: { _j: Json; _k: string }; Returns: string }
       admin_delete_user_cascade: {
         Args: { p_admin_id: string; p_user_id: string }
         Returns: undefined
@@ -3922,6 +3998,10 @@ export type Database = {
         Args: { p_charte_exemptee_jusqua: string; p_charte_signee_le: string }
         Returns: boolean
       }
+      classer_source_conversion: {
+        Args: { _gclid: boolean; _medium: string; _ref: string; _src: string }
+        Returns: string
+      }
       cle_zone_normalisee: { Args: { p_valeur: string }; Returns: string }
       date_reference_mariage: { Args: { _uid: string }; Returns: string }
       definir_consentement_marketing: {
@@ -3974,6 +4054,10 @@ export type Database = {
           template_name: string
           total_count: number
         }[]
+      }
+      get_kpi_quotidiens: {
+        Args: { p_date: string; p_inclure_photo?: boolean }
+        Returns: Json
       }
       get_prestataire_preview: {
         Args: { p_slug: string }
@@ -4129,7 +4213,7 @@ export type Database = {
       normaliser_cle_zone: { Args: { p_valeur: string }; Returns: string }
       normaliser_telephone: { Args: { p: string }; Returns: string }
       obtenir_telephone_prestataire: {
-        Args: { p_prestataire_id: string }
+        Args: { p_prestataire_id: string; p_source?: Json }
         Returns: string
       }
       prerender_forcer_recapture: {
@@ -4184,6 +4268,10 @@ export type Database = {
       rattraper_emails_demandes: { Args: never; Returns: Json }
       reactiver_prestataire_paiement: {
         Args: { p_prestataire_id: string }
+        Returns: undefined
+      }
+      recalculer_nombre_demandes: {
+        Args: { _prestataire_id: string }
         Returns: undefined
       }
       recalculer_tous_les_scores: {
@@ -4241,6 +4329,7 @@ export type Database = {
           p_nombre_invites_rang?: string
           p_objet: Database["public"]["Enums"]["objet_demande"]
           p_prestataire_id: string
+          p_source?: Json
           p_telephone: string
         }
         Returns: Json

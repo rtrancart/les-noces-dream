@@ -49,3 +49,6 @@
 - [x] Tables modèles + tâches couple, synchro en base, 38 modèles avec messages assistant
 - [x] Onglet Planning, accueil (progression + À faire ce mois-ci), back-office Modèles de planning
 - [x] Tests sur le compte couple de test + captures
+
+- [x] Export KPI quotidien Google Sheets (code + calcul vérifiés)
+- [ ] Clé du compte de service Google + identifiant de la feuille (attente utilisateur), puis rattrapage 01/10 → hier

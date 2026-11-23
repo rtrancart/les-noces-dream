@@ -1,3 +1,4 @@
+import { obtenirSourceVisite } from "@/lib/sourceVisite";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
@@ -186,6 +187,7 @@ export default function FichePrestataireView({
     const p = (async () => {
       const { data, error } = await supabase.rpc("obtenir_telephone_prestataire", {
         p_prestataire_id: presta.id,
+        p_source: (obtenirSourceVisite() ?? undefined) as never,
       });
       setPhoneLoading(false);
       if (error || !data) {

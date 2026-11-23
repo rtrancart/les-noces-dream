@@ -96,6 +96,28 @@ Deno.serve(async (req) => {
     return data as Record<string, unknown>;
   };
 
+  // Export KPI : une seule fois par nuit (premier appel du cron, sans phase),
+  // exécuté dans le finally pour tourner même si le pré-rendu échoue, et
+  // isolé pour ne jamais modifier le résultat du pré-rendu.
+  const premierAppelDeLaNuit = hop === 0 && body.phase === undefined;
+  const exporterKpi = async () => {
+    if (!premierAppelDeLaNuit) return;
+    try {
+      const ctrl = new AbortController();
+      const minuterie = setTimeout(() => ctrl.abort(), 120_000);
+      const res = await fetch(`${supabaseUrl}/functions/v1/kpi-export-sheets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
+        body: "{}",
+        signal: ctrl.signal,
+      }).finally(() => clearTimeout(minuterie));
+      const txt = await res.text().catch(() => "");
+      console.log(`[cron-prerender-nightly] export KPI : HTTP ${res.status} — ${txt.slice(0, 300)}`);
+    } catch (e) {
+      console.error("[cron-prerender-nightly] export KPI échoué (sans effet sur le pré-rendu)", e);
+    }
+  };
+
   const cumul = { reconcile: null as unknown, lots: 0, reussis: 0, echecs: 0, ignores: 0 };
 
   try {
@@ -178,5 +200,7 @@ Deno.serve(async (req) => {
       { ok: false, hop, phase, offset, message: e instanceof Error ? e.message : String(e) },
       500,
     );
+  } finally {
+    await exporterKpi();
   }
 });
