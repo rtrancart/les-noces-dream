@@ -2509,6 +2509,30 @@ export type Database = {
           },
         ]
       }
+      prerender_chaine_verrou: {
+        Row: {
+          chaine: string
+          demarre_le: string
+          dernier_saut: string
+          id: boolean
+          origine: string
+        }
+        Insert: {
+          chaine: string
+          demarre_le?: string
+          dernier_saut?: string
+          id?: boolean
+          origine: string
+        }
+        Update: {
+          chaine?: string
+          demarre_le?: string
+          dernier_saut?: string
+          id?: boolean
+          origine?: string
+        }
+        Relationships: []
+      }
       prerender_queue: {
         Row: {
           created_at: string
@@ -4265,6 +4289,16 @@ export type Database = {
           total_indexables: number
           total_orphelins: number
         }[]
+      }
+      prerender_verrou_autorise: { Args: never; Returns: boolean }
+      prerender_verrou_battre: { Args: { p_chaine: string }; Returns: boolean }
+      prerender_verrou_prendre: {
+        Args: { p_chaine: string; p_origine: string }
+        Returns: boolean
+      }
+      prerender_verrou_rendre: {
+        Args: { p_chaine: string }
+        Returns: undefined
       }
       prestataire_est_actif: { Args: { _id: string }; Returns: boolean }
       purge_sessions_fiche_expirees: { Args: never; Returns: number }

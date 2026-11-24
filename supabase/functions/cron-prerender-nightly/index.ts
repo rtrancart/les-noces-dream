@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     return json({ ok: false, message: "Non autorisé" }, 401);
   }
 
-  let body: { phase?: Phase; offset?: number; hop?: number; lot_age?: number; nuit?: Nuit } = {};
+  let body: { phase?: Phase; offset?: number; hop?: number; lot_age?: number; nuit?: Nuit; chaine?: string; origine?: string } = {};
   try {
     body = await req.json();
   } catch {
@@ -79,6 +79,9 @@ Deno.serve(async (req) => {
   let phase: Phase = body.phase === "render" ? "render" : "reconcile";
   let offset = Math.max(0, Number(body.offset) || 0);
   const hop = Math.max(0, Number(body.hop) || 0);
+  // Identifiant de chaîne pour le verrou anti-concurrence (repris de saut en saut).
+  const chaine = typeof body.chaine === "string" && body.chaine ? body.chaine : crypto.randomUUID();
+  const origine = typeof body.origine === "string" ? body.origine.slice(0, 40) : (hop === 0 ? "cron_ou_manuel" : "chaine_existante");
 
   const nuit: Nuit = {
     sauts: Number(body.nuit?.sauts) || 0,
@@ -165,7 +168,18 @@ Deno.serve(async (req) => {
     // ---- Phase 2 : rendu séquentiel ----------------------------------------
     let restantes: number | null = null;
     let bloquee = false;
+    let dejaActive = false;
+    let verrouPerdu = false;
     if (phase === "render") {
+      // Prend (ou renouvelle) le verrou : une seule chaîne de rendu à la fois.
+      const { data: ok, error: eV } = await admin.rpc("prerender_verrou_prendre", { p_chaine: chaine, p_origine: origine });
+      if (eV) throw new Error(`verrou : ${eV.message}`);
+      if (ok !== true) {
+        dejaActive = true;
+        console.log("[cron-prerender-nightly] chaîne déjà active : pas de rendu dans cette chaîne");
+      }
+    }
+    if (phase === "render" && !dejaActive) {
       while (Date.now() - startedAt < BUDGET_MS && !apresFin()) {
         const r = await appeler("prerender-snapshots-batch", { batch_size: BATCH_SIZE });
         cumul.lots++;
@@ -176,6 +190,8 @@ Deno.serve(async (req) => {
         nuit.echecs += Number(r.echecs ?? 0);
         nuit.ignores += Number(r.ignores ?? 0);
         restantes = Number(r.restantes ?? 0);
+        const { data: vivant } = await admin.rpc("prerender_verrou_battre", { p_chaine: chaine });
+        if (vivant !== true) { verrouPerdu = true; break; }
 
         // File vide, ou file qui ne décroît pas : on arrête la chaîne.
         if (restantes <= 0) break;
@@ -186,7 +202,9 @@ Deno.serve(async (req) => {
 
     nuit.sauts++;
     let motif: string | null = null;
-    if (phase === "render" && restantes !== null && restantes <= 0) motif = "file_vide";
+    if (dejaActive) motif = "chaine_deja_active";
+    else if (verrouPerdu) motif = "verrou_perdu";
+    else if (phase === "render" && restantes !== null && restantes <= 0) motif = "file_vide";
     else if (bloquee) motif = "file_bloquee";
     else if (apresFin()) motif = "heure_limite_0530";
     else if (hop + 1 >= MAX_HOPS) motif = "max_hops";
@@ -201,7 +219,7 @@ Deno.serve(async (req) => {
           const res = await fetch(`${supabaseUrl}/functions/v1/cron-prerender-nightly`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
-            body: JSON.stringify({ phase, offset, hop: hop + 1, nuit }),
+            body: JSON.stringify({ phase, offset, hop: hop + 1, nuit, chaine, origine }),
           });
           await res.body?.cancel();
         } catch (e) {
@@ -212,6 +230,7 @@ Deno.serve(async (req) => {
       if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(relance);
       else await relance;
     } else {
+      if (!dejaActive) await admin.rpc("prerender_verrou_rendre", { p_chaine: chaine });
       const { count } = await admin
         .from("prerender_queue")
         .select("id", { count: "exact", head: true })
@@ -233,6 +252,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("[cron-prerender-nightly]", e);
     journal("erreur", null);
+    await admin.rpc("prerender_verrou_rendre", { p_chaine: chaine }).then(() => {}, () => {});
     return json(
       { ok: false, hop, phase, offset, message: e instanceof Error ? e.message : String(e) },
       500,

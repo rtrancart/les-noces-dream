@@ -110,8 +110,20 @@ export function PrerenderSnapshotsPanel() {
 
     const taille = Math.min(15, Math.max(1, Number(batchSize) || 1));
     const cumul = { ...initialProgress };
+    const chaine = crypto.randomUUID();
+    let verrouPris = false;
 
     try {
+      // Verrou partagé avec la tâche de nuit : jamais deux chaînes en même temps.
+      const { data: ok, error: eV } = await supabase.rpc("prerender_verrou_prendre", {
+        p_chaine: chaine,
+        p_origine: "back_office",
+      });
+      if (eV) throw eV;
+      if (ok !== true) {
+        throw new Error("Une chaîne de pré-rendu est déjà active (dernier saut il y a moins de 5 min). Réessayez plus tard.");
+      }
+      verrouPris = true;
       for (let i = 0; i < MAX_ITERATIONS; i++) {
         const data = await invoke(taille);
 
@@ -124,6 +136,8 @@ export function PrerenderSnapshotsPanel() {
         cumul.restantes = (data?.restantes as number) ?? null;
         setProgress({ ...cumul });
         setResult(JSON.stringify(data, null, 2));
+        const { data: vivant } = await supabase.rpc("prerender_verrou_battre", { p_chaine: chaine });
+        if (vivant !== true) throw new Error("Verrou perdu : une autre chaîne a pris le relais.");
 
         if (!boucle) break;
         if (typeof data?.restantes === "number" && data.restantes <= 0) break;
@@ -135,6 +149,7 @@ export function PrerenderSnapshotsPanel() {
     } catch (e: any) {
       setError(e?.message ?? String(e));
     } finally {
+      if (verrouPris) await supabase.rpc("prerender_verrou_rendre", { p_chaine: chaine });
       setLoading(false);
     }
   };

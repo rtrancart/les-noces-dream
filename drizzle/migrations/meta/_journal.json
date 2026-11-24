@@ -225,6 +225,13 @@
       "when": 1795552236191,
       "tag": "0031_prerender_file_signature_score",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795553489384,
+      "tag": "0032_prerender_verrou_chaine",
+      "breakpoints": true
     }
   ]
 }
