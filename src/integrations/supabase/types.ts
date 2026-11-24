@@ -4242,6 +4242,10 @@ export type Database = {
         Args: { p_age: string; p_limit: number }
         Returns: number
       }
+      prerender_priorite_base: {
+        Args: { p_source: string; p_type: string }
+        Returns: number
+      }
       prerender_priorite_type: { Args: { p_type: string }; Returns: number }
       prerender_reconcilier: {
         Args: { p_limit?: number; p_offset?: number }

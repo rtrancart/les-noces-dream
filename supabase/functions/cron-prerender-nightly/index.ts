@@ -9,7 +9,7 @@
 // Reprise : budget de temps par passe, puis auto-relance gatée (uniquement s'il
 // reste du travail) avec un compteur de sauts borné. Ce qui n'a pas été rendu
 // dans la nuit est repris la nuit suivante — la file est traitée par
-// updated_at croissant, aucune page n'est laissée indéfiniment de côté.
+// priorité (trigger trg_prerender_priorite), arrêt : file vide, 05:30 UTC ou MAX_HOPS.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -23,19 +23,22 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const BUDGET_MS = 40_000;
+const BUDGET_MS = 50_000;
 /** Plafond de sauts d'une même nuit : ~4 h de traitement au maximum. */
 const MAX_HOPS = 400;
-const BATCH_SIZE = 5;
+const BATCH_SIZE = 10;
 const COOLDOWN_MS = 1_500;
-/**
- * Rafraîchissement par l'âge : snapshots rendus il y a plus de ~6 jours
- * (seuil 5 j 22 h pour qu'un rendu de 03:00 soit éligible 6 nuits plus tard),
- * par lots tournants. 240/nuit couvre 1 398 pages en 6 nuits (~233/nuit)
- * avec une marge de croissance, sous la capacité Browserless.
- */
-const LOT_AGE = 240;
-const SEUIL_AGE = "5 days 22 hours";
+/** Filet de sécurité : snapshots de plus de 30 jours, 100 max par nuit (le socle est rafraîchi chaque nuit en plus). */
+const LOT_AGE = 100;
+const SEUIL_AGE = "30 days";
+/** Heure limite de la chaîne nocturne (UTC). */
+const FIN_UTC = { h: 5, m: 30 };
+const apresFin = () => {
+  const d = new Date();
+  return d.getUTCHours() * 60 + d.getUTCMinutes() >= FIN_UTC.h * 60 + FIN_UTC.m && d.getUTCHours() < 12;
+};
+type Nuit = { sauts: number; pages: number; echecs: number; ignores: number };
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
 type Phase = "reconcile" | "render";
 
@@ -66,7 +69,7 @@ Deno.serve(async (req) => {
     return json({ ok: false, message: "Non autorisé" }, 401);
   }
 
-  let body: { phase?: Phase; offset?: number; hop?: number; lot_age?: number } = {};
+  let body: { phase?: Phase; offset?: number; hop?: number; lot_age?: number; nuit?: Nuit } = {};
   try {
     body = await req.json();
   } catch {
@@ -77,9 +80,20 @@ Deno.serve(async (req) => {
   let offset = Math.max(0, Number(body.offset) || 0);
   const hop = Math.max(0, Number(body.hop) || 0);
 
+  const nuit: Nuit = {
+    sauts: Number(body.nuit?.sauts) || 0,
+    pages: Number(body.nuit?.pages) || 0,
+    echecs: Number(body.nuit?.echecs) || 0,
+    ignores: Number(body.nuit?.ignores) || 0,
+  };
+  const journal = (motif: string, restantes: number | null) =>
+    console.log(
+      `[cron-prerender-nightly] BILAN NUIT — sauts=${nuit.sauts} pages=${nuit.pages} echecs=${nuit.echecs} ignores=${nuit.ignores} restantes=${restantes ?? "?"} arret=${motif}`,
+    );
+
   if (hop >= MAX_HOPS) {
-    console.log(`[cron-prerender-nightly] plafond de sauts atteint (${hop}), arrêt.`);
-    return json({ ok: true, termine: false, motif: "plafond_sauts", hop });
+    journal("max_hops", null);
+    return json({ ok: true, termine: true, motif: "max_hops", hop, nuit });
   }
 
   const admin = createClient(supabaseUrl, serviceRoleKey);
@@ -99,7 +113,7 @@ Deno.serve(async (req) => {
   // Export KPI : une seule fois par nuit (premier appel du cron, sans phase),
   // exécuté dans le finally pour tourner même si le pré-rendu échoue, et
   // isolé pour ne jamais modifier le résultat du pré-rendu.
-  const premierAppelDeLaNuit = hop === 0 && body.phase === undefined;
+  const premierAppelDeLaNuit = hop === 0 && body.nuit === undefined;
   const exporterKpi = async () => {
     if (!premierAppelDeLaNuit) return;
     try {
@@ -150,45 +164,67 @@ Deno.serve(async (req) => {
 
     // ---- Phase 2 : rendu séquentiel ----------------------------------------
     let restantes: number | null = null;
+    let bloquee = false;
     if (phase === "render") {
-      while (Date.now() - startedAt < BUDGET_MS) {
+      while (Date.now() - startedAt < BUDGET_MS && !apresFin()) {
         const r = await appeler("prerender-snapshots-batch", { batch_size: BATCH_SIZE });
         cumul.lots++;
         cumul.reussis += Number(r.reussis ?? 0);
         cumul.echecs += Number(r.echecs ?? 0);
         cumul.ignores += Number(r.ignores ?? 0);
+        nuit.pages += Number(r.reussis ?? 0);
+        nuit.echecs += Number(r.echecs ?? 0);
+        nuit.ignores += Number(r.ignores ?? 0);
         restantes = Number(r.restantes ?? 0);
 
         // File vide, ou file qui ne décroît pas : on arrête la chaîne.
         if (restantes <= 0) break;
-        if (Number(r.traites ?? 0) === 0) break;
+        if (Number(r.traites ?? 0) === 0) { bloquee = true; break; }
         await new Promise((res) => setTimeout(res, COOLDOWN_MS));
       }
     }
 
-    const resteDuTravail = phase === "reconcile" || (restantes !== null && restantes > 0);
+    nuit.sauts++;
+    let motif: string | null = null;
+    if (phase === "render" && restantes !== null && restantes <= 0) motif = "file_vide";
+    else if (bloquee) motif = "file_bloquee";
+    else if (apresFin()) motif = "heure_limite_0530";
+    else if (hop + 1 >= MAX_HOPS) motif = "max_hops";
+    else if (phase === "render" && restantes === null) motif = "aucun_lot";
+    const resteDuTravail = motif === null;
 
     if (resteDuTravail) {
-      // Saut suivant : gaté sur du travail réellement restant, avec cooldown.
-      setTimeout(() => {
-        fetch(`${supabaseUrl}/functions/v1/cron-prerender-nightly`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
-          body: JSON.stringify({ phase, offset, hop: hop + 1 }),
-        }).catch((e) => console.error("[cron-prerender-nightly] relance échouée", e));
-      }, COOLDOWN_MS);
+      // Saut suivant rattaché au runtime : il part après la réponse sans être coupé.
+      const relance = (async () => {
+        await new Promise((r) => setTimeout(r, COOLDOWN_MS));
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/cron-prerender-nightly`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
+            body: JSON.stringify({ phase, offset, hop: hop + 1, nuit }),
+          });
+          await res.body?.cancel();
+        } catch (e) {
+          console.error("[cron-prerender-nightly] relance échouée", e);
+          journal("relance_echouee", restantes);
+        }
+      })();
+      if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(relance);
+      else await relance;
     } else {
       const { count } = await admin
         .from("prerender_queue")
         .select("id", { count: "exact", head: true })
         .eq("statut", "a_traiter");
-      console.log(`[cron-prerender-nightly] terminé au saut ${hop}, restantes=${count ?? 0}`);
+      journal(motif!, count ?? 0);
     }
 
     return json({
       ok: true,
       hop,
       phase_suivante: resteDuTravail ? phase : null,
+      motif_arret: motif,
+      nuit,
       offset,
       restantes,
       ...cumul,
@@ -196,6 +232,7 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("[cron-prerender-nightly]", e);
+    journal("erreur", null);
     return json(
       { ok: false, hop, phase, offset, message: e instanceof Error ? e.message : String(e) },
       500,
